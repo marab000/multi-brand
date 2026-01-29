@@ -1,0 +1,15 @@
+<script lang="ts">
+  import './layout.css';
+  import Header from '$lib/components/Header.svelte';
+  let { children } = $props();
+</script>
+
+<Header />
+
+<main class="min-h-screen bg-gray-50">
+  {@render children()}
+</main>
+
+<footer class="bg-slate-800 text-gray-300">
+  <div class="mx-auto max-w-7xl px-6 py-8 text-sm">© 2026 EKROM</div>
+</footer>
