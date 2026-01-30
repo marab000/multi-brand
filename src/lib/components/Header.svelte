@@ -24,21 +24,21 @@
 </script>
 
 <nav class="relative bg-slate-900 text-white">
-  <div class="mx-auto flex max-w-7xl items-center gap-8 px-6 py-4">
-    <div class="text-xl font-bold">EKROM</div>
+  <div class="mx-auto flex max-w-7xl items-center gap-8 px-6">
+    <div class="text-xl font-bold"><a href="/">EKROM</a></div>
 
     <button
-      class="font-medium hover:text-teal-400"
+      title=""
+      class="py-4 font-medium hover:text-teal-400"
       on:mouseenter={() => (open = true)}
       on:mouseleave={() => (open = false)}
     >
-      Каталог
+      <i class="fa-solid fa-bars"></i>
     </button>
-
     <div class="ml-auto flex gap-6 text-sm">
       <a href="/">Акции</a>
       <a href="/">Доставка</a>
-      <a href="/">Контакты</a>
+      <a href="/contacts">Контакты</a>
     </div>
   </div>
   {#if open}
@@ -53,8 +53,13 @@
             <h3 class="mb-3 font-semibold">{cat.title}</h3>
             <ul class="space-y-2 text-sm text-slate-600">
               {#each cat.items as item}
-                <li class="cursor-pointer hover:text-teal-600">
-                  {item}
+                <li>
+                  <a
+                    href={`/catalog?category=${cat.slug}&type=${item.slug}`}
+                    class="hover:text-teal-600"
+                  >
+                    {item.title}
+                  </a>
                 </li>
               {/each}
             </ul>
