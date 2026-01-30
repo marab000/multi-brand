@@ -43,7 +43,7 @@
   </div>
   {#if open}
     <div
-      class="absolute top-full left-0 w-full bg-white text-slate-900 shadow-xl"
+      class="absolute top-full left-0 z-10 w-full bg-white text-slate-900 shadow-xl"
       on:mouseenter={() => (open = true)}
       on:mouseleave={() => (open = false)}
     >
@@ -69,3 +69,6 @@
     </div>
   {/if}
 </nav>
+
+<style lang="scss">
+</style>
