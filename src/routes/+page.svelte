@@ -27,7 +27,12 @@
     { title: 'Холодильники' }
   ];
   //
+  import { signIn } from '@auth/sveltekit/client';
 </script>
+
+<button on:click={() => signIn('credentials', { email: 'test@test.com', password: '123456' })}>
+  Login
+</button>
 
 <section class="mx-auto max-w-7xl px-6 py-10">
   <h1 class="mb-4 text-3xl font-bold">Главная страница</h1>
