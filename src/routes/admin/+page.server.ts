@@ -1,11 +1,11 @@
-import { redirect } from "@sveltejs/kit";
+// import { redirect } from "@sveltejs/kit";
 
-export async function load({ locals }) {
-  const session = await locals.getSession();
+// export async function load({ locals }) {
+//   const session = await locals.getSession();
 
-  if (!session) {
-    throw redirect(302, "/login");
-  }
+//   if (!session) {
+//     throw redirect(302, "/login");
+//   }
 
-  return { user: session.user };
-}
+//   return { user: session.user };
+// }

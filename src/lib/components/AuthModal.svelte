@@ -1,75 +1,75 @@
 <script lang="ts">
+  import { supabase } from '$lib/supabaseClient';
+  import { createEventDispatcher } from 'svelte';
+
   export let open = false;
   export let mode: 'login' | 'register' = 'login';
-  export let error: string | null = null;
 
-  function close() {
-    open = false;
+  const dispatch = createEventDispatcher();
+
+  let email = '';
+  let password = '';
+  let loading = false;
+  let errorMsg = '';
+
+  async function handleAuth() {
+    loading = true;
+    errorMsg = '';
+
+    if (mode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) errorMsg = error.message;
+    }
+
+    if (mode === 'register') {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) errorMsg = error.message;
+    }
+
+    loading = false;
+
+    if (!errorMsg) {
+      dispatch('success');
+      open = false;
+    }
   }
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-xl font-semibold">
-          {mode === 'login' ? 'Вход' : 'Регистрация'}
-        </h2>
-        <button on:click={close} class="text-slate-400 hover:text-black">✕</button>
-      </div>
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  <div class="bg-white p-6 rounded-xl w-96">
+    <h2 class="text-xl font-bold mb-4">
+      {mode === 'login' ? 'Login' : 'Register'}
+    </h2>
 
-      <form
-        method="POST"
-        action={mode === 'login' ? '/login' : '/register'}
-        class="space-y-4"
-      >
-        {#if error}
-          <div class="rounded-lg bg-red-50 p-2 text-sm text-red-600">
-            {error}
-          </div>
-        {/if}
+    <input
+      class="border p-2 w-full mb-2"
+      placeholder="Email"
+      bind:value={email}
+    />
 
-        {#if mode === 'register'}
-          <input name="name" placeholder="Имя" required class="input" />
-          <input name="phone" placeholder="Телефон" required class="input" />
-        {/if}
+    <input
+      class="border p-2 w-full mb-2"
+      type="password"
+      placeholder="Password"
+      bind:value={password}
+    />
 
-        <input name="email" type="email" placeholder="Email" required class="input" />
-        <input
-          name="password"
-          type="password"
-          placeholder="Пароль"
-          required
-          class="input"
-        />
+    {#if errorMsg}
+      <p class="text-red-500 text-sm">{errorMsg}</p>
+    {/if}
 
-        {#if mode === 'register'}
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="captcha" required />
-            Я не робот
-          </label>
-        {/if}
+    <button
+      class="bg-black text-white px-4 py-2 rounded w-full"
+      disabled={loading}
+      on:click={handleAuth}
+    >
+      {loading ? '...' : mode === 'login' ? 'Login' : 'Register'}
+    </button>
 
-        <button type="submit" class="btn-primary">
-          {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
-        </button>
-      </form>
-    </div>
+    <button class="text-sm mt-2" on:click={() => (open = false)}>
+      Close
+    </button>
   </div>
+</div>
 {/if}
-
-<style>
-  .input {
-    width: 100%;
-    border-radius: 0.5rem;
-    border: 1px solid #e5e7eb;
-    padding: 0.5rem 0.75rem;
-  }
-  .btn-primary {
-    width: 100%;
-    border-radius: 0.5rem;
-    background: black;
-    padding: 0.5rem;
-    color: white;
-  }
-</style>
