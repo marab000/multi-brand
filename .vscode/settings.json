@@ -1,5 +1,17 @@
 {
-	"files.associations": {
-		"*.css": "tailwindcss"
-	}
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": true,
+  "deno.importMap": "./supabase/functions/import_map.json",
+  "deno.codeLens.test": true,
+  "deno.codeLens.implementations": true,
+
+  // Отключаем TS в Supabase functions, чтобы не конфликтовал
+  "typescript.enablePromptUseWorkspaceTsdk": false,
+  "typescript.tsserver.enable": false,
+
+  // Чтобы VSCode не ругался на Deno imports
+  "files.associations": {
+    "*.ts": "typescript"
+  }
 }

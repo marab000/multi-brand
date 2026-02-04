@@ -86,7 +86,8 @@
 
 {#if open}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="w-96 rounded-xl bg-white p-6">
+    <button class="absolute h-full w-full opacity-0" on:click={() => (open = false)}>''</button>
+    <div class="relative w-96 rounded-xl bg-white p-6">
       <h2 class="mb-4 text-xl font-bold">
         {mode === 'login' ? 'Вход' : 'Регистрация'}
       </h2>
