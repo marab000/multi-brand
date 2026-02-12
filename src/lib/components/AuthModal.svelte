@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { supabase } from '$lib/supabaseClient';
   import { createEventDispatcher } from 'svelte';
   import { toast } from 'svelte-sonner';
 
@@ -25,27 +24,27 @@
         // если ввели телефон — ищем email
         let loginEmail = loginValue;
 
-        if (/^\+?\d+$/.test(loginValue)) {
-          const { data } = await supabase
-            .from('users')
-            .select('email')
-            .eq('phone_number', loginValue)
-            .single();
+        // if (/^\+?\d+$/.test(loginValue)) {
+        //   const { data } = await supabase
+        //     .from('users')
+        //     .select('email')
+        //     .eq('phone_number', loginValue)
+        //     .single();
 
-          if (!data?.email) {
-            toast.error('Телефон не найден');
-            return;
-          }
+        //   if (!data?.email) {
+        //     toast.error('Телефон не найден');
+        //     return;
+        //   }
 
-          loginEmail = data.email;
-        }
+        //   loginEmail = data.email;
+        // }
 
-        const { error } = await supabase.auth.signInWithPassword({
-          email: loginEmail,
-          password
-        });
+        // const { error } = await supabase.auth.signInWithPassword({
+        //   email: loginEmail,
+        //   password
+        // });
 
-        if (error) throw error;
+        // if (error) throw error;
 
         toast.success('Вы вошли');
       }
@@ -57,19 +56,19 @@
           return;
         }
 
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          phone,
-          options: {
-            data: {
-              full_name: fullName,
-              phone_number: phone
-            }
-          }
-        });
+        // const { data, error } = await supabase.auth.signUp({
+        //   email,
+        //   password,
+        //   phone,
+        //   options: {
+        //     data: {
+        //       full_name: fullName,
+        //       phone_number: phone
+        //     }
+        //   }
+        // });
 
-        if (error) throw error;
+        // if (error) throw error;
 
         toast.success('Проверь почту для подтверждения');
       }

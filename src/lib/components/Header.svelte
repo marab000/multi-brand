@@ -1,7 +1,5 @@
 <script lang="ts">
   import AuthModal from '$lib/components/AuthModal.svelte';
-  import { session } from '$lib/stores/session';
-  //
   let open = false; // меню
   let showLogin = false;
   let showRegister = false;
@@ -27,15 +25,14 @@
   ];
   //
   //
-  import { supabase } from '$lib/supabaseClient';
   let user = null;
 </script>
 
-{#if $session}
+<!-- {#if $session}
   <p>Hi {$session.user.email}</p>
 {:else}
   <button on:click={() => (showLogin = true)}>Login</button>
-{/if}
+{/if} -->
 
 <AuthModal bind:open={showRegister} mode="register" />
 <AuthModal bind:open={showLogin} mode="login" />
@@ -72,13 +69,13 @@
       <button
         class="rounded-md bg-teal-500 px-3 py-1 font-medium text-black hover:bg-teal-400"
         on:click={async () => {
-          const { error } = await supabase.auth.signOut();
-          if (error) {
-            console.error('Ошибка при выходе:', error);
-          } else {
-            console.log('Успешный выход из системы');
-            user = null; // Обнуляем состояние пользователя, если нужно
-          }
+          // const { error } = await supabase.auth.signOut();
+          // if (error) {
+          //   console.error('Ошибка при выходе:', error);
+          // } else {
+          //   console.log('Успешный выход из системы');
+          //   user = null; // Обнуляем состояние пользователя, если нужно
+          // }
         }}
         >Logout
       </button>

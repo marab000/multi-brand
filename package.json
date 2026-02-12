@@ -39,6 +39,7 @@
 	},
 	"dependencies": {
 		"@supabase/supabase-js": "^2.93.3",
+		"postgres": "^3.4.8",
 		"svelte-sonner": "^1.0.7",
 		"swiper": "^12.1.0"
 	}

@@ -1,23 +1,45 @@
-import { supabase } from '$lib/supabaseClient';
-import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types'
+import postgres from 'postgres'
 
-export async function POST({ request }) {
-  const { phone, password } = await request.json();
+const sql = postgres({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT),
+  database: process.env.DB_NAME,
+  username: process.env.DB_USER,
+  user: process.env.DB_USER,,
+})
 
-  const { data: user } = await supabase
-    .from('users')
-    .select('email')
-    .eq('phone_number', phone)
-    .single();
+export const GET: RequestHandler = async ({ url }) => {
+  const brand = url.searchParams.get('brand')
+  const category = url.searchParams.get('category')
+  const type = url.searchParams.get('type')
+  const search = url.searchParams.get('search')
 
-  if (!user) return json({ error: 'User not found' }, { status: 404 });
+  let query = sql`
+    SELECT *
+    FROM products
+    WHERE 1=1
+  `
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: user.email,
-    password
-  });
+  if (brand) {
+    query = sql`${query} AND brand_name = ${brand}`
+  }
 
-  if (error) return json({ error: error.message }, { status: 401 });
+  if (category) {
+    query = sql`${query} AND category = ${category}`
+  }
 
-  return json({ success: true });
+  if (type) {
+    query = sql`${query} AND product_type = ${type}`
+  }
+
+  if (search) {
+    query = sql`${query} AND name ILIKE ${'%' + search + '%'}`
+  }
+
+  const products = await query
+
+  return new Response(JSON.stringify(products), {
+    headers: { 'Content-Type': 'application/json' }
+  })
 }
