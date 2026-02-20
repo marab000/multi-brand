@@ -1,4 +1,3 @@
-import { supabase } from '$lib/supabaseClient';
 import { fail } from '@sveltejs/kit';
 
 export const actions = {

@@ -1,24 +1,35 @@
 <script lang="ts">
-  export let product: any;
+  export let product;
+
+  const image1 = product.images?.[0]?.url ?? '/no-image.jpg';
+  const image = product.images?.[0]?.url ?? '/no-image.jpg';
 </script>
 
 <div class="card">
-  <h3>{product.name}</h3>
+  <img src={image} alt={product.name} />
 
-  <p>
-    <strong>Бренд:</strong>
-    {product.brand_name ?? '—'}
-  </p>
+  <a href={'/product/' + product.name.toLowerCase().replace(/\s+/g, '_')}>
+    <h3>{product.name}</h3>
+  </a>
 
-  <p>
-    <small>ID: {product.id}</small>
+  <p class="price">
+    {product.price * 1000} ₽
   </p>
 </div>
 
 <style>
   .card {
-    padding: 16px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid #eee;
+    padding: 15px;
+  }
+
+  img {
+    width: 100%;
+    height: 250px;
+    object-fit: contain;
+  }
+
+  .price {
+    font-weight: bold;
   }
 </style>
