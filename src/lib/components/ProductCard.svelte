@@ -1,26 +1,39 @@
 <script lang="ts">
+  import { formatPrice } from '$lib/utils/formatPrice';
   export let product;
 
-  const image1 = product.images?.[0]?.url ?? '/no-image.jpg';
   const image = product.images?.[0]?.url ?? '/no-image.jpg';
+  const slug = product.name.toLowerCase().replace(/\s+/g, '_');
 </script>
 
-<div class="card">
+<a class="card" href={'/product/' + slug}>
   <img src={image} alt={product.name} />
 
-  <a href={'/product/' + product.name.toLowerCase().replace(/\s+/g, '_')}>
-    <h3>{product.name}</h3>
-  </a>
-
-  <p class="price">
-    {product.price * 1000} ₽
+  <h3 class="my-3">{product.name}</h3>
+  <p class="price my-3">
+    {formatPrice(product.price_ric ?? product.price_rrc)} ₽
   </p>
-</div>
+
+  <button class="add">Добавить в корзину</button>
+</a>
 
 <style>
   .card {
     border: 1px solid #eee;
     padding: 15px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition:
+      box-shadow 0.3s ease,
+      transform 0.3s ease;
+    border-radius: 6px;
+  }
+
+  .card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
   }
 
   img {
@@ -31,5 +44,21 @@
 
   .price {
     font-weight: bold;
+    margin-top: auto;
+  }
+
+  .add {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    background: #111;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .add:hover {
+    background: #333;
   }
 </style>

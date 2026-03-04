@@ -19,7 +19,7 @@
 {#if products.length === 0}
   <p>Товары не найдены</p>
 {:else}
-  <div class="grid">
+  <div class="grid gap-4">
     {#each products as product (product.id)}
       <ProductCard {product} />
     {/each}
@@ -35,6 +35,5 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 20px;
   }
 </style>
