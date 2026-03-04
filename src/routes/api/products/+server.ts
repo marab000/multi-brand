@@ -8,7 +8,41 @@ export async function GET({ url }) {
     const type = url.searchParams.get('type');
     const search = url.searchParams.get('search');
 
-    let query = sql`
+    const page = Number(url.searchParams.get('page') ?? 1);
+    const limit = Number(url.searchParams.get('limit') ?? 9);
+    const offset = (page - 1) * limit;
+
+    // ---------- WHERE фильтры ----------
+    let where = sql`WHERE 1=1`;
+
+    if (brand) {
+      where = sql`${where} AND p.brand_name ILIKE ${'%' + brand + '%'}`;
+    }
+
+    if (category) {
+      where = sql`${where} AND p.category = ${category}`;
+    }
+
+    if (type) {
+      where = sql`${where} AND p.product_type = ${type}`;
+    }
+
+    if (search) {
+      where = sql`${where} AND p.name ILIKE ${'%' + search + '%'}`;
+    }
+
+    // ---------- COUNT ----------
+    const totalResult = await sql`
+      SELECT COUNT(*) 
+      FROM products p
+      ${where}
+    `;
+
+    const total = Number(totalResult[0].count);
+    const pages = Math.ceil(total / limit);
+
+    // ---------- PRODUCTS ----------
+    const products = await sql`
       SELECT 
         p.*,
         COALESCE(
@@ -24,30 +58,19 @@ export async function GET({ url }) {
       FROM products p
       LEFT JOIN product_images pi 
         ON pi.product_id = p.id
-      WHERE 1=1
+      ${where}
+      GROUP BY p.id
+      ORDER BY p.id DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
     `;
 
-    if (brand) {
-      query = sql`${query} AND p.brand_name ILIKE ${'%' + brand + '%'}`;
-    }
-
-    if (category) {
-      query = sql`${query} AND p.category = ${category}`;
-    }
-
-    if (type) {
-      query = sql`${query} AND p.product_type = ${type}`;
-    }
-
-    if (search) {
-      query = sql`${query} AND p.name ILIKE ${'%' + search + '%'}`;
-    }
-
-    query = sql`${query} GROUP BY p.id`;
-
-    const products = await query;
-
-    return json(products);
+    return json({
+      products,
+      total,
+      page,
+      pages
+    });
   } catch (e) {
     console.error('API ERROR:', e);
     return json({ error: String(e) }, { status: 500 });
