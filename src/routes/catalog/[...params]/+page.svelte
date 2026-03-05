@@ -99,7 +99,7 @@
   {/if}
 {/if}
 
-<style>
+<style lang="scss">
   .title {
     font-size: 28px;
     margin-bottom: 20px;
@@ -117,27 +117,32 @@
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-  }
 
-  .pagination a {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 50%;
-    background: white;
-    text-decoration: none;
-    color: black;
-    min-width: 38px;
-    text-align: center;
-  }
+    a {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 50%;
+      background: white;
+      text-decoration: none;
+      color: black;
+      min-width: 38px;
+      text-align: center;
+      transition: 0.2s;
 
-  .pagination a.active {
-    background: black;
-    color: white;
-    border-color: black;
-  }
+      &:hover {
+        background: #f5f5f5;
+      }
 
-  .pagination .dots {
-    padding: 0 6px;
-    color: #777;
+      &.active {
+        background: black;
+        color: white;
+        border-color: black;
+      }
+    }
+
+    .dots {
+      padding: 0 6px;
+      color: #777;
+    }
   }
 </style>

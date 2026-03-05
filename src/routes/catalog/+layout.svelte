@@ -1,6 +1,14 @@
-<script>
-  // export let data
+<script lang="ts">
+  import { navigating } from '$app/stores';
+
+  $: isLoading = $navigating !== null;
 </script>
+
+{#if isLoading}
+  <div class="global-loader">
+    <div class="spinner"></div>
+  </div>
+{/if}
 
 <div class="catalog-layout">
   <slot />
@@ -9,5 +17,34 @@
 <style>
   .catalog-layout {
     padding: 40px;
+  }
+
+  .global-loader {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(2px);
+
+    z-index: 9999;
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+
+      border: 4px solid #ddd;
+      border-top: 4px solid black;
+      border-radius: 50%;
+
+      animation: spin 0.8s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
