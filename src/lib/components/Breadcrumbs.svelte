@@ -1,60 +1,36 @@
 <script lang="ts">
-  export let brand: string | undefined;
-  export let category: string | undefined;
-  export let type: string | undefined;
-
-  const parts = [{ label: 'Каталог', href: '/catalog' }];
-
-  if (brand) {
-    parts.push({
-      label: brand,
-      href: `/catalog/${brand}`
-    });
-  }
-
-  if (category) {
-    parts.push({
-      label: category,
-      href: `/catalog/${brand}/${category}`
-    });
-  }
-
-  if (type) {
-    parts.push({
-      label: type,
-      href: `/catalog/${brand}/${category}/${type}`
-    });
-  }
+  import { slugify } from '/Users/maratnugmanov/Documents/Projects/multi-brand/src/lib/utils/slugify';
+  export let brand: string | null = null;
+  export let category: string | null = null;
+  export let type: string | null = null;
 </script>
 
 <nav class="breadcrumbs">
-  {#each parts as part, i}
-    <a href={part.href}>{part.label}</a>
-    {#if i < parts.length - 1}
-      <span class="sep">›</span>
-    {/if}
-  {/each}
+  <a href="/catalog/brands">Каталог</a>
+
+  {#if brand}
+    <span class="sep">›</span>
+    <a href={`/catalog/brands/${slugify(brand!)}`}>{brand}</a>
+  {/if}
+
+  {#if category}
+    <span class="sep">›</span>
+    <a href={`/catalog/brands/${slugify(brand!)}/${slugify(category!)}`}>{category}</a>
+  {/if}
+
+  {#if type}
+    <span class="sep">›</span>
+    <span>{type}</span>
+  {/if}
 </nav>
 
-<style>
+<style lang="scss">
   .breadcrumbs {
     display: flex;
+    gap: 6px;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
   }
-
-  .breadcrumbs a {
-    text-decoration: none;
-    color: #555;
-    transition: color 0.2s ease;
-  }
-
-  .breadcrumbs a:hover {
-    color: #000;
-  }
-
   .sep {
-    color: #aaa;
+    opacity: 0.5;
   }
 </style>

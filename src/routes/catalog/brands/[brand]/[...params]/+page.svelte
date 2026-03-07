@@ -117,29 +117,27 @@
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
-
     a {
-      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
       border: 1px solid #ccc;
       border-radius: 50%;
       background: white;
       text-decoration: none;
       color: black;
-      min-width: 38px;
-      text-align: center;
       transition: 0.2s;
-
       &:hover {
         background: #f5f5f5;
       }
-
       &.active {
         background: black;
         color: white;
         border-color: black;
       }
     }
-
     .dots {
       padding: 0 6px;
       color: #777;

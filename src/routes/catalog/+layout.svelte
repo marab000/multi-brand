@@ -14,7 +14,7 @@
   <slot />
 </div>
 
-<style>
+<style lang="scss">
   .catalog-layout {
     padding: 40px;
   }
@@ -27,17 +27,13 @@
     justify-content: center;
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(2px);
-
     z-index: 9999;
-
     .spinner {
       width: 48px;
       height: 48px;
-
       border: 4px solid #ddd;
       border-top: 4px solid black;
       border-radius: 50%;
-
       animation: spin 0.8s linear infinite;
     }
   }

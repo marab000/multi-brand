@@ -6,7 +6,7 @@
 </script>
 
 <Header />
-<main class="min-h-screen bg-gray-50">
+<main class="min-h-screen bg-gray-50 p-6">
   {@render children()}
 </main>
 

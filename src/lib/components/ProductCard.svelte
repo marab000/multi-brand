@@ -6,16 +6,17 @@
   const slug = product.name.toLowerCase().replace(/\s+/g, '_');
 </script>
 
-<a class="card" href={'/product/' + slug}>
-  <img src={image} alt={product.name} />
+<div class="card">
+  <a href={'/products/' + slug}>
+    <img src={image} alt={product.name} />
 
-  <h3 class="my-3">{product.name}</h3>
-  <p class="price my-3">
-    {formatPrice(product.price_ric ?? product.price_rrc)} ₽
-  </p>
-
+    <h3 class="my-3">{product.name}</h3>
+    <p class="price my-3">
+      {formatPrice(product.price_ric ?? product.price_rrc)} ₽
+    </p>
+  </a>
   <button class="add">Добавить в корзину</button>
-</a>
+</div>
 
 <style>
   .card {
