@@ -43,7 +43,12 @@
 
 {#if p}
   <div class="mx-auto max-w-7xl px-4 py-6">
-    <Breadcrumbs brand={p.brand_name} category={p.category} type={p.product_type} />
+    <Breadcrumbs
+      brand={p.brand_name}
+      category={p.category}
+      type={p.product_type}
+      product={p.name}
+    />
 
     <div class="mt-6 grid gap-12 lg:grid-cols-2">
       <!-- LEFT -->

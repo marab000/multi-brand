@@ -4,18 +4,18 @@ import { slugify } from '$lib/utils/slugify';
 
 export const load: PageServerLoad = async ({ params, url, fetch }) => {
   const brandSlug = params.brand;
-  const raw = params.params;
-  const parts = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+  const parts = params.params ? params.params.split('/') : [];
 
   const categorySlug = parts[0] ?? null;
   const typeSlug = parts[1] ?? null;
 
   const brandRow = await sql`
-		select distinct brand_name
-		from products
-		where lower(brand_name) = ${brandSlug}
-		limit 1
-	`;
+select distinct brand_name
+from products
+where lower(brand_name)=${brandSlug}
+limit 1
+`;
 
   if (!brandRow.length) {
     return {
@@ -37,10 +37,10 @@ export const load: PageServerLoad = async ({ params, url, fetch }) => {
 
   if (categorySlug) {
     const rows = await sql`
-			select distinct category
-			from products
-			where brand_name = ${brandName}
-		`;
+select distinct category
+from products
+where brand_name=${brandName}
+`;
 
     const match = rows.find((r) => slugify(r.category) === categorySlug);
     if (match) category = match.category;
@@ -48,10 +48,10 @@ export const load: PageServerLoad = async ({ params, url, fetch }) => {
 
   if (typeSlug) {
     const rows = await sql`
-			select distinct product_type
-			from products
-			where brand_name = ${brandName}
-		`;
+select distinct product_type
+from products
+where brand_name=${brandName}
+`;
 
     const match = rows.find((r) => slugify(r.product_type) === typeSlug);
     if (match) type = match.product_type;
