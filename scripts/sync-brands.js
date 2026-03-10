@@ -98,7 +98,7 @@ async function syncBrand(apiBrand) {
 	const brand = findMatchedBrand(apiBrand.NAME)
 	if (!brand) return
 
-	console.log('Sync:', brand.name)
+	console.log('Sync:', brand.name, '| API:', apiBrand.NAME)
 
 	const products = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/0/`)
 	const pricesRaw = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/2/`)
@@ -118,6 +118,7 @@ async function syncBrand(apiBrand) {
 			external_id: id,
 			brand_id: String(apiBrand.ID),
 			brand_name: brand.name,
+			brand_api_name: apiBrand.NAME,
 			name: item['РабочееНаименование'] ?? null,
 			description: item['ТекстовоеОписание'] ?? null,
 			sku: item['Артикул'] ?? null,
@@ -151,6 +152,7 @@ async function syncBrand(apiBrand) {
 		on conflict (external_id) do update set
 			brand_id = excluded.brand_id,
 			brand_name = excluded.brand_name,
+			brand_api_name = excluded.brand_api_name,
 			name = excluded.name,
 			description = excluded.description,
 			sku = excluded.sku,
