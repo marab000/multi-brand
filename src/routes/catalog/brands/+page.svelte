@@ -3,7 +3,7 @@
   $: brands = data.brands ?? [];
 </script>
 
-<h1 class="title">Бренды</h1>
+<h1 class="title mb-3" style="font-size: 24px;">Бренды</h1>
 
 {#if brands.length === 0}
   <p>Бренды не найдены</p>
@@ -18,10 +18,6 @@
 {/if}
 
 <style lang="scss">
-  .title {
-    font-size: 28px;
-    margin-bottom: 20px;
-  }
   .brands {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

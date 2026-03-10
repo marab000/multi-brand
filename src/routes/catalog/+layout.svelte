@@ -1,7 +1,12 @@
 <script lang="ts">
   import { navigating } from '$app/stores';
-
+  import { page } from '$app/stores';
+  import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  $: console.log('navigating', $navigating);
   $: isLoading = $navigating !== null;
+  $: brand = $page.data?.brand ?? null;
+  $: category = $page.data?.category ?? null;
+  $: type = $page.data?.type ?? null;
 </script>
 
 {#if isLoading}
@@ -10,15 +15,11 @@
   </div>
 {/if}
 
-<div class="catalog-layout">
-  <slot />
-</div>
+<Breadcrumbs {brand} {category} {type} />
+
+<slot />
 
 <style lang="scss">
-  .catalog-layout {
-    padding: 40px;
-  }
-
   .global-loader {
     position: fixed;
     inset: 0;
@@ -37,7 +38,6 @@
       animation: spin 0.8s linear infinite;
     }
   }
-
   @keyframes spin {
     to {
       transform: rotate(360deg);

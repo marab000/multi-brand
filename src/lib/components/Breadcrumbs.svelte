@@ -1,6 +1,5 @@
 <script lang="ts">
   import { slugify } from '$lib/utils/slugify';
-
   export let brand: string | null = null;
   export let category: string | null = null;
   export let type: string | null = null;
@@ -12,21 +11,25 @@
 
   {#if brand}
     <span class="sep">›</span>
-    <a href={`/catalog/brands/${slugify(brand!)}`}>{brand}</a>
+    <a href={`/catalog/brands/${slugify(brand)}`}>{brand}</a>
   {/if}
 
   {#if category}
     <span class="sep">›</span>
-    <a href={`/catalog/brands/${slugify(brand!)}/${slugify(category!)}`}>
-      {category}
-    </a>
+    <a
+      href={brand
+        ? `/catalog/brands/${slugify(brand)}/${slugify(category)}`
+        : `/catalog/${slugify(category)}`}>{category}</a
+    >
   {/if}
 
   {#if type}
     <span class="sep">›</span>
-    <a href={`/catalog/brands/${slugify(brand!)}/${slugify(category!)}/${slugify(type!)}`}>
-      {type}
-    </a>
+    <a
+      href={brand
+        ? `/catalog/brands/${slugify(brand)}/${slugify(category!)}/${slugify(type)}`
+        : `/catalog/${slugify(category!)}/${slugify(type)}`}>{type}</a
+    >
   {/if}
 
   {#if product}
