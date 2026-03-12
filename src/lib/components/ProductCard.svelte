@@ -2,7 +2,13 @@
   import { formatPrice } from '$lib/utils/formatPrice';
   export let product;
 
-  const image = product.images?.[0]?.url ?? '/no-image.jpg';
+  const image =
+    product.images && product.images.length
+      ? product.images.reduce((prev: any, curr: any) =>
+          prev.position < curr.position ? prev : curr
+        ).url
+      : '/images/no_image.png';
+
   const slug = product.name.toLowerCase().replace(/\s+/g, '_');
 </script>
 

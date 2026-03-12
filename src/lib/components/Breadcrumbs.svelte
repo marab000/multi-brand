@@ -1,35 +1,39 @@
 <script lang="ts">
+  import { page } from '$app/stores';
   import { slugify } from '$lib/utils/slugify';
+
   export let brand: string | null = null;
   export let category: string | null = null;
   export let type: string | null = null;
   export let product: string | null = null;
+
+  $: queryParams = new URLSearchParams($page.url.search);
+  $: queryStr = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+  // ссылки для крошек
+  $: categoryLink = category ? `/catalog/${slugify(category)}` : '';
+  $: typeLink =
+    type && category ? `/catalog/${slugify(category)}?type=${encodeURIComponent(type)}` : '';
+  $: brandLink =
+    brand && category ? `/catalog/${slugify(category)}?brand=${encodeURIComponent(brand)}` : '';
 </script>
 
 <nav class="breadcrumbs">
-  <a href="/catalog/brands">Каталог</a>
-
-  {#if brand}
-    <span class="sep">›</span>
-    <a href={`/catalog/brands/${slugify(brand)}`}>{brand}</a>
-  {/if}
+  <a href="/catalog">Каталог</a>
 
   {#if category}
     <span class="sep">›</span>
-    <a
-      href={brand
-        ? `/catalog/brands/${slugify(brand)}/${slugify(category)}`
-        : `/catalog/${slugify(category)}`}>{category}</a
-    >
+    <a href={categoryLink}>{category}</a>
   {/if}
 
   {#if type}
     <span class="sep">›</span>
-    <a
-      href={brand
-        ? `/catalog/brands/${slugify(brand)}/${slugify(category!)}/${slugify(type)}`
-        : `/catalog/${slugify(category!)}/${slugify(type)}`}>{type}</a
-    >
+    <a href={typeLink}>{type}</a>
+  {/if}
+
+  {#if brand}
+    <span class="sep">›</span>
+    <a href={brandLink}>{brand}</a>
   {/if}
 
   {#if product}

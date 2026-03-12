@@ -5,7 +5,25 @@
 
   register();
 
-  export let data;
+  type ProductImage = { url: string };
+  type Product = {
+    name: string;
+    brand_name?: string;
+    category?: string;
+    product_type?: string;
+    price_ric?: number;
+    price_rrc?: number;
+    color?: string;
+    width?: number;
+    height?: number;
+    length?: number;
+    weight?: number;
+    images: ProductImage[];
+    raw?: any;
+  };
+
+  export let data: { product: Product };
+
   const p = data.product;
 
   let mainSwiper: any;
@@ -18,13 +36,11 @@
     zoomIndex = i;
     zoom = true;
   };
-
   const closeZoom = () => (zoom = false);
 
   const slidePrev = () => {
     mainSwiper?.swiper?.slidePrev();
   };
-
   const slideNext = () => {
     mainSwiper?.swiper?.slideNext();
   };
@@ -49,9 +65,7 @@
       type={p.product_type}
       product={p.name}
     />
-
     <div class="mt-6 grid gap-12 lg:grid-cols-2">
-      <!-- LEFT -->
       <div class="w-full max-w-xl min-w-0">
         <swiper-container
           bind:this={mainSwiper}
@@ -61,6 +75,7 @@
             <swiper-slide>
               <img
                 src={img.url}
+                alt={p.name}
                 class="h-full w-full cursor-zoom-in object-contain p-4 select-none"
                 on:click={() => openZoom(i)}
               />
@@ -82,7 +97,11 @@
                   class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
                   on:click={() => mainSwiper?.swiper?.slideTo(i)}
                 >
-                  <img src={img.url} class="pointer-events-none h-full w-full object-contain p-1" />
+                  <img
+                    src={img.url}
+                    alt={p.name}
+                    class="pointer-events-none h-full w-full object-contain p-1"
+                  />
                 </button>
               </swiper-slide>
             {/each}
@@ -90,27 +109,19 @@
 
           <button
             class="absolute top-1/2 -left-4 z-10 -translate-y-1/2 rounded border bg-white p-2 shadow hover:bg-gray-100"
-            on:click={slidePrev}
+            on:click={slidePrev}>←</button
           >
-            ←
-          </button>
-
           <button
             class="absolute top-1/2 -right-4 z-10 -translate-y-1/2 rounded border bg-white p-2 shadow hover:bg-gray-100"
-            on:click={slideNext}
+            on:click={slideNext}>→</button
           >
-            →
-          </button>
         </div>
       </div>
 
-      <!-- RIGHT -->
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
 
-        <div class="mb-6 text-3xl font-bold">
-          {formatPrice(p.price_ric ?? p.price_rrc)} ₽
-        </div>
+        <div class="mb-6 text-3xl font-bold">{formatPrice(p.price_ric ?? p.price_rrc)} ₽</div>
 
         <div class="mb-8 flex gap-3">
           <button class="rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
@@ -119,7 +130,6 @@
           <button class="rounded border px-6 py-3 hover:bg-gray-100">В избранное</button>
         </div>
 
-        <!-- MAIN SPECS -->
         <div class="mb-6 space-y-2 text-sm">
           {#if p.color}
             <div class="flex items-end gap-2">
@@ -162,7 +172,6 @@
           {/if}
         </div>
 
-        <!-- ALL SPECS -->
         <div>
           <h2 class="mb-4 font-semibold">Характеристики</h2>
           <div class="space-y-2 text-sm">
@@ -181,8 +190,7 @@
 
   {#if zoom}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-      <!-- CLOSE BUTTON -->
-      <div class="w-ful absolute flex h-full" on:click={closeZoom}></div>
+      <div class="absolute flex h-full w-full" on:click={closeZoom}></div>
       <button
         on:click={closeZoom}
         class="absolute top-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl font-semibold shadow-lg backdrop-blur transition hover:scale-110 hover:bg-white"
@@ -199,7 +207,11 @@
           {#each p.images as img}
             <swiper-slide>
               <div class="flex aspect-square w-full items-center justify-center">
-                <img src={img.url} class="max-h-full max-w-full object-contain select-none" />
+                <img
+                  src={img.url}
+                  alt={p.name}
+                  class="max-h-full max-w-full object-contain select-none"
+                />
               </div>
             </swiper-slide>
           {/each}
