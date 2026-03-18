@@ -1,7 +1,9 @@
 <script lang="ts">
   import { navigating, page } from '$app/stores';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
-  import SidebarFilters from '$lib/components/SidebarFilters.svelte';
+  import SidebarFilters from '$lib/components/filters/SidebarFilters.svelte';
+  import ProductSearch from '$lib/components/ProductSearch.svelte';
+
   export let data;
   $: isLoading = $navigating !== null;
   $: brand = $page.data?.brand ?? null;
@@ -16,22 +18,28 @@
 {#if isLoading}
   <div class="global-loader"><div class="spinner"></div></div>
 {/if}
+
+<div class="mb-4">
+  <ProductSearch />
+</div>
+
 <Breadcrumbs {brand} {category} {type} />
 <div class="catalog-layout">
-  <SidebarFilters {brands} {types} minPrice={min} maxPrice={max} />
+  <SidebarFilters {brands} {types} minPrice={min} maxPrice={max} colors={data.colors ?? []} />
   <div class="catalog-content">
     <slot />
   </div>
 </div>
+
 <style lang="scss">
   .catalog-layout {
     display: grid;
     grid-template-columns: 260px 1fr;
     gap: 32px;
     margin-top: 20px;
-		.catalog-content {
-			min-width: 0;
-		}
+    .catalog-content {
+      min-width: 0;
+    }
   }
   .global-loader {
     position: fixed;
@@ -42,14 +50,14 @@
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(2px);
     z-index: 9999;
-		.spinner {
-			width: 48px;
-			height: 48px;
-			border: 4px solid #ddd;
-			border-top: 4px solid black;
-			border-radius: 50%;
-			animation: spin 0.8s linear infinite;
-		}
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #ddd;
+      border-top: 4px solid black;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
   }
   @keyframes spin {
     to {

@@ -1,30 +1,24 @@
 export interface Product {
   id: string;
   external_id: string;
-  brand_id: number | null;
   name: string;
   description: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  weight: number | null;
-  width: number | null;
-  height: number | null;
-  depth: number | null;
-  power: number | null;
-  color: string | null;
+  brand: {
+    name: string;
+    api?: string;
+    id?: string;
+  } | null;
+  category: string | null;
+  product_type: string | null;
   price_rrc: number | null;
   price_opt: number | null;
   price_ric: number | null;
-  category: string | null;
-  product_type: string | null;
-  length: number | null;
-  sku: string | null;
-  brand_name: string | null;
-  volume: number | null;
-  noise_level: number | null;
-  energy_class: string | null;
-  country: string | null;
-  warranty: number | null;
-  images?: any[];
+  specs: Record<string, any> | null;
+  raw: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
+  images?: {
+    url: string;
+    position: number;
+  }[];
 }
