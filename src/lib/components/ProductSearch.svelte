@@ -1,5 +1,7 @@
 <script lang="ts">
   import { slugify } from '$lib/utils/slugify';
+  import { onMount, onDestroy } from 'svelte';
+  import { browser } from '$app/environment';
 
   let query = '';
   let results: any[] = [];
@@ -36,19 +38,30 @@
 
   function handleKey(e: KeyboardEvent) {
     if (!open) return;
-    if (e.key === 'ArrowDown') {
-      selected = Math.min(selected + 1, results.length - 1);
-    }
-    if (e.key === 'ArrowUp') {
-      selected = Math.max(selected - 1, 0);
-    }
+    if (e.key === 'ArrowDown') selected = Math.min(selected + 1, results.length - 1);
+    if (e.key === 'ArrowUp') selected = Math.max(selected - 1, 0);
     if (e.key === 'Enter') {
-      if (selected >= 0) {
-        goToProduct(results[selected]);
-      } else {
-        window.location.href = `/catalog?search=${encodeURIComponent(query)}`;
-      }
+      if (selected >= 0) goToProduct(results[selected]);
+      else window.location.href = `/catalog?search=${encodeURIComponent(query)}`;
     }
+  }
+
+  function submitSearch() {
+    window.location.href = `/catalog?search=${encodeURIComponent(query)}`;
+  }
+
+  function handleClickOutside(e: MouseEvent) {
+    const path = e.composedPath();
+    if (!path.some((el: any) => el?.classList?.contains('search'))) open = false;
+  }
+
+  if (browser) {
+    onMount(() => {
+      document.addEventListener('click', handleClickOutside);
+    });
+    onDestroy(() => {
+      document.removeEventListener('click', handleClickOutside);
+    });
   }
 </script>
 
@@ -60,6 +73,7 @@
     on:input={handleInput}
     on:keydown={handleKey}
   />
+  <button class="btn-search" on:click={submitSearch} aria-label="Поиск">🔍</button>
 
   {#if open && results.length}
     <div class="dropdown">
@@ -73,10 +87,7 @@
         </div>
       {/each}
 
-      <div
-        class="all"
-        on:click={() => (window.location.href = `/catalog?search=${encodeURIComponent(query)}`)}
-      >
+      <div class="all" on:click={submitSearch}>
         Показать все результаты
       </div>
     </div>
@@ -88,16 +99,29 @@
     position: relative;
     width: 100%;
     max-width: 500px;
+    display: flex;
     input {
-      width: 100%;
+      flex: 1;
       padding: 14px 16px;
       border: 1px solid #ddd;
-      border-radius: 6px;
+      border-radius: 6px 0 0 6px;
       font-size: 16px;
       outline: none;
       transition: 0.2s;
       &:focus {
         border-color: #111;
+      }
+    }
+    .btn-search {
+      padding: 0 12px;
+      border: 1px solid #ddd;
+      border-left: none;
+      border-radius: 0 6px 6px 0;
+      background: #f7f7f7;
+      cursor: pointer;
+      font-size: 16px;
+      &:hover {
+        background: #eee;
       }
     }
   }

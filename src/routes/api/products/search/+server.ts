@@ -1,39 +1,15 @@
 import { json } from '@sveltejs/kit';
-import { sql } from '$lib/db';
+import { fetchProducts } from '$lib/server/catalogApi';
 
 export async function GET({ url }) {
-  const q = url.searchParams.get('q')?.trim();
+  try {
+    const search = url.searchParams.get('q')?.trim();
+    if (!search || search.length < 2) return json([]);
 
-  if (!q || q.length < 2) {
+    const { products } = await fetchProducts({ search }, 8, 0);
+    return json(products);
+  } catch (e) {
+    console.error('SEARCH ERROR:', e);
     return json([]);
   }
-
-  const products = await sql`
-SELECT
-p.id,
-p.name,
-p.brand->>'name' as brand_name,
-COALESCE(p.price_ric,p.price_rrc) as price,
-COALESCE(
-json_agg(
-json_build_object(
-'url',pi.url,
-'position',pi.position
-)
-ORDER BY pi.position
-) FILTER (WHERE pi.id IS NOT NULL),
-'[]'
-) as images
-FROM products p
-LEFT JOIN product_images pi
-ON pi.product_id=p.id
-WHERE
-lower(p.name) ILIKE ${'%' + q.toLowerCase() + '%'}
-OR lower(p.brand->>'name') ILIKE ${'%' + q.toLowerCase() + '%'}
-GROUP BY p.id
-ORDER BY p.created_at DESC
-LIMIT 8
-`;
-
-  return json(products);
 }

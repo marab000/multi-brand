@@ -34,23 +34,22 @@
 
 <div class="filters">
   <div class="filter-block">
-    <div class="filter-title" on:click={() => (showTypes = !showTypes)}>
-      Тип <span class:rotated={!showTypes}>⌄</span>
-    </div>
-    {#if showTypes}
-      <div class="filter-content" transition:slide>
-        <CheckboxFilter items={types} param="type" />
-      </div>
-    {/if}
-  </div>
-
-  <div class="filter-block">
     <div class="filter-title" on:click={() => (showBrands = !showBrands)}>
       Бренд <span class:rotated={!showBrands}>⌄</span>
     </div>
     {#if showBrands}
       <div class="filter-content" transition:slide>
         <CheckboxFilter items={brands} param="brand" />
+      </div>
+    {/if}
+  </div>
+  <div class="filter-block">
+    <div class="filter-title" on:click={() => (showTypes = !showTypes)}>
+      Тип <span class:rotated={!showTypes}>⌄</span>
+    </div>
+    {#if showTypes}
+      <div class="filter-content" transition:slide>
+        <CheckboxFilter items={types} param="type" />
       </div>
     {/if}
   </div>
@@ -72,7 +71,13 @@
     </div>
     {#if showPrice}
       <div class="filter-content" transition:slide>
-        <SliderFilter label="Цена" paramMin="price_min" paramMax="price_max" min={minPrice} max={maxPrice} />
+        <SliderFilter
+          label="Цена"
+          paramMin="price_min"
+          paramMax="price_max"
+          min={minPrice}
+          max={maxPrice}
+        />
       </div>
     {/if}
   </div>
@@ -83,7 +88,14 @@
     </div>
     {#if showWidth}
       <div class="filter-content" transition:slide>
-        <SliderFilter label="Ширина" paramMin="width_min" paramMax="width_max" min={widthMin} max={widthMax} step={0.1} />
+        <SliderFilter
+          label="Ширина"
+          paramMin="width_min"
+          paramMax="width_max"
+          min={widthMin}
+          max={widthMax}
+          step={0.1}
+        />
       </div>
     {/if}
   </div>
@@ -94,7 +106,14 @@
     </div>
     {#if showHeight}
       <div class="filter-content" transition:slide>
-        <SliderFilter label="Высота" paramMin="height_min" paramMax="height_max" min={heightMin} max={heightMax} step={0.1} />
+        <SliderFilter
+          label="Высота"
+          paramMin="height_min"
+          paramMax="height_max"
+          min={heightMin}
+          max={heightMax}
+          step={0.1}
+        />
       </div>
     {/if}
   </div>
@@ -105,7 +124,14 @@
     </div>
     {#if showDepth}
       <div class="filter-content" transition:slide>
-        <SliderFilter label="Глубина" paramMin="depth_min" paramMax="depth_max" min={depthMin} max={depthMax} step={0.1} />
+        <SliderFilter
+          label="Глубина"
+          paramMin="depth_min"
+          paramMax="depth_max"
+          min={depthMin}
+          max={depthMax}
+          step={0.1}
+        />
       </div>
     {/if}
   </div>
@@ -115,33 +141,39 @@
 
 <style lang="scss">
   .filters {
-    display:flex;
-    flex-direction:column;
-    gap:24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
     .filter-block {
-      display:flex;
-      flex-direction:column;
+      display: flex;
+      flex-direction: column;
       .filter-title {
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        font-weight:600;
-        cursor:pointer;
-        span {transition:.25s;}
-        .rotated {transform:rotate(-180deg);}
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        cursor: pointer;
+        span {
+          transition: 0.25s;
+        }
+        .rotated {
+          transform: rotate(-180deg);
+        }
       }
       .filter-content {
-        margin-top:8px;
+        margin-top: 8px;
       }
     }
     .reset-btn {
-      margin-top:12px;
-      padding:8px 12px;
-      background:#eee;
-      border:1px solid #ccc;
-      cursor:pointer;
-      border-radius:4px;
-      &:hover {background:#ddd;}
+      margin-top: 12px;
+      padding: 8px 12px;
+      background: #eee;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      border-radius: 4px;
+      &:hover {
+        background: #ddd;
+      }
     }
   }
 </style>
