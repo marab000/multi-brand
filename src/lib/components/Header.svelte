@@ -1,6 +1,9 @@
 <script lang="ts">
   import AuthModal from '$lib/components/AuthModal.svelte';
-  let open = false; // меню
+  import ProductSearch from '$lib/components/ProductSearch.svelte';
+  import logo1 from '$lib/assets/logo1.png';
+
+  let open = false;
   let showLogin = false;
   let showRegister = false;
 
@@ -23,90 +26,185 @@
       ]
     }
   ];
-  //
-  //
-  let user = null;
 </script>
-
-<!-- {#if $session}
-  <p>Hi {$session.user.email}</p>
-{:else}
-  <button on:click={() => (showLogin = true)}>Login</button>
-{/if} -->
 
 <AuthModal bind:open={showRegister} mode="register" />
 <AuthModal bind:open={showLogin} mode="login" />
 
-<nav class="relative bg-slate-900 text-white">
-  <div class="mx-auto flex max-w-7xl items-center gap-8 px-6">
-    <div class="text-xl font-bold"><a href="/">MULTIBRAND</a></div>
+<nav class="nav">
+  <div class="nav__inner container mx-auto">
+    <!-- logo -->
+    <a class="nav__logo" href="/">
+      <img src={logo1} alt="logo" />
+    </a>
 
-    <button
-      title=""
-      class="py-4 font-medium hover:text-teal-400"
+    <!-- catalog button -->
+    <div
+      class="nav__catalog"
       on:mouseenter={() => (open = true)}
       on:mouseleave={() => (open = false)}
     >
-      <i class="fa-solid fa-bars"></i>
-    </button>
-    <div class="ml-auto flex gap-6 text-sm">
-      <a href="/">Акции</a>
-      <a href="/">Доставка</a>
-      <a href="/contacts">Контакты</a>
-      <!-- AUTH -->
-      <button
-        on:click={() => (showLogin = true)}
-        class="rounded-md border border-white/20 px-3 py-1 hover:bg-white/10"
-        >Логин
+      <button class="catalog-btn">
+        <i class="fa-solid fa-bars"></i>
+        <span>Каталог</span>
       </button>
 
-      <button
-        on:click={() => (showRegister = true)}
-        class="rounded-md border border-white/20 px-3 py-1 hover:bg-white/10"
-        >Регистрация
-      </button>
+      {#if open}
+        <div
+          class="catalog-dropdown"
+          on:mouseenter={() => (open = true)}
+          on:mouseleave={() => (open = false)}
+        >
+          {#each categories as cat}
+            <div class="cat">
+              <h3>{cat.title}</h3>
+              <ul>
+                {#each cat.items as item}
+                  <li>
+                    <a href={`/catalog?category=${cat.slug}&type=${item.slug}`}>
+                      {item.title}
+                    </a>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
 
-      <button
-        class="rounded-md bg-teal-500 px-3 py-1 font-medium text-black hover:bg-teal-400"
-        on:click={async () => {
-          // const { error } = await supabase.auth.signOut();
-          // if (error) {
-          //   console.error('Ошибка при выходе:', error);
-          // } else {
-          //   console.log('Успешный выход из системы');
-          //   user = null; // Обнуляем состояние пользователя, если нужно
-          // }
-        }}
-        >Logout
+    <!-- search -->
+    <div class="nav__search">
+      <ProductSearch />
+    </div>
+
+    <!-- actions -->
+    <div class="nav__actions">
+      <button on:click={() => (showLogin = true)}>
+        <i class="fa-regular fa-user"></i>
+      </button>
+      <button>
+        <i class="fa-regular fa-heart"></i>
+      </button>
+      <button>
+        <i class="fa-solid fa-cart-shopping"></i>
       </button>
     </div>
   </div>
-  {#if open}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div
-      class="absolute top-full left-0 z-10 w-full bg-white text-slate-900 shadow-xl"
-      on:mouseenter={() => (open = true)}
-      on:mouseleave={() => (open = false)}
-    >
-      <div class="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 py-8 md:grid-cols-4">
-        {#each categories as cat}
-          <div>
-            <h3 class="mb-3 font-semibold">{cat.title}</h3>
-            <ul class="space-y-2 text-sm text-slate-600">
-              {#each cat.items as item}
-                <li>
-                  <a
-                    href={`/catalog?category=${cat.slug}&type=${item.slug}`}
-                    class="hover:text-teal-600"
-                  >
-                    {item.title}
-                  </a>
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/each}
-      </div>
-    </div>
-  {/if}
 </nav>
+
+<style lang="scss">
+  .nav {
+    background: white;
+    &__inner {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      height: 100px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    &__logo {
+      display: flex;
+      align-items: center;
+      img {
+        height: 46px;
+        object-fit: contain;
+      }
+    }
+    &__catalog {
+      position: relative;
+    }
+    &__search {
+      flex: 1;
+
+      :global(input) {
+        height: 44px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 0 16px;
+        transition: 0.2s;
+
+        &:focus {
+          border-color: $green-light;
+          box-shadow: 0 0 0 3px rgba($green-light, 0.15);
+        }
+      }
+    }
+    &__actions {
+      display: flex;
+      gap: 12px;
+      button {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: rgba($green, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+        i {
+          color: $green;
+          font-size: 16px;
+        }
+        &:hover {
+          background: $green-light;
+          i {
+            color: white;
+          }
+        }
+      }
+    }
+  }
+  .catalog-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    background: $green;
+    color: white;
+    font-weight: 500;
+    transition: 0.2s;
+    i {
+      font-size: 14px;
+    }
+    &:hover {
+      background: $green-light;
+    }
+  }
+  .catalog-dropdown {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    width: 520px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    z-index: 10;
+    .cat {
+      h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      ul {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        a {
+          font-size: 13px;
+          color: #555;
+          transition: 0.2s;
+          &:hover {
+            color: $green-light;
+          }
+        }
+      }
+    }
+  }
+</style>

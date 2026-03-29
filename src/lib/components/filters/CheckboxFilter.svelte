@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
 
   export let items: string[] = [];
   export let param: string;
@@ -9,18 +8,19 @@
   let selected: string[] = [];
 
   function toggle(value: string) {
-    if (selected.includes(value)) {
-      selected = selected.filter((x) => x !== value);
-    } else {
-      selected = [...selected, value];
-    }
+    selected = selected.includes(value)
+      ? selected.filter((x) => x !== value)
+      : [...selected, value];
+
     updateURL();
   }
 
   function updateURL() {
     const params = new URLSearchParams($page.url.search);
+
     params.delete(param);
     selected.forEach((v) => params.append(param, v));
+
     goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
 
@@ -28,17 +28,19 @@
     return [...list].sort((a, b) => {
       const aSel = selected.includes(a);
       const bSel = selected.includes(b);
-      if (aSel === bSel) return 0;
-      return aSel ? -1 : 1;
+
+      if (aSel !== bSel) return aSel ? -1 : 1;
+
+      // ✅ алфавит
+      return a.localeCompare(b);
     });
   }
 
-  $: sorted = sortItems(items);
+  // ✅ ВСЕГДА синхронизация с URL (фикс reset)
+  $: selected = $page.url.searchParams.getAll(param);
 
-  onMount(() => {
-    const params = new URLSearchParams($page.url.search);
-    selected = params.getAll(param);
-  });
+  // ✅ всегда пересортировка
+  $: sorted = sortItems(items);
 </script>
 
 <div class="filter">

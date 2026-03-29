@@ -2,10 +2,20 @@ import type { LayoutServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { slugify } from '$lib/utils/slugify';
 
-function parseSize(v: string | null) {
-  if (!v) return null;
-  const m = v.replace(',', '.').match(/[\d.]+/);
-  return m ? Number(m[0]) : null;
+function parseSpecsValue(specs: Record<string, any>, keys: string[]) {
+  for (const key of keys) {
+    const val = specs?.[key];
+    if (!val) continue;
+
+    const str = String(val).replace(',', '.');
+    const match = str.match(/\d+(\.\d+)?/);
+
+    if (match) {
+      const num = parseFloat(match[0]);
+      if (!isNaN(num)) return num;
+    }
+  }
+  return null;
 }
 
 export const load: LayoutServerLoad = async ({ url }) => {
@@ -21,6 +31,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
 
   const values: any[] = [];
   let where = 'WHERE price_rrc IS NOT NULL';
+
   if (category) {
     values.push(category);
     where += ` AND trim(category)=$1`;
@@ -31,11 +42,9 @@ export const load: LayoutServerLoad = async ({ url }) => {
     SELECT
       brand->>'name' as brand_name,
       product_type,
+      category,
       price_rrc,
-      specs->>'Цвет' as color,
-      specs->>'Ширина' as width,
-      specs->>'Высота' as height,
-      specs->>'Глубина' as depth
+      specs
     FROM products
     ${where}
   `,
@@ -43,28 +52,57 @@ export const load: LayoutServerLoad = async ({ url }) => {
   );
 
   const brands = [...new Set(products.map((p: any) => p.brand_name?.trim()).filter(Boolean))];
-  const types = [...new Set(products.map((p: any) => p.product_type?.trim()).filter(Boolean))];
-  const colors = [...new Set(products.map((p: any) => p.color?.trim()).filter(Boolean))];
+
+  const typeGroupsMap: Record<string, Set<string>> = {};
+  for (const p of products) {
+    const cat = p.category?.trim();
+    const type = p.product_type?.trim();
+    if (!cat || !type) continue;
+
+    if (!typeGroupsMap[cat]) typeGroupsMap[cat] = new Set();
+    typeGroupsMap[cat].add(type);
+  }
+
+  const typeGroups = Object.entries(typeGroupsMap).map(([group, types]) => ({
+    group,
+    items: Array.from(types)
+  }));
+
+  const colors = [...new Set(products.map((p: any) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
 
   const prices = products.map((p: any) => Math.round(Number(p.price_rrc) * 1000));
-  const minPrice = prices.length ? Math.min(...prices) : 0;
-  const maxPrice = prices.length ? Math.max(...prices) : 0;
+  const priceMax = prices.length ? Math.max(...prices) : 0;
 
-  const widths = products.map((p: any) => parseSize(p.width)).filter(Boolean);
-  const heights = products.map((p: any) => parseSize(p.height)).filter(Boolean);
-  const depths = products.map((p: any) => parseSize(p.depth)).filter(Boolean);
+  const map = {
+    width: ['Размер (Ширина)', 'Размер (Ширина), см', 'Ширина прибора'],
+    height: ['Размер (Высота)', 'Размер (Высота), см', 'Высота прибора'],
+    depth: ['Размер (Глубина)', 'Размер (Глубина), см', 'Глубина прибора']
+  };
+
+  const widths = products
+    .map((p: any) => parseSpecsValue(p.specs, map.width))
+    .filter((v) => v != null);
+  const heights = products
+    .map((p: any) => parseSpecsValue(p.specs, map.height))
+    .filter((v) => v != null);
+  const depths = products
+    .map((p: any) => parseSpecsValue(p.specs, map.depth))
+    .filter((v) => v != null);
+
+  const widthMax = widths.length ? Math.max(...widths) : 0;
+  const heightMax = heights.length ? Math.max(...heights) : 0;
+  const depthMax = depths.length ? Math.max(...depths) : 0;
 
   return {
     brands,
-    types,
+    typeGroups,
     colors,
-    minPrice,
-    maxPrice,
-    widthMin: widths.length ? Math.min(...widths) : 0,
-    widthMax: widths.length ? Math.max(...widths) : 0,
-    heightMin: heights.length ? Math.min(...heights) : 0,
-    heightMax: heights.length ? Math.max(...heights) : 0,
-    depthMin: depths.length ? Math.min(...depths) : 0,
-    depthMax: depths.length ? Math.max(...depths) : 0
+
+    minMax: {
+      price: [0, priceMax],
+      width: [0, widthMax],
+      height: [0, heightMax],
+      depth: [0, depthMax]
+    }
   };
 };

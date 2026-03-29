@@ -6,12 +6,10 @@
 </script>
 
 <Header />
-<main class="min-h-screen bg-gray-50 p-6">
+<main class="container mx-auto min-h-screen bg-gray-50 p-6">
   {@render children()}
+  <Toaster richColors />
 </main>
-
 <footer class="bg-slate-800 text-gray-300">
   <div class="mx-auto max-w-7xl px-6 py-8 text-sm">© 2026 MULTIBRAND</div>
 </footer>
-
-<Toaster richColors />

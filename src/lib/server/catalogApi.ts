@@ -1,62 +1,75 @@
 import { sql } from '$lib/db';
 import { normalize, expandQuery } from '$lib/search/normalize';
-import { apiFetch } from '$lib/api';
 
 export interface CatalogFilters {
   search?: string;
-  category?: string;
+  categories?: string[];
   types?: string[];
   brands?: string[];
   colors?: string[];
   priceMin?: number;
   priceMax?: number;
-  specs?: Record<string, { min?: number; max?: number }>; // width, height, depth
+  specs?: Record<string, { min?: number; max?: number }>;
 }
 
-// === СЕРВЕРНАЯ ЛОГИКА ===
 export function buildWhere(filters: CatalogFilters) {
   const conditions: string[] = [];
   const values: any[] = [];
 
+  // SEARCH
   if (filters.search) {
     const normalized = normalize(filters.search);
     const words = expandQuery(normalized).filter((w) => w.length >= 3);
     if (words.length) {
-      const searchCondition = words
-        .map(
-          (word) => `
-        (
-          LOWER(p.name) LIKE '%${word}%'
-          OR LOWER(COALESCE(p.description,'')) LIKE '%${word}%'
-          OR LOWER(p.brand->>'name') LIKE '%${word}%'
-        )
-      `
-        )
-        .join(' AND ');
-      conditions.push(searchCondition);
+      const parts: string[] = [];
+      for (const word of words) {
+        const idx = values.length + 1;
+        values.push(`%${word.toLowerCase()}%`);
+        parts.push(`
+          LOWER(p.name) LIKE $${idx}
+          OR LOWER(COALESCE(p.description,'')) LIKE $${idx}
+          OR LOWER(p.brand->>'name') LIKE $${idx}
+        `);
+      }
+      conditions.push(`(${parts.join(' OR ')})`);
     }
   }
-
-  if (filters.category) {
-    conditions.push(`trim(p.category)=$${values.length + 1}`);
-    values.push(filters.category);
+  // бренды
+  if (filters.brands?.length) {
+    const parts: string[] = [];
+    for (const b of filters.brands) {
+      const idx = values.length + 1;
+      values.push(b.toLowerCase());
+      parts.push(`lower(trim(p.brand->>'name')) = $${idx}`);
+    }
+    conditions.push(`(${parts.join(' OR ')})`);
   }
-
-  if (filters.types && filters.types.length) {
+  // категории / типы
+  if (filters.categories?.length && filters.types?.length) {
+    conditions.push(`(
+      trim(p.category)=ANY($${values.length + 1})
+      OR trim(p.product_type)=ANY($${values.length + 2})
+    )`);
+    values.push(filters.categories, filters.types);
+  } else if (filters.categories?.length) {
+    conditions.push(`trim(p.category)=ANY($${values.length + 1})`);
+    values.push(filters.categories);
+  } else if (filters.types?.length) {
     conditions.push(`trim(p.product_type)=ANY($${values.length + 1})`);
     values.push(filters.types);
   }
+  // цвета
+  if (filters.colors?.length) {
+    const parts: string[] = [];
 
-  if (filters.brands && filters.brands.length) {
-    conditions.push(`lower(trim(p.brand->>'name'))=ANY($${values.length + 1})`);
-    values.push(filters.brands.map((b) => b.toLowerCase()));
+    for (const c of filters.colors) {
+      const idx = values.length + 1;
+      values.push(c.toLowerCase());
+      parts.push(`lower(trim(p.specs->>'Цвет')) = $${idx}`);
+    }
+    conditions.push(`(${parts.join(' OR ')})`);
   }
-
-  if (filters.colors && filters.colors.length) {
-    conditions.push(`lower(trim(p.specs->>'Цвет'))=ANY($${values.length + 1})`);
-    values.push(filters.colors.map((c) => c.toLowerCase()));
-  }
-
+  // цена
   if (filters.priceMin != null) {
     conditions.push(`p.price_rrc >= $${values.length + 1}`);
     values.push(filters.priceMin);
@@ -66,16 +79,28 @@ export function buildWhere(filters: CatalogFilters) {
     values.push(filters.priceMax);
   }
 
-  // width, height, depth
   function specNumericExpr(keys: string[]) {
-    if (!keys || !keys.length) return '0'; // fallback
-    const exprs = keys
-      .map(
-        (k) =>
-          `CAST(replace(regexp_replace(split_part(p.specs->>'${k}','-',1),'[^0-9,\\.]','','g'),',','.') AS numeric)`
-      )
-      .filter(Boolean);
-    return exprs.length ? `COALESCE(${exprs.join(',')},0)` : '0';
+    if (!keys.length) return 'NULL';
+    const exprs = keys.map(
+      (k) => `
+        CAST(
+          NULLIF(
+            regexp_replace(
+              regexp_replace(
+                replace(split_part(p.specs->>'${k}','-',1), ',', '.'),
+                '[^0-9\\.]',
+                '',
+                'g'
+              ),
+              '\\.(?=.*\\.)',
+              '',
+              'g'
+            ),
+          '') AS numeric
+        )
+      `
+    );
+    return `COALESCE(${exprs.join(',')})`;
   }
 
   if (filters.specs) {
@@ -89,55 +114,39 @@ export function buildWhere(filters: CatalogFilters) {
       if (!value) continue;
       const expr = specNumericExpr(map[field]);
       if (value.min != null) {
-        conditions.push(`${expr} >= $${values.length + 1}`);
+        conditions.push(`(${expr}) IS NOT NULL AND (${expr}) >= $${values.length + 1}`);
         values.push(value.min);
       }
       if (value.max != null) {
-        conditions.push(`${expr} <= $${values.length + 1}`);
+        conditions.push(`(${expr}) IS NOT NULL AND (${expr}) <= $${values.length + 1}`);
         values.push(value.max);
       }
     }
   }
-
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   return { whereClause, values };
 }
 
 export async function fetchProducts(filters: CatalogFilters, limit = 50, offset = 0) {
-  const { whereClause, values } = buildWhere(filters);
-
-  const query = `
-    SELECT p.*, COALESCE(json_agg(pi) FILTER (WHERE pi.id IS NOT NULL),'[]') AS images
-    FROM products p
-    LEFT JOIN product_images pi ON pi.product_id=p.id
-    ${whereClause}
-    GROUP BY p.id
-    ORDER BY p.created_at DESC
-    LIMIT ${limit} OFFSET ${offset}
-  `;
-
-  const products = await sql.unsafe(query, values);
-  const countQuery = `SELECT COUNT(*) AS total FROM products p ${whereClause}`;
-  const countResult = await sql.unsafe(countQuery, values);
-  const total = Number(countResult[0].total);
-
-  return { products, total };
-}
-
-// === КЛИЕНТСКАЯ ОБЁРТКА ===
-export async function loadProducts(fetch: typeof globalThis.fetch, query: URLSearchParams) {
-  return apiFetch<{
-    products: any[];
-    total: number;
-    pages: number;
-    page: number;
-    brands?: string[];
-    minPrice?: number;
-    maxPrice?: number;
-  }>(fetch, `/api/products?${query}`).catch(() => ({
-    products: [],
-    total: 0,
-    pages: 1,
-    page: 1
-  }));
+  try {
+    const { whereClause, values } = buildWhere(filters);
+    const query = `
+      SELECT 
+        p.*,
+        COUNT(*) OVER() AS total_count,
+        COALESCE(json_agg(pi) FILTER (WHERE pi.id IS NOT NULL),'[]') AS images
+      FROM products p
+      LEFT JOIN product_images pi ON pi.product_id = p.id
+      ${whereClause}
+      GROUP BY p.id
+      ORDER BY p.created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+    const rows = await sql.unsafe(query, values);
+    const total = rows.length ? Number(rows[0].total_count) : 0;
+    return { products: rows, total };
+  } catch (err) {
+    console.error('❌ SQL ERROR:', err);
+    throw err;
+  }
 }

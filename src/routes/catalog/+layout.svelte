@@ -2,30 +2,36 @@
   import { navigating, page } from '$app/stores';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import SidebarFilters from '$lib/components/filters/SidebarFilters.svelte';
-  import ProductSearch from '$lib/components/ProductSearch.svelte';
 
   export let data;
+
   $: isLoading = $navigating !== null;
   $: brand = $page.data?.brand ?? null;
   $: category = $page.data?.category ?? null;
   $: type = $page.data?.type ?? null;
+
+  $: typeGroups = data.typeGroups ?? [];
   $: brands = data.brands ?? [];
-  $: types = data.types ?? [];
-  $: min = data.minPrice ?? 0;
-  $: max = data.maxPrice ?? 0;
+
+  $: minMax = data.minMax ?? {
+    price: [0, 999999],
+    width: [0, 300],
+    height: [0, 300],
+    depth: [0, 300]
+  };
 </script>
 
 {#if isLoading}
   <div class="global-loader"><div class="spinner"></div></div>
 {/if}
 
-<div class="mb-4">
-  <ProductSearch />
-</div>
+
 
 <Breadcrumbs {brand} {category} {type} />
+
 <div class="catalog-layout">
-  <SidebarFilters {brands} {types} minPrice={min} maxPrice={max} colors={data.colors ?? []} />
+  <SidebarFilters {brands} {typeGroups} colors={data.colors ?? []} {minMax} />
+
   <div class="catalog-content">
     <slot />
   </div>

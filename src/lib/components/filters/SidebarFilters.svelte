@@ -6,18 +6,12 @@
   import CheckboxFilter from '$lib/components/filters/CheckboxFilter.svelte';
   import SliderFilter from '$lib/components/filters/SliderFilter.svelte';
   import { goto } from '$app/navigation';
+  import TypeFilter from '$lib/components/filters/TypeFilter.svelte';
 
-  export let types: string[] = [];
+  export let typeGroups: { group: string; items: string[] }[] = [];
   export let brands: string[] = [];
   export let colors: string[] = [];
-  export let minPrice = 0;
-  export let maxPrice = 100000;
-  export let widthMin = 0;
-  export let widthMax = 100;
-  export let heightMin = 0;
-  export let heightMax = 100;
-  export let depthMin = 0;
-  export let depthMax = 100;
+  export let minMax;
 
   let showTypes = true;
   let showBrands = true;
@@ -43,13 +37,14 @@
       </div>
     {/if}
   </div>
+
   <div class="filter-block">
     <div class="filter-title" on:click={() => (showTypes = !showTypes)}>
       Тип <span class:rotated={!showTypes}>⌄</span>
     </div>
     {#if showTypes}
       <div class="filter-content" transition:slide>
-        <CheckboxFilter items={types} param="type" />
+        <TypeFilter groups={typeGroups} />
       </div>
     {/if}
   </div>
@@ -72,11 +67,10 @@
     {#if showPrice}
       <div class="filter-content" transition:slide>
         <SliderFilter
-          label="Цена"
           paramMin="price_min"
           paramMax="price_max"
-          min={minPrice}
-          max={maxPrice}
+          min={minMax.price[0]}
+          max={minMax.price[1]}
         />
       </div>
     {/if}
@@ -89,11 +83,10 @@
     {#if showWidth}
       <div class="filter-content" transition:slide>
         <SliderFilter
-          label="Ширина"
           paramMin="width_min"
           paramMax="width_max"
-          min={widthMin}
-          max={widthMax}
+          min={0}
+          max={minMax.width[1]}
           step={0.1}
         />
       </div>
@@ -107,11 +100,10 @@
     {#if showHeight}
       <div class="filter-content" transition:slide>
         <SliderFilter
-          label="Высота"
           paramMin="height_min"
           paramMax="height_max"
-          min={heightMin}
-          max={heightMax}
+          min={0}
+          max={minMax.height[1]}
           step={0.1}
         />
       </div>
@@ -125,11 +117,10 @@
     {#if showDepth}
       <div class="filter-content" transition:slide>
         <SliderFilter
-          label="Глубина"
           paramMin="depth_min"
           paramMax="depth_max"
-          min={depthMin}
-          max={depthMax}
+          min={0}
+          max={minMax.depth[1]}
           step={0.1}
         />
       </div>

@@ -13,15 +13,17 @@
 </script>
 
 <div class="card">
-  <a href={'/products/' + slug}>
-    <img src={image} alt={product.name} />
+  <a href={'/products/' + slug} data-sveltekit-preload-data="off">
+    <img src={image} alt={product.name} loading="lazy" />
     <h3 class="my-3">{product.name}</h3>
-    <p class="price my-3">{formatPrice(product.price_ric ?? product.price_rrc)} ₽</p>
+    <p class="price my-3">
+      {formatPrice(product.price_rrc ?? product.price_ric)} ₽
+    </p>
   </a>
   <button class="add">Добавить в корзину</button>
 </div>
 
-<style>
+<style lang="scss">
   .card {
     border: 1px solid #eee;
     padding: 15px;
@@ -33,31 +35,38 @@
       box-shadow 0.3s ease,
       transform 0.3s ease;
     border-radius: 6px;
-  }
-  .card:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-    transform: translateY(-4px);
-  }
-  img {
-    width: 100%;
-    height: 250px;
-    object-fit: contain;
-  }
-  .price {
-    font-weight: bold;
-    margin-top: auto;
-  }
-  .add {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    background: #111;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  .add:hover {
-    background: #333;
+    a {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: inherit;
+      text-decoration: none;
+    }
+    &:hover {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+      transform: translateY(-4px);
+    }
+    img {
+      width: 100%;
+      height: 250px;
+      object-fit: contain;
+    }
+    .price {
+      font-weight: bold;
+      margin-top: auto;
+    }
+    .add {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      background: #111;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      &:hover {
+        background: #333;
+      }
+    }
   }
 </style>
