@@ -81,37 +81,43 @@
     grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
     gap: 16px;
   }
+
   .pagination {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     margin-top: 30px;
     justify-content: center;
-    align-items: center;
     flex-wrap: wrap;
+
     a {
+      min-width: 38px;
+      height: 38px;
+      padding: 0 10px;
+      border-radius: 10px;
+      border: 1px solid #eee;
+      background: #fff;
+      text-decoration: none;
+      color: #222;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      border: 1px solid #ccc;
-      border-radius: 50%;
-      background: white;
-      text-decoration: none;
-      color: black;
+      font-weight: 500;
       transition: 0.2s;
+
       &:hover {
         background: #f5f5f5;
       }
+
       &.active {
-        background: black;
-        color: white;
-        border-color: black;
+        background: $green;
+        color: #fff;
+        border-color: $green;
       }
     }
+
     .dots {
-      padding: 0 6px;
-      color: #777;
+      padding: 0 8px;
+      color: #aaa;
     }
   }
 </style>

@@ -26,13 +26,16 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+
 <div class="filters">
   <div class="filter-block">
     <div class="filter-title" on:click={() => (showBrands = !showBrands)}>
       Бренд <span class:rotated={!showBrands}>⌄</span>
     </div>
     {#if showBrands}
-      <div class="filter-content" transition:slide>
+      <div class="filter-content scroll" transition:slide>
         <CheckboxFilter items={brands} param="brand" />
       </div>
     {/if}
@@ -43,7 +46,7 @@
       Тип <span class:rotated={!showTypes}>⌄</span>
     </div>
     {#if showTypes}
-      <div class="filter-content" transition:slide>
+      <div class="filter-content scroll" transition:slide>
         <TypeFilter groups={typeGroups} />
       </div>
     {/if}
@@ -54,7 +57,7 @@
       Цвет <span class:rotated={!showColors}>⌄</span>
     </div>
     {#if showColors}
-      <div class="filter-content" transition:slide>
+      <div class="filter-content scroll" transition:slide>
         <ColorFilter {colors} />
       </div>
     {/if}
@@ -82,13 +85,7 @@
     </div>
     {#if showWidth}
       <div class="filter-content" transition:slide>
-        <SliderFilter
-          paramMin="width_min"
-          paramMax="width_max"
-          min={0}
-          max={minMax.width[1]}
-          step={0.1}
-        />
+        <SliderFilter paramMin="width_min" paramMax="width_max" min={0} max={minMax.width[1]} />
       </div>
     {/if}
   </div>
@@ -99,13 +96,7 @@
     </div>
     {#if showHeight}
       <div class="filter-content" transition:slide>
-        <SliderFilter
-          paramMin="height_min"
-          paramMax="height_max"
-          min={0}
-          max={minMax.height[1]}
-          step={0.1}
-        />
+        <SliderFilter paramMin="height_min" paramMax="height_max" min={0} max={minMax.height[1]} />
       </div>
     {/if}
   </div>
@@ -116,13 +107,7 @@
     </div>
     {#if showDepth}
       <div class="filter-content" transition:slide>
-        <SliderFilter
-          paramMin="depth_min"
-          paramMax="depth_max"
-          min={0}
-          max={minMax.depth[1]}
-          step={0.1}
-        />
+        <SliderFilter paramMin="depth_min" paramMax="depth_max" min={0} max={minMax.depth[1]} />
       </div>
     {/if}
   </div>
@@ -134,36 +119,144 @@
   .filters {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     .filter-block {
-      display: flex;
-      flex-direction: column;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
       .filter-title {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 12px 14px;
         font-weight: 600;
         cursor: pointer;
+        background: #fafafa;
         span {
-          transition: 0.25s;
+          transition: 0.2s;
+          transform: rotate(-90deg);
         }
         .rotated {
-          transform: rotate(-180deg);
+          transform: rotate(0deg);
         }
       }
       .filter-content {
-        margin-top: 8px;
+        &:not(.scroll) {
+          padding: 10px 12px;
+        }
+        &.scroll {
+          padding: 10px 0 12px 10px;
+          :global(.group) {
+            margin-right: 10px;
+          }
+        }
+
+        /* === БАЗА === */
+        :global(.filter-body) {
+          max-height: 400px;
+          overflow: auto;
+          display: grid;
+          gap: 8px;
+        }
+
+        :global(.group) {
+          border: 1px solid #eee;
+          border-radius: 10px;
+          overflow: hidden;
+        }
+
+        :global(.row) {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px;
+          background: #fafafa;
+          cursor: pointer;
+          &:hover {
+            background: #f3f3f3;
+          }
+        }
+
+        :global(.label) {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+        }
+
+        :global(.arrow) {
+          margin-left: auto;
+          transition: 0.2s;
+          transform: rotate(0);
+          font-size: 12px;
+        }
+        :global(.arrow.open) {
+          transform: rotate(-90deg) !important;
+        }
+
+        /* === ЧЕКБОКСЫ (ОБЩИЕ) === */
+        :global(.check),
+        :global(.subcheck) {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #bbb;
+          border-radius: 4px;
+          background: #fff;
+        }
+
+        :global(.check) {
+          width: 16px;
+          height: 16px;
+          min-width: 16px;
+        }
+
+        :global(.subcheck) {
+          width: 14px;
+          height: 14px;
+          min-width: 14px;
+        }
+
+        :global(.check.checked),
+        :global(.subcheck.checked) {
+          background: $yellow;
+          border-color: $yellow;
+        }
+
+        :global(.check.partial) {
+          background: linear-gradient(135deg, rgba($yellow, 1) 40%, rgba($yellow, 0) 60%);
+          border-color: $yellow;
+        }
+
+        /* === ITEMS === */
+        :global(.sub) {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 28px;
+          cursor: pointer;
+          &:hover {
+            background: #f7f7f7;
+          }
+          &.selected {
+            background: rgba($green, 0.08);
+          }
+        }
       }
     }
+
     .reset-btn {
-      margin-top: 12px;
-      padding: 8px 12px;
-      background: #eee;
-      border: 1px solid #ccc;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: $yellow;
+      font-weight: 600;
       cursor: pointer;
-      border-radius: 4px;
+      transition: 0.2s;
       &:hover {
-        background: #ddd;
+        opacity: 0.9;
       }
     }
   }

@@ -25,8 +25,6 @@
   <div class="global-loader"><div class="spinner"></div></div>
 {/if}
 
-
-
 <Breadcrumbs {brand} {category} {type} />
 
 <div class="catalog-layout">
@@ -40,7 +38,7 @@
 <style lang="scss">
   .catalog-layout {
     display: grid;
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 300px 1fr;
     gap: 32px;
     margin-top: 20px;
     .catalog-content {

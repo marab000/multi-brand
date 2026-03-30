@@ -7,7 +7,7 @@
 
   export let colors: string[] = [];
 
-  let selectedColors: string[] = [];
+  let selectedColors: string[] = $page.url.searchParams.getAll('color');
   let openGroups: Record<string, boolean> = {};
 
   function toggleColor(color: string) {
@@ -18,7 +18,7 @@
   }
 
   function toggleGroup(group: string, items: string[]) {
-    const available = items.filter((i) => colors.includes(i));
+    const available = items.filter((c) => colors.includes(c));
     const allSelected = available.every((c) => selectedColors.includes(c));
     selectedColors = allSelected
       ? selectedColors.filter((c) => !available.includes(c))
@@ -31,8 +31,7 @@
   }
 
   function updateURL() {
-    const params = new URLSearchParams($page.url.search);
-    params.delete('color');
+    const params = new URLSearchParams();
     selectedColors.forEach((c) => params.append('color', c));
     goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
@@ -49,57 +48,48 @@
   }
 
   function sortColors(list: string[]) {
-    return [...list].sort((a, b) =>
-      selectedColors.includes(a) === selectedColors.includes(b)
-        ? 0
-        : selectedColors.includes(a)
-          ? -1
-          : 1
-    );
+    return [...list].sort((a, b) => {
+      const aSel = selectedColors.includes(a);
+      const bSel = selectedColors.includes(b);
+      if (aSel !== bSel) return aSel ? -1 : 1;
+      return a.localeCompare(b);
+    });
   }
 
-  function getSortedGroups() {
-    return Object.entries(COLOR_GROUPS)
-      .map(([group, items]) => {
-        const available = items.filter((i) => colors.includes(i));
-        const selectedCount = available.filter((c) => selectedColors.includes(c)).length;
-        return { group, items, available, selectedCount };
-      })
-      .filter((g) => g.available.length)
-      .sort((a, b) => {
-        const aHas = a.selectedCount > 0;
-        const bHas = b.selectedCount > 0;
-        return aHas !== bHas ? (aHas ? -1 : 1) : b.selectedCount - a.selectedCount;
-      });
-  }
-
-  $: selectedColors = $page.url.searchParams.getAll('color');
-  $: groups = getSortedGroups();
+  $: sortedGroupsWithColors = Object.entries(COLOR_GROUPS)
+    .map(([group, items]) => {
+      const available = items.filter((i) => colors.includes(i));
+      return { group, items, available, sorted: sortColors(available) };
+    })
+    .filter((g) => g.available.length)
+    .sort((a, b) => {
+      const aSelected = a.sorted.some((c) => selectedColors.includes(c));
+      const bSelected = b.sorted.some((c) => selectedColors.includes(c));
+      if (aSelected !== bSelected) return aSelected ? -1 : 1;
+      return a.group.localeCompare(b.group);
+    });
 </script>
 
 <div class="filter">
   <div class="filter-body">
-    {#each groups as g}
-      {@const sorted = sortColors(g.available)}
+    {#each sortedGroupsWithColors as g}
       <div class="group">
         <div class="row">
           <div
             class="check"
             class:checked={isGroupSelected(g.items)}
             class:partial={isPartial(g.items)}
-            on:click={() => toggleGroup(g.group, g.items)}
+            on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
           ></div>
           <div class="label" on:click={() => toggleOpen(g.group)}>
             <span class="dot" style="background:{getGroupColor(g.group)}"></span>
-            {g.group}
-          </div>
-          <div class="arrow" class:open={openGroups[g.group]} on:click={() => toggleOpen(g.group)}>
-            ▸
+            <span class="text">{g.group}</span>
+            <span class="arrow" class:open={openGroups[g.group]}>⌄</span>
           </div>
         </div>
         {#if openGroups[g.group]}
           <div class="subs" transition:slide>
-            {#each sorted as c}
+            {#each g.sorted as c}
               <div
                 class="sub"
                 class:selected={selectedColors.includes(c)}
@@ -117,93 +107,11 @@
 </div>
 
 <style lang="scss">
-  .filter {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    .filter-body {
-      max-height: 320px;
-      overflow: auto;
-      padding-right: 4px;
-    }
-    .group {
-      border: 1px solid #e5e5e5;
-      border-radius: 6px;
-      overflow: hidden;
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-        background: #fafafa;
-        cursor: pointer;
-        &:hover {
-          background: #f2f2f2;
-        }
-      }
-      .check {
-        width: 16px;
-        height: 16px;
-        border: 2px solid #bbb;
-        border-radius: 3px;
-        &.checked {
-          background: #000;
-          border-color: #000;
-        }
-        &.partial {
-          background: #666;
-          border-color: #666;
-        }
-      }
-      .label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 1;
-      }
-      .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        border: 1px solid #aaa;
-      }
-      .arrow {
-        transition: 0.2s;
-        &.open {
-          transform: rotate(90deg);
-        }
-      }
-      .subs {
-        display: flex;
-        flex-direction: column;
-        background: white;
-        .sub {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 28px;
-          cursor: pointer;
-          &:hover {
-            background: #f6f6f6;
-          }
-          &.selected {
-            background: #eef2ff;
-          }
-        }
-        .subcheck {
-          width: 14px;
-          height: 14px;
-          border: 2px solid #bbb;
-          border-radius: 3px;
-          &.checked {
-            background: #000;
-            border-color: #000;
-          }
-        }
-        span {
-          font-size: 13px;
-        }
-      }
-    }
+  .dot {
+    margin-right: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
   }
 </style>
