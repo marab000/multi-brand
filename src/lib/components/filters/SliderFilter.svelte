@@ -114,6 +114,9 @@
         border-radius: 8px;
         border: 1px solid #ddd;
         font-size: 14px;
+        &:focus {
+          box-shadow: 0 0 1px 1px $yellow;
+        }
       }
       span {
         display: flex;
