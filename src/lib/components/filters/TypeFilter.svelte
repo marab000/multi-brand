@@ -3,7 +3,8 @@
   import { goto } from '$app/navigation';
   import { slide } from 'svelte/transition';
 
-  type FilterGroup = { group: string; items: string[] };
+  type FilterItem = { name: string; slug: string };
+  type FilterGroup = { group: string; items: FilterItem[] };
 
   export let groups: FilterGroup[] = [];
 
@@ -19,14 +20,14 @@
     updateURL();
   }
 
-  function toggleGroup(group: string, groupItems: string[]) {
+  function toggleGroup(group: string, groupItems: FilterItem[]) {
     const inGroup = selected.filter((s) => s.group === group);
     const isFull = inGroup.length === groupItems.length;
     selected = isFull
       ? selected.filter((s) => s.group !== group)
       : [
           ...selected.filter((s) => s.group !== group),
-          ...groupItems.map((i) => ({ group, value: i }))
+          ...groupItems.map((i) => ({ group, value: i.name }))
         ];
     updateURL();
   }
@@ -39,11 +40,14 @@
     const params = new URLSearchParams($page.url.search);
     params.delete('type');
     params.delete('category');
+
     const grouped: Record<string, string[]> = {};
+
     selected.forEach((s) => {
       if (!grouped[s.group]) grouped[s.group] = [];
       grouped[s.group].push(s.value);
     });
+
     for (const g of groups) {
       const sel = grouped[g.group] || [];
       if (sel.length === g.items.length) {
@@ -52,25 +56,26 @@
         sel.forEach((v) => params.append('type', v));
       }
     }
+
     goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
 
-  function isGroupSelected(group: string, items: string[]) {
+  function isGroupSelected(group: string, items: FilterItem[]) {
     const inGroup = selected.filter((s) => s.group === group);
     return items.length && inGroup.length === items.length;
   }
 
-  function isPartial(group: string, items: string[]) {
+  function isPartial(group: string, items: FilterItem[]) {
     const inGroup = selected.filter((s) => s.group === group);
     return inGroup.length > 0 && inGroup.length < items.length;
   }
 
-  function sortItems(group: string, items: string[], sel: typeof selected) {
+  function sortItems(group: string, items: FilterItem[], sel: typeof selected) {
     return [...items].sort((a, b) => {
-      const aSel = sel.some((s) => s.value === a && s.group === group);
-      const bSel = sel.some((s) => s.value === b && s.group === group);
+      const aSel = sel.some((s) => s.value === a.name && s.group === group);
+      const bSel = sel.some((s) => s.value === b.name && s.group === group);
       if (aSel !== bSel) return aSel ? -1 : 1;
-      return a.localeCompare(b);
+      return a.name.localeCompare(b.name);
     });
   }
 
@@ -84,9 +89,11 @@
         const aAll = isGroupSelected(a.group, a.items);
         const bAll = isGroupSelected(b.group, b.items);
         if (aAll !== bAll) return aAll ? -1 : 1;
+
         const aPartial = isPartial(a.group, a.items);
         const bPartial = isPartial(b.group, b.items);
         if (aPartial !== bPartial) return aPartial ? -1 : 1;
+
         return a.group.localeCompare(b.group);
       });
   }
@@ -94,18 +101,20 @@
   $: {
     const types = $page.url.searchParams.getAll('type');
     const categories = $page.url.searchParams.getAll('category');
+
     const next: typeof selected = [];
+
     categories.forEach((cat) => {
       const g = groups.find((gr) => gr.group === cat);
-      if (g) next.push(...g.items.map((i) => ({ group: g.group, value: i })));
+      if (g) next.push(...g.items.map((i) => ({ group: g.group, value: i.name })));
     });
+
     types.forEach((t) => {
-      const g = groups.find((gr) => gr.items.includes(t));
+      const g = groups.find((gr) => gr.items.some((i) => i.name === t));
       if (g) next.push({ group: g.group, value: t });
     });
-    if (!isSame(selected, next)) {
-      selected = next;
-    }
+
+    if (!isSame(selected, next)) selected = next;
   }
 
   function isSame(a: typeof selected, b: typeof selected) {
@@ -126,40 +135,39 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="filter">
   <div class="filter-body">
     {#each sortedGroups as g}
       <div class="group">
         <div class="row">
-          <div
+          <button
+            title=""
             class="check"
             class:checked={isGroupSelected(g.group, g.items)}
             class:partial={isPartial(g.group, g.items)}
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
-          ></div>
+          ></button>
 
-          <div class="label" on:click={() => toggleOpen(g.group)}>
+          <button class="label" on:click={() => toggleOpen(g.group)}>
             <span class="text">{g.group}</span>
             <span class="arrow" class:open={open[g.group]}>⌄</span>
-          </div>
+          </button>
         </div>
 
         {#if open[g.group]}
           <div class="subs" transition:slide>
             {#each g.items as item}
-              <div
+              <button
                 class="sub"
-                class:selected={selected.some((s) => s.value === item && s.group === g.group)}
-                on:click={() => toggleItem(g.group, item)}
+                class:selected={selected.some((s) => s.value === item.name && s.group === g.group)}
+                on:click={() => toggleItem(g.group, item.name)}
               >
                 <div
                   class="subcheck"
-                  class:checked={selected.some((s) => s.value === item && s.group === g.group)}
+                  class:checked={selected.some((s) => s.value === item.name && s.group === g.group)}
                 ></div>
-                <span>{item}</span>
-              </div>
+                <span>{item.name}</span>
+              </button>
             {/each}
           </div>
         {/if}

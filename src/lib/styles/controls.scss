@@ -14,7 +14,7 @@ button {
   &.primary {
     background: $green-light;
     color: white;
-    &:hover {
+    &:hover:not(.disabled) {
       background: color.scale($green-light, $lightness: -30%);
     }
   }

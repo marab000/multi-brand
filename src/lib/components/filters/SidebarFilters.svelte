@@ -6,7 +6,10 @@
   import { goto } from '$app/navigation';
   import TypeFilter from '$lib/components/filters/TypeFilter.svelte';
 
-  export let typeGroups: { group: string; items: string[] }[] = [];
+  type TypeItem = { name: string; slug: string };
+  type TypeGroup = { group: string; items: TypeItem[] };
+
+  export let typeGroups: TypeGroup[] = [];
   export let brands: string[] = [];
   export let colors: string[] = [];
   export let minMax;
@@ -65,12 +68,14 @@
       </button>
       {#if showPrice}
         <div class="filter-content" transition:slide>
-          <SliderFilter
-            paramMin="price_min"
-            paramMax="price_max"
-            min={minMax.price[0]}
-            max={minMax.price[1]}
-          />
+          {#key minMax.price[1]}
+            <SliderFilter
+              paramMin="price_min"
+              paramMax="price_max"
+              min={minMax.price[0]}
+              max={minMax.price[1]}
+            />
+          {/key}
         </div>
       {/if}
     </div>
@@ -81,7 +86,9 @@
       </button>
       {#if showWidth}
         <div class="filter-content" transition:slide>
-          <SliderFilter paramMin="width_min" paramMax="width_max" min={0} max={minMax.width[1]} />
+          {#key minMax.width[1]}
+            <SliderFilter paramMin="width_min" paramMax="width_max" min={0} max={minMax.width[1]} />
+          {/key}
         </div>
       {/if}
     </div>
@@ -92,12 +99,14 @@
       </button>
       {#if showHeight}
         <div class="filter-content" transition:slide>
-          <SliderFilter
-            paramMin="height_min"
-            paramMax="height_max"
-            min={0}
-            max={minMax.height[1]}
-          />
+          {#key minMax.height[1]}
+            <SliderFilter
+              paramMin="height_min"
+              paramMax="height_max"
+              min={0}
+              max={minMax.height[1]}
+            />
+          {/key}
         </div>
       {/if}
     </div>
@@ -108,7 +117,9 @@
       </button>
       {#if showDepth}
         <div class="filter-content" transition:slide>
-          <SliderFilter paramMin="depth_min" paramMax="depth_max" min={0} max={minMax.depth[1]} />
+          {#key minMax.depth[1]}
+            <SliderFilter paramMin="depth_min" paramMax="depth_max" min={0} max={minMax.depth[1]} />
+          {/key}
         </div>
       {/if}
     </div>
@@ -119,7 +130,6 @@
 
 <style lang="scss">
   @use 'sass:color';
-
   .filters {
     display: flex;
     flex-direction: column;
@@ -131,7 +141,6 @@
       overflow: auto;
       padding-right: 4px;
     }
-
     .filter-block {
       border: 1px solid #eee;
       border-radius: 10px;
@@ -146,7 +155,6 @@
       @media (max-width: 1023px) {
         margin: 12px 0;
       }
-
       .filter-title {
         display: flex;
         justify-content: space-between;
@@ -167,7 +175,6 @@
           transform: rotate(0);
         }
       }
-
       .filter-content {
         &:not(.scroll) {
           padding: 10px 12px;
@@ -178,20 +185,17 @@
             margin-right: 10px;
           }
         }
-
         :global(.filter-body) {
           max-height: 400px;
           overflow: auto;
           display: grid;
           gap: 8px;
         }
-
         :global(.group) {
           border: 1px solid #eee;
           border-radius: 10px;
           overflow: hidden;
         }
-
         :global(.row) {
           display: flex;
           align-items: center;
@@ -203,14 +207,12 @@
             background: #f3f3f3;
           }
         }
-
         :global(.label) {
           flex: 1;
           display: flex;
           align-items: center;
           cursor: pointer;
         }
-
         :global(.arrow) {
           margin-left: auto;
           transition: 0.2s;
@@ -220,7 +222,6 @@
         :global(.arrow.open) {
           transform: rotate(-90deg) !important;
         }
-
         :global(.check),
         :global(.subcheck) {
           display: flex;
@@ -230,7 +231,6 @@
           border-radius: 4px;
           background: #fff;
         }
-
         :global(.check) {
           width: 16px;
           height: 16px;
@@ -241,7 +241,6 @@
           height: 14px;
           min-width: 14px;
         }
-
         :global(.check.checked) {
           background: $yellow;
           border-color: $yellow;
@@ -254,11 +253,11 @@
           background: linear-gradient(135deg, rgba($yellow, 1) 40%, rgba($yellow, 0) 60%);
           border-color: $yellow;
         }
-
         :global(.sub) {
           font-size: 0.9rem;
           display: flex;
           align-items: center;
+          width: 100%;
           gap: 10px;
           padding: 8px 28px;
           cursor: pointer;
@@ -273,7 +272,6 @@
         }
       }
     }
-
     .reset-btn {
       margin-top: 10px;
       padding: 12px;

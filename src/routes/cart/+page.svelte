@@ -3,14 +3,27 @@
   import { formatPrice } from '$lib/utils/formatPrice';
   import { apiFetch } from '$lib/api';
   import { toast } from 'svelte-sonner';
+  import IMask from 'imask';
+  import Modal from '$lib/components/Modal.svelte';
 
   let name = '';
-  let phone = '';
   let showModal = false;
+  let phoneInput: HTMLInputElement;
+  let mask: ReturnType<typeof IMask>;
+
+  const isValidPhone = () => {
+    const digits = mask?.unmaskedValue || '';
+    return digits.length === 10 && digits.startsWith('9');
+  };
 
   const submit = async () => {
-    if (!phone) {
-      toast.error('Введите телефон');
+    if (!name.trim()) {
+      toast.error('Введите имя');
+      return;
+    }
+
+    if (!mask || !isValidPhone()) {
+      toast.error('Введите корректный номер телефона');
       return;
     }
 
@@ -24,20 +37,34 @@
     try {
       await apiFetch(fetch, '/api/orders', {
         method: 'POST',
-        body: JSON.stringify({ name, phone, items }),
+        body: JSON.stringify({
+          name,
+          phone: `+7${mask.unmaskedValue}`,
+          items
+        }),
         headers: { 'Content-Type': 'application/json' }
       });
 
       showModal = true;
       cart.clear();
       name = '';
-      phone = '';
+      mask.value = '';
     } catch {
       toast.error('Ошибка при оформлении заказа');
     }
   };
 
   const total = () => $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+  $: if (phoneInput && !mask) {
+    mask = IMask(phoneInput, {
+      mask: '+7 000 000 00 00',
+      lazy: false,
+      placeholderChar: ' '
+    });
+  }
+
+  const closeModal = () => (showModal = false);
 </script>
 
 <div class="cart-page">
@@ -46,7 +73,7 @@
   {#if $cart.length === 0}
     <p class="empty">Корзина пуста</p>
   {:else}
-    <div class="cart">
+    <div class="cart flex flex-col lg:grid">
       <div class="items">
         {#each $cart as item}
           <div class="item">
@@ -55,17 +82,14 @@
               <h3>{item.name}</h3>
               <p>{formatPrice(item.price)} ₽</p>
             </div>
-
             <div class="qty">
               <button on:click={() => cart.dec(item.id)}>-</button>
               <span>{item.qty}</span>
               <button on:click={() => cart.inc(item.id)}>+</button>
             </div>
-
-            <div class="sum">
+            <div class="sum text-[0.9rem] lg:text-[1rem]">
               {formatPrice(item.price * item.qty)} ₽
             </div>
-
             <button class="remove" on:click={() => cart.remove(item.id)}> ✕ </button>
           </div>
         {/each}
@@ -77,22 +101,19 @@
           <b>{formatPrice(total())} ₽</b>
         </div>
 
-        <input placeholder="Ваше имя" bind:value={name} />
-        <input placeholder="Телефон" bind:value={phone} />
-        <button class="submit" on:click={submit}> Перейти к оплате </button>
+        <input class="input primary" placeholder="Ваше имя" bind:value={name} />
+        <input class="input primary imask-input" placeholder="Телефон" bind:this={phoneInput} />
+        <button class="submit" on:click={submit}>Перейти к оплате</button>
       </div>
     </div>
   {/if}
 </div>
 
-{#if showModal}
-  <div class="modal-overlay" on:click={() => (showModal = false)}>
-    <div class="modal" on:click|stopPropagation>
-      <p>Менеджер свяжется с вами в ближайшее время</p>
-      <button on:click={() => (showModal = false)}>Понятно</button>
-    </div>
-  </div>
-{/if}
+<Modal
+  open={showModal}
+  text="Мы получили ваш заказ! Скоро свяжемся с вами, чтобы уточнить детали."
+  on:close={closeModal}
+/>
 
 <style lang="scss">
   .cart-page {
@@ -104,115 +125,90 @@
     .empty {
       color: #777;
     }
-  }
-  .cart {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 30px;
-  }
-  .items {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .item {
-    display: grid;
-    grid-template-columns: 80px 1fr 120px 120px 40px;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    background: #fff;
-    border-radius: 12px;
-    border: 1px solid #eee;
-    img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-    }
-    .info {
-      h3 {
-        font-size: 14px;
-        font-weight: 600;
-      }
-      p {
-        font-size: 13px;
-        color: #777;
-      }
-    }
-    .qty {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      button {
-        width: 28px;
-        height: 28px;
-        border-radius: 6px;
-        background: #f3f3f3;
-        &:hover {
-          opacity: 0.9;
+    .cart {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 30px;
+      .items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        .item {
+          display: grid;
+          grid-template-columns:
+            minmax(50px, 80px) minmax(100px, 1fr) minmax(70px, 100px) minmax(70px, 100px)
+            minmax(20px, 40px);
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: #fff;
+          border-radius: 12px;
+          border: 1px solid #eee;
+          img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+          }
+          .info {
+            h3 {
+              font-size: 14px;
+              font-weight: 600;
+            }
+            p {
+              font-size: 13px;
+              color: #777;
+            }
+          }
+          .qty {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            button {
+              width: 28px;
+              height: 28px;
+              border-radius: 6px;
+              background: #f3f3f3;
+              &:hover {
+                opacity: 0.9;
+              }
+            }
+          }
+          .sum {
+            font-weight: 600;
+            font-size: 0.9rem;
+          }
+          .remove {
+            color: red;
+          }
         }
       }
     }
-    .sum {
-      font-weight: 600;
-    }
-    .remove {
-      color: red;
-    }
-  }
-  .checkout {
-    background: #fff;
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid #eee;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: auto;
-    .total {
+    .checkout {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #eee;
       display: flex;
-      justify-content: space-between;
-      font-size: 18px;
-    }
-    input {
-      height: 42px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      padding: 0 10px;
-    }
-    .submit {
-      background: $green-light;
-      color: white;
-      height: 44px;
-      border-radius: 10px;
-    }
-  }
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  .modal {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    width: 300px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    p {
-      font-size: 14px;
-    }
-    button {
-      background: $green-light;
-      color: #fff;
-      height: 40px;
-      border-radius: 8px;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: auto;
+      .total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 18px;
+      }
+      input {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 0 10px;
+      }
+      .submit {
+        background: $green-light;
+        color: white;
+        height: 44px;
+        border-radius: 10px;
+      }
     }
   }
 </style>

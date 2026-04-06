@@ -3,7 +3,21 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import SidebarFilters from '$lib/components/filters/SidebarFilters.svelte';
 
-  export let data;
+  type TypeItem = { name: string; slug: string };
+  type TypeGroup = { group: string; items: TypeItem[] };
+
+  export let data: {
+    typeGroups?: TypeGroup[];
+    brands?: string[];
+    colors?: string[];
+    minMax?: {
+      price: [number, number];
+      width: [number, number];
+      height: [number, number];
+      depth: [number, number];
+    };
+    category?: string;
+  };
 
   let showFilters = false;
 
@@ -30,12 +44,18 @@
 <Breadcrumbs {brand} {category} {type} />
 
 <div class="mobile-bar">
-  <button on:click={() => (showFilters = true)}>Фильтры</button>
+  <button onclick={() => (showFilters = true)}>Фильтры</button>
 </div>
 
 <div class="catalog-layout lg:gap-3 xl:gap-4">
   <div class="sidebar">
-    <SidebarFilters {brands} {typeGroups} colors={data.colors ?? []} {minMax} />
+    <SidebarFilters
+      {brands}
+      {typeGroups}
+      colors={data.colors ?? []}
+      {minMax}
+      activeCategory={data.category}
+    />
   </div>
 
   <div class="catalog-content">
@@ -44,13 +64,19 @@
 </div>
 
 {#if showFilters}
-  <button title="" class="overlay" on:click={() => (showFilters = false)}></button>
+  <button class="overlay" onclick={() => (showFilters = false)}></button>
   <div class="drawer">
     <div class="drawer-header">
       <span>Фильтры</span>
-      <button class="close" on:click={() => (showFilters = false)}>✕</button>
+      <button class="close" onclick={() => (showFilters = false)}>✕</button>
     </div>
-    <SidebarFilters {brands} {typeGroups} colors={data.colors ?? []} {minMax} />
+    <SidebarFilters
+      {brands}
+      {typeGroups}
+      colors={data.colors ?? []}
+      {minMax}
+      activeCategory={data.category}
+    />
   </div>
 {/if}
 

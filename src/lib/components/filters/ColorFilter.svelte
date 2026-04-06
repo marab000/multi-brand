@@ -76,29 +76,30 @@
     {#each sortedGroupsWithColors as g}
       <div class="group">
         <div class="row">
-          <div
+          <button
+            title=""
             class="check"
             class:checked={isGroupSelected(g.items)}
             class:partial={isPartial(g.items)}
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
-          ></div>
-          <div class="label" on:click={() => toggleOpen(g.group)}>
+          ></button>
+          <button class="label" on:click={() => toggleOpen(g.group)}>
             <span class="dot" style="background:{getGroupColor(g.group)}"></span>
             <span class="text">{g.group}</span>
             <span class="arrow" class:open={openGroups[g.group]}>⌄</span>
-          </div>
+          </button>
         </div>
         {#if openGroups[g.group]}
           <div class="subs" transition:slide>
             {#each g.sorted as c}
-              <div
+              <button
                 class="sub"
                 class:selected={selectedColors.includes(c)}
                 on:click={() => toggleColor(c)}
               >
                 <div class="subcheck" class:checked={selectedColors.includes(c)}></div>
                 <span>{c}</span>
-              </div>
+              </button>
             {/each}
           </div>
         {/if}

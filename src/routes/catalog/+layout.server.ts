@@ -55,7 +55,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
   const brands = [...new Set(products.map((p: any) => p.brand_name?.trim()).filter(Boolean))];
 
   //
-  const typeGroups = await getTypeGroups(category || undefined);
+  const typeGroups = category ? await getTypeGroups(category) : await getTypeGroups();
 
   const colors = [...new Set(products.map((p: any) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
 
@@ -86,7 +86,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
     brands,
     typeGroups,
     colors,
-
+    category,
     minMax: {
       price: [0, priceMax],
       width: [0, widthMax],

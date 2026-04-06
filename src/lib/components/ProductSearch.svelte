@@ -91,7 +91,7 @@
   }
 </script>
 
-<div class="search">
+<div class="search w-full lg:w-[95%]">
   <div class="input-wrap">
     <input
       class="input primary"
@@ -146,7 +146,6 @@
 
 <style lang="scss">
   .search {
-    width: 66%;
     position: relative;
     margin: auto;
     .input-wrap {

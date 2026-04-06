@@ -2,15 +2,18 @@
   import { createEventDispatcher } from 'svelte';
   export let open = false;
   export let text = '';
+  export let buttonText = 'Понятно';
   const dispatch = createEventDispatcher();
   const close = () => dispatch('close');
 </script>
 
 {#if open}
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="overlay" on:click={close}>
     <div class="modal" on:click|stopPropagation>
       <p>{text}</p>
-      <button on:click={close}>Понятно</button>
+      <button on:click={close}>{buttonText ?? 'Понятно'}</button>
     </div>
   </div>
 {/if}

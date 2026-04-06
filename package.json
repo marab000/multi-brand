@@ -49,6 +49,7 @@
 		"bcryptjs": "^3.0.3",
 		"dotenv": "^17.3.1",
 		"fs-extra": "^11.3.3",
+		"imask": "^7.6.1",
 		"imghash": "^1.1.2",
 		"lucide-svelte": "^1.0.1",
 		"node-fetch": "^3.3.2",

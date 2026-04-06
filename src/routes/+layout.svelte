@@ -29,7 +29,7 @@
 </footer>
 
 <style lang="scss">
-  .container {
+  :global.container {
     @media (min-width: 1280px) {
       max-width: 1280px !important;
     }

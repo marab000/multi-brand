@@ -1,4 +1,5 @@
 import { sql } from '$lib/db';
+import { slugify } from '$lib/utils/slugify';
 
 export async function getTypeGroups(category?: string) {
   const products = category
@@ -16,6 +17,7 @@ export async function getTypeGroups(category?: string) {
       `;
 
   const map: Record<string, Set<string>> = {};
+  const slugMap: Record<string, Record<string, string>> = {}; // category -> type -> slug
 
   for (const p of products) {
     const cat = p.category?.trim();
@@ -23,11 +25,15 @@ export async function getTypeGroups(category?: string) {
     if (!cat || !type) continue;
 
     if (!map[cat]) map[cat] = new Set();
+    if (!slugMap[cat]) slugMap[cat] = {};
+
+    if (!slugMap[cat][type]) slugMap[cat][type] = slugify(type);
+
     map[cat].add(type);
   }
 
   return Object.entries(map).map(([group, items]) => ({
     group,
-    items: Array.from(items)
+    items: Array.from(items).map((name) => ({ name, slug: slugMap[group][name] }))
   }));
 }
