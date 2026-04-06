@@ -31,7 +31,8 @@
   }
 
   function updateURL() {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams($page.url.searchParams);
+    params.delete('color');
     selectedColors.forEach((c) => params.append('color', c));
     goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
   }

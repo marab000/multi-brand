@@ -2,28 +2,12 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { register } from 'swiper/element/bundle';
   import { formatPrice } from '$lib/utils/formatPrice';
+  import { cart } from '$lib/stores/cart';
+  import type { Product } from '$lib/types/product';
 
   register();
 
-  type ProductImage = { url: string };
-  type Product = {
-    name: string;
-    brand_name?: string;
-    category?: string;
-    product_type?: string;
-    price_ric?: number;
-    price_rrc?: number;
-    color?: string;
-    width?: number;
-    height?: number;
-    length?: number;
-    weight?: number;
-    images: ProductImage[];
-    raw?: any;
-  };
-
   export let data: { product: Product };
-
   const p = data.product;
 
   let mainSwiper: any;
@@ -45,7 +29,28 @@
     mainSwiper?.swiper?.slideNext();
   };
 
+  const image = p.images && p.images.length ? p.images[0].url : undefined;
+
+  const addToCart = () => {
+    cart.add({
+      id: p.id,
+      name: p.name,
+      price: p.price_rrc ?? p.price_ric ?? 0,
+      image
+    });
+  };
+
   let specs: { name: string; value: string }[] = [];
+
+  const isLink = (name: string) => name === 'Ссылка на сайт производителя';
+  const formatLink = (url: string) => {
+    try {
+      const u = new URL(url);
+      return u.hostname.replace('www.', '');
+    } catch {
+      return url.slice(0, 30) + '...';
+    }
+  };
 
   try {
     const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -58,13 +63,14 @@
 </script>
 
 {#if p}
-  <div class="mx-auto max-w-7xl px-4 py-6">
+  <div class="mx-auto flex flex-col items-start">
     <Breadcrumbs
-      brand={p.brand_name}
+      brand={p.brand?.name}
       category={p.category}
       type={p.product_type}
       product={p.name}
     />
+
     <div class="mt-6 grid gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
         <swiper-container
@@ -73,6 +79,8 @@
         >
           {#each p.images as img, i}
             <swiper-slide>
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
               <img
                 src={img.url}
                 alt={p.name}
@@ -121,57 +129,12 @@
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
 
-        <div class="mb-6 text-3xl font-bold">{formatPrice(p.price_ric ?? p.price_rrc)} ₽</div>
+        <div class="mb-6 text-3xl font-bold">{formatPrice(p.price_rrc ?? p.price_ric)} ₽</div>
 
         <div class="mb-8 flex gap-3">
-          <button class="rounded bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
-            >В корзину</button
-          >
-          <button class="rounded border px-6 py-3 hover:bg-gray-100">В избранное</button>
+          <button class="btn primary" on:click={addToCart}>В корзину</button>
+          <!-- <button class="rounded border px-6 py-3 hover:bg-gray-100">В избранное</button> -->
         </div>
-
-        <div class="mb-6 space-y-2 text-sm">
-          {#if p.color}
-            <div class="flex items-end gap-2">
-              <span class="whitespace-nowrap text-gray-500">Цвет</span>
-              <div class="flex-1 border-b border-dashed border-gray-300"></div>
-              <span class="whitespace-nowrap">{p.color}</span>
-            </div>
-          {/if}
-
-          {#if p.width}
-            <div class="flex items-end gap-2">
-              <span class="whitespace-nowrap text-gray-500">Ширина</span>
-              <div class="flex-1 border-b border-dashed border-gray-300"></div>
-              <span class="whitespace-nowrap">{p.width} см</span>
-            </div>
-          {/if}
-
-          {#if p.height}
-            <div class="flex items-end gap-2">
-              <span class="whitespace-nowrap text-gray-500">Высота</span>
-              <div class="flex-1 border-b border-dashed border-gray-300"></div>
-              <span class="whitespace-nowrap">{p.height} см</span>
-            </div>
-          {/if}
-
-          {#if p.length}
-            <div class="flex items-end gap-2">
-              <span class="whitespace-nowrap text-gray-500">Глубина</span>
-              <div class="flex-1 border-b border-dashed border-gray-300"></div>
-              <span class="whitespace-nowrap">{p.length} см</span>
-            </div>
-          {/if}
-
-          {#if p.weight}
-            <div class="flex items-end gap-2">
-              <span class="whitespace-nowrap text-gray-500">Вес</span>
-              <div class="flex-1 border-b border-dashed border-gray-300"></div>
-              <span class="whitespace-nowrap">{p.weight} кг</span>
-            </div>
-          {/if}
-        </div>
-
         <div>
           <h2 class="mb-4 font-semibold">Характеристики</h2>
           <div class="space-y-2 text-sm">
@@ -179,7 +142,17 @@
               <div class="flex items-end gap-2">
                 <span class="whitespace-nowrap text-gray-500">{s.name}</span>
                 <div class="flex-1 border-b border-dashed border-gray-300"></div>
-                <span class="text-right whitespace-nowrap">{s.value}</span>
+                {#if isLink(s.name)}
+                  <a
+                    href={s.value}
+                    target="_blank"
+                    class="whitespace-nowrap text-blue-600 hover:underline">{formatLink(s.value)}</a
+                  >
+                {:else}
+                  <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap"
+                    >{s.value}</span
+                  >
+                {/if}
               </div>
             {/each}
           </div>
@@ -190,13 +163,12 @@
 
   {#if zoom}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
-      <div class="absolute flex h-full w-full" on:click={closeZoom}></div>
+      <button title="" class="absolute flex h-full w-full opacity-0" on:click={closeZoom}></button>
       <button
         on:click={closeZoom}
         class="absolute top-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl font-semibold shadow-lg backdrop-blur transition hover:scale-110 hover:bg-white"
         >✕</button
       >
-
       <div class="w-full max-w-5xl">
         <swiper-container
           initial-slide={zoomIndex}
@@ -220,3 +192,6 @@
     </div>
   {/if}
 {/if}
+
+<style lang="scss">
+</style>

@@ -69,20 +69,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
     }
   };
 
-  const perPage = 50;
-  // если фильтры изменены, сбрасываем страницу на 1
+  const perPage = 30;
   let page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 1;
-  const resetPage =
-    filters.search ||
-    filters.types?.length ||
-    filters.brands?.length ||
-    filters.colors?.length ||
-    filters.specs.width ||
-    filters.specs.height ||
-    filters.specs.depth ||
-    filters.priceMin ||
-    filters.priceMax;
-  if (resetPage) page = 1;
 
   const offset = (page - 1) * perPage;
   const { products, total } = await fetchProducts(filters, perPage, offset);

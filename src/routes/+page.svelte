@@ -48,12 +48,12 @@
   //
 </script>
 
-<section class="mx-auto max-w-7xl px-6 py-10">
+<section class="mx-auto px-6 py-10">
   <h1 class="mb-4 text-3xl font-bold">Главная страница</h1>
   <Slider imgPaths={[slide_1, slide_2, slide_3, slide_4, slide_5, slide_6, slide_7, slide_8]} />
 </section>
 
-<section class="mx-auto max-w-7xl px-6 py-10">
+<section class="mx-auto px-6 py-10">
   <div class="grid gap-6 md:grid-cols-3">
     {#each features as f}
       <div class="rounded-xl bg-white p-6 shadow">
@@ -64,7 +64,7 @@
   </div>
 </section>
 
-<section class="mx-auto max-w-7xl px-6 py-10">
+<section class="mx-auto px-6 py-10">
   <div>
     <h2 class="mb-6 text-2xl font-bold">Популярные категории</h2>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -77,7 +77,7 @@
             class="absolute bottom-6 left-6 z-10 rounded-2xl bg-white p-2.5 text-lg font-medium shadow shadow-blue-50"
             >{c.title}</span
           >
-          <div class="qwe">
+          <div class="image">
             <img src={c.img ?? ''} alt="" />
           </div>
         </a>
@@ -87,7 +87,7 @@
 </section>
 
 <style lang="scss">
-  .qwe {
+  .image {
     position: absolute;
     left: 0;
     top: 0;

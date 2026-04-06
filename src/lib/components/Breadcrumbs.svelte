@@ -11,7 +11,9 @@
   $: brandLink = brand ? `/catalog?brand=${encodeURIComponent(brand)}` : '';
 </script>
 
-<nav class="breadcrumbs">
+<div class="breadcrumbs">
+  <a href="/">Главная</a>
+  <span class="sep">›</span>
   <a href="/catalog">Каталог</a>
   {#if brand}
     <span class="sep">›</span>
@@ -29,21 +31,47 @@
     <span class="sep">›</span>
     <span class="current">{product}</span>
   {/if}
-</nav>
+</div>
 
 <style lang="scss">
   .breadcrumbs {
-    font-size: 18px;
-    font-weight: 500;
     display: flex;
-    gap: 6px;
     align-items: center;
-    border-bottom: 0.5px solid rgba(0, 0, 0, 0.177);
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 14px;
+    padding: 10px 14px;
+    @media (max-width: 1024px) {
+      font-size: 0.85rem;
+    }
+    @media (max-width: 768px) {
+      padding: 10px;
+      font-size: 0.8rem;
+    }
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    a {
+      color: #2b2b2b;
+      text-decoration: none;
+      padding: 4px 8px;
+      @media (max-width: 768px) {
+        padding: 4px 8px;
+      }
+      border-radius: 6px;
+      transition: 0.2s;
+
+      &:hover {
+        background: #e9ecef;
+      }
+    }
     .sep {
-      opacity: 0.5;
+      opacity: 0.4;
     }
     .current {
-      font-weight: 500;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
     }
   }
 </style>

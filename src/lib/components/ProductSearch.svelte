@@ -94,6 +94,7 @@
 <div class="search">
   <div class="input-wrap">
     <input
+      class="input primary"
       type="text"
       placeholder="Поиск..."
       bind:value={query}
@@ -114,7 +115,7 @@
   {#if open && (results.length || suggestions.length)}
     <div class="dropdown">
       {#each suggestions as s, i}
-        <div class="item suggestion" class:selected={i === selected} on:click={() => goTo(s.url)}>
+        <div class="item font-medium" class:selected={i === selected} on:click={() => goTo(s.url)}>
           <Folder size={18} />
           <span>{s.name}</span>
         </div>
@@ -145,23 +146,15 @@
 
 <style lang="scss">
   .search {
+    width: 66%;
     position: relative;
-    width: 100%;
+    margin: auto;
     .input-wrap {
       position: relative;
-      input {
+      .input {
         width: 100%;
         height: 50px;
-        padding: 14px 90px 14px 16px;
-        border-radius: 10px;
-        border: 2px solid $green-soft;
-        font-size: 15px;
-        outline: none;
-        transition: 0.25s;
-        &:focus {
-          border-color: $yellow;
-          box-shadow: 0 0 0 3px rgba($yellow, 0.15);
-        }
+        border-color: #{$green-light};
       }
       .btn-search {
         position: absolute;
@@ -179,9 +172,6 @@
         justify-content: center;
         cursor: pointer;
         transition: 0.2s;
-        svg {
-          stroke: #fff;
-        }
         &:hover {
           background: linear-gradient(135deg, $green-light, $green);
         }
@@ -261,12 +251,6 @@
     }
     &.selected {
       background: rgba($green, 0.06);
-    }
-  }
-  .suggestion {
-    font-weight: 500;
-    svg {
-      color: $green-light;
     }
   }
   .all {

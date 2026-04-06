@@ -49,7 +49,7 @@
 </div>
 
 <style lang="scss">
-  .row {
-    background: transparent !important;
+  .filter .filter-body .group .row {
+    background: transparent;
   }
 </style>

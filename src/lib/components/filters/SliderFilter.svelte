@@ -91,9 +91,9 @@
 
 <div class="filter">
   <div class="range-inputs">
-    <input type="text" bind:value={inputValue[0]} on:change={inputChange} />
+    <input class="input primary" type="text" bind:value={inputValue[0]} on:change={inputChange} />
     <span>—</span>
-    <input type="text" bind:value={inputValue[1]} on:change={inputChange} />
+    <input class="input secondary" type="text" bind:value={inputValue[1]} on:change={inputChange} />
   </div>
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div on:mousedown={handleStart} on:touchstart={handleStart}>
@@ -112,11 +112,7 @@
         height: 36px;
         padding: 0 10px;
         border-radius: 8px;
-        border: 1px solid #ddd;
-        font-size: 14px;
-        &:focus {
-          box-shadow: 0 0 1px 1px $yellow;
-        }
+        font-size: 0.8rem;
       }
       span {
         display: flex;

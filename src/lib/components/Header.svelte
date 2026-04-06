@@ -2,30 +2,35 @@
   import AuthModal from '$lib/components/AuthModal.svelte';
   import ProductSearch from '$lib/components/ProductSearch.svelte';
   import logo1 from '$lib/assets/logo1.png';
+  import { cart } from '$lib/stores/cart';
+  import { derived } from 'svelte/store';
+  import { slugify } from '$lib/utils/slugify';
 
-  let open = false;
-  let showLogin = false;
-  let showRegister = false;
+  let { data } = $props();
 
-  const categories = [
-    {
-      title: 'Мойки',
-      slug: 'moiki',
-      items: [
-        { title: 'Нержавейка', slug: 'steel' },
-        { title: 'Гранитные', slug: 'granit' },
-        { title: 'Круглые', slug: 'round' }
-      ]
-    },
-    {
-      title: 'Варочные панели',
-      slug: 'hob',
-      items: [
-        { title: 'Газовые', slug: 'gas' },
-        { title: 'Индукционные', slug: 'induction' }
-      ]
-    }
-  ];
+  let open = $state(false);
+  let timeout: any;
+
+  let showLogin = $state(false);
+  let showRegister = $state(false);
+
+  const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
+
+  function openMenu() {
+    clearTimeout(timeout);
+    open = true;
+  }
+
+  function closeMenu() {
+    timeout = setTimeout(() => {
+      open = false;
+    }, 180);
+  }
+
+  function toggleClick() {
+    open = !open;
+  }
+  console.log(data);
 </script>
 
 <AuthModal bind:open={showRegister} mode="register" />
@@ -33,62 +38,54 @@
 
 <nav class="nav">
   <div class="nav__inner container mx-auto">
-    <!-- logo -->
     <a class="nav__logo" href="/">
       <img src={logo1} alt="logo" />
     </a>
 
-    <!-- catalog button -->
-    <div
-      class="nav__catalog"
-      on:mouseenter={() => (open = true)}
-      on:mouseleave={() => (open = false)}
-    >
-      <button class="catalog-btn">
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="nav__catalog" on:mouseenter={openMenu} on:mouseleave={closeMenu}>
+      <button title="" class="catalog-btn flex items-center" on:click={toggleClick}>
         <i class="fa-solid fa-bars"></i>
-        <span>Каталог</span>
+        <span class="ml-1.5">Каталог</span>
       </button>
 
-      {#if open}
-        <div
-          class="catalog-dropdown"
-          on:mouseenter={() => (open = true)}
-          on:mouseleave={() => (open = false)}
-        >
-          {#each categories as cat}
-            <div class="cat">
-              <h3>{cat.title}</h3>
-              <ul>
-                {#each cat.items as item}
-                  <li>
-                    <a href={`/catalog?category=${cat.slug}&type=${item.slug}`}>
-                      {item.title}
-                    </a>
-                  </li>
-                {/each}
-              </ul>
-            </div>
-          {/each}
-        </div>
-      {/if}
+      <div class="catalog-dropdown" class:visible={open}>
+        {#each data.typeGroups as cat}
+          <div class="cat">
+            <a class="cat__title" href={`/catalog/${slugify(cat.group)}`}>
+              {cat.group}
+            </a>
+
+            <ul class="cat__list">
+              {#each cat.items as item}
+                <li>
+                  <a href={`/catalog/${slugify(cat.group)}?type=${encodeURIComponent(item)}`}>
+                    {item}
+                  </a>
+                </li>
+              {/each}
+            </ul>
+          </div>
+        {/each}
+      </div>
     </div>
 
-    <!-- search -->
-    <div class="nav__search">
-      <ProductSearch />
-    </div>
+    <ProductSearch />
 
-    <!-- actions -->
     <div class="nav__actions">
-      <button on:click={() => (showLogin = true)}>
+      <button title="" on:click={() => (showLogin = true)}>
         <i class="fa-regular fa-user"></i>
       </button>
-      <button>
+      <button title="">
         <i class="fa-regular fa-heart"></i>
       </button>
-      <button>
+
+      <a href="/cart" class="relative">
         <i class="fa-solid fa-cart-shopping"></i>
-      </button>
+        {#if $count > 0}
+          <span class="badge">{$count}</span>
+        {/if}
+      </a>
     </div>
   </div>
 </nav>
@@ -106,105 +103,108 @@
     &__logo {
       display: flex;
       align-items: center;
+
       img {
         height: 46px;
         object-fit: contain;
       }
     }
+
     &__catalog {
       position: relative;
     }
-    &__search {
-      flex: 1;
-
-      :global(input) {
-        height: 44px;
-        border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        padding: 0 16px;
-        transition: 0.2s;
-
-        &:focus {
-          border-color: $green-light;
-          box-shadow: 0 0 0 3px rgba($green-light, 0.15);
-        }
-      }
-    }
-    &__actions {
-      display: flex;
-      gap: 12px;
-      button {
-        width: 42px;
-        height: 42px;
-        border-radius: 10px;
-        background: rgba($green, 0.05);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 0.2s;
-        i {
-          color: $green;
-          font-size: 16px;
-        }
-        &:hover {
-          background: $green-light;
-          i {
-            color: white;
-          }
-        }
-      }
-    }
   }
-  .catalog-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 44px;
-    padding: 0 16px;
-    border-radius: 10px;
-    background: $green;
-    color: white;
-    font-weight: 500;
-    transition: 0.2s;
-    i {
-      font-size: 14px;
-    }
-    &:hover {
-      background: $green-light;
-    }
-  }
+
   .catalog-dropdown {
     position: absolute;
-    top: 110%;
+    top: 100%;
     left: 0;
-    width: 520px;
+    width: 320px; // 👈 фикс вместо кривого грида
     background: white;
     border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    z-index: 10;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    padding: 16px;
+    z-index: 20;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.18s ease;
+    &.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
     .cat {
-      h3 {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+      &:last-child {
+        margin-bottom: 0;
+      }
+      &__title {
         font-size: 14px;
         font-weight: 600;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
+        color: #222;
+        text-decoration: none;
+        &:hover {
+          color: $green;
+        }
       }
-      ul {
+      &__list {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
+        padding-left: 14px; // 👈 ВЛОЖЕННОСТЬ
+        li {
+          list-style: none;
+        }
         a {
           font-size: 13px;
           color: #555;
+          text-decoration: none;
           transition: 0.2s;
           &:hover {
-            color: $green-light;
+            color: $green;
+            transform: translateX(4px);
           }
         }
       }
     }
+  }
+  .nav__actions {
+    display: flex;
+    gap: 12px;
+    button,
+    a {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba($green, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      i {
+        color: $green;
+      }
+      &:hover {
+        background: $green-light;
+        i {
+          color: white;
+        }
+      }
+    }
+  }
+
+  .badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background: red;
+    color: white;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 999px;
   }
 </style>

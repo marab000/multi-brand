@@ -1,6 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { slugify } from '$lib/utils/slugify';
+import { getTypeGroups } from '$lib/server/getTypeGroups';
 
 function parseSpecsValue(specs: Record<string, any>, keys: string[]) {
   for (const key of keys) {
@@ -53,20 +54,8 @@ export const load: LayoutServerLoad = async ({ url }) => {
 
   const brands = [...new Set(products.map((p: any) => p.brand_name?.trim()).filter(Boolean))];
 
-  const typeGroupsMap: Record<string, Set<string>> = {};
-  for (const p of products) {
-    const cat = p.category?.trim();
-    const type = p.product_type?.trim();
-    if (!cat || !type) continue;
-
-    if (!typeGroupsMap[cat]) typeGroupsMap[cat] = new Set();
-    typeGroupsMap[cat].add(type);
-  }
-
-  const typeGroups = Object.entries(typeGroupsMap).map(([group, types]) => ({
-    group,
-    items: Array.from(types)
-  }));
+  // 
+  const typeGroups = await getTypeGroups();
 
   const colors = [...new Set(products.map((p: any) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
 

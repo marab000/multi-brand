@@ -5,6 +5,8 @@
 
   export let data;
 
+  let showFilters = false;
+
   $: isLoading = $navigating !== null;
   $: brand = $page.data?.brand ?? null;
   $: category = $page.data?.category ?? null;
@@ -27,24 +29,121 @@
 
 <Breadcrumbs {brand} {category} {type} />
 
-<div class="catalog-layout">
-  <SidebarFilters {brands} {typeGroups} colors={data.colors ?? []} {minMax} />
+<div class="mobile-bar">
+  <button on:click={() => (showFilters = true)}>Фильтры</button>
+</div>
+
+<div class="catalog-layout lg:gap-3 xl:gap-4">
+  <div class="sidebar">
+    <SidebarFilters {brands} {typeGroups} colors={data.colors ?? []} {minMax} />
+  </div>
 
   <div class="catalog-content">
     <slot />
   </div>
 </div>
 
+{#if showFilters}
+  <button title="" class="overlay" on:click={() => (showFilters = false)}></button>
+  <div class="drawer">
+    <div class="drawer-header">
+      <span>Фильтры</span>
+      <button class="close" on:click={() => (showFilters = false)}>✕</button>
+    </div>
+    <SidebarFilters {brands} {typeGroups} colors={data.colors ?? []} {minMax} />
+  </div>
+{/if}
+
 <style lang="scss">
+  .mobile-bar {
+    display: none;
+    margin-top: 10px;
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #eee;
+      background: #fff;
+      font-weight: 600;
+    }
+    @media (max-width: 1023px) {
+      display: block;
+    }
+  }
+
   .catalog-layout {
     display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 32px;
     margin-top: 20px;
+    grid-template-columns: 1fr;
+    @media (min-width: 1024px) {
+      grid-template-columns: 250px 1fr;
+    }
+    @media (min-width: 1280px) {
+      grid-template-columns: 300px 1fr;
+    }
     .catalog-content {
       min-width: 0;
     }
+    .sidebar {
+      @media (max-width: 1023px) {
+        display: none;
+      }
+    }
   }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+  }
+
+  .drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 400px;
+    max-width: 80%;
+    background: #fff;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.25s ease;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+  }
+
+  .drawer-header {
+    flex-shrink: 0;
+  }
+
+  .drawer :global(.filters) {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    .close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
   .global-loader {
     position: fixed;
     inset: 0;
@@ -63,6 +162,7 @@
       animation: spin 0.8s linear infinite;
     }
   }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);

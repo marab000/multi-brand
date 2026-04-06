@@ -78,8 +78,8 @@
 <style lang="scss">
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 8px;
   }
 
   .pagination {

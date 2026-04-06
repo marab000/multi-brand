@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatPrice } from '$lib/utils/formatPrice';
   import { slugify } from '$lib/utils/slugify';
+  import { cart } from '$lib/stores/cart';
   export let product;
 
   const image =
@@ -10,6 +11,15 @@
         ).url
       : '/images/no_image.png';
   const slug = slugify(product.name);
+
+  const addToCart = () => {
+    cart.add({
+      id: product.id,
+      name: product.name,
+      price: product.price_rrc ?? product.price_ric,
+      image
+    });
+  };
 </script>
 
 <div class="card">
@@ -24,7 +34,7 @@
     </p>
   </a>
 
-  <button class="add">В корзину</button>
+  <button class="btn primary" on:click|stopPropagation={addToCart}>В корзину</button>
 </div>
 
 <style lang="scss">
@@ -37,7 +47,6 @@
     flex-direction: column;
     gap: 10px;
     transition: all 0.25s ease;
-
     a {
       display: flex;
       flex-direction: column;
@@ -45,12 +54,10 @@
       text-decoration: none;
       color: inherit;
     }
-
     &:hover {
       transform: translateY(-4px);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
     }
-
     .image {
       height: 220px;
       display: flex;
@@ -58,19 +65,16 @@
       justify-content: center;
       background: #fafafa;
       border-radius: 10px;
-
       img {
         max-height: 180px;
         object-fit: contain;
       }
     }
-
     h3 {
       font-size: 15px;
       font-weight: 600;
       line-height: 1.3;
     }
-
     .description {
       font-size: 13px;
       color: #777;
@@ -78,28 +82,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     .price {
       margin-top: auto;
       font-size: 18px;
       font-weight: 700;
       color: $green;
-    }
-
-    .add {
-      margin-top: 8px;
-      padding: 12px;
-      border-radius: 10px;
-      border: none;
-      background: $green;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
-
-      &:hover {
-        background: $green-light;
-      }
     }
   }
 </style>

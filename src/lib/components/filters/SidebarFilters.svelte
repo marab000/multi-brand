@@ -1,5 +1,3 @@
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import ColorFilter from '$lib/components/filters/ColorFilter.svelte';
@@ -26,121 +24,150 @@
   }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-
 <div class="filters">
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showBrands = !showBrands)}>
-      Бренд <span class:rotated={!showBrands}>⌄</span>
+  <div class="content">
+    <div class="filter-block brand">
+      <button class="filter-title" on:click={() => (showBrands = !showBrands)}>
+        Бренд <span class:rotated={!showBrands}>⌄</span>
+      </button>
+      {#if showBrands}
+        <div class="filter-content scroll" transition:slide>
+          <CheckboxFilter items={brands} param="brand" />
+        </div>
+      {/if}
     </div>
-    {#if showBrands}
-      <div class="filter-content scroll" transition:slide>
-        <CheckboxFilter items={brands} param="brand" />
-      </div>
-    {/if}
-  </div>
 
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showTypes = !showTypes)}>
-      Тип <span class:rotated={!showTypes}>⌄</span>
+    <div class="filter-block">
+      <button class="filter-title" on:click={() => (showTypes = !showTypes)}>
+        Тип <span class:rotated={!showTypes}>⌄</span>
+      </button>
+      {#if showTypes}
+        <div class="filter-content scroll" transition:slide>
+          <TypeFilter groups={typeGroups} />
+        </div>
+      {/if}
     </div>
-    {#if showTypes}
-      <div class="filter-content scroll" transition:slide>
-        <TypeFilter groups={typeGroups} />
-      </div>
-    {/if}
-  </div>
 
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showColors = !showColors)}>
-      Цвет <span class:rotated={!showColors}>⌄</span>
+    <div class="filter-block">
+      <button class="filter-title" on:click={() => (showColors = !showColors)}>
+        Цвет <span class:rotated={!showColors}>⌄</span>
+      </button>
+      {#if showColors}
+        <div class="filter-content scroll" transition:slide>
+          <ColorFilter {colors} />
+        </div>
+      {/if}
     </div>
-    {#if showColors}
-      <div class="filter-content scroll" transition:slide>
-        <ColorFilter {colors} />
-      </div>
-    {/if}
-  </div>
 
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showPrice = !showPrice)}>
-      Цена <span class:rotated={!showPrice}>⌄</span>
+    <div class="filter-block">
+      <button class="filter-title" on:click={() => (showPrice = !showPrice)}>
+        Цена <span class:rotated={!showPrice}>⌄</span>
+      </button>
+      {#if showPrice}
+        <div class="filter-content" transition:slide>
+          <SliderFilter
+            paramMin="price_min"
+            paramMax="price_max"
+            min={minMax.price[0]}
+            max={minMax.price[1]}
+          />
+        </div>
+      {/if}
     </div>
-    {#if showPrice}
-      <div class="filter-content" transition:slide>
-        <SliderFilter
-          paramMin="price_min"
-          paramMax="price_max"
-          min={minMax.price[0]}
-          max={minMax.price[1]}
-        />
-      </div>
-    {/if}
-  </div>
 
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showWidth = !showWidth)}>
-      Ширина <span class:rotated={!showWidth}>⌄</span>
+    <div class="filter-block">
+      <button class="filter-title" on:click={() => (showWidth = !showWidth)}>
+        Ширина <span class:rotated={!showWidth}>⌄</span>
+      </button>
+      {#if showWidth}
+        <div class="filter-content" transition:slide>
+          <SliderFilter paramMin="width_min" paramMax="width_max" min={0} max={minMax.width[1]} />
+        </div>
+      {/if}
     </div>
-    {#if showWidth}
-      <div class="filter-content" transition:slide>
-        <SliderFilter paramMin="width_min" paramMax="width_max" min={0} max={minMax.width[1]} />
-      </div>
-    {/if}
-  </div>
 
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showHeight = !showHeight)}>
-      Высота <span class:rotated={!showHeight}>⌄</span>
+    <div class="filter-block">
+      <button class="filter-title" on:click={() => (showHeight = !showHeight)}>
+        Высота <span class:rotated={!showHeight}>⌄</span>
+      </button>
+      {#if showHeight}
+        <div class="filter-content" transition:slide>
+          <SliderFilter
+            paramMin="height_min"
+            paramMax="height_max"
+            min={0}
+            max={minMax.height[1]}
+          />
+        </div>
+      {/if}
     </div>
-    {#if showHeight}
-      <div class="filter-content" transition:slide>
-        <SliderFilter paramMin="height_min" paramMax="height_max" min={0} max={minMax.height[1]} />
-      </div>
-    {/if}
-  </div>
 
-  <div class="filter-block">
-    <div class="filter-title" on:click={() => (showDepth = !showDepth)}>
-      Глубина <span class:rotated={!showDepth}>⌄</span>
+    <div class="filter-block">
+      <button class="filter-title" on:click={() => (showDepth = !showDepth)}>
+        Глубина <span class:rotated={!showDepth}>⌄</span>
+      </button>
+      {#if showDepth}
+        <div class="filter-content" transition:slide>
+          <SliderFilter paramMin="depth_min" paramMax="depth_max" min={0} max={minMax.depth[1]} />
+        </div>
+      {/if}
     </div>
-    {#if showDepth}
-      <div class="filter-content" transition:slide>
-        <SliderFilter paramMin="depth_min" paramMax="depth_max" min={0} max={minMax.depth[1]} />
-      </div>
-    {/if}
   </div>
 
   <button class="reset-btn" on:click={resetFilters}>Сбросить фильтры</button>
 </div>
 
 <style lang="scss">
+  @use 'sass:color';
+
   .filters {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    @media (max-width: 1023px) {
+      height: 100%;
+    }
+    .content {
+      flex: 1;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
     .filter-block {
       border: 1px solid #eee;
       border-radius: 10px;
       overflow: hidden;
       background: #fff;
+      @media (min-width: 1024px) {
+        &:first-child {
+          margin-top: 0;
+        }
+        margin: 20px 0;
+      }
+      @media (max-width: 1023px) {
+        margin: 12px 0;
+      }
+
       .filter-title {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        width: 100%;
         padding: 12px 14px;
         font-weight: 600;
         cursor: pointer;
         background: #fafafa;
+        &:hover {
+          background: color.scale(#fafafa, $lightness: -3%);
+        }
         span {
           transition: 0.2s;
           transform: rotate(-90deg);
         }
         .rotated {
-          transform: rotate(0deg);
+          transform: rotate(0);
         }
       }
+
       .filter-content {
         &:not(.scroll) {
           padding: 10px 12px;
@@ -152,7 +179,6 @@
           }
         }
 
-        /* === БАЗА === */
         :global(.filter-body) {
           max-height: 400px;
           overflow: auto;
@@ -195,7 +221,6 @@
           transform: rotate(-90deg) !important;
         }
 
-        /* === ЧЕКБОКСЫ (ОБЩИЕ) === */
         :global(.check),
         :global(.subcheck) {
           display: flex;
@@ -211,26 +236,27 @@
           height: 16px;
           min-width: 16px;
         }
-
         :global(.subcheck) {
           width: 14px;
           height: 14px;
           min-width: 14px;
         }
 
-        :global(.check.checked),
-        :global(.subcheck.checked) {
+        :global(.check.checked) {
           background: $yellow;
           border-color: $yellow;
         }
-
+        :global(.subcheck.checked) {
+          background: rgba($yellow, 0.5);
+          border-color: rgba($yellow, 1);
+        }
         :global(.check.partial) {
           background: linear-gradient(135deg, rgba($yellow, 1) 40%, rgba($yellow, 0) 60%);
           border-color: $yellow;
         }
 
-        /* === ITEMS === */
         :global(.sub) {
+          font-size: 0.9rem;
           display: flex;
           align-items: center;
           gap: 10px;
@@ -239,9 +265,11 @@
           &:hover {
             background: #f7f7f7;
           }
-          &.selected {
-            background: rgba($green, 0.08);
-          }
+        }
+      }
+      &.brand {
+        :global(.row) {
+          font-size: 0.9rem;
         }
       }
     }

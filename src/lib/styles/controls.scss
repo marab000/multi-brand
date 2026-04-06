@@ -1,0 +1,62 @@
+@use './variables' as *;
+@use 'sass:color';
+
+button {
+  cursor: pointer;
+}
+.btn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: 0.2s;
+  cursor: pointer;
+  &.primary {
+    background: $green-light;
+    color: white;
+    &:hover {
+      background: color.scale($green-light, $lightness: -30%);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    border: 1px solid #ddd;
+    &:hover {
+      background: #f5f5f5;
+    }
+  }
+}
+.input {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  padding: 0 12px;
+  transition: 0.2s;
+  &.primary {
+    &.with-border {
+      border-color: #{$green-light};
+    }
+    &:hover {
+      border-color: #{$green-light};
+      box-shadow: 0 0 0 1px rgba($green-light, 0.15) !important;
+    }
+    &:focus {
+      border-color: #{$green-light};
+      box-shadow: 0 0 2px 1px rgba($green-light, 0.15) !important;
+    }
+  }
+  &.secondary {
+    &.with-border {
+      border-color: #{$yellow};
+    }
+    &:hover {
+      border-color: $yellow;
+      box-shadow: 0 0 0 1px rgba($yellow, 0.15);
+    }
+    &:focus {
+      border-color: $yellow;
+      box-shadow: 0 0 2px 1px rgba($yellow, 0.15);
+    }
+  }
+}

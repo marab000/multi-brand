@@ -9,6 +9,7 @@
 
   let selected: { group: string; value: string }[] = [];
   let open: Record<string, boolean> = {};
+  let initialized = false;
 
   function toggleItem(group: string, value: string) {
     const exists = selected.some((s) => s.value === value && s.group === group);
@@ -111,7 +112,18 @@
     if (a.length !== b.length) return false;
     return a.every((x) => b.some((y) => y.group === x.group && y.value === x.value));
   }
+
   $: sortedGroups = sortGroups(groups, selected);
+
+  $: if (!initialized && sortedGroups.length) {
+    const nextOpen: Record<string, boolean> = {};
+    sortedGroups.forEach((g) => {
+      const hasSelected = selected.some((s) => s.group === g.group);
+      nextOpen[g.group] = hasSelected;
+    });
+    open = nextOpen;
+    initialized = true;
+  }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->

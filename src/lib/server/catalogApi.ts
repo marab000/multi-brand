@@ -34,42 +34,46 @@ export function buildWhere(filters: CatalogFilters) {
       conditions.push(`(${parts.join(' OR ')})`);
     }
   }
-  // бренды
-  if (filters.brands?.length) {
-    const parts: string[] = [];
-    for (const b of filters.brands) {
-      const idx = values.length + 1;
-      values.push(b.toLowerCase());
-      parts.push(`lower(trim(p.brand->>'name')) = $${idx}`);
-    }
-    conditions.push(`(${parts.join(' OR ')})`);
-  }
-  // категории / типы
-  if (filters.categories?.length && filters.types?.length) {
-    conditions.push(`(
-      trim(p.category)=ANY($${values.length + 1})
-      OR trim(p.product_type)=ANY($${values.length + 2})
-    )`);
-    values.push(filters.categories, filters.types);
-  } else if (filters.categories?.length) {
-    conditions.push(`trim(p.category)=ANY($${values.length + 1})`);
-    values.push(filters.categories);
-  } else if (filters.types?.length) {
-    conditions.push(`trim(p.product_type)=ANY($${values.length + 1})`);
-    values.push(filters.types);
-  }
-  // цвета
-  if (filters.colors?.length) {
-    const parts: string[] = [];
 
-    for (const c of filters.colors) {
+  // BRANDS
+  if (filters.brands?.length) {
+    const uniq = Array.from(new Set(filters.brands.map(b => b.toLowerCase())));
+    const parts: string[] = [];
+    for (const b of uniq) {
       const idx = values.length + 1;
-      values.push(c.toLowerCase());
-      parts.push(`lower(trim(p.specs->>'Цвет')) = $${idx}`);
+      values.push(b);
+      parts.push(`LOWER(TRIM(p.brand->>'name')) = $${idx}`);
     }
     conditions.push(`(${parts.join(' OR ')})`);
   }
-  // цена
+
+  // CATEGORIES
+  if (filters.categories?.length) {
+    const uniq = Array.from(new Set(filters.categories.map(c => c.toLowerCase())));
+    values.push(uniq);
+    conditions.push(`LOWER(TRIM(p.category)) = ANY($${values.length}::text[])`);
+  }
+
+  // TYPES
+  if (filters.types?.length) {
+    const uniq = Array.from(new Set(filters.types.map(t => t.toLowerCase())));
+    values.push(uniq);
+    conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
+  }
+
+  // COLORS
+  if (filters.colors?.length) {
+    const uniq = Array.from(new Set(filters.colors.map(c => c.toLowerCase())));
+    const parts: string[] = [];
+    for (const c of uniq) {
+      const idx = values.length + 1;
+      values.push(c);
+      parts.push(`LOWER(TRIM(p.specs->>'Цвет')) = $${idx}`);
+    }
+    conditions.push(`(${parts.join(' OR ')})`);
+  }
+
+  // PRICE
   if (filters.priceMin != null) {
     conditions.push(`p.price_rrc >= $${values.length + 1}`);
     values.push(filters.priceMin);
@@ -79,6 +83,7 @@ export function buildWhere(filters: CatalogFilters) {
     values.push(filters.priceMax);
   }
 
+  // SPECS NUMERIC
   function specNumericExpr(keys: string[]) {
     if (!keys.length) return 'NULL';
     const exprs = keys.map(
@@ -123,6 +128,7 @@ export function buildWhere(filters: CatalogFilters) {
       }
     }
   }
+
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   return { whereClause, values };
 }
