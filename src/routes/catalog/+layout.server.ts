@@ -54,8 +54,8 @@ export const load: LayoutServerLoad = async ({ url }) => {
 
   const brands = [...new Set(products.map((p: any) => p.brand_name?.trim()).filter(Boolean))];
 
-  // 
-  const typeGroups = await getTypeGroups();
+  //
+  const typeGroups = await getTypeGroups(category || undefined);
 
   const colors = [...new Set(products.map((p: any) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
 

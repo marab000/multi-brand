@@ -1,6 +1,8 @@
 <script lang="ts">
+  import type { PageData } from './$types';
   import ProductList from '$lib/components/ProductList.svelte';
-  export let data;
+
+  export let data: PageData;
   $: products = data.products ?? [];
 </script>
 

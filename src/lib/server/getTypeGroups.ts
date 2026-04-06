@@ -1,11 +1,19 @@
 import { sql } from '$lib/db';
 
-export async function getTypeGroups() {
-  const products = await sql`
-    SELECT category, product_type
-    FROM products
-    WHERE category IS NOT NULL AND product_type IS NOT NULL
-  `;
+export async function getTypeGroups(category?: string) {
+  const products = category
+    ? await sql`
+        SELECT category, product_type
+        FROM products
+        WHERE category = ${category}
+          AND category IS NOT NULL
+          AND product_type IS NOT NULL
+      `
+    : await sql`
+        SELECT category, product_type
+        FROM products
+        WHERE category IS NOT NULL AND product_type IS NOT NULL
+      `;
 
   const map: Record<string, Set<string>> = {};
 
