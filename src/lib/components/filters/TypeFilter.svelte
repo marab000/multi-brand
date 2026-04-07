@@ -148,7 +148,7 @@
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
           ></button>
 
-          <button class="label" on:click={() => toggleOpen(g.group)}>
+          <button class="label text-left" on:click={() => toggleOpen(g.group)}>
             <span class="text">{g.group}</span>
             <span class="arrow" class:open={open[g.group]}>⌄</span>
           </button>

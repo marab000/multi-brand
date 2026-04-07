@@ -7,8 +7,13 @@
 
   register();
 
-  export let data: { product: Product };
+  export let data: { product: Product | null };
+
   const p = data.product;
+
+  if (!p) {
+    throw new Error('Product is null');
+  }
 
   let mainSwiper: any;
   let thumbsSwiper: any;
@@ -29,7 +34,7 @@
     mainSwiper?.swiper?.slideNext();
   };
 
-  const image = p.images && p.images.length ? p.images[0].url : undefined;
+  const image = p.images?.[0]?.url;
 
   const addToCart = () => {
     cart.add({
@@ -115,14 +120,14 @@
             {/each}
           </swiper-container>
 
-          <button
+          <!-- <button
             class="absolute top-1/2 -left-4 z-10 -translate-y-1/2 rounded border bg-white p-2 shadow hover:bg-gray-100"
             on:click={slidePrev}>←</button
           >
           <button
             class="absolute top-1/2 -right-4 z-10 -translate-y-1/2 rounded border bg-white p-2 shadow hover:bg-gray-100"
             on:click={slideNext}>→</button
-          >
+          > -->
         </div>
       </div>
 

@@ -23,11 +23,9 @@ const sql = postgres({
 })
 
 // Reg.ru S3
-var qwe = process.env.S3_ENDPOINT;
-console.log(qwe);
 const s3 = new S3Client({
 	region: 'reg',
-	endpoint: process.env.S3_ENDPOINT,       // https://s3.eu-central-1.reg.ru
+	endpoint: process.env.S3_ENDPOINT,
 	credentials: {
 		accessKeyId: process.env.S3_ACCESS_KEY,
 		secretAccessKey: process.env.S3_SECRET_KEY

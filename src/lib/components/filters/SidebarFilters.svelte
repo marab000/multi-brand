@@ -257,9 +257,11 @@
           font-size: 0.9rem;
           display: flex;
           align-items: center;
+          justify-content: flex-start;
+          text-align: left;
           width: 100%;
           gap: 10px;
-          padding: 8px 28px;
+          padding: 8px 8px 8px 20px;
           cursor: pointer;
           &:hover {
             background: #f7f7f7;

@@ -7,8 +7,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const pathSegments = params.params ? params.params.split('/') : [];
   const categorySlug = pathSegments[0] || null;
 
+  const isSearchPage = categorySlug === 'search';
+
   let categoryFromPath: string | null = null;
-  if (categorySlug) {
+
+  if (!isSearchPage && categorySlug) {
     const rows = await sql`SELECT DISTINCT category FROM products`;
     const match = rows.find((r: any) => slugify(r.category?.trim()) === categorySlug);
     categoryFromPath = match ? match.category.trim() : null;
@@ -18,11 +21,13 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
   const filters: any = {
     search: url.searchParams.get('search')?.trim() || undefined,
-    categories: categoryFilters.length
-      ? categoryFilters
-      : categoryFromPath
-        ? [categoryFromPath]
-        : undefined,
+    categories: isSearchPage
+      ? undefined
+      : categoryFilters.length
+        ? categoryFilters
+        : categoryFromPath
+          ? [categoryFromPath]
+          : undefined,
     types: url.searchParams.getAll('type'),
     brands: url.searchParams.getAll('brand'),
     colors: url.searchParams.getAll('color'),
@@ -85,6 +90,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
     perPage,
     page,
     pages,
-    currentSearch: url.searchParams.toString()
+    currentSearch: url.searchParams.toString(),
+    isSearchPage
   };
 };

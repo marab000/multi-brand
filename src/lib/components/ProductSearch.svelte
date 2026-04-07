@@ -30,10 +30,10 @@
 
     results = await res.json();
 
-    suggestions = [
-      { type: 'category', name: 'Холодильники', url: `/catalog?search=${query}` },
-      { type: 'category', name: 'Двухкамерные холодильники', url: `/catalog?type=${query}` }
-    ];
+    // suggestions = [
+    //   { type: 'category', name: 'Холодильники', url: `/catalog/search?search=${query}` },
+    //   { type: 'category', name: 'Двухкамерные холодильники', url: `/catalog/search?type=${query}` }
+    // ];
 
     open = true;
     selected = -1;
@@ -77,7 +77,7 @@
   }
 
   function submitSearch() {
-    window.location.href = `/catalog?search=${encodeURIComponent(query)}`;
+    window.location.href = `/catalog/search?search=${encodeURIComponent(query)}`;
   }
 
   function handleClickOutside(e: MouseEvent) {
@@ -110,8 +110,6 @@
     </button>
   </div>
 
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
   {#if open && (results.length || suggestions.length)}
     <div class="dropdown">
       {#each suggestions as s, i}
@@ -126,10 +124,7 @@
           class:selected={i + suggestions.length === selected}
           on:click={() => goToProduct(r)}
         >
-          <img
-            src={r.images?.[0]?.url ?? '/images/no_image.png'}
-            alt={r.images?.[0]?.url ?? '/images/no_image.png'}
-          />
+          <img src={r.images?.[0]?.url ?? '/images/no_image.png'} alt="" />
           <div class="info">
             <div class="top">
               <div class="name">{r.name}</div>
@@ -139,7 +134,7 @@
           </div>
         </div>
       {/each}
-      <div class="all" on:click={submitSearch}>Показать все результаты</div>
+      <button class="btn primary all" on:click={submitSearch}>Показать все результаты</button>
     </div>
   {/if}
 </div>
@@ -193,7 +188,6 @@
         }
       }
     }
-
     .dropdown {
       position: absolute;
       top: calc(100% + 10px);
@@ -256,10 +250,10 @@
     padding: 12px 14px;
     font-size: 14px;
     border-top: 1px solid #eee;
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
     cursor: pointer;
     background: #fafafa;
-    &:hover {
-      background: #f2f2f2;
-    }
+    width: 100%;
   }
 </style>

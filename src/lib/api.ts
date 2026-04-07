@@ -2,29 +2,22 @@ export async function apiFetch<T>(
   fetchFn: typeof fetch,
   url: string,
   options?: RequestInit
-): Promise<T> {
+): Promise<T | null> {
   try {
     const res = await fetchFn(url, options);
-
+    const text = await res.text();
     if (!res.ok) {
-      let text = '';
-      try {
-        text = await res.text();
-      } catch {}
-
       throw new Error(text || `API error ${res.status}`);
     }
-
-    return await res.json();
+    try {
+      return text ? JSON.parse(text) : null;
+    } catch {
+      throw new Error('Invalid JSON response');
+    }
   } catch (err: any) {
     console.group('🚨 API REQUEST FAILED');
     console.log('URL:', url);
     console.log('Error:', err);
-    try {
-      throw new Error('TRACE');
-    } catch (trace) {
-      console.log('STACK TRACE:\n', (trace as Error).stack);
-    }
     console.groupEnd();
     throw err;
   }
