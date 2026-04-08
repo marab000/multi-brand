@@ -7,18 +7,18 @@
   import freeze from '$lib/assets/links/freeze.jpg';
   import dm from '$lib/assets/links/dm.jpg';
 
-  const modules = import.meta.glob('/static/main_slider/*.{jpg,jpeg,png,webp}', { eager: true });
+  const modules = import.meta.glob('$lib/assets/main_slider/*.{jpg,jpeg,png,webp}', {
+    eager: true,
+    import: 'default'
+  });
 
-  const sliderImages = Object.keys(modules)
-    .map(path => path.replace('/static', ''))
-    .sort((a, b) => {
-      const getNum = (str: string) => {
-        const match = str.match(/(\d+)/);
-        return match ? parseInt(match[0]) : 0;
-      };
-      return getNum(a) - getNum(b);
-    });
-
+  const sliderImages = Object.values(modules).sort((a: any, b: any) => {
+    const getNum = (str: string) => {
+      const match = str.match(/(\d+)/);
+      return match ? parseInt(match[0]) : 0;
+    };
+    return getNum(a) - getNum(b);
+  }) as string[];
   const features = [
     { title: 'Быстрая доставка', text: 'Привезём товар из наличия сегодня' },
     { title: 'Спеццены', text: 'Для дизайнеров и партнёров' },
@@ -80,8 +80,14 @@
     <h2 class="mb-6 text-2xl font-bold">Популярные категории</h2>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {#each categories as c}
-        <a href={c.link} class="relative flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg">
-          <span class="absolute bottom-6 left-6 z-10 rounded-2xl bg-white p-2.5 text-lg font-medium shadow shadow-blue-50">{c.title}</span>
+        <a
+          href={c.link}
+          class="relative flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
+        >
+          <span
+            class="absolute bottom-6 left-6 z-10 rounded-2xl bg-white p-2.5 text-lg font-medium shadow shadow-blue-50"
+            >{c.title}</span
+          >
           <div class="image">
             <img src={c.img ?? ''} alt="" />
           </div>
@@ -92,5 +98,11 @@
 </section>
 
 <style lang="scss">
-.image{position:absolute;left:0;top:0;width:100%;height:100%;}
+  .image {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
 </style>
