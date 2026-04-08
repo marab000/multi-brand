@@ -13,18 +13,10 @@ export const actions = {
       return fail(400, { error: 'Missing email or password' });
     }
 
-    const { data: result, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { name, phone }
-      }
-    });
-
-    if (error) {
-      console.error(error);
-      return fail(400, { error: error.message });
-    }
+    // if (error) {
+    //   console.error(error);
+    //   return fail(400, { error: error.message });
+    // }
 
     return { success: true };
   }

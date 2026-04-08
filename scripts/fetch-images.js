@@ -8,7 +8,7 @@ import { v4 as uuid } from 'uuid'
 
 // ==================== CONFIG / ENV ====================
 const MODE = 'missing'
-const THREADS = 1
+const THREADS = 3
 const BASE = 'https://tetrasis-bt.ru'
 const LOG = path.resolve('scripts/fetch-images.log')
 const DELAY = 200

@@ -6,6 +6,7 @@
   import { slugify } from '$lib/utils/slugify';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
+  import { Menu, ShoppingCart, Heart, User } from 'lucide-svelte';
 
   let { data } = $props();
 
@@ -61,7 +62,7 @@
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div class="nav__catalog lg:relative" onmouseenter={openMenu} onmouseleave={closeMenu}>
       <button class="catalog-btn flex items-center" onclick={toggleClick}>
-        <i class="fa-solid fa-bars"></i>
+        <Menu size={18} />
         <span class="ml-1.5">Каталог</span>
       </button>
 
@@ -107,14 +108,10 @@
     <div class="hidden flex-1 lg:block"><ProductSearch /></div>
 
     <div class="nav__actions ml-auto lg:ml-0">
-      <button title="" class="disabled" style="cursor: default;"
-        ><i class="fa-regular fa-user"></i></button
-      >
-      <button title="" class="disabled" style="cursor: default;"
-        ><i class="fa-regular fa-heart"></i></button
-      >
+      <button title="" class="disabled" style="cursor: default;"><User size="18" /></button>
+      <button title="" class="disabled" style="cursor: default;"><Heart size="18" /></button>
       <a href="/cart" class="relative">
-        <i class="fa-solid fa-cart-shopping"></i>
+        <ShoppingCart size="18" />
         {#if $count > 0}<span class="badge">{$count}</span>{/if}
       </a>
     </div>
@@ -296,7 +293,7 @@
       align-items: center;
       justify-content: center;
       transition: 0.2s;
-      i {
+      :global(svg) {
         color: $green;
       }
       &:hover:not(.disabled) {

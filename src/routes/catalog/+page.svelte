@@ -30,7 +30,7 @@
 
 <style lang="scss">
   .catalog-hub {
-    padding: 20px 0;
+    padding-bottom: 20px;
     h1 {
       font-size: 28px;
       font-weight: 700;
