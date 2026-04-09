@@ -16,7 +16,6 @@ export function buildWhere(filters: CatalogFilters) {
   const conditions: string[] = [];
   const values: any[] = [];
 
-  // SEARCH
   if (filters.search) {
     const normalized = normalize(filters.search);
     const words = expandQuery(normalized).filter((w) => w.length >= 3);
@@ -35,7 +34,6 @@ export function buildWhere(filters: CatalogFilters) {
     }
   }
 
-  // BRANDS
   if (filters.brands?.length) {
     const uniq = Array.from(new Set(filters.brands.map(b => b.toLowerCase())));
     const parts: string[] = [];
@@ -47,21 +45,18 @@ export function buildWhere(filters: CatalogFilters) {
     conditions.push(`(${parts.join(' OR ')})`);
   }
 
-  // CATEGORIES
   if (filters.categories?.length) {
     const uniq = Array.from(new Set(filters.categories.map(c => c.toLowerCase())));
     values.push(uniq);
     conditions.push(`LOWER(TRIM(p.category)) = ANY($${values.length}::text[])`);
   }
 
-  // TYPES
   if (filters.types?.length) {
     const uniq = Array.from(new Set(filters.types.map(t => t.toLowerCase())));
     values.push(uniq);
     conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
   }
 
-  // COLORS
   if (filters.colors?.length) {
     const uniq = Array.from(new Set(filters.colors.map(c => c.toLowerCase())));
     const parts: string[] = [];
@@ -73,7 +68,6 @@ export function buildWhere(filters: CatalogFilters) {
     conditions.push(`(${parts.join(' OR ')})`);
   }
 
-  // PRICE
   if (filters.priceMin != null) {
     conditions.push(`p.price_rrc >= $${values.length + 1}`);
     values.push(filters.priceMin);
@@ -83,7 +77,6 @@ export function buildWhere(filters: CatalogFilters) {
     values.push(filters.priceMax);
   }
 
-  // SPECS NUMERIC
   function specNumericExpr(keys: string[]) {
     if (!keys.length) return 'NULL';
     const exprs = keys.map(
@@ -145,7 +138,9 @@ export async function fetchProducts(filters: CatalogFilters, limit = 50, offset 
       LEFT JOIN product_images pi ON pi.product_id = p.id
       ${whereClause}
       GROUP BY p.id
-      ORDER BY p.created_at DESC
+      ORDER BY 
+        CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
+        p.created_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
     const rows = await sql.unsafe(query, values);
