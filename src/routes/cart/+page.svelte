@@ -126,7 +126,6 @@
       color: #777;
     }
     .cart {
-      display: grid;
       grid-template-columns: 1fr 320px;
       gap: 30px;
       .items {
