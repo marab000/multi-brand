@@ -297,9 +297,10 @@
         color: $green;
       }
       &:hover:not(.disabled) {
+        color: #fff;
         background: $green-light;
-        i {
-          color: white;
+        :global(svg) {
+          color: #fff !important;
         }
       }
     }
