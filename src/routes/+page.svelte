@@ -7,18 +7,26 @@
   import freeze from '$lib/assets/links/freeze.jpg';
   import dm from '$lib/assets/links/dm.jpg';
 
-  const modules = import.meta.glob('$lib/assets/main_slider/*.{jpg,jpeg,png,webp}', {
+  const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
+    eager: true,
+    import: 'default'
+  });
+  const mobileModules = import.meta.glob('$lib/assets/main_slider/mobile/*.{jpg,jpeg,png,webp}', {
     eager: true,
     import: 'default'
   });
 
-  const sliderImages = Object.values(modules).sort((a: any, b: any) => {
+  const sortFn = (a: any, b: any) => {
     const getNum = (str: string) => {
       const match = str.match(/(\d+)/);
       return match ? parseInt(match[0]) : 0;
     };
     return getNum(a) - getNum(b);
-  }) as string[];
+  };
+
+  const desktopImages = Object.values(desktopModules).sort(sortFn) as string[];
+  const mobileImages = Object.values(mobileModules).sort(sortFn) as string[];
+
   const features = [
     { title: 'Быстрая доставка', text: 'Привезём товар из наличия сегодня' },
     { title: 'Спеццены', text: 'Для дизайнеров и партнёров' },
@@ -59,12 +67,17 @@
   ];
 </script>
 
-<section class="mx-auto px-6 py-10">
+<section class="mx-auto mt-5">
   <h1 class="mb-4 text-3xl font-bold">Главная страница</h1>
-  <Slider imgPaths={sliderImages} />
+  <div class="block px-5 lg:hidden">
+    <Slider imgPaths={mobileImages} />
+  </div>
+  <div class="hidden px-10 lg:block">
+    <Slider imgPaths={desktopImages} />
+  </div>
 </section>
 
-<section class="mx-auto px-6 py-10">
+<section class="mx-auto">
   <div class="grid gap-6 md:grid-cols-3">
     {#each features as f}
       <div class="rounded-xl bg-white p-6 shadow">
@@ -75,7 +88,7 @@
   </div>
 </section>
 
-<section class="mx-auto px-6 py-10">
+<section class="mx-auto">
   <div>
     <h2 class="mb-6 text-2xl font-bold">Популярные категории</h2>
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
