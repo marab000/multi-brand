@@ -67,12 +67,12 @@
   ];
 </script>
 
-<section class="mx-auto mt-5">
+<section class="mx-auto">
   <h1 class="mb-4 text-3xl font-bold">Главная страница</h1>
   <div class="block px-5 lg:hidden">
     <Slider imgPaths={mobileImages} />
   </div>
-  <div class="hidden px-10 lg:block">
+  <div class="hidden lg:block">
     <Slider imgPaths={desktopImages} />
   </div>
 </section>
@@ -117,5 +117,9 @@
     top: 0;
     width: 100%;
     height: 100%;
+  }
+  section {
+    margin-top: 20px;
+    margin-bottom: 20px;
   }
 </style>
