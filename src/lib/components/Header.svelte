@@ -55,7 +55,7 @@
 </script>
 
 <nav class="nav container mx-auto">
-  <div class="nav__inner h-20 lg:h-25">
+  <div class="nav__inner h-20 px-3 lg:h-25 lg:px-0">
     <a class="nav__logo" href="/"><img src={logo1} alt="logo" /></a>
 
     <!-- svelte-ignore a11y_no_static_element_interactions -->

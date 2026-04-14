@@ -6,6 +6,7 @@
   import oven from '$lib/assets/links/oven.png';
   import freeze from '$lib/assets/links/freeze.jpg';
   import dm from '$lib/assets/links/dm.jpg';
+  import BrandsGrid from '$lib/components/BrandsGrid.svelte';
 
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
     eager: true,
@@ -69,7 +70,7 @@
 
 <section class="mx-auto">
   <h1 class="mb-4 text-3xl font-bold">Главная страница</h1>
-  <div class="block px-5 lg:hidden">
+  <div class="block lg:hidden">
     <Slider imgPaths={mobileImages} />
   </div>
   <div class="hidden lg:block">
@@ -108,6 +109,10 @@
       {/each}
     </div>
   </div>
+</section>
+<section class="mx-auto">
+  <h2 class="mb-6 text-2xl font-bold">Бренды</h2>
+  <BrandsGrid></BrandsGrid>
 </section>
 
 <style lang="scss">

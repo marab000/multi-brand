@@ -54,7 +54,6 @@
       {typeGroups}
       colors={data.colors ?? []}
       {minMax}
-      activeCategory={data.category}
     />
   </div>
 
@@ -75,7 +74,6 @@
       {typeGroups}
       colors={data.colors ?? []}
       {minMax}
-      activeCategory={data.category}
     />
   </div>
 {/if}

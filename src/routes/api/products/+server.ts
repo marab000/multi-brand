@@ -4,7 +4,7 @@ import { fetchProducts } from '$lib/server/catalogApi';
 export async function GET({ url }) {
   try {
     const search = url.searchParams.get('search')?.trim();
-    const category = url.searchParams.get('category')?.trim();
+    const categories = url.searchParams.getAll('category');
     const types = url.searchParams.getAll('type');
     const brands = url.searchParams.getAll('brand');
     const colors = url.searchParams.getAll('color');
@@ -15,7 +15,7 @@ export async function GET({ url }) {
     const offset = (page - 1) * limit;
 
     const { products, total } = await fetchProducts(
-      { search, category, types, brands, colors, priceMin, priceMax },
+      { search, categories, types, brands, colors, priceMin, priceMax },
       limit,
       offset
     );

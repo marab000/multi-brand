@@ -28,7 +28,7 @@
       <img src={image} alt={product.name} loading="lazy" />
     </div>
     <h3>{product.name}</h3>
-    <p class="description">{product.description}</p>
+    <p class="description mt-auto">{product.description}</p>
     <p class="price">
       {formatPrice(product.price_rrc ?? product.price_ric)} ₽
     </p>
@@ -53,6 +53,7 @@
       gap: 10px;
       text-decoration: none;
       color: inherit;
+      height: 100%;
     }
     &:hover {
       transform: translateY(-4px);
@@ -83,7 +84,6 @@
       text-overflow: ellipsis;
     }
     .price {
-      margin-top: auto;
       font-size: 18px;
       font-weight: 700;
       color: $green;
