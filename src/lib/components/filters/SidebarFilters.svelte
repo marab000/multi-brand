@@ -212,6 +212,7 @@
           display: flex;
           align-items: center;
           cursor: pointer;
+          line-height: 1;
         }
         :global(.arrow) {
           margin-left: auto;
@@ -271,6 +272,7 @@
       &.brand {
         :global(.row) {
           font-size: 0.9rem;
+          line-height: 1;
         }
       }
     }

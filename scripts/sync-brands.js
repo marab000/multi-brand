@@ -102,10 +102,9 @@ async function syncBrand(apiBrand) {
 		if (!(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
 		const specs = extractSpecs(item)
 		rows.push({
-			external_id: id,
 			brand: sql.json({
-				name: cleanName,          // ✅ чистый бренд без '
-				api: apiBrand.NAME,      // ✅ оригинал как есть
+				name: cleanName,
+				api: apiBrand.NAME,
 			}),
 			name: item['РабочееНаименование'] ?? null,
 			description: item['ТекстовоеОписание'] ?? null,
