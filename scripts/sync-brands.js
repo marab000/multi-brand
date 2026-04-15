@@ -147,12 +147,34 @@ async function syncBrand(apiBrand) {
 }
 
 async function removeExcludedCategories() {
-	if (!excludedCategories.length) return
-	await sql`
-		delete from products
-		where category = ANY(${sql.array(excludedCategories)})
+	const { categories = [], category_product_types = {} } = excludedCategories
+	if (categories.length) {
+		await sql`
+			delete from products
+			where category = ANY(${sql.array(categories)})
 		`
-	console.log('Excluded categories removed')
+	}
+	let query = sql``
+	let first = true
+	for (const [category, types] of Object.entries(category_product_types)) {
+		if (!types.length) continue
+		const condition = sql`(category = ${category} and product_type = ANY(${sql.array(types)}))`
+		if (first) {
+			query = sql`${condition}`
+			first = false
+		} else {
+			query = sql`${query} OR ${condition}`
+		}
+	}
+
+	if (!first) {
+		await sql`
+			delete from products
+			where ${query}
+		`
+	}
+
+	console.log('Excluded categories & product_types removed')
 }
 
 async function main() {
