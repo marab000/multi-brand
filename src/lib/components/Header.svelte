@@ -5,7 +5,7 @@
   import { derived } from 'svelte/store';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { Menu, ShoppingCart, Heart, User, Plus, Minus, X } from 'lucide-svelte';
+  import { Menu, ShoppingCart, Heart, User, Plus, Minus, X, Phone } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
 
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
@@ -41,6 +41,8 @@
 
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
+  const phoneNumber = '8 800 201 49 88';
+  const phoneHref = '+78002014988';
 
   let { data } = $props<{
     data?: {
@@ -184,6 +186,14 @@
 </script>
 
 <nav class="nav container mx-auto">
+  <div class="nav__top px-3 lg:px-0">
+    <div class="nav__top-spacer"></div>
+    <a class="nav__phone" href={'tel:' + phoneHref} aria-label={`Позвонить ${phoneNumber}`}>
+      <Phone size={18} strokeWidth={2.1} />
+      <span>{phoneNumber}</span>
+    </a>
+  </div>
+
   <div class="nav__inner h-20 px-3 lg:h-25 lg:px-0">
     <a class="nav__logo" href="/"><img src={logo1} alt="logo" /></a>
 
@@ -327,6 +337,37 @@
 <style lang="scss">
   .nav {
     background: #fff;
+    &__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 44px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      @media (max-width: 1023px) {
+        display: none;
+      }
+    }
+    &__top-spacer {
+      flex: 1 1 auto;
+    }
+    &__phone {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #202020;
+      text-decoration: none;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+      :global(svg) {
+        color: $green;
+        flex: 0 0 auto;
+      }
+      &:hover {
+        color: $green;
+      }
+    }
     &__inner {
       display: flex;
       align-items: center;

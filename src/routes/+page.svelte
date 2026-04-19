@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { BadgePercent, Warehouse, ConciergeBell } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import gaz from '$lib/assets/links/gaz.jpg';
   import coffee from '$lib/assets/links/coffee.jpg';
@@ -29,9 +30,21 @@
   const mobileImages = Object.values(mobileModules).sort(sortFn) as string[];
 
   const features = [
-    { title: 'Быстрая доставка', text: 'Привезём товар из наличия сегодня' },
-    { title: 'Спеццены', text: 'Для дизайнеров и партнёров' },
-    { title: 'Проверка перед покупкой', text: 'Можно посмотреть товар на складе' }
+    {
+      title: 'Рассрочка 0% на 12 месяцев',
+      text: 'Без переплат и скрытых комиссий. Техника в проект сегодня оплата частями. Оформляем онлайн за 5 минут.',
+      icon: BadgePercent
+    },
+    {
+      title: 'Бесплатное хранение',
+      text: 'Ваш заказ хранится на нашем складе 1600 м² без оплаты, пока не потребуется доставка на объект. Удобно, если ремонт затягивается.',
+      icon: Warehouse
+    },
+    {
+      title: 'Личный менеджер подберет всё под ключ',
+      text: 'Вы отправляете список мы подбираем технику по брендам, бюджету и срокам. Экономим ваши часы.',
+      icon: ConciergeBell
+    }
   ];
 
   const categories = [
@@ -79,11 +92,16 @@
 </section>
 
 <section class="mx-auto">
-  <div class="grid gap-6 md:grid-cols-3">
+  <div class="features-grid">
     {#each features as f}
-      <div class="rounded-xl bg-white p-6 shadow">
-        <h3 class="font-semibold">{f.title}</h3>
-        <p class="mt-2 text-sm text-slate-600">{f.text}</p>
+      <div class="feature-card">
+        <div class="feature-card__icon">
+          <svelte:component this={f.icon} size={22} strokeWidth={2} />
+        </div>
+        <div class="feature-card__content">
+          <h3>{f.title}</h3>
+          <p>{f.text}</p>
+        </div>
       </div>
     {/each}
   </div>
@@ -116,6 +134,50 @@
 </section>
 
 <style lang="scss">
+  .features-grid {
+    display: grid;
+    gap: 24px;
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .feature-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      min-height: 100%;
+      padding: 24px;
+      border: 1px solid rgba($green, 0.08);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+      .feature-card__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 46px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: rgba($yellow, 0.14);
+        color: #1f2937;
+      }
+      .feature-card__content {
+        h3 {
+          margin: 0;
+          font-size: 1.125rem;
+          font-weight: 700;
+          line-height: 1.25;
+          color: #111827;
+        }
+        p {
+          margin: 10px 0 0;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: #475569;
+        }
+      }
+    }
+  }
   .image {
     position: absolute;
     left: 0;
