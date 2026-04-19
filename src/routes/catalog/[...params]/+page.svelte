@@ -19,7 +19,6 @@
 
   <ProductList
     {products}
-    total={data.total}
     currentPage={data.page}
     pages={data.pages}
     currentSearch={data.currentSearch}

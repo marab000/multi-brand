@@ -48,6 +48,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const groupSlug = segments[1] ?? null;
   const leafSlug = segments[2] ?? null;
   const isSearchPage = rootSlug === 'search';
+  const sortParam = url.searchParams.get('sort');
+  const sort =
+    sortParam === 'price_asc' || sortParam === 'price_desc' ? sortParam : 'default';
 
   const availabilityRows = await sql`
     SELECT DISTINCT
@@ -111,7 +114,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
     priceMax: url.searchParams.get('price_max')
       ? Number(url.searchParams.get('price_max')) / 1000
       : undefined,
-    specs: buildSpecs(url)
+    specs: buildSpecs(url),
+    sort
   };
 
   const perPage = 30;

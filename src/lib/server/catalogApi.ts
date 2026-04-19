@@ -12,6 +12,7 @@ export interface CatalogFilters {
   priceMin?: number;
   priceMax?: number;
   specs?: Record<string, { min?: number; max?: number }>;
+  sort?: 'default' | 'price_asc' | 'price_desc';
 }
 
 export function buildWhere(filters: CatalogFilters) {
@@ -134,9 +135,34 @@ export function buildWhere(filters: CatalogFilters) {
   return { whereClause, values };
 }
 
+function buildOrderBy(sort?: CatalogFilters['sort']) {
+  if (sort === 'price_asc') {
+    return `
+      ORDER BY
+        CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
+        COALESCE(p.price_rrc, p.price_ric) ASC NULLS LAST,
+        p.created_at DESC
+    `;
+  }
+  if (sort === 'price_desc') {
+    return `
+      ORDER BY
+        CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
+        COALESCE(p.price_rrc, p.price_ric) DESC NULLS LAST,
+        p.created_at DESC
+    `;
+  }
+  return `
+    ORDER BY
+      CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
+      p.created_at DESC
+  `;
+}
+
 export async function fetchProducts(filters: CatalogFilters, limit = 50, offset = 0) {
   try {
     const { whereClause, values } = buildWhere(filters);
+    const orderBy = buildOrderBy(filters.sort);
     const query = `
       SELECT 
         p.*,
@@ -146,9 +172,7 @@ export async function fetchProducts(filters: CatalogFilters, limit = 50, offset 
       LEFT JOIN product_images pi ON pi.product_id = p.id
       ${whereClause}
       GROUP BY p.id
-      ORDER BY 
-        CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
-        p.created_at DESC
+      ${orderBy}
       LIMIT ${limit} OFFSET ${offset}
     `;
     const rows = await sql.unsafe(query, values);
