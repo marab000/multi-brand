@@ -7,7 +7,7 @@
 
   register();
 
-  export let data: { product: Product | null };
+  let { data } = $props<{ data: { product: Product | null } }>();
 
   const p = data.product;
 
@@ -18,21 +18,14 @@
   let mainSwiper: any;
   let thumbsSwiper: any;
 
-  let zoom = false;
-  let zoomIndex = 0;
+  let zoom = $state(false);
+  let zoomIndex = $state(0);
 
   const openZoom = (i: number) => {
     zoomIndex = i;
     zoom = true;
   };
   const closeZoom = () => (zoom = false);
-
-  const slidePrev = () => {
-    mainSwiper?.swiper?.slidePrev();
-  };
-  const slideNext = () => {
-    mainSwiper?.swiper?.slideNext();
-  };
 
   const image = p.images?.[0]?.url;
 
@@ -46,6 +39,20 @@
   };
 
   let specs: { name: string; value: string }[] = [];
+
+  const breadcrumbs = [
+    { name: 'Главная', href: '/' },
+    { name: 'Каталог', href: '/catalog' },
+    ...(p.catalog_root_name && p.catalog_root_slug
+      ? [{ name: p.catalog_root_name, href: `/catalog/${p.catalog_root_slug}` }]
+      : []),
+    ...(p.catalog_group_name && p.catalog_group_slug && p.catalog_root_slug
+      ? [{ name: p.catalog_group_name, href: `/catalog/${p.catalog_root_slug}/${p.catalog_group_slug}` }]
+      : []),
+    ...(p.catalog_leaf_name && p.catalog_leaf_slug && p.catalog_root_slug && p.catalog_group_slug
+      ? [{ name: p.catalog_leaf_name, href: `/catalog/${p.catalog_root_slug}/${p.catalog_group_slug}/${p.catalog_leaf_slug}` }]
+      : [])
+  ];
 
   const isLink = (name: string) => name === 'Ссылка на сайт производителя';
   const formatLink = (url: string) => {
@@ -69,23 +76,13 @@
 
 {#if p}
   <div class="mx-auto flex flex-col items-start">
-    <Breadcrumbs
-      brand={p.brand?.name}
-      category={p.category}
-      type={p.product_type}
-      product={p.name}
-    />
+    <Breadcrumbs items={breadcrumbs} product={p.name} />
 
     <div class="mt-6 grid gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
-        <swiper-container
-          bind:this={mainSwiper}
-          class="aspect-square w-full rounded border bg-white"
-        >
+        <swiper-container bind:this={mainSwiper} class="aspect-square w-full rounded border bg-white">
           {#each p.images as img, i}
             <swiper-slide>
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
               <img
                 src={img.url}
                 alt={p.name}
@@ -110,36 +107,22 @@
                   class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
                   on:click={() => mainSwiper?.swiper?.slideTo(i)}
                 >
-                  <img
-                    src={img.url}
-                    alt={p.name}
-                    class="pointer-events-none h-full w-full object-contain p-1"
-                  />
+                  <img src={img.url} alt={p.name} class="pointer-events-none h-full w-full object-contain p-1" />
                 </button>
               </swiper-slide>
             {/each}
           </swiper-container>
-
-          <!-- <button
-            class="absolute top-1/2 -left-4 z-10 -translate-y-1/2 rounded border bg-white p-2 shadow hover:bg-gray-100"
-            on:click={slidePrev}>←</button
-          >
-          <button
-            class="absolute top-1/2 -right-4 z-10 -translate-y-1/2 rounded border bg-white p-2 shadow hover:bg-gray-100"
-            on:click={slideNext}>→</button
-          > -->
         </div>
       </div>
 
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
-
         <div class="mb-6 text-3xl font-bold">{formatPrice(p.price_rrc ?? p.price_ric)} ₽</div>
 
         <div class="mb-8 flex gap-3">
           <button class="btn primary" on:click={addToCart}>В корзину</button>
-          <!-- <button class="rounded border px-6 py-3 hover:bg-gray-100">В избранное</button> -->
         </div>
+
         <div>
           <h2 class="mb-4 font-semibold">Характеристики</h2>
           <div class="space-y-2 text-sm">
@@ -148,15 +131,9 @@
                 <span class="whitespace-nowrap text-gray-500">{s.name}</span>
                 <div class="flex-1 border-b border-dashed border-gray-300"></div>
                 {#if isLink(s.name)}
-                  <a
-                    href={s.value}
-                    target="_blank"
-                    class="whitespace-nowrap text-blue-600 hover:underline">{formatLink(s.value)}</a
-                  >
+                  <a href={s.value} target="_blank" class="whitespace-nowrap text-blue-600 hover:underline">{formatLink(s.value)}</a>
                 {:else}
-                  <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap"
-                    >{s.value}</span
-                  >
+                  <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap">{s.value}</span>
                 {/if}
               </div>
             {/each}
@@ -172,23 +149,13 @@
       <button
         on:click={closeZoom}
         class="absolute top-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl font-semibold shadow-lg backdrop-blur transition hover:scale-110 hover:bg-white"
-        >✕</button
-      >
+      >✕</button>
       <div class="w-full max-w-5xl">
-        <swiper-container
-          initial-slide={zoomIndex}
-          centered-slides="true"
-          slides-per-view="1"
-          class="w-full"
-        >
+        <swiper-container initial-slide={zoomIndex} centered-slides="true" slides-per-view="1" class="w-full">
           {#each p.images as img}
             <swiper-slide>
               <div class="flex aspect-square w-full items-center justify-center">
-                <img
-                  src={img.url}
-                  alt={p.name}
-                  class="max-h-full max-w-full object-contain select-none"
-                />
+                <img src={img.url} alt={p.name} class="max-h-full max-w-full object-contain select-none" />
               </div>
             </swiper-slide>
           {/each}

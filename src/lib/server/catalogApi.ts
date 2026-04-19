@@ -3,7 +3,9 @@ import { normalize, expandQuery } from '$lib/search/normalize';
 
 export interface CatalogFilters {
   search?: string;
-  categories?: string[];
+  catalogRootSlug?: string;
+  catalogGroupSlug?: string;
+  catalogLeafSlug?: string;
   types?: string[];
   brands?: string[];
   colors?: string[];
@@ -28,14 +30,32 @@ export function buildWhere(filters: CatalogFilters) {
           LOWER(p.name) LIKE $${idx}
           OR LOWER(COALESCE(p.description,'')) LIKE $${idx}
           OR LOWER(p.brand->>'name') LIKE $${idx}
+          OR LOWER(COALESCE(p.product_type,'')) LIKE $${idx}
         `);
       }
       conditions.push(`(${parts.join(' OR ')})`);
     }
   }
 
+  if (filters.catalogLeafSlug) {
+    values.push(filters.catalogLeafSlug.toLowerCase());
+    conditions.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
+  } else if (filters.catalogGroupSlug) {
+    values.push(filters.catalogGroupSlug.toLowerCase());
+    conditions.push(`LOWER(TRIM(p.catalog_group_slug)) = $${values.length}`);
+  } else if (filters.catalogRootSlug) {
+    values.push(filters.catalogRootSlug.toLowerCase());
+    conditions.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
+  }
+
+  if (filters.types?.length) {
+    const uniq = Array.from(new Set(filters.types.map((t) => t.toLowerCase())));
+    values.push(uniq);
+    conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
+  }
+
   if (filters.brands?.length) {
-    const uniq = Array.from(new Set(filters.brands.map(b => b.toLowerCase())));
+    const uniq = Array.from(new Set(filters.brands.map((b) => b.toLowerCase())));
     const parts: string[] = [];
     for (const b of uniq) {
       const idx = values.length + 1;
@@ -45,20 +65,8 @@ export function buildWhere(filters: CatalogFilters) {
     conditions.push(`(${parts.join(' OR ')})`);
   }
 
-  if (filters.categories?.length) {
-    const uniq = Array.from(new Set(filters.categories.map(c => c.toLowerCase())));
-    values.push(uniq);
-    conditions.push(`LOWER(TRIM(p.category)) = ANY($${values.length}::text[])`);
-  }
-
-  if (filters.types?.length) {
-    const uniq = Array.from(new Set(filters.types.map(t => t.toLowerCase())));
-    values.push(uniq);
-    conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
-  }
-
   if (filters.colors?.length) {
-    const uniq = Array.from(new Set(filters.colors.map(c => c.toLowerCase())));
+    const uniq = Array.from(new Set(filters.colors.map((c) => c.toLowerCase())));
     const parts: string[] = [];
     for (const c of uniq) {
       const idx = values.length + 1;
@@ -133,7 +141,7 @@ export async function fetchProducts(filters: CatalogFilters, limit = 50, offset 
       SELECT 
         p.*,
         COUNT(*) OVER() AS total_count,
-        COALESCE(json_agg(pi) FILTER (WHERE pi.id IS NOT NULL),'[]') AS images
+        COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL),'[]') AS images
       FROM products p
       LEFT JOIN product_images pi ON pi.product_id = p.id
       ${whereClause}

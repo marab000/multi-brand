@@ -3,6 +3,9 @@
 
 button {
   cursor: pointer;
+  &:focus-visible {
+    outline: unset;
+  }
 }
 .btn {
   height: 44px;
@@ -11,6 +14,7 @@ button {
   font-weight: 500;
   transition: 0.2s;
   cursor: pointer;
+
   &.primary {
     background: $green-light;
     color: white;

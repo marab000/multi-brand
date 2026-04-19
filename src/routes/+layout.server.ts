@@ -1,8 +1,24 @@
 import type { LayoutServerLoad } from './$types';
-import { getTypeGroups } from '$lib/server/getTypeGroups';
+import { sql } from '$lib/db';
+import { filterCatalogRootsByAvailability, getCatalogRoots } from '$lib/server/categories';
 
 export const load: LayoutServerLoad = async () => {
+  const availabilityRows = await sql`
+    SELECT DISTINCT
+      catalog_root_slug AS root_slug,
+      catalog_group_slug AS group_slug,
+      catalog_leaf_slug AS leaf_slug
+    FROM products
+    WHERE catalog_root_slug IS NOT NULL
+      AND price_rrc IS NOT NULL
+  `;
+
+  const filteredRoots = filterCatalogRootsByAvailability(
+    getCatalogRoots(),
+    availabilityRows as any[]
+  );
+
   return {
-    typeGroups: await getTypeGroups()
+    catalogRoots: filteredRoots
   };
 };

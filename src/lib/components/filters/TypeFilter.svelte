@@ -39,7 +39,6 @@
   function updateURL() {
     const params = new URLSearchParams($page.url.search);
     params.delete('type');
-    params.delete('category');
 
     const grouped: Record<string, string[]> = {};
 
@@ -50,19 +49,16 @@
 
     for (const g of groups) {
       const sel = grouped[g.group] || [];
-      if (sel.length === g.items.length) {
-        params.append('category', g.group);
-      } else {
-        sel.forEach((v) => params.append('type', v));
-      }
+      sel.forEach((v) => params.append('type', v));
     }
 
-    goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
+    const query = params.toString();
+    goto(query ? `?${query}` : '?', { keepFocus: true, noScroll: true });
   }
 
   function isGroupSelected(group: string, items: FilterItem[]) {
     const inGroup = selected.filter((s) => s.group === group);
-    return items.length && inGroup.length === items.length;
+    return items.length > 0 && inGroup.length === items.length;
   }
 
   function isPartial(group: string, items: FilterItem[]) {
@@ -75,7 +71,7 @@
       const aSel = sel.some((s) => s.value === a.name && s.group === group);
       const bSel = sel.some((s) => s.value === b.name && s.group === group);
       if (aSel !== bSel) return aSel ? -1 : 1;
-      return a.name.localeCompare(b.name);
+      return a.name.localeCompare(b.name, 'ru');
     });
   }
 
@@ -89,25 +85,16 @@
         const aAll = isGroupSelected(a.group, a.items);
         const bAll = isGroupSelected(b.group, b.items);
         if (aAll !== bAll) return aAll ? -1 : 1;
-
         const aPartial = isPartial(a.group, a.items);
         const bPartial = isPartial(b.group, b.items);
         if (aPartial !== bPartial) return aPartial ? -1 : 1;
-
-        return a.group.localeCompare(b.group);
+        return a.group.localeCompare(b.group, 'ru');
       });
   }
 
   $: {
     const types = $page.url.searchParams.getAll('type');
-    const categories = $page.url.searchParams.getAll('category');
-
     const next: typeof selected = [];
-
-    categories.forEach((cat) => {
-      const g = groups.find((gr) => gr.group === cat);
-      if (g) next.push(...g.items.map((i) => ({ group: g.group, value: i.name })));
-    });
 
     types.forEach((t) => {
       const g = groups.find((gr) => gr.items.some((i) => i.name === t));
@@ -124,11 +111,11 @@
 
   $: sortedGroups = sortGroups(groups, selected);
 
-  $: if (!initialized && sortedGroups.length) {
+  $: if (sortedGroups.length) {
     const nextOpen: Record<string, boolean> = {};
     sortedGroups.forEach((g) => {
       const hasSelected = selected.some((s) => s.group === g.group);
-      nextOpen[g.group] = hasSelected;
+      nextOpen[g.group] = initialized ? open[g.group] ?? hasSelected : hasSelected;
     });
     open = nextOpen;
     initialized = true;
@@ -147,13 +134,11 @@
             class:partial={isPartial(g.group, g.items)}
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
           ></button>
-
           <button class="label text-left" on:click={() => toggleOpen(g.group)}>
             <span class="text">{g.group}</span>
             <span class="arrow" class:open={open[g.group]}>⌄</span>
           </button>
         </div>
-
         {#if open[g.group]}
           <div class="subs" transition:slide>
             {#each g.items as item}

@@ -3,21 +3,127 @@
   import logo1 from '$lib/assets/logo1.png';
   import { cart } from '$lib/stores/cart';
   import { derived } from 'svelte/store';
-  import { slugify } from '$lib/utils/slugify';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { Menu, ShoppingCart, Heart, User } from 'lucide-svelte';
+  import { Menu, ShoppingCart, Heart, User, Plus, Minus, X } from 'lucide-svelte';
+  import { slide } from 'svelte/transition';
 
-  let { data } = $props();
+  type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
+  type CatalogGroup = {
+    slug: string;
+    name: string;
+    categories: string[];
+    leaves: CatalogLeaf[];
+    isDefault?: boolean;
+  };
+  type CatalogRoot = { slug: string; name: string; groups: CatalogGroup[] };
+
+  type CatalogMenuRoot = {
+    slug: string;
+    name: string;
+    href: string;
+    groups: {
+      slug: string;
+      name: string;
+      href: string;
+      leaves: {
+        title: string;
+        href: string;
+      }[];
+    }[];
+  };
+
+  type CatalogParent = {
+    slug: string;
+    name: string;
+    items: CatalogMenuRoot[];
+  };
+
+  const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
+  const LEAVES_PREVIEW_LIMIT = 5;
+
+  let { data } = $props<{
+    data?: {
+      catalogRoots?: CatalogRoot[];
+    };
+  }>();
 
   let open = $state(false);
-  let timeout: any;
-  let openIndex = $state<number | null>(null);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   let isMobile = $state(false);
+  let pathname = $state('');
+  let showSearch = $state(false);
+  let openRootSlug = $state<string | null>(null);
+  let expandedGroupLeaves = $state<Record<string, boolean>>({});
 
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
-  let pathname = '';
-  let showSearch = $state(false);
+  const catalogRoots = $derived((data?.catalogRoots ?? []) as CatalogRoot[]);
+
+  function buildRoot(root: CatalogRoot): CatalogMenuRoot | null {
+    const groups = root.groups
+      .filter((group) => !group.isDefault)
+      .map((group) => ({
+        slug: group.slug,
+        name: group.name,
+        href: `/catalog/${root.slug}/${group.slug}`,
+        leaves: group.leaves
+          .map((leaf) => ({
+            title: leaf.name,
+            href: `/catalog/${root.slug}/${group.slug}/${leaf.slug}`
+          }))
+          .filter((leaf) => leaf.title && leaf.href)
+      }))
+      .filter((group) => group.leaves.length > 0);
+
+    if (!groups.length) return null;
+
+    return {
+      slug: root.slug,
+      name: root.name,
+      href: `/catalog/${root.slug}`,
+      groups
+    };
+  }
+
+  const catalogParents = $derived.by(() => {
+    const menuRoots = catalogRoots.map(buildRoot).filter(Boolean) as CatalogMenuRoot[];
+
+    const groups: CatalogParent[] = [
+      {
+        slug: 'bytovaya-tehnika',
+        name: 'Бытовая техника',
+        items: menuRoots.filter((root) =>
+          [
+            'Встраиваемая техника',
+            'Кухонные вытяжки',
+            'Крупная бытовая техника',
+            'Мелкая бытовая техника',
+            'Климатическая техника',
+            'Запчасти и аксессуары для техники'
+          ].includes(root.name)
+        )
+      },
+      {
+        slug: 'moyki-smesiteli-musornye-sistemy',
+        name: 'Мойки, смесители, мусорные системы и аксессуары',
+        items: menuRoots.filter((root) =>
+          [
+            'Запчасти для моек, смесителей, измельчителей и мусорных систем',
+            'Кухонные мойки',
+            'Смесители',
+            'Измельчители пищевых отходов'
+          ].includes(root.name)
+        )
+      },
+      {
+        slug: 'professionalnaya tehnika',
+        name: 'Профессиональная техника',
+        items: menuRoots.filter((root) => root.name === 'Профессиональная техника')
+      }
+    ];
+
+    return groups.filter((group) => group.items.length > 0);
+  });
 
   $effect(() => {
     pathname = $page.url.pathname;
@@ -25,46 +131,72 @@
       pathname === '/' || pathname.startsWith('/catalog') || pathname.startsWith('/products');
   });
 
-  onMount(() => {
+  function syncMobile() {
     isMobile = window.innerWidth < 1024;
+  }
+
+  onMount(() => {
+    syncMobile();
+    window.addEventListener('resize', syncMobile);
+    return () => window.removeEventListener('resize', syncMobile);
   });
 
+  function resetMenuState() {
+    expandedGroupLeaves = {};
+    openRootSlug = null;
+  }
+
   function openMenu() {
-    if (!isMobile) {
-      clearTimeout(timeout);
-      open = true;
-    }
+    if (isMobile) return;
+    clearTimeout(timeout);
+    open = true;
   }
+
   function closeMenu() {
-    if (!isMobile) {
-      timeout = setTimeout(() => {
-        open = false;
-      }, 180);
-    }
+    if (isMobile) return;
+    timeout = setTimeout(() => {
+      open = false;
+      resetMenuState();
+    }, 160);
   }
+
   function toggleClick() {
+    if (!isMobile) return;
     open = !open;
+    if (!open) resetMenuState();
   }
-  const toggleCat = (i: number) => {
-    openIndex = openIndex === i ? null : i;
-  };
-  const closeCatalog = () => {
+
+  function closeCatalog() {
     open = false;
-    openIndex = null;
-  };
+    resetMenuState();
+  }
+
+  function toggleRoot(rootSlug: string) {
+    openRootSlug = openRootSlug === rootSlug ? null : rootSlug;
+  }
+
+  function toggleGroupLeaves(key: string) {
+    expandedGroupLeaves = {
+      ...expandedGroupLeaves,
+      [key]: !expandedGroupLeaves[key]
+    };
+  }
 </script>
 
 <nav class="nav container mx-auto">
   <div class="nav__inner h-20 px-3 lg:h-25 lg:px-0">
     <a class="nav__logo" href="/"><img src={logo1} alt="logo" /></a>
 
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="nav__catalog lg:relative" onmouseenter={openMenu} onmouseleave={closeMenu}>
-      <button class="catalog-btn flex items-center" onclick={toggleClick}>
-        <Menu size={18} />
-        <span class="ml-1.5">Каталог</span>
-      </button>
+    <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
+      {#if isMobile}
+        <button class="catalog-trigger" type="button" onclick={toggleClick}>
+          <span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span>
+        </button>
+      {:else}
+        <a class="catalog-trigger" href="/catalog">
+          <span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span>
+        </a>
+      {/if}
 
       {#if open && isMobile}
         <div class="catalog-overlay" onclick={closeCatalog}></div>
@@ -72,36 +204,106 @@
 
       <div class="catalog-dropdown" class:visible={open}>
         {#if open && isMobile}
-          <div class="catalog-close">
-            <button type="button" onclick={closeCatalog}>✕</button>
+          <div class="catalog-mobile-head">
+            <a href="/catalog" class="catalog-mobile-link" onclick={closeCatalog}>Каталог</a>
+            <button
+              type="button"
+              class="catalog-close"
+              onclick={closeCatalog}
+              aria-label="Закрыть каталог"
+            >
+              <X size={18} strokeWidth={2.25} />
+            </button>
           </div>
         {/if}
-        {#each data.typeGroups as cat, i}
-          <div class="cat">
-            <div class="cat__header">
-              <a
-                class="cat__title"
-                href={`/catalog/${slugify(cat.group)}`}
-                onclick={isMobile ? closeCatalog : undefined}>{cat.group}</a
-              >
-              {#if cat.items.length}
-                <button class="cat__toggle" type="button" onclick={() => toggleCat(i)}>
-                  <span class:rotated={openIndex === i}>+</span>
-                </button>
-              {/if}
-            </div>
-            <ul class="cat__list" class:open={openIndex === i}>
-              {#each cat.items as item}
-                <li>
-                  <a
-                    href={`/catalog/${slugify(cat.group)}?type=${encodeURIComponent(item.name)}`}
-                    onclick={isMobile ? closeCatalog : undefined}>{item.name}</a
+
+        <div class="catalog-tree">
+          {#each catalogParents as parent}
+            <section class="tree-parent">
+              <div class="tree-parent__head">
+                <p class="tree-parent__title">{parent.name}</p>
+              </div>
+
+              <div class="tree-parent__accordion">
+                {#each parent.items as root}
+                  <article
+                    class="accordion-item"
+                    class:accordion-item--open={openRootSlug === root.slug}
                   >
-                </li>
-              {/each}
-            </ul>
-          </div>
-        {/each}
+                    <div class="accordion-item__head">
+                      <div class="accordion-item__main">
+                        <a
+                          class="accordion-item__title"
+                          href={root.href}
+                          onclick={isMobile ? closeCatalog : undefined}
+                        >
+                          {root.name}
+                        </a>
+                      </div>
+                      {#if root.groups.length > 0}
+                        <div class="accordion-item__aside">
+                          <button
+                            class="accordion-item__toggle"
+                            type="button"
+                            onclick={() => toggleRoot(root.slug)}
+                            aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
+                            aria-label="Показать группы"
+                          >
+                            {#if openRootSlug === root.slug}
+                              <Minus size={14} strokeWidth={2.25} />
+                            {:else}
+                              <Plus size={14} strokeWidth={2.25} />
+                            {/if}
+                          </button>
+                        </div>
+                      {/if}
+                    </div>
+
+                    {#if openRootSlug === root.slug && root.groups.length > 0}
+                      <div class="accordion-item__body" transition:slide={slideTransition}>
+                        {#each root.groups as group}
+                          {@const groupKey = `${root.slug}:${group.slug}`}
+                          <div class="group-block">
+                            <a
+                              class="group-block__title"
+                              href={group.href}
+                              onclick={isMobile ? closeCatalog : undefined}
+                            >
+                              {group.name}
+                            </a>
+
+                            <div class="group-block__leaves">
+                              {#each expandedGroupLeaves[groupKey] ? group.leaves : group.leaves.slice(0, LEAVES_PREVIEW_LIMIT) as leaf}
+                                <a href={leaf.href} onclick={isMobile ? closeCatalog : undefined}>
+                                  {leaf.title}
+                                </a>
+                              {/each}
+                            </div>
+
+                            {#if group.leaves.length > LEAVES_PREVIEW_LIMIT}
+                              <div class="group-block__footer">
+                                <button
+                                  class="group-block__more"
+                                  type="button"
+                                  onclick={() => toggleGroupLeaves(groupKey)}
+                                  aria-expanded={expandedGroupLeaves[groupKey] ? 'true' : 'false'}
+                                >
+                                  {expandedGroupLeaves[groupKey]
+                                    ? 'Скрыть'
+                                    : `Ещё ${group.leaves.length - LEAVES_PREVIEW_LIMIT}`}
+                                </button>
+                              </div>
+                            {/if}
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  </article>
+                {/each}
+              </div>
+            </section>
+          {/each}
+        </div>
       </div>
     </div>
 
@@ -124,7 +326,7 @@
 
 <style lang="scss">
   .nav {
-    background: white;
+    background: #fff;
     &__inner {
       display: flex;
       align-items: center;
@@ -141,125 +343,265 @@
     }
     &__catalog {
       position: relative;
+      .catalog-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 124px;
+        height: 42px;
+        padding: 0 14px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #1c1c1c;
+        background: transparent;
+        transition: background 0.18s ease;
+        &:hover {
+          background: rgba($yellow, 0.08);
+        }
+        &__left {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+          font-weight: 600;
+        }
+      }
       .catalog-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.3);
+        inset: 0;
         z-index: 15;
+        background: rgba(0, 0, 0, 0.3);
       }
       .catalog-dropdown {
         position: absolute;
-        top: 100%;
+        top: calc(100% + 10px);
         left: 0;
-        width: 320px;
-        background: white;
-        border-radius: 14px;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
-        padding: 16px;
         z-index: 20;
+        width: 440px;
+        max-height: min(78vh, 760px);
+        overflow: auto;
+        border: 1px solid rgba($yellow, 0.22);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.1);
         opacity: 0;
         visibility: hidden;
         transform: translateY(8px);
-        transition: all 0.18s ease;
+        transition:
+          opacity 0.18s ease,
+          visibility 0.18s ease,
+          transform 0.18s ease;
         &.visible {
           opacity: 1;
           visibility: visible;
           transform: translateY(0);
         }
-        .catalog-close {
+      }
+      .catalog-mobile-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 16px 16px 0px;
+      }
+      .catalog-mobile-link {
+        color: #141414;
+        font-size: 18px;
+        font-weight: 800;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+      .catalog-close,
+      .accordion-item__toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        background: #fff;
+        cursor: pointer;
+        flex: 0 0 38px;
+        :global(svg) {
+          display: block;
+          flex: 0 0 auto;
+        }
+      }
+      .catalog-close {
+        border: 1px solid rgba($yellow, 0.55);
+        border-radius: 10px;
+      }
+      .tree-parent {
+        display: grid;
+        &__head {
+          border-bottom: 1px solid rgba($green, 0.12);
+          border-top: 1px solid rgba($green, 0.12);
+          background: rgba(128, 128, 128, 0.05);
+          padding: 16px;
+        }
+        &__title {
+          margin: 0;
+          color: #1a1a1a;
+          font-size: 1.1rem;
+          font-weight: 600;
+          line-height: 1.12;
+          letter-spacing: -0.02em;
+        }
+        &__accordion {
+          margin: 18px 14px 14px 14px;
+          overflow: hidden;
+          border: 1px solid rgba($green, 0.14);
+          border-radius: 22px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.035);
+        }
+      }
+      .accordion-item {
+        border-top: 1px solid rgba($green, 0.08);
+        &:first-child {
+          border-top: none;
+        }
+        &--open .accordion-item__head {
+          background: rgb(248 249 250);
+        }
+        &__head {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: start;
+          gap: 12px;
+          padding: 8px 10px;
+          transition: background 0.18s ease;
+        }
+        &__main {
+          min-width: 0;
           display: flex;
+          align-items: center;
+          min-height: 38px;
+        }
+        &__aside {
+          display: flex;
+          align-items: flex-start;
           justify-content: flex-end;
-          margin-bottom: 8px;
-          button {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            border: none;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        }
+        &__title {
+          display: block;
+          width: 100%;
+          min-width: 0;
+          padding: 0 2px;
+          color: #1f1f1f;
+          font-size: 1rem;
+          font-weight: 500;
+          line-height: 1.2;
+          text-decoration: none;
+          &:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
           }
         }
-        .cat {
-          display: flex;
-          flex-direction: column;
-          &:last-child {
-            margin-bottom: 0;
+        &__toggle {
+          border: 1px solid rgba($yellow, 0.7);
+          border-radius: 12px;
+          transition: background 0.18s ease;
+          &:hover {
+            background: rgba($yellow, 0.08);
           }
-          &__header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+        &__body {
+          display: grid;
+          background: linear-gradient(180deg, rgb(248 249 250) 0%, rgba(#fff, 0) 100%);
+        }
+      }
+      .group-block {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border-top: 1px solid rgba($green, 0.08);
+        &:first-child {
+          border-top: none;
+        }
+        &__title {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          width: fit-content;
+          max-width: 100%;
+          min-height: 28px;
+          padding-left: 14px;
+          color: #232323;
+          font-size: 16px;
+          line-height: 1.25;
+          text-decoration: none;
+          &::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: rgba($yellow, 0.95);
+            transform: translateY(-50%);
           }
-          &__title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #222;
-            text-decoration: none;
-            cursor: pointer;
-            border-bottom: 1px solid transparent !important;
-            &:hover {
-              color: $green;
-              border-bottom: 1px solid $green !important;
-            }
+          &:hover {
+            text-decoration: underline;
+            text-underline-offset: 2px;
           }
-          &__toggle {
-            min-width: 34px;
-            width: 34px;
-            min-height: 34px;
-            height: 34px;
-            border-radius: 5px;
-            // border: 1px solid rgba(128, 128, 128, 0.309) !important;
-            box-shadow: inset 0 0 4px 0 rgba($yellow, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 18px;
-            line-height: 1;
-            transition: 0.2s;
-            span {
-              display: inline-block;
-              transition: transform 0.2s ease;
-            }
-            .rotated {
-              transform: rotate(45deg);
-            }
-          }
-          &__list {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.25s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+        }
+        &__leaves {
+          display: grid;
+          gap: 10px;
+          padding-left: 18px;
+          a {
+            position: relative;
+            display: block;
+            min-height: 24px;
             padding-left: 14px;
-            margin-top: 6px;
-            li {
-              list-style: none;
+            color: #5b5b5b;
+            font-size: 15px;
+            line-height: 1.35;
+            text-decoration: none;
+            transition: color 0.18s ease;
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0.72em;
+              left: 0;
+              width: 4px;
+              height: 4px;
+              border-radius: 999px;
+              background: rgba($green, 0.75);
+              transform: translateY(-50%);
             }
-            a {
-              font-size: 13px;
-              color: #555;
-              text-decoration: none;
-              transition: 0.2s;
-              border-bottom: 1px solid transparent !important;
-              &:hover {
-                color: $green;
-                border-bottom: 1px solid $green !important;
-              }
+            &:hover {
+              color: #222;
+              text-decoration: underline;
+              text-underline-offset: 2px;
             }
-            &.open {
-              max-height: 500px;
-              overflow: auto;
-            }
+          }
+        }
+        &__footer {
+          display: flex;
+          justify-content: flex-start;
+          padding-left: 18px;
+        }
+        &__more {
+          min-height: 36px;
+          padding: 0 14px;
+          border: 1px solid rgba($yellow, 0.45);
+          border-radius: 16px;
+          background: #fff;
+          color: #3a3a3a;
+          font-size: 13px;
+          font-weight: 800;
+          cursor: pointer;
+          transition:
+            border-color 0.18s ease,
+            background 0.18s ease,
+            color 0.18s ease;
+          &:hover {
+            border-color: rgba($yellow, 0.75);
+            background: rgba($yellow, 0.08);
+            color: #171717;
           }
         }
       }
@@ -268,14 +610,12 @@
           position: fixed;
           top: 0;
           left: 0;
-          width: 80%;
-          max-width: 80%;
-          height: 100%;
-          border-radius: 0;
-          padding: 16px;
-          box-shadow: none;
-          background: white;
           z-index: 25;
+          width: min(440px, 86vw);
+          max-width: 86vw;
+          height: 100%;
+          max-height: 100%;
+          border-radius: 0 18px 18px 0;
         }
       }
     }
@@ -285,13 +625,13 @@
     gap: 12px;
     button,
     a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 42px;
       height: 42px;
       border-radius: 10px;
       background: rgba($green, 0.05);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       transition: 0.2s;
       :global(svg) {
         color: $green;
@@ -309,10 +649,10 @@
     position: absolute;
     top: -4px;
     right: -6px;
-    background: red;
-    color: white;
-    font-size: 10px;
     padding: 2px 5px;
     border-radius: 999px;
+    background: red;
+    color: #fff;
+    font-size: 10px;
   }
 </style>

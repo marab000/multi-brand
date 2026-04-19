@@ -2,6 +2,7 @@ import 'dotenv/config'
 import postgres from 'postgres'
 import brands from './brands.json' with { type: 'json' }
 import excludedCategories from './excluded-categories.json' with { type: 'json' }
+import { resolveCatalog } from '../src/lib/server/categories.ts'
 
 const sql = postgres({
 	host: process.env.DB_HOST,
@@ -33,8 +34,11 @@ function findMatchedBrand(apiName) {
 async function safeJsonFetch(url) {
 	const r = await fetch(url)
 	const t = await r.text()
-	try { return JSON.parse(t) }
-	catch { throw new Error(`Not JSON: ${t.slice(0, 200)}`) }
+	try {
+		return JSON.parse(t)
+	} catch {
+		throw new Error(`Not JSON: ${t.slice(0, 200)}`)
+	}
 }
 
 function cleanSpecKey(key) {
@@ -53,7 +57,6 @@ function extractSpecs(item) {
 	}
 	if (item['Вес']) specs['Вес'] = item['Вес']
 	if (item['Объем']) specs['Объем'] = item['Объем']
-
 	return specs
 }
 
@@ -101,15 +104,25 @@ async function syncBrand(apiBrand) {
 		if (!prices) continue
 		if (!(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
 		const specs = extractSpecs(item)
+		const rawCategory = item['ГруппаАналитическогоУчета'] ?? null
+		const rawType = item['ЦеноваяГруппа'] ?? null
+		const catalog = resolveCatalog(rawCategory, rawType)
 		rows.push({
+			external_id: id,
 			brand: sql.json({
 				name: cleanName,
-				api: apiBrand.NAME,
+				api: apiBrand.NAME
 			}),
 			name: item['РабочееНаименование'] ?? null,
 			description: item['ТекстовоеОписание'] ?? null,
-			category: item['ГруппаАналитическогоУчета'] ?? null,
-			product_type: item['ЦеноваяГруппа'] ?? null,
+			category: rawCategory,
+			product_type: rawType,
+			catalog_root_slug: catalog.root?.slug ?? null,
+			catalog_root_name: catalog.root?.name ?? null,
+			catalog_group_slug: catalog.group?.slug ?? null,
+			catalog_group_name: catalog.group?.name ?? null,
+			catalog_leaf_slug: catalog.leaf?.slug ?? null,
+			catalog_leaf_name: catalog.leaf?.name ?? null,
 			price_rrc: prices.price_rrc,
 			price_opt: prices.price_opt,
 			price_ric: prices.price_ric,
@@ -129,19 +142,25 @@ async function syncBrand(apiBrand) {
 		description=excluded.description,
 		category=excluded.category,
 		product_type=excluded.product_type,
+		catalog_root_slug=excluded.catalog_root_slug,
+		catalog_root_name=excluded.catalog_root_name,
+		catalog_group_slug=excluded.catalog_group_slug,
+		catalog_group_name=excluded.catalog_group_name,
+		catalog_leaf_slug=excluded.catalog_leaf_slug,
+		catalog_leaf_name=excluded.catalog_leaf_name,
 		price_rrc=excluded.price_rrc,
 		price_opt=excluded.price_opt,
 		price_ric=excluded.price_ric,
 		specs=excluded.specs,
 		raw=excluded.raw,
 		updated_at=now()
-		`
+	`
 	const ids = rows.map(r => r.external_id)
 	await sql`
 		delete from products
 		where brand->>'api'=${String(apiBrand.NAME)}
 		and external_id not in ${sql(ids)}
-		`
+	`
 	console.log('Done:', rows.length)
 }
 
@@ -165,14 +184,12 @@ async function removeExcludedCategories() {
 			query = sql`${query} OR ${condition}`
 		}
 	}
-
 	if (!first) {
 		await sql`
 			delete from products
 			where ${query}
 		`
 	}
-
 	console.log('Excluded categories & product_types removed')
 }
 

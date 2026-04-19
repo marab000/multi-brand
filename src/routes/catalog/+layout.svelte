@@ -5,76 +5,83 @@
 
   type TypeItem = { name: string; slug: string };
   type TypeGroup = { group: string; items: TypeItem[] };
+  type CategoryNavItem = { name: string; slug: string; href: string; level: 'group' | 'leaf' };
+  type BreadcrumbItem = { name: string; href?: string };
 
-  export let data: {
-    typeGroups?: TypeGroup[];
-    brands?: string[];
-    colors?: string[];
-    minMax?: {
-      price: [number, number];
-      width: [number, number];
-      height: [number, number];
-      depth: [number, number];
+  let { data } = $props<{
+    data?: {
+      categoryNav?: CategoryNavItem[];
+      typeGroups?: TypeGroup[];
+      brands?: string[];
+      colors?: string[];
+      minMax?: {
+        price: [number, number];
+        width: [number, number];
+        height: [number, number];
+        depth: [number, number];
+      };
+      category?: string;
     };
-    category?: string;
-  };
+  }>();
 
-  let showFilters = false;
+  let showFilters = $state(false);
 
-  $: isLoading = $navigating !== null;
-  $: brand = $page.data?.brand ?? null;
-  $: category = $page.data?.category ?? null;
-  $: type = $page.data?.type ?? null;
+  const isLoading = $derived($navigating !== null);
+  const pathname = $derived($page.url.pathname);
+  const isCatalogRoot = $derived(pathname === '/catalog');
 
-  $: typeGroups = data.typeGroups ?? [];
-  $: brands = data.brands ?? [];
+  const breadcrumbs = $derived(($page.data?.breadcrumbs ?? [
+    { name: 'Главная', href: '/' },
+    { name: 'Каталог', href: '/catalog' }
+  ]) as BreadcrumbItem[]);
 
-  $: minMax = data.minMax ?? {
-    price: [0, 999999],
-    width: [0, 300],
-    height: [0, 300],
-    depth: [0, 300]
-  };
+  const product = $derived($page.data?.product ?? null);
+  const categoryNav = $derived(data?.categoryNav ?? []);
+  const typeGroups = $derived(data?.typeGroups ?? []);
+  const brands = $derived(data?.brands ?? []);
+  const colors = $derived(data?.colors ?? []);
+  const minMax = $derived(
+    data?.minMax ?? {
+      price: [0, 999999],
+      width: [0, 300],
+      height: [0, 300],
+      depth: [0, 300]
+    }
+  );
 </script>
 
 {#if isLoading}
   <div class="global-loader"><div class="spinner"></div></div>
 {/if}
 
-<Breadcrumbs {brand} {category} {type} />
+<Breadcrumbs items={breadcrumbs} {product} />
 
-<div class="mobile-bar">
-  <button onclick={() => (showFilters = true)}>Фильтры</button>
-</div>
-
-<div class="catalog-layout lg:gap-3 xl:gap-4">
-  <div class="sidebar">
-    <SidebarFilters
-      {brands}
-      {typeGroups}
-      colors={data.colors ?? []}
-      {minMax}
-    />
+{#if !isCatalogRoot}
+  <div class="mobile-bar">
+    <button onclick={() => (showFilters = true)}>Фильтры</button>
   </div>
+{/if}
+
+<div class="catalog-layout" class:catalog-layout--root={isCatalogRoot}>
+  {#if !isCatalogRoot}
+    <div class="sidebar">
+      <SidebarFilters {categoryNav} {brands} {typeGroups} {colors} {minMax} />
+    </div>
+  {/if}
 
   <div class="catalog-content">
     <slot />
   </div>
 </div>
 
-{#if showFilters}
+{#if showFilters && !isCatalogRoot}
   <button class="overlay" onclick={() => (showFilters = false)}></button>
   <div class="drawer">
     <div class="drawer-header">
       <span>Фильтры</span>
       <button class="close" onclick={() => (showFilters = false)}>✕</button>
     </div>
-    <SidebarFilters
-      {brands}
-      {typeGroups}
-      colors={data.colors ?? []}
-      {minMax}
-    />
+    <SidebarFilters {categoryNav} {brands} {typeGroups} {colors} {minMax} />
   </div>
 {/if}
 
@@ -93,16 +100,21 @@
       display: block;
     }
   }
-
   .catalog-layout {
     display: grid;
     margin-top: 20px;
     grid-template-columns: 1fr;
+    gap: 16px;
     @media (min-width: 1024px) {
       grid-template-columns: 250px 1fr;
+      gap: 20px;
     }
     @media (min-width: 1280px) {
       grid-template-columns: 300px 1fr;
+      gap: 24px;
+    }
+    &--root {
+      grid-template-columns: 1fr !important;
     }
     .catalog-content {
       min-width: 0;
@@ -113,14 +125,12 @@
       }
     }
   }
-
   .overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 1000;
   }
-
   .drawer {
     position: fixed;
     top: 0;
@@ -136,17 +146,8 @@
     padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
     box-sizing: border-box;
   }
-
   .drawer-header {
     flex-shrink: 0;
-  }
-
-  .drawer :global(.filters) {
-    flex: 1;
-    min-height: 0;
-  }
-
-  .drawer-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -158,7 +159,10 @@
       cursor: pointer;
     }
   }
-
+  .drawer :global(.filters) {
+    flex: 1;
+    min-height: 0;
+  }
   @keyframes slideIn {
     from {
       transform: translateX(-100%);
@@ -167,7 +171,6 @@
       transform: translateX(0);
     }
   }
-
   .global-loader {
     position: fixed;
     inset: 0;
@@ -186,7 +189,6 @@
       animation: spin 0.8s linear infinite;
     }
   }
-
   @keyframes spin {
     to {
       transform: rotate(360deg);

@@ -1,37 +1,33 @@
 <script lang="ts">
-  import { slugify } from '$lib/utils/slugify';
-  export let brand: string | null = null;
-  export let category: string | null = null;
-  export let type: string | null = null;
-  export let product: string | null = null;
-
-  $: categoryLink = category ? `/catalog/${slugify(category)}` : '';
-  $: typeLink =
-    type && category ? `/catalog/${slugify(category)}?type=${encodeURIComponent(type)}` : '';
-  $: brandLink = brand ? `/catalog?brand=${encodeURIComponent(brand)}` : '';
+  let { items = [], product = null } = $props<{
+    items?: { name: string; href?: string }[];
+    product?: string | null;
+  }>();
+	console.log(items);
 </script>
 
-<div class="breadcrumbs">
-  <a href="/">Главная</a>
-  <span class="sep">›</span>
-  <a href="/catalog">Каталог</a>
-  {#if brand}
-    <span class="sep">›</span>
-    <a href={brandLink}>{brand}</a>
-  {/if}
-  {#if category}
-    <span class="sep">›</span>
-    <a href={categoryLink}>{category}</a>
-  {/if}
-  {#if type}
-    <span class="sep">›</span>
-    <a href={typeLink}>{type}</a>
-  {/if}
-  {#if product}
-    <span class="sep">›</span>
-    <span class="current">{product}</span>
-  {/if}
-</div>
+{#if items.length || product}
+  <div class="breadcrumbs">
+    {#each items as item, i}
+      {#if i > 0}
+        <span class="sep">›</span>
+      {/if}
+
+      {#if item.href}
+        <a href={item.href}>{item.name}</a>
+      {:else}
+        <span class="current">{item.name}</span>
+      {/if}
+    {/each}
+
+    {#if product}
+      {#if items.length}
+        <span class="sep">›</span>
+      {/if}
+      <span class="current">{product}</span>
+    {/if}
+  </div>
+{/if}
 
 <style lang="scss">
   .breadcrumbs {
@@ -41,6 +37,9 @@
     gap: 8px;
     font-size: 14px;
     padding: 10px 14px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
     @media (max-width: 1024px) {
       font-size: 0.85rem;
     }
@@ -48,19 +47,12 @@
       padding: 10px;
       font-size: 0.8rem;
     }
-    background: #f8f9fa;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
     a {
       color: #2b2b2b;
       text-decoration: none;
       padding: 4px 8px;
-      @media (max-width: 768px) {
-        padding: 4px 8px;
-      }
       border-radius: 6px;
       transition: 0.2s;
-
       &:hover {
         background: #e9ecef;
       }
