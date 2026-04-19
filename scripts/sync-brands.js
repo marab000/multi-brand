@@ -62,13 +62,32 @@ function extractSpecs(item) {
 
 function toNumber(v) {
 	if (v == null) return null
-	const n = parseFloat(
-		String(v)
-			.replace(/\s/g, '')
-			.replace(',', '.')
-			.replace(/[^0-9.\-]/g, '')
-	)
-	return isNaN(n) ? null : n
+	let s = String(v).trim()
+	if (!s) return null
+	s = s.replace(/\s/g, '').replace(/[^0-9,.\-]/g, '')
+	const lastComma = s.lastIndexOf(',')
+	const lastDot = s.lastIndexOf('.')
+	if (lastComma !== -1 && lastDot !== -1) {
+		if (lastDot > lastComma) {
+			s = s.replace(/,/g, '')
+		} else {
+			s = s.replace(/\./g, '').replace(',', '.')
+		}
+	} else if (lastComma !== -1) {
+		const fractionalLength = s.length - lastComma - 1
+		if (fractionalLength === 1 || fractionalLength === 2) {
+			s = s.replace(/\./g, '').replace(',', '.')
+		} else {
+			s = s.replace(/,/g, '')
+		}
+	} else if (lastDot !== -1) {
+		const fractionalLength = s.length - lastDot - 1
+		if (!(fractionalLength === 1 || fractionalLength === 2)) {
+			s = s.replace(/\./g, '')
+		}
+	}
+	const n = Number(s)
+	return Number.isFinite(n) ? n / 1000 : null
 }
 
 function extractPrices(rows) {
