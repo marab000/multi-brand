@@ -2,6 +2,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { slide } from 'svelte/transition';
+  import { ChevronDown } from 'lucide-svelte';
   import { COLOR_GROUPS } from '$lib/filters/colorGroups';
   import { getGroupColor } from '$lib/filters/colorUtils';
 
@@ -84,11 +85,17 @@
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
           ></button>
           <button class="label" on:click={() => toggleOpen(g.group)}>
-            <span class="dot" style="background:{getGroupColor(g.group)}"></span>
-            <span class="text">{g.group}</span>
-            <span class="arrow" class:open={openGroups[g.group]}>⌄</span>
+            <span class="label-main">
+              <span class="dot" style="background:{getGroupColor(g.group)}"></span>
+              <span class="text">{g.group}</span>
+            </span>
+
+            <span class="arrow-icon" class:open={openGroups[g.group]}>
+              <ChevronDown size={16} strokeWidth={2.2} />
+            </span>
           </button>
         </div>
+
         {#if openGroups[g.group]}
           <div class="subs" transition:slide>
             {#each g.sorted as c}
@@ -109,11 +116,47 @@
 </div>
 
 <style lang="scss">
+  .label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin: -10px;
+    padding: 10px;
+
+    border-radius: 10px;
+  }
+
+  .label-main {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .text {
+    min-width: 0;
+  }
+
   .dot {
     margin-right: 10px;
     width: 12px;
     height: 12px;
+    min-width: 12px;
     border-radius: 50%;
     border: 1px solid #ccc;
+  }
+
+  .arrow-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+
+    &.open {
+      transform: rotate(180deg);
+    }
   }
 </style>

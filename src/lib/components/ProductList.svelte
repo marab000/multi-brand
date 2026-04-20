@@ -188,7 +188,7 @@
     }
     .sort__option {
       display: grid;
-      grid-template-columns: 18px 1fr;
+      grid-template-columns: 14px 1fr;
       align-items: center;
       gap: 10px;
       width: 100%;

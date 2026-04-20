@@ -185,6 +185,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <nav class="nav container mx-auto">
   <div class="nav__top px-3 lg:px-0">
     <div class="nav__top-spacer"></div>
@@ -194,7 +195,7 @@
     </a>
   </div>
 
-  <div class="nav__inner h-20 px-3 lg:h-25 lg:px-0">
+  <div class="nav__inner h-20 px-4 lg:h-25 lg:px-0">
     <a class="nav__logo" href="/"><img src={logo1} alt="logo" /></a>
 
     <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
@@ -259,11 +260,13 @@
                             aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
                             aria-label="Показать группы"
                           >
-                            {#if openRootSlug === root.slug}
-                              <Minus size={14} strokeWidth={2.25} />
-                            {:else}
-                              <Plus size={14} strokeWidth={2.25} />
-                            {/if}
+                            <div class="toggle__circle">
+                              {#if openRootSlug === root.slug}
+                                <Minus size={14} strokeWidth={2.25} />
+                              {:else}
+                                <Plus size={14} strokeWidth={2.25} />
+                              {/if}
+                            </div>
                           </button>
                         </div>
                       {/if}
@@ -454,7 +457,7 @@
         text-underline-offset: 4px;
       }
       .catalog-close,
-      .accordion-item__toggle {
+      .accordion-item__toggle .toggle__circle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -498,6 +501,7 @@
         }
       }
       .accordion-item {
+        position: relative;
         border-top: 1px solid rgba($green, 0.08);
         &:first-child {
           border-top: none;
@@ -540,11 +544,19 @@
           }
         }
         &__toggle {
-          border: 1px solid rgba($yellow, 0.7);
-          border-radius: 12px;
-          transition: background 0.18s ease;
-          &:hover {
+          position: absolute;
+          right: 0;
+          top: 0;
+          height: 100%;
+          max-height: 52px;
+          width: 50px;
+          &:hover .toggle__circle {
             background: rgba($yellow, 0.08);
+          }
+          .toggle__circle {
+            border: 1px solid rgba($yellow, 0.7);
+            transition: background 0.18s ease;
+            border-radius: 999px;
           }
         }
         &__body {

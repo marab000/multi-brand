@@ -68,7 +68,7 @@
         </button>
         {#if showCategories}
           <div class="filter-content" transition:slide>
-            <CategoryNav items={categoryNav} activeVariant="underline" />
+            <CategoryNav items={categoryNav} />
           </div>
         {/if}
       </div>

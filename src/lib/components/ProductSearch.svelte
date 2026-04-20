@@ -4,13 +4,20 @@
   import { browser } from '$app/environment';
   import { Search, X, Folder } from 'lucide-svelte';
 
+  type SearchSuggestion = {
+    type: 'category' | 'brand';
+    name: string;
+    url: string;
+    subtitle?: string;
+    score: number;
+  };
+
   let query = '';
   let results: any[] = [];
   let open = false;
   let selected = -1;
   let timer: any;
-
-  let suggestions: any[] = [];
+  let suggestions: SearchSuggestion[] = [];
 
   async function search() {
     if (query.length < 2) {
@@ -19,23 +26,17 @@
       open = false;
       return;
     }
-
-    const res = await fetch(`/api/products/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
     if (!res.ok) {
       results = [];
       suggestions = [];
       open = false;
       return;
     }
-
-    results = await res.json();
-
-    // suggestions = [
-    //   { type: 'category', name: 'Холодильники', url: `/catalog/search?search=${query}` },
-    //   { type: 'category', name: 'Двухкамерные холодильники', url: `/catalog/search?type=${query}` }
-    // ];
-
-    open = true;
+    const data = await res.json();
+    results = Array.isArray(data.products) ? data.products : [];
+    suggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+    open = !!(results.length || suggestions.length);
     selected = -1;
   }
 
@@ -49,6 +50,7 @@
     results = [];
     suggestions = [];
     open = false;
+    selected = -1;
   }
 
   function goToProduct(p: any) {
@@ -62,17 +64,28 @@
 
   function handleKey(e: KeyboardEvent) {
     if (!open) return;
-
     const total = suggestions.length + results.length;
-
-    if (e.key === 'ArrowDown') selected = Math.min(selected + 1, total - 1);
-    if (e.key === 'ArrowUp') selected = Math.max(selected - 1, 0);
-
+    if (!total) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selected = Math.min(selected + 1, total - 1);
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selected = Math.max(selected - 1, 0);
+    }
     if (e.key === 'Enter') {
+      e.preventDefault();
       if (selected >= 0) {
         if (selected < suggestions.length) goTo(suggestions[selected].url);
         else goToProduct(results[selected - suggestions.length]);
-      } else submitSearch();
+      } else {
+        submitSearch();
+      }
+    }
+    if (e.key === 'Escape') {
+      open = false;
+      selected = -1;
     }
   }
 
@@ -104,7 +117,6 @@
     {#if query}
       <button class="clear" on:click={clearInput}><X size={18} /></button>
     {/if}
-
     <button class="btn-search" on:click={submitSearch}>
       <Search size={18} />
     </button>
@@ -113,9 +125,16 @@
   {#if open && (results.length || suggestions.length)}
     <div class="dropdown">
       {#each suggestions as s, i}
-        <div class="item font-medium" class:selected={i === selected} on:click={() => goTo(s.url)}>
+        <div class="item suggestion" class:selected={i === selected} on:click={() => goTo(s.url)}>
           <Folder size={18} />
-          <span>{s.name}</span>
+          <div class="info">
+            <div class="top">
+              <div class="name">{s.name}</div>
+            </div>
+            {#if s.subtitle}
+              <div class="description">{s.subtitle}</div>
+            {/if}
+          </div>
         </div>
       {/each}
       {#each results as r, i}
@@ -212,12 +231,14 @@
       width: 50px;
       height: 50px;
       object-fit: contain;
+      flex: 0 0 50px;
     }
     .info {
       display: flex;
       flex-direction: column;
       gap: 4px;
       min-width: 0;
+      flex: 1;
       .top {
         display: flex;
         gap: 6px;
@@ -244,6 +265,12 @@
     }
     &.selected {
       background: rgba($green, 0.06);
+    }
+    &.suggestion {
+      svg {
+        flex: 0 0 18px;
+        color: $green;
+      }
     }
   }
   .all {
