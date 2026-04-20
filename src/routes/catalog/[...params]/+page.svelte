@@ -4,6 +4,9 @@
 
   export let data: PageData;
   $: products = data.products ?? [];
+  $: searchValue = data.isSearchPage
+    ? (new URLSearchParams(data.currentSearch ?? '').get('search')?.trim() ?? '')
+    : '';
 </script>
 
 <main class="catalog-content">
@@ -11,7 +14,11 @@
     {#if data.category}
       {data.category}
     {:else if data.isSearchPage}
-      Результаты поиска
+      {#if searchValue}
+        Результаты поиска "{searchValue}"
+      {:else}
+        Результаты поиска
+      {/if}
     {:else}
       Каталог
     {/if}
@@ -26,5 +33,8 @@
 </main>
 
 <style lang="scss">
-.catalog-content{display:grid;gap:16px;}
+  .catalog-content {
+    display: grid;
+    gap: 16px;
+  }
 </style>
