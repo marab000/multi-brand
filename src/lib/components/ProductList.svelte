@@ -63,6 +63,10 @@
   function closeSort() {
     isSortOpen = false;
   }
+
+  function openFilters() {
+    window.dispatchEvent(new CustomEvent('catalog:open-filters'));
+  }
 </script>
 
 <svelte:body onclick={closeSort} />
@@ -73,6 +77,8 @@
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="topbar">
+    <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
+
     <div class="sort" onclick={(e) => e.stopPropagation()}>
       <button
         class="sort__trigger"
@@ -140,11 +146,32 @@
 <style lang="scss">
   .topbar {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    @media (min-width: 1024px) {
+      justify-content: flex-end;
+    }
+  }
+  .filters-trigger {
+    flex: 0 0 auto;
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    background: #fff;
+    font-weight: 600;
+    white-space: nowrap;
   }
   .sort {
     position: relative;
     min-width: 200px;
+    @media (max-width: 1023px) {
+      min-width: 0;
+      width: auto;
+      flex: 0 1 180px;
+    }
     .sort__trigger {
       display: flex;
       align-items: center;
@@ -172,6 +199,11 @@
       }
       :global(svg) {
         flex: 0 0 auto;
+      }
+      @media (max-width: 1023px) {
+        min-height: 42px;
+        padding: 0 12px;
+        font-size: 0.9rem;
       }
     }
     .sort__dropdown {

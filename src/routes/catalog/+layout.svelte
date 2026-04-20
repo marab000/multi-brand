@@ -1,5 +1,6 @@
 <script lang="ts">
   import { navigating, page } from '$app/stores';
+  import { onMount } from 'svelte';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import SidebarFilters from '$lib/components/filters/SidebarFilters.svelte';
 
@@ -30,10 +31,12 @@
   const pathname = $derived($page.url.pathname);
   const isCatalogRoot = $derived(pathname === '/catalog');
 
-  const breadcrumbs = $derived(($page.data?.breadcrumbs ?? [
-    { name: 'Главная', href: '/' },
-    { name: 'Каталог', href: '/catalog' }
-  ]) as BreadcrumbItem[]);
+  const breadcrumbs = $derived(
+    ($page.data?.breadcrumbs ?? [
+      { name: 'Главная', href: '/' },
+      { name: 'Каталог', href: '/catalog' }
+    ]) as BreadcrumbItem[]
+  );
 
   const product = $derived($page.data?.product ?? null);
   const categoryNav = $derived(data?.categoryNav ?? []);
@@ -48,6 +51,14 @@
       depth: [0, 300]
     }
   );
+
+  onMount(() => {
+    const handleOpenFilters = () => {
+      showFilters = true;
+    };
+    window.addEventListener('catalog:open-filters', handleOpenFilters);
+    return () => window.removeEventListener('catalog:open-filters', handleOpenFilters);
+  });
 </script>
 
 {#if isLoading}
@@ -55,12 +66,6 @@
 {/if}
 
 <Breadcrumbs items={breadcrumbs} {product} />
-
-{#if !isCatalogRoot}
-  <div class="mobile-bar">
-    <button onclick={() => (showFilters = true)}>Фильтры</button>
-  </div>
-{/if}
 
 <div class="catalog-layout" class:catalog-layout--root={isCatalogRoot}>
   {#if !isCatalogRoot}
@@ -86,20 +91,6 @@
 {/if}
 
 <style lang="scss">
-  .mobile-bar {
-    display: none;
-    margin-top: 10px;
-    button {
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid #eee;
-      background: #fff;
-      font-weight: 600;
-    }
-    @media (max-width: 1023px) {
-      display: block;
-    }
-  }
   .catalog-layout {
     display: grid;
     margin-top: 20px;

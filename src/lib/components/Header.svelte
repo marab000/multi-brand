@@ -186,7 +186,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<nav class="nav container mx-auto">
+<nav class="nav container mx-auto px-3 lg:px-4">
   <div class="nav__top px-3 lg:px-0">
     <div class="nav__top-spacer"></div>
     <a class="nav__phone" href={'tel:' + phoneHref} aria-label={`Позвонить ${phoneNumber}`}>
@@ -195,7 +195,7 @@
     </a>
   </div>
 
-  <div class="nav__inner h-20 px-4 lg:h-25 lg:px-0">
+  <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo" href="/"><img src={logo1} alt="logo" /></a>
 
     <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
@@ -332,7 +332,7 @@
     </div>
   </div>
 
-  <div class="block flex-1 p-3 lg:hidden">
+  <div class="my-3 block flex-1 lg:hidden">
     {#if showSearch}<ProductSearch />{/if}
   </div>
 </nav>
@@ -346,9 +346,6 @@
       justify-content: space-between;
       min-height: 44px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      @media (max-width: 1023px) {
-        display: none;
-      }
     }
     &__top-spacer {
       flex: 1 1 auto;
