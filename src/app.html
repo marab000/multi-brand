@@ -10,6 +10,7 @@
 	<link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
 	<meta name="apple-mobile-web-app-title" content="Multibrand" />
 	<link rel="manifest" href="/favicon/site.webmanifest" />
+
 	<!--Tawk.to-->
 	<script type="text/javascript">
 		var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
@@ -21,7 +22,24 @@
 			s1.setAttribute('crossorigin', '*');
 			s0.parentNode.insertBefore(s1, s0);
 		})();
+
 	</script>
+	<!-- /Tawk.to-->
+	<!-- Yandex.Metrika counter -->
+	<script type="text/javascript">
+		(function (m, e, t, r, i, k, a) {
+			m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments) };
+			m[i].l = 1 * new Date();
+			for (var j = 0; j < document.scripts.length; j++) { if (document.scripts[j].src === r) { return; } }
+			k = e.createElement(t), a = e.getElementsByTagName(t)[0], k.async = 1, k.src = r, a.parentNode.insertBefore(k, a)
+		})(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=108518016', 'ym');
+
+		ym(108518016, 'init', { ssr: true, webvisor: true, clickmap: true, ecommerce: "dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce: true, trackLinks: true });
+	</script>
+	<noscript>
+		<div><img src="https://mc.yandex.ru/watch/108518016" style="position:absolute; left:-9999px;" alt="" /></div>
+	</noscript>
+	<!-- /Yandex.Metrika counter -->
 	%sveltekit.head%
 </head>
 
