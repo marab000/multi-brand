@@ -26,12 +26,12 @@
 
 <Header {data} />
 
-<main class="container mx-auto min-h-screen bg-gray-50 p-3 lg:p-4 pb-0!">
+<main class="container mx-auto min-h-screen bg-gray-50 p-3 pb-0! lg:p-4">
   {@render children()}
   <Toaster richColors position="top-center" />
 </main>
 
-<footer class="bg-slate-800 px-3 text-gray-300 lg:px-4">
+<footer class="bg-slate-800 px-4 text-gray-300">
   <div class="mx-auto max-w-7xl px-6 py-8 text-sm">© 2026 MULTIBRAND</div>
 </footer>
 

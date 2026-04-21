@@ -5,11 +5,13 @@
   import { toast } from 'svelte-sonner';
   import IMask from 'imask';
   import Modal from '$lib/components/Modal.svelte';
+  import { Minus, Plus, Trash } from 'lucide-svelte';
 
   let name = '';
   let showModal = false;
   let phoneInput: HTMLInputElement;
   let mask: ReturnType<typeof IMask>;
+  let total = 0;
 
   const isValidPhone = () => {
     const digits = mask?.unmaskedValue || '';
@@ -54,7 +56,7 @@
     }
   };
 
-  const total = () => $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  $: total = $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
 
   $: if (phoneInput && !mask) {
     mask = IMask(phoneInput, {
@@ -76,21 +78,34 @@
     <div class="cart flex flex-col lg:grid">
       <div class="items">
         {#each $cart as item}
-          <div class="item">
+          <div class="item flex! justify-around lg:grid!">
             <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
+
             <div class="info">
               <h3>{item.name}</h3>
               <p>{formatPrice(item.price)} ₽</p>
             </div>
-            <div class="qty">
-              <button on:click={() => cart.dec(item.id)}>-</button>
-              <span>{item.qty}</span>
-              <button on:click={() => cart.inc(item.id)}>+</button>
+
+            <div class="qty flex flex-col gap-3">
+              <p class="sum block text-center lg:hidden">{formatPrice(item.price * item.qty)} ₽</p>
+              <div class="flex items-center gap-2">
+                <button on:click={() => cart.dec(item.id)}>
+                  <Minus size="14" strokeWidth="2.5" />
+                </button>
+                <span>{item.qty}</span>
+                <button on:click={() => cart.inc(item.id)}>
+                  <Plus size="14" strokeWidth="2.5" />
+                </button>
+              </div>
             </div>
-            <div class="sum text-[0.9rem] lg:text-[1rem]">
+
+            <p class="sum hidden text-[0.9rem] lg:block lg:text-[1rem]!">
               {formatPrice(item.price * item.qty)} ₽
-            </div>
-            <button class="remove" on:click={() => cart.remove(item.id)}> ✕ </button>
+            </p>
+
+            <button class="remove" on:click={() => cart.remove(item.id)}>
+              <Trash size="14" strokeWidth="2.5" />
+            </button>
           </div>
         {/each}
       </div>
@@ -98,12 +113,12 @@
       <div class="checkout">
         <div class="total">
           <span>Итого:</span>
-          <b>{formatPrice(total())} ₽</b>
+          <b>{formatPrice(total)} ₽</b>
         </div>
 
         <input class="input primary" placeholder="Ваше имя" bind:value={name} />
         <input class="input primary imask-input" placeholder="Телефон" bind:this={phoneInput} />
-        <button class="submit" on:click={submit}>Перейти к оплате</button>
+        <button class="btn primary" on:click={submit}>Перейти к оплате</button>
       </div>
     </div>
   {/if}
@@ -118,9 +133,9 @@
 <style lang="scss">
   .cart-page {
     h1 {
+      margin-bottom: 20px;
       font-size: 28px;
       font-weight: 600;
-      margin-bottom: 20px;
     }
     .empty {
       color: #777;
@@ -140,9 +155,9 @@
           align-items: center;
           gap: 12px;
           padding: 12px;
-          background: #fff;
-          border-radius: 12px;
           border: 1px solid #eee;
+          border-radius: 12px;
+          background: #fff;
           img {
             width: 80px;
             height: 80px;
@@ -159,38 +174,47 @@
             }
           }
           .qty {
-            display: flex;
-            align-items: center;
-            gap: 8px;
             button {
+              display: flex;
+              align-items: center;
+              justify-content: center;
               width: 28px;
               height: 28px;
               border-radius: 6px;
               background: #f3f3f3;
+              text-align: center;
               &:hover {
+                background: #e6e4e4;
                 opacity: 0.9;
               }
             }
           }
-          .sum {
-            font-weight: 600;
-            font-size: 0.9rem;
-          }
           .remove {
-            color: red;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 33px;
+            height: 33px;
+            border: 1px solid rgba(255, 0, 0, 0.25);
+            border-radius: 12px;
+            color: rgba(255, 0, 0, 0.5);
+            &:hover {
+              border: 1px solid rgba(255, 0, 0, 0.5);
+              background: rgba(255, 0, 0, 0.05);
+            }
           }
         }
       }
     }
     .checkout {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      border: 1px solid #eee;
       display: flex;
       flex-direction: column;
       gap: 12px;
       margin-bottom: auto;
+      padding: 16px;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      background: #fff;
       .total {
         display: flex;
         justify-content: space-between;
@@ -198,15 +222,9 @@
       }
       input {
         height: 42px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
         padding: 0 10px;
-      }
-      .submit {
-        background: $green-light;
-        color: white;
-        height: 44px;
-        border-radius: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
       }
     }
   }

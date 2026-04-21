@@ -170,7 +170,7 @@
     @media (max-width: 1023px) {
       min-width: 0;
       width: auto;
-      flex: 0 1 180px;
+      flex: 0 1 186px;
     }
     .sort__trigger {
       display: flex;

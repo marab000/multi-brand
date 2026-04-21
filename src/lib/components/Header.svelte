@@ -186,8 +186,8 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<nav class="nav container mx-auto px-3 lg:px-4">
-  <div class="nav__top px-3 lg:px-0">
+<nav class="nav container mx-auto px-4">
+  <div class="nav__top">
     <div class="nav__top-spacer"></div>
     <a class="nav__phone" href={'tel:' + phoneHref} aria-label={`Позвонить ${phoneNumber}`}>
       <Phone size={18} strokeWidth={2.1} />
