@@ -87,7 +87,9 @@
             </div>
 
             <div class="qty flex flex-col gap-3">
-              <p class="sum block text-center lg:hidden">{formatPrice(item.price * item.qty)} ₽</p>
+              <p class="block text-center font-semibold lg:hidden">
+                {formatPrice(item.price * item.qty)} ₽
+              </p>
               <div class="flex items-center gap-2">
                 <button on:click={() => cart.dec(item.id)}>
                   <Minus size="14" strokeWidth="2.5" />
@@ -99,7 +101,7 @@
               </div>
             </div>
 
-            <p class="sum hidden text-[0.9rem] lg:block lg:text-[1rem]!">
+            <p class="hidden text-[0.9rem] font-semibold lg:block lg:text-[1rem]!">
               {formatPrice(item.price * item.qty)} ₽
             </p>
 

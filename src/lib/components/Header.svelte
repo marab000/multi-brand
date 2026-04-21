@@ -187,8 +187,10 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <nav class="nav container mx-auto px-4">
-  <div class="nav__top">
-    <div class="nav__top-spacer"></div>
+  <div class="nav__top min-h-15 md:min-h-11">
+    <a class="nav__logo flex h-10 sm:hidden" href="/"
+      ><img class="object-contain" src={logo1} alt="logo" /></a
+    >
     <a class="nav__phone" href={'tel:' + phoneHref} aria-label={`Позвонить ${phoneNumber}`}>
       <Phone size={18} strokeWidth={2.1} />
       <span>{phoneNumber}</span>
@@ -196,8 +198,9 @@
   </div>
 
   <div class="nav__inner h-20 lg:h-25">
-    <a class="nav__logo" href="/"><img src={logo1} alt="logo" /></a>
-
+    <a class="nav__logo hidden h-11.5 sm:flex" href="/"
+      ><img class="object-contain" src={logo1} alt="logo" /></a
+    >
     <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
       {#if isMobile}
         <button class="catalog-trigger" type="button" onclick={toggleClick}>
@@ -210,7 +213,7 @@
       {/if}
 
       {#if open && isMobile}
-        <div class="catalog-overlay" onclick={closeCatalog}></div>
+        <button title="Закрыть" class="catalog-overlay" onclick={closeCatalog}></button>
       {/if}
 
       <div class="catalog-dropdown" class:visible={open}>
@@ -344,11 +347,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 44px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    &__top-spacer {
-      flex: 1 1 auto;
     }
     &__phone {
       display: inline-flex;
@@ -358,8 +357,7 @@
       text-decoration: none;
       font-size: 1.05rem;
       font-weight: 700;
-      line-height: 1;
-      white-space: nowrap;
+      margin-left: auto;
       :global(svg) {
         color: $green;
         flex: 0 0 auto;
@@ -374,31 +372,25 @@
       gap: 20px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
-    &__logo {
-      display: flex;
-      align-items: center;
-      img {
-        height: 46px;
-        object-fit: contain;
-      }
-    }
     &__catalog {
       position: relative;
       .catalog-trigger {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 124px;
         height: 42px;
         padding: 0 14px;
         border-radius: 12px;
         text-decoration: none;
         color: #1c1c1c;
+        color: #fff;
         background: transparent;
         transition: background 0.18s ease;
-        &:hover {
-          background: rgba($yellow, 0.08);
-        }
+        background: rgba($green-light, 1);
+        // &:hover {
+        //   box-shadow: 0px 5px 20px 0px #00000044;
+        //   transform: translate(0px, -1px);
+        // }
         &__left {
           display: inline-flex;
           align-items: center;
@@ -470,7 +462,7 @@
         }
       }
       .catalog-close {
-        border: 1px solid rgba($yellow, 0.55);
+        border: 1px solid rgba($green, 0.5);
         border-radius: 10px;
       }
       .tree-parent {
@@ -508,7 +500,7 @@
         }
         &__head {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-columns: minmax(0, 1fr) 35px;
           align-items: start;
           gap: 12px;
           padding: 8px 10px;
