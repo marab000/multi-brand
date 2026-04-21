@@ -258,7 +258,7 @@
   .pagination {
     display: flex;
     gap: 6px;
-    margin-top: 30px;
+    margin: 30px 0;
     justify-content: center;
     flex-wrap: wrap;
     a {
