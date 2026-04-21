@@ -191,7 +191,11 @@
     <a class="nav__logo flex h-10 sm:hidden" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
-    <a class="nav__phone" href={'tel:' + phoneHref} aria-label={`Позвонить ${phoneNumber}`}>
+    <a
+      class="nav__phone whitespace-nowrap"
+      href={'tel:' + phoneHref}
+      aria-label={`Позвонить ${phoneNumber}`}
+    >
       <Phone size={18} strokeWidth={2.1} />
       <span>{phoneNumber}</span>
     </a>
