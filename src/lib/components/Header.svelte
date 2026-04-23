@@ -41,8 +41,8 @@
 
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
-  const phoneNumber = '8 800 201 49 88';
-  const phoneHref = '+78002014988';
+  const phoneNumber = '8 800 101 23 68';
+  const phoneHref = '+78001012368';
 
   let { data } = $props<{
     data?: {
