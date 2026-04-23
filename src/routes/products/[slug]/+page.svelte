@@ -47,22 +47,22 @@
       ? [{ name: p.catalog_root_name, href: `/catalog/${p.catalog_root_slug}` }]
       : []),
     ...(p.catalog_group_name && p.catalog_group_slug && p.catalog_root_slug
-      ? [{ name: p.catalog_group_name, href: `/catalog/${p.catalog_root_slug}/${p.catalog_group_slug}` }]
+      ? [
+          {
+            name: p.catalog_group_name,
+            href: `/catalog/${p.catalog_root_slug}/${p.catalog_group_slug}`
+          }
+        ]
       : []),
     ...(p.catalog_leaf_name && p.catalog_leaf_slug && p.catalog_root_slug && p.catalog_group_slug
-      ? [{ name: p.catalog_leaf_name, href: `/catalog/${p.catalog_root_slug}/${p.catalog_group_slug}/${p.catalog_leaf_slug}` }]
+      ? [
+          {
+            name: p.catalog_leaf_name,
+            href: `/catalog/${p.catalog_root_slug}/${p.catalog_group_slug}/${p.catalog_leaf_slug}`
+          }
+        ]
       : [])
   ];
-
-  const isLink = (name: string) => name === 'Ссылка на сайт производителя';
-  const formatLink = (url: string) => {
-    try {
-      const u = new URL(url);
-      return u.hostname.replace('www.', '');
-    } catch {
-      return url.slice(0, 30) + '...';
-    }
-  };
 
   try {
     const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -70,7 +70,7 @@
     const names = raw?.ДопРеквизитыНаименование || {};
     specs = Object.keys(values)
       .map((k) => ({ name: names[k] || k, value: values[k] }))
-      .filter((s) => s.value);
+      .filter((s) => s.value && s.name !== 'Ссылка на сайт производителя');
   } catch {}
 </script>
 
@@ -80,7 +80,10 @@
 
     <div class="mt-6 grid gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
-        <swiper-container bind:this={mainSwiper} class="aspect-square w-full rounded border bg-white">
+        <swiper-container
+          bind:this={mainSwiper}
+          class="aspect-square w-full rounded border bg-white"
+        >
           {#each p.images as img, i}
             <swiper-slide>
               <img
@@ -107,7 +110,11 @@
                   class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
                   on:click={() => mainSwiper?.swiper?.slideTo(i)}
                 >
-                  <img src={img.url} alt={p.name} class="pointer-events-none h-full w-full object-contain p-1" />
+                  <img
+                    src={img.url}
+                    alt={p.name}
+                    class="pointer-events-none h-full w-full object-contain p-1"
+                  />
                 </button>
               </swiper-slide>
             {/each}
@@ -130,11 +137,9 @@
               <div class="flex items-end gap-2">
                 <span class="whitespace-nowrap text-gray-500">{s.name}</span>
                 <div class="flex-1 border-b border-dashed border-gray-300"></div>
-                {#if isLink(s.name)}
-                  <a href={s.value} target="_blank" class="whitespace-nowrap text-blue-600 hover:underline">{formatLink(s.value)}</a>
-                {:else}
-                  <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap">{s.value}</span>
-                {/if}
+                <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap"
+                  >{s.value}</span
+                >
               </div>
             {/each}
           </div>
@@ -149,13 +154,23 @@
       <button
         on:click={closeZoom}
         class="absolute top-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-xl font-semibold shadow-lg backdrop-blur transition hover:scale-110 hover:bg-white"
-      >✕</button>
+        >✕</button
+      >
       <div class="w-full max-w-5xl">
-        <swiper-container initial-slide={zoomIndex} centered-slides="true" slides-per-view="1" class="w-full">
+        <swiper-container
+          initial-slide={zoomIndex}
+          centered-slides="true"
+          slides-per-view="1"
+          class="w-full"
+        >
           {#each p.images as img}
             <swiper-slide>
               <div class="flex aspect-square w-full items-center justify-center">
-                <img src={img.url} alt={p.name} class="max-h-full max-w-full object-contain select-none" />
+                <img
+                  src={img.url}
+                  alt={p.name}
+                  class="max-h-full max-w-full object-contain select-none"
+                />
               </div>
             </swiper-slide>
           {/each}
