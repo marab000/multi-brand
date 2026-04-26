@@ -5,13 +5,17 @@
   import { toast } from 'svelte-sonner';
   import IMask from 'imask';
   import Modal from '$lib/components/Modal.svelte';
-  import { Minus, Plus, Trash } from 'lucide-svelte';
+  import { Minus, Plus, Trash, FileText } from 'lucide-svelte';
+  import logoUrl from '$lib/assets/logo1.png';
+  import notoRegularUrl from '$lib/assets/fonts/NotoSans-Regular.ttf';
+  import notoBoldUrl from '$lib/assets/fonts/NotoSans-Bold.ttf';
 
   let name = '';
   let showModal = false;
   let phoneInput: HTMLInputElement;
-  let mask: ReturnType<typeof IMask>;
+  let mask: any = null;
   let total = 0;
+  let isExporting = false;
 
   const isValidPhone = () => {
     const digits = mask?.unmaskedValue || '';
@@ -23,19 +27,16 @@
       toast.error('Введите имя');
       return;
     }
-
     if (!mask || !isValidPhone()) {
       toast.error('Введите корректный номер телефона');
       return;
     }
-
     const items = $cart.map((i) => ({
       id: i.id,
       name: i.name,
       price: i.price,
       qty: i.qty
     }));
-
     try {
       await apiFetch(fetch, '/api/orders', {
         method: 'POST',
@@ -46,13 +47,226 @@
         }),
         headers: { 'Content-Type': 'application/json' }
       });
-
       showModal = true;
       cart.clear();
       name = '';
       mask.value = '';
     } catch {
       toast.error('Ошибка при оформлении заказа');
+    }
+  };
+
+  const blobToDataUrl = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(String(reader.result));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  const loadLocalImage = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return await blobToDataUrl(blob);
+    } catch {
+      return null;
+    }
+  };
+
+  const loadFontBase64 = async (url: string) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const dataUrl = await blobToDataUrl(blob);
+    return dataUrl.split(',')[1];
+  };
+
+  const getItemLink = (item: any) => {
+    if (item.url) return item.url;
+    if (item.slug) return `https://multi-brand.online/products/${item.slug}`;
+    return '';
+  };
+
+  const getItemDescription = (item: any) => {
+    const parts: string[] = [];
+    if (item.brand) parts.push(`Бренд: ${item.brand}`);
+    if (item.color) parts.push(`Цвет: ${item.color}`);
+    if (item.material) parts.push(`Материал: ${item.material}`);
+    if (item.guarantee) parts.push(`Гарантия: ${item.guarantee}`);
+    if (item.description) parts.push(String(item.description).trim());
+    return parts.filter(Boolean).join('\n');
+  };
+
+  const splitText = (text: string, maxLength = 70) => {
+    if (!text) return '';
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let current = '';
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word;
+      if (next.length > maxLength) {
+        if (current) lines.push(current);
+        current = word;
+      } else {
+        current = next;
+      }
+    }
+    if (current) lines.push(current);
+    return lines.join('\n');
+  };
+
+  const exportPdf = async () => {
+    if (!$cart.length) {
+      toast.error('Корзина пуста');
+      return;
+    }
+    isExporting = true;
+    try {
+      const [{ default: jsPDF }, autoTableModule, logoDataUrl, notoRegular, notoBold] =
+        await Promise.all([
+          import('jspdf'),
+          import('jspdf-autotable'),
+          loadLocalImage(logoUrl),
+          loadFontBase64(notoRegularUrl),
+          loadFontBase64(notoBoldUrl)
+        ]);
+      const autoTable = autoTableModule.default;
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4'
+      });
+      doc.addFileToVFS('NotoSans-Regular.ttf', notoRegular);
+      doc.addFileToVFS('NotoSans-Bold.ttf', notoBold);
+      doc.addFont('NotoSans-Regular.ttf', 'NotoSans', 'normal');
+      doc.addFont('NotoSans-Bold.ttf', 'NotoSans', 'bold');
+      doc.setFont('NotoSans', 'normal');
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const now = new Date();
+      const fileDate = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
+
+      if (logoDataUrl) {
+        const props = doc.getImageProperties(logoDataUrl);
+        const width = 96;
+        const height = (props.height * width) / props.width;
+        doc.addImage(logoDataUrl, 'PNG', 40, 28, width, height);
+      } else {
+        doc.setFont('NotoSans', 'bold');
+        doc.setFontSize(12);
+        doc.text('Логотип', 40, 50);
+      }
+
+      const contactX = pageWidth - 220;
+      doc.setFontSize(12);
+      doc.setTextColor(20, 20, 20);
+      doc.setFont('NotoSans', 'bold');
+      doc.text('Тел.', contactX, 38);
+      doc.text('e-mail.', contactX, 58);
+      doc.text('Сайт.', contactX, 78);
+      doc.setFont('NotoSans', 'normal');
+      doc.text('8 800 101 23 68', contactX + 48, 38);
+      doc.text('mebeliyer@gmail.com', contactX + 48, 58);
+      doc.setTextColor(29, 78, 216);
+      doc.textWithLink('multi-brand.online', contactX + 48, 78, {
+        url: 'https://multi-brand.online'
+      });
+      const siteWidth = doc.getTextWidth('multi-brand.online');
+      doc.line(contactX + 48, 81, contactX + 48 + siteWidth, 81);
+      doc.setTextColor(30, 30, 30);
+
+      doc.setFont('NotoSans', 'bold');
+      doc.setFontSize(18);
+      doc.text('Коммерческое предложение', 40, 110);
+
+      doc.setFont('NotoSans', 'normal');
+      doc.setFontSize(11);
+      doc.text(`Дата: ${fileDate}`, 40, 130);
+
+      const rows = $cart.map((item) => {
+        const link = getItemLink(item);
+        const description = getItemDescription(item);
+        return [
+          splitText(item.name, 32),
+          `${formatPrice(item.price)} ₽`,
+          String(item.qty),
+          `${formatPrice(item.price * item.qty)} ₽`,
+          splitText(description || 'Описание отсутствует', 40),
+          link || 'Ссылка отсутствует'
+        ];
+      });
+
+      autoTable(doc, {
+        startY: 150,
+        head: [['Название', 'Цена', 'Кол-во', 'Сумма', 'Описание', 'Ссылка']],
+        body: rows,
+        theme: 'grid',
+        margin: { left: 40, right: 40 },
+        styles: {
+          font: 'NotoSans',
+          fontSize: 10,
+          cellPadding: 8,
+          lineColor: [210, 210, 210],
+          lineWidth: 1,
+          textColor: [30, 30, 30],
+          valign: 'middle',
+          overflow: 'linebreak'
+        },
+        headStyles: {
+          fillColor: [245, 245, 245],
+          textColor: [20, 20, 20],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 170 },
+          1: { cellWidth: 80, halign: 'right' },
+          2: { cellWidth: 60, halign: 'center' },
+          3: { cellWidth: 90, halign: 'right' },
+          4: { cellWidth: 210 },
+          5: { cellWidth: 165 }
+        },
+        didParseCell: (data: any) => {
+          if (
+            data.section === 'body' &&
+            data.column.index === 5 &&
+            data.cell.raw !== 'Ссылка отсутствует'
+          ) {
+            data.cell.text = ['Открыть товар'];
+            data.cell.styles.textColor = [29, 78, 216];
+            data.cell.styles.fontStyle = 'normal';
+          }
+        },
+        didDrawCell: (data: any) => {
+          if (data.section !== 'body' || data.column.index !== 5) return;
+          const url = data.cell.raw;
+          if (!url || url === 'Ссылка отсутствует') return;
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url });
+        }
+      });
+
+      const finalY = (doc as any).lastAutoTable?.finalY || 150;
+      doc.setFont('NotoSans', 'bold');
+      doc.setFontSize(14);
+      doc.text(`Итого: ${formatPrice(total)} ₽`, pageWidth - 40, finalY + 30, { align: 'right' });
+
+      doc.setFont('NotoSans', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(30, 30, 30);
+      doc.text(
+        '*Ценовое предложение действует ограниченный срок. Перед оформлением обязательно уточняйте конечную стоимость товаров у менеджера.',
+        40,
+        pageHeight - 34
+      );
+
+      doc.save(`commercial-offer-${fileDate}.pdf`);
+      toast.success('PDF выгружен');
+    } catch (error) {
+      console.error(error);
+      toast.error('Не удалось сформировать PDF');
+    } finally {
+      isExporting = false;
     }
   };
 
@@ -111,16 +325,26 @@
           </div>
         {/each}
       </div>
-
-      <div class="checkout">
-        <div class="total">
-          <span>Итого:</span>
-          <b>{formatPrice(total)} ₽</b>
+      <div>
+        <div class="checkout">
+          <div class="total">
+            <span>Итого:</span>
+            <b>{formatPrice(total)} ₽</b>
+          </div>
+          <input class="input primary" placeholder="Ваше имя" bind:value={name} />
+          <input class="input primary imask-input" placeholder="Телефон" bind:this={phoneInput} />
+          <div class="actions">
+            <button class="btn primary" on:click={submit}>Перейти к оплате</button>
+          </div>
         </div>
-
-        <input class="input primary" placeholder="Ваше имя" bind:value={name} />
-        <input class="input primary imask-input" placeholder="Телефон" bind:this={phoneInput} />
-        <button class="btn primary" on:click={submit}>Перейти к оплате</button>
+        <button
+          class="btn secondary export-btn my-3 ml-auto"
+          on:click={exportPdf}
+          disabled={isExporting}
+        >
+          <FileText size="16" />
+          <span>{isExporting ? 'Формируем PDF...' : 'Скачать в pdf'}</span>
+        </button>
       </div>
     </div>
   {/if}
@@ -222,11 +446,23 @@
         justify-content: space-between;
         font-size: 18px;
       }
-      input {
-        height: 42px;
-        padding: 0 10px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+    .export-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      &:disabled {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+      :global(svg) {
+        stroke: $yellow;
       }
     }
   }

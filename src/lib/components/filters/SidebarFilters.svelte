@@ -194,7 +194,7 @@
     {/if}
   </div>
 
-  <button class="reset-btn" onclick={resetFilters}>Сбросить фильтры</button>
+  <button class="reset-btn lg:mb-8" onclick={resetFilters}>Сбросить фильтры</button>
 </div>
 
 <style lang="scss">

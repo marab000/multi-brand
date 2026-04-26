@@ -51,6 +51,8 @@
 		"fs-extra": "^11.3.3",
 		"imask": "^7.6.1",
 		"imghash": "^1.1.2",
+		"jspdf": "^4.2.1",
+		"jspdf-autotable": "^5.0.7",
 		"lucide-svelte": "^1.0.1",
 		"node-fetch": "^3.3.2",
 		"postgres": "^3.4.8",

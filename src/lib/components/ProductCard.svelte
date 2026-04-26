@@ -17,7 +17,9 @@
       id: product.id,
       name: product.name,
       price: product.price_rrc ?? product.price_ric,
-      image
+      image,
+      slug,
+      description: product.description
     });
   };
 </script>
