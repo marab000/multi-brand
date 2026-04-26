@@ -10,6 +10,7 @@ import {
   getCatalogRoots,
   slugifyCatalogValue
 } from '$lib/server/categories';
+import { normalizePrice } from '$lib/utils/formatPrice';
 
 type MinMax = {
   price: [number, number];
@@ -52,7 +53,6 @@ function buildScopeWhere(
 ) {
   const clauses: string[] = ['price_rrc IS NOT NULL'];
   const values: any[] = [];
-
   if (rootSlug) {
     values.push(rootSlug);
     clauses.push(`catalog_root_slug = $${values.length}`);
@@ -69,7 +69,6 @@ function buildScopeWhere(
     values.push(selectedTypes);
     clauses.push(`TRIM(product_type) = ANY($${values.length}::text[])`);
   }
-
   return {
     where: `WHERE ${clauses.join(' AND ')}`,
     values
@@ -83,12 +82,10 @@ function buildSearchCategoryNav(
 ): CategoryNavItem[] {
   const searchParam = searchValue ? `search=${encodeURIComponent(searchValue)}` : '';
   const items = new Map<string, CategoryNavItem>();
-
   for (const row of rows) {
     if (!row.catalog_root_slug) continue;
     const root = findCatalogRootBySlug(row.catalog_root_slug, filteredRoots);
     if (!root) continue;
-
     if (row.catalog_group_slug) {
       const group = root.groups.find((item) => item.slug === row.catalog_group_slug);
       if (group && !group.isDefault) {
@@ -102,7 +99,6 @@ function buildSearchCategoryNav(
             level: 'group'
           });
         }
-
         if (row.catalog_leaf_slug && !group.isDynamicByProductType) {
           const leaf = group.leaves.find((item) => item.slug === row.catalog_leaf_slug);
           if (leaf) {
@@ -121,7 +117,6 @@ function buildSearchCategoryNav(
       }
     }
   }
-
   return Array.from(items.values()).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 }
 
@@ -131,14 +126,11 @@ export const load: LayoutServerLoad = async ({ url }) => {
   const groupSlug = segments[2] ?? null;
   const leafSlug = segments[3] ?? null;
   const isSearchPage = rootSlug === 'search';
-
   const selectedTypes = url.searchParams
     .getAll('type')
     .map((item) => item.trim())
     .filter(Boolean);
-
   const allRoots = getCatalogRoots();
-
   const availabilityRows = await sql`
     SELECT DISTINCT
       catalog_root_slug AS root_slug,
@@ -148,15 +140,11 @@ export const load: LayoutServerLoad = async ({ url }) => {
     WHERE catalog_root_slug IS NOT NULL
       AND price_rrc IS NOT NULL
   `;
-
   const filteredRoots = filterCatalogRootsByAvailability(allRoots, availabilityRows as any[]);
-
   const currentRoot = isSearchPage ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
   const currentGroup = isSearchPage ? null : findCatalogGroupBySlug(currentRoot, groupSlug);
-
   let products: ProductScopeRow[] = [];
   let categoryNav: CategoryNavItem[] = [];
-
   if (isSearchPage) {
     const filters: CatalogFilters = {
       search: url.searchParams.get('search')?.trim() || undefined,
@@ -177,7 +165,6 @@ export const load: LayoutServerLoad = async ({ url }) => {
         const heightMax = url.searchParams.get('height_max');
         const depthMin = url.searchParams.get('depth_min');
         const depthMax = url.searchParams.get('depth_max');
-
         if (widthMin || widthMax) {
           specs.width = {
             ...(widthMin ? { min: Math.floor(Number(widthMin)) } : {}),
@@ -196,13 +183,10 @@ export const load: LayoutServerLoad = async ({ url }) => {
             ...(depthMax ? { max: Math.ceil(Number(depthMax)) } : {})
           };
         }
-
         return Object.keys(specs).length ? specs : undefined;
       })()
     };
-
     const { whereClause, values } = buildWhere(filters);
-
     products = (await sql.unsafe(
       `
         SELECT
@@ -218,7 +202,6 @@ export const load: LayoutServerLoad = async ({ url }) => {
       `,
       values
     )) as unknown as ProductScopeRow[];
-
     categoryNav = buildSearchCategoryNav(
       products,
       filteredRoots,
@@ -231,7 +214,6 @@ export const load: LayoutServerLoad = async ({ url }) => {
       currentGroup?.isDynamicByProductType ? null : leafSlug,
       selectedTypes
     );
-
     products = (await sql.unsafe(
       `
         SELECT
@@ -247,9 +229,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
       `,
       values
     )) as unknown as ProductScopeRow[];
-
     categoryNav = getCatalogNav(url.pathname, filteredRoots);
-
     if (currentRoot && currentGroup?.isDynamicByProductType) {
       const dynamicTypeRows = await sql.unsafe(
         `
@@ -263,7 +243,6 @@ export const load: LayoutServerLoad = async ({ url }) => {
         `,
         [currentRoot.slug, currentGroup.slug]
       );
-
       categoryNav = dynamicTypeRows
         .map((row: any) => String(row.product_type || '').trim())
         .filter(Boolean)
@@ -275,21 +254,17 @@ export const load: LayoutServerLoad = async ({ url }) => {
         }));
     }
   }
-
   const brands = [...new Set(products.map((p) => p.brand_name?.trim()).filter(Boolean))];
   const colors = [...new Set(products.map((p) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
-
   const prices = products
-    .map((p) => Math.round(Number(p.price_rrc) * 1000))
+    .map((p) => normalizePrice(Number(p.price_rrc)))
     .filter((value) => Number.isFinite(value));
   const priceMax = prices.length ? Math.max(...prices) : 0;
-
   const sizeMap = {
     width: ['Размер (Ширина)', 'Размер (Ширина), см', 'Ширина прибора'],
     height: ['Размер (Высота)', 'Размер (Высота), см', 'Высота прибора'],
     depth: ['Размер (Глубина)', 'Размер (Глубина), см', 'Глубина прибора']
   };
-
   const widths = products
     .map((p) => parseSpecsValue(p.specs, sizeMap.width))
     .filter((v: number | null): v is number => v != null);
@@ -299,14 +274,12 @@ export const load: LayoutServerLoad = async ({ url }) => {
   const depths = products
     .map((p) => parseSpecsValue(p.specs, sizeMap.depth))
     .filter((v: number | null): v is number => v != null);
-
   const minMax: MinMax = {
     price: [0, priceMax],
     width: [0, widths.length ? Math.max(...widths) : 0],
     height: [0, heights.length ? Math.max(...heights) : 0],
     depth: [0, depths.length ? Math.max(...depths) : 0]
   };
-
   return {
     categoryNav,
     typeGroups: [],
