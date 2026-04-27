@@ -1,12 +1,25 @@
 <script lang="ts">
   import ProductSearch from '$lib/components/ProductSearch.svelte';
+  import AuthModal from '$lib/components/AuthModal.svelte';
   import logo1 from '$lib/assets/logo1.png';
   import { cart } from '$lib/stores/cart';
   import { derived } from 'svelte/store';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-  import { Menu, ShoppingCart, Heart, User, Plus, Minus, X, Phone } from 'lucide-svelte';
+  import {
+    Menu,
+    ShoppingCart,
+    Heart,
+    User,
+    UserCheck,
+    CircleUserRound,
+    Plus,
+    Minus,
+    X,
+    Phone
+  } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
+  import { toast } from 'svelte-sonner';
 
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
@@ -17,7 +30,13 @@
     isDefault?: boolean;
   };
   type CatalogRoot = { slug: string; name: string; groups: CatalogGroup[] };
-
+  type AuthUser = {
+    id: string;
+    email: string;
+    phone: string | null;
+    full_name: string;
+    email_verified: boolean;
+  };
   type CatalogMenuRoot = {
     slug: string;
     name: string;
@@ -26,29 +45,17 @@
       slug: string;
       name: string;
       href: string;
-      leaves: {
-        title: string;
-        href: string;
-      }[];
+      leaves: { title: string; href: string }[];
     }[];
   };
-
-  type CatalogParent = {
-    slug: string;
-    name: string;
-    items: CatalogMenuRoot[];
-  };
+  type CatalogParent = { slug: string; name: string; items: CatalogMenuRoot[] };
 
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
   const phoneNumber = '8 800 101 23 68';
   const phoneHref = '+78001012368';
 
-  let { data } = $props<{
-    data?: {
-      catalogRoots?: CatalogRoot[];
-    };
-  }>();
+  let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null } }>();
 
   let open = $state(false);
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -57,9 +64,13 @@
   let showSearch = $state(false);
   let openRootSlug = $state<string | null>(null);
   let expandedGroupLeaves = $state<Record<string, boolean>>({});
+  let authOpen = $state(false);
+  let authMode = $state<'login' | 'register'>('login');
+  let userMenuOpen = $state(false);
 
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
   const catalogRoots = $derived((data?.catalogRoots ?? []) as CatalogRoot[]);
+  const user = $derived(data?.user ?? null);
 
   function buildRoot(root: CatalogRoot): CatalogMenuRoot | null {
     const groups = root.groups
@@ -76,20 +87,12 @@
           .filter((leaf) => leaf.title && leaf.href)
       }))
       .filter((group) => group.leaves.length > 0);
-
     if (!groups.length) return null;
-
-    return {
-      slug: root.slug,
-      name: root.name,
-      href: `/catalog/${root.slug}`,
-      groups
-    };
+    return { slug: root.slug, name: root.name, href: `/catalog/${root.slug}`, groups };
   }
 
   const catalogParents = $derived.by(() => {
     const menuRoots = catalogRoots.map(buildRoot).filter(Boolean) as CatalogMenuRoot[];
-
     const groups: CatalogParent[] = [
       {
         slug: 'bytovaya-tehnika',
@@ -123,7 +126,6 @@
         items: menuRoots.filter((root) => root.name === 'Профессиональная техника')
       }
     ];
-
     return groups.filter((group) => group.items.length > 0);
   });
 
@@ -178,14 +180,29 @@
   }
 
   function toggleGroupLeaves(key: string) {
-    expandedGroupLeaves = {
-      ...expandedGroupLeaves,
-      [key]: !expandedGroupLeaves[key]
-    };
+    expandedGroupLeaves = { ...expandedGroupLeaves, [key]: !expandedGroupLeaves[key] };
+  }
+
+  function handleUserClick() {
+    if (!user) {
+      authMode = 'login';
+      authOpen = true;
+      return;
+    }
+    userMenuOpen = !userMenuOpen;
+  }
+
+  async function logout() {
+    const res = await fetch('/api/auth/logout', { method: 'POST' });
+    if (!res.ok) {
+      toast.error('Не удалось выйти');
+      return;
+    }
+    toast.success('Вы вышли');
+    location.reload();
   }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <nav class="nav container mx-auto px-4">
   <div class="nav__top min-h-15 md:min-h-11">
     <a class="nav__logo flex h-10 sm:hidden" href="/"
@@ -200,26 +217,23 @@
       <span>{phoneNumber}</span>
     </a>
   </div>
-
   <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo hidden h-11.5 sm:flex" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
       {#if isMobile}
-        <button class="catalog-trigger" type="button" onclick={toggleClick}>
-          <span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span>
-        </button>
+        <button class="catalog-trigger" type="button" onclick={toggleClick}
+          ><span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span></button
+        >
       {:else}
-        <a class="catalog-trigger" href="/catalog">
-          <span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span>
-        </a>
+        <a class="catalog-trigger" href="/catalog"
+          ><span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span></a
+        >
       {/if}
-
-      {#if open && isMobile}
-        <button title="Закрыть" class="catalog-overlay" onclick={closeCatalog}></button>
-      {/if}
-
+      {#if open && isMobile}<button title="Закрыть" class="catalog-overlay" onclick={closeCatalog}
+        ></button>{/if}
       <div class="catalog-dropdown" class:visible={open}>
         {#if open && isMobile}
           <div class="catalog-mobile-head">
@@ -228,20 +242,14 @@
               type="button"
               class="catalog-close"
               onclick={closeCatalog}
-              aria-label="Закрыть каталог"
+              aria-label="Закрыть каталог"><X size={18} strokeWidth={2.25} /></button
             >
-              <X size={18} strokeWidth={2.25} />
-            </button>
           </div>
         {/if}
-
         <div class="catalog-tree">
           {#each catalogParents as parent}
             <section class="tree-parent">
-              <div class="tree-parent__head">
-                <p class="tree-parent__title">{parent.name}</p>
-              </div>
-
+              <div class="tree-parent__head"><p class="tree-parent__title">{parent.name}</p></div>
               <div class="tree-parent__accordion">
                 {#each parent.items as root}
                   <article
@@ -253,10 +261,8 @@
                         <a
                           class="accordion-item__title"
                           href={root.href}
-                          onclick={isMobile ? closeCatalog : undefined}
+                          onclick={isMobile ? closeCatalog : undefined}>{root.name}</a
                         >
-                          {root.name}
-                        </a>
                       </div>
                       {#if root.groups.length > 0}
                         <div class="accordion-item__aside">
@@ -268,17 +274,15 @@
                             aria-label="Показать группы"
                           >
                             <div class="toggle__circle">
-                              {#if openRootSlug === root.slug}
-                                <Minus size={14} strokeWidth={2.25} />
-                              {:else}
-                                <Plus size={14} strokeWidth={2.25} />
-                              {/if}
+                              {#if openRootSlug === root.slug}<Minus
+                                  size={14}
+                                  strokeWidth={2.25}
+                                />{:else}<Plus size={14} strokeWidth={2.25} />{/if}
                             </div>
                           </button>
                         </div>
                       {/if}
                     </div>
-
                     {#if openRootSlug === root.slug && root.groups.length > 0}
                       <div class="accordion-item__body" transition:slide={slideTransition}>
                         {#each root.groups as group}
@@ -287,19 +291,15 @@
                             <a
                               class="group-block__title"
                               href={group.href}
-                              onclick={isMobile ? closeCatalog : undefined}
+                              onclick={isMobile ? closeCatalog : undefined}>{group.name}</a
                             >
-                              {group.name}
-                            </a>
-
                             <div class="group-block__leaves">
                               {#each expandedGroupLeaves[groupKey] ? group.leaves : group.leaves.slice(0, LEAVES_PREVIEW_LIMIT) as leaf}
-                                <a href={leaf.href} onclick={isMobile ? closeCatalog : undefined}>
-                                  {leaf.title}
-                                </a>
+                                <a href={leaf.href} onclick={isMobile ? closeCatalog : undefined}
+                                  >{leaf.title}</a
+                                >
                               {/each}
                             </div>
-
                             {#if group.leaves.length > LEAVES_PREVIEW_LIMIT}
                               <div class="group-block__footer">
                                 <button
@@ -307,11 +307,10 @@
                                   type="button"
                                   onclick={() => toggleGroupLeaves(groupKey)}
                                   aria-expanded={expandedGroupLeaves[groupKey] ? 'true' : 'false'}
-                                >
-                                  {expandedGroupLeaves[groupKey]
+                                  >{expandedGroupLeaves[groupKey]
                                     ? 'Скрыть'
-                                    : `Ещё ${group.leaves.length - LEAVES_PREVIEW_LIMIT}`}
-                                </button>
+                                    : `Ещё ${group.leaves.length - LEAVES_PREVIEW_LIMIT}`}</button
+                                >
                               </div>
                             {/if}
                           </div>
@@ -326,11 +325,24 @@
         </div>
       </div>
     </div>
-
     <div class="hidden flex-1 lg:block"><ProductSearch /></div>
-
     <div class="nav__actions ml-auto lg:ml-0">
-      <button title="" class="disabled" style="cursor: default;"><User size="18" /></button>
+      <div class="user-menu-wrap">
+        <button title={user ? user.full_name : 'Войти'} type="button" onclick={handleUserClick}>
+          {#if user}
+            <CircleUserRound size="18" />
+          {:else}
+            <User size="18" />
+          {/if}
+        </button>
+        {#if user && userMenuOpen}
+          <div class="user-menu">
+            <a href="/user/info" onclick={() => (userMenuOpen = false)}>Личный кабинет</a>
+            <a href="/user/orders" onclick={() => (userMenuOpen = false)}>Мои заказы</a>
+            <button type="button" onclick={logout}>Выйти</button>
+          </div>
+        {/if}
+      </div>
       <button title="" class="disabled" style="cursor: default;"><Heart size="18" /></button>
       <a href="/cart" class="relative">
         <ShoppingCart size="18" />
@@ -338,11 +350,17 @@
       </a>
     </div>
   </div>
-
   <div class="my-3 block flex-1 lg:hidden">
     {#if showSearch}<ProductSearch />{/if}
   </div>
 </nav>
+{#if user && userMenuOpen}<button
+    class="user-menu-backdrop"
+    type="button"
+    aria-label="Закрыть меню"
+    onclick={() => (userMenuOpen = false)}
+  ></button>{/if}
+<AuthModal bind:open={authOpen} bind:mode={authMode} />
 
 <style lang="scss">
   .nav {
@@ -386,15 +404,9 @@
         padding: 0 14px;
         border-radius: 12px;
         text-decoration: none;
-        color: #1c1c1c;
         color: #fff;
-        background: transparent;
-        transition: background 0.18s ease;
         background: rgba($green-light, 1);
-        // &:hover {
-        //   box-shadow: 0px 5px 20px 0px #00000044;
-        //   transform: translate(0px, -1px);
-        // }
+        transition: background 0.18s ease;
         &__left {
           display: inline-flex;
           align-items: center;
@@ -690,6 +702,44 @@
         }
       }
     }
+  }
+  .user-menu-wrap {
+    position: relative;
+  }
+  .user-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 1002;
+    min-width: 190px;
+    padding: 8px;
+    border: 1px solid rgba($green, 0.14);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.12);
+    a,
+    button {
+      width: 100%;
+      height: 40px;
+      justify-content: flex-start;
+      padding: 0 12px;
+      border-radius: 10px;
+      background: transparent;
+      color: #202020;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      &:hover {
+        background: rgba($green, 0.06) !important;
+        color: #202020 !important;
+      }
+    }
+  }
+  .user-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1001;
+    background: transparent;
   }
   .badge {
     position: absolute;

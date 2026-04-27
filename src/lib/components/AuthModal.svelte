@@ -1,122 +1,206 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onDestroy, tick } from 'svelte';
   import { toast } from 'svelte-sonner';
+  import IMask from 'imask';
 
   export let open = false;
   export let mode: 'login' | 'register' = 'login';
 
-  const dispatch = createEventDispatcher();
+  const dispatch = createEventDispatcher<{ success: void; close: void }>();
 
+  let login = '';
   let email = '';
-  let phone = '';
   let password = '';
   let fullName = '';
   let loading = false;
+  let phoneInput: HTMLInputElement;
+  let mask: any = null;
+
+  $: if (open && mode === 'register') initPhoneMask();
+
+  async function initPhoneMask() {
+    await tick();
+    if (phoneInput && !mask) {
+      mask = IMask(phoneInput, {
+        mask: '000 000 00 00',
+        lazy: true
+      });
+    }
+  }
+
+  function destroyPhoneMask() {
+    if (!mask) return;
+    mask.destroy();
+    mask = null;
+  }
+
+  function close() {
+    open = false;
+    destroyPhoneMask();
+    dispatch('close');
+  }
+
+  function switchMode(next: 'login' | 'register') {
+    mode = next;
+    password = '';
+    if (next === 'login') destroyPhoneMask();
+  }
+
+  function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  }
+
+  function isValidPhone() {
+    const digits = mask?.unmaskedValue || '';
+    return digits.length === 10 && digits.startsWith('9');
+  }
 
   async function handleAuth() {
+    if (loading) return;
+    if (mode === 'login') {
+      if (!login.trim() || !password) {
+        toast.error('Введите email или телефон и пароль');
+        return;
+      }
+    }
+    if (mode === 'register') {
+      if (!fullName.trim() || !email.trim() || !password) {
+        toast.error('Заполни все поля');
+        return;
+      }
+      if (!isValidEmail(email)) {
+        toast.error('Введите корректный email');
+        return;
+      }
+      if (!mask || !isValidPhone()) {
+        toast.error('Введите корректный номер телефона');
+        return;
+      }
+      if (password.length < 6) {
+        toast.error('Пароль должен быть минимум 6 символов');
+        return;
+      }
+    }
     loading = true;
-
     try {
-      // ================= LOGIN =================
-      if (mode === 'login') {
-        const loginValue = email.trim(); // тут email или телефон
-
-        // если ввели телефон — ищем email
-        let loginEmail = loginValue;
-
-        // if (/^\+?\d+$/.test(loginValue)) {
-        //   const { data } = await supabase
-        //     .from('users')
-        //     .select('email')
-        //     .eq('phone_number', loginValue)
-        //     .single();
-
-        //   if (!data?.email) {
-        //     toast.error('Телефон не найден');
-        //     return;
-        //   }
-
-        //   loginEmail = data.email;
-        // }
-
-        // const { error } = await supabase.auth.signInWithPassword({
-        //   email: loginEmail,
-        //   password
-        // });
-
-        // if (error) throw error;
-
-        toast.success('Вы вошли');
-      }
-
-      // ================= REGISTER =================
-      if (mode === 'register') {
-        if (!fullName || !email || !phone || !password) {
-          toast.error('Заполни все поля');
-          return;
-        }
-
-        // const { data, error } = await supabase.auth.signUp({
-        //   email,
-        //   password,
-        //   phone,
-        //   options: {
-        //     data: {
-        //       full_name: fullName,
-        //       phone_number: phone
-        //     }
-        //   }
-        // });
-
-        // if (error) throw error;
-
-        toast.success('Проверь почту для подтверждения');
-      }
-
+      const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+      const payload =
+        mode === 'login'
+          ? { login, password }
+          : {
+              fullName: fullName.trim(),
+              email: email.trim(),
+              phone: `+7${mask.unmaskedValue}`,
+              password
+            };
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Ошибка авторизации');
+      toast.success(mode === 'login' ? 'Вы вошли' : 'Вы зарегистрировались');
       dispatch('success');
-      open = false;
+      close();
+      location.reload();
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(e.message || 'Ошибка авторизации');
     } finally {
       loading = false;
     }
   }
+
+  onDestroy(destroyPhoneMask);
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <button class="absolute h-full w-full opacity-0" on:click={() => (open = false)}>''</button>
-    <div class="relative w-96 rounded-xl bg-white p-6">
-      <h2 class="mb-4 text-xl font-bold">
-        {mode === 'login' ? 'Вход' : 'Регистрация'}
-      </h2>
-
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="auth-overlay" on:click={close}>
+    <div class="auth-modal" on:click|stopPropagation>
+      <button class="auth-close" type="button" on:click={close}>×</button>
+      <h2>{mode === 'login' ? 'Вход' : 'Регистрация'}</h2>
       {#if mode === 'register'}
-        <input class="mb-2 w-full border p-2" placeholder="Имя" bind:value={fullName} />
-        <input class="mb-2 w-full border p-2" placeholder="Телефон" bind:value={phone} />
-        <input class="mb-2 w-full border p-2" placeholder="Email" bind:value={email} />
+        <input class="input primary" placeholder="Имя" bind:value={fullName} autocomplete="name" />
+        <div class="with-prefix">
+          <span class="prefix">+7</span>
+          <input
+            class="input primary"
+            placeholder="999 123 45 67"
+            bind:this={phoneInput}
+            autocomplete="tel"
+            inputmode="numeric"
+          />
+        </div>
+        <input class="input primary" placeholder="Email" bind:value={email} autocomplete="email" />
+      {:else}
+        <input class="input primary" placeholder="Email" bind:value={login} autocomplete="email" />
       {/if}
-
-      {#if mode === 'login'}
-        <input class="mb-2 w-full border p-2" placeholder="Email или телефон" bind:value={email} />
-      {/if}
-
       <input
-        class="mb-2 w-full border p-2"
+        class="input primary"
         type="password"
         placeholder="Пароль"
         bind:value={password}
+        autocomplete={mode === 'login' ? 'current-password' : 'new-password'}
+        on:keydown={(e) => e.key === 'Enter' && handleAuth()}
       />
-
-      <button
-        class="w-full rounded bg-black px-4 py-2 text-white"
-        disabled={loading}
-        on:click={handleAuth}
+      <button class="btn primary" type="button" disabled={loading} on:click={handleAuth}
+        >{loading ? '...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}</button
       >
-        {loading ? '...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
-      </button>
-
-      <button class="mt-2 text-sm" on:click={() => (open = false)}>Закрыть</button>
+      {#if mode === 'login'}
+        <button
+          class="btn secondary-with-border"
+          type="button"
+          on:click={() => switchMode('register')}>Нет аккаунта? Зарегистрироваться</button
+        >
+      {:else}
+        <button class="btn secondary-with-border" type="button" on:click={() => switchMode('login')}
+          >Уже есть аккаунт? Войти</button
+        >
+      {/if}
     </div>
   </div>
 {/if}
+
+<style lang="scss">
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.45);
+  }
+  .auth-modal {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
+    h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 700;
+    }
+  }
+  .auth-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+  }
+</style>

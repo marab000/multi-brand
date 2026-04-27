@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { PageData } from './$types';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
   import { apiFetch } from '$lib/api';
@@ -6,16 +7,39 @@
   import IMask from 'imask';
   import Modal from '$lib/components/Modal.svelte';
   import { Minus, Plus, Trash, FileText } from 'lucide-svelte';
+  import { onMount, tick } from 'svelte';
   import logoUrl from '$lib/assets/logo1.png';
   import notoRegularUrl from '$lib/assets/fonts/NotoSans-Regular.ttf';
   import notoBoldUrl from '$lib/assets/fonts/NotoSans-Bold.ttf';
 
-  let name = '';
+  export let data: PageData;
+
+  let name = data.user?.full_name ?? '';
   let showModal = false;
   let phoneInput: HTMLInputElement;
   let mask: any = null;
   let total = 0;
   let isExporting = false;
+
+  const getLocalPhoneDigits = (phone?: string | null) => {
+    const digits = String(phone ?? '').replace(/\D/g, '');
+    if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8')))
+      return digits.slice(1);
+    if (digits.length > 10) return digits.slice(-10);
+    return digits;
+  };
+
+  onMount(async () => {
+    await tick();
+    if (phoneInput && !mask) {
+      mask = IMask(phoneInput, {
+        mask: '000 000 00 00',
+        lazy: true
+      });
+    }
+    const digits = getLocalPhoneDigits(data.user?.phone);
+    if (digits && mask) mask.unmaskedValue = digits;
+  });
 
   const isValidPhone = () => {
     const digits = mask?.unmaskedValue || '';
@@ -49,8 +73,10 @@
       });
       showModal = true;
       cart.clear();
-      name = '';
-      mask.value = '';
+      if (!data.user) {
+        name = '';
+        mask.value = '';
+      }
     } catch {
       toast.error('Ошибка при оформлении заказа');
     }
@@ -272,14 +298,6 @@
 
   $: total = $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
 
-  $: if (phoneInput && !mask) {
-    mask = IMask(phoneInput, {
-      mask: '+7 000 000 00 00',
-      lazy: false,
-      placeholderChar: ' '
-    });
-  }
-
   const closeModal = () => (showModal = false);
 </script>
 
@@ -289,7 +307,7 @@
   {#if $cart.length === 0}
     <p class="empty">Корзина пуста</p>
   {:else}
-    <div class="cart flex flex-col lg:grid">
+    <div class="cart flex flex-col gap-3 lg:grid lg:gap-5">
       <div class="items">
         {#each $cart as item}
           <div class="item flex! justify-around lg:grid!">
@@ -332,16 +350,21 @@
             <b>{formatPrice(total)} ₽</b>
           </div>
           <input class="input primary" placeholder="Ваше имя" bind:value={name} />
-          <input class="input primary imask-input" placeholder="Телефон" bind:this={phoneInput} />
+          <div class="with-prefix">
+            <span class="prefix">+7</span>
+            <input
+              class="input primary"
+              placeholder="999 123 45 67"
+              bind:this={phoneInput}
+              autocomplete="tel"
+              inputmode="numeric"
+            />
+          </div>
           <div class="actions">
             <button class="btn primary" on:click={submit}>Перейти к оплате</button>
           </div>
         </div>
-        <button
-          class="btn secondary export-btn my-3 ml-auto"
-          on:click={exportPdf}
-          disabled={isExporting}
-        >
+        <button class="btn export-btn my-3 ml-auto" on:click={exportPdf} disabled={isExporting}>
           <FileText size="16" />
           <span>{isExporting ? 'Формируем PDF...' : 'Скачать в pdf'}</span>
         </button>
@@ -368,7 +391,6 @@
     }
     .cart {
       grid-template-columns: 1fr 320px;
-      gap: 30px;
       .items {
         display: flex;
         flex-direction: column;
@@ -457,12 +479,16 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      border: 1px solid transparent;
       &:disabled {
         opacity: 0.7;
         pointer-events: none;
       }
       :global(svg) {
         stroke: $yellow;
+      }
+      &:hover {
+        border: 1px solid $yellow;
       }
     }
   }

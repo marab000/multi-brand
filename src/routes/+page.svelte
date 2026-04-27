@@ -81,8 +81,7 @@
   ];
 </script>
 
-<section class="mx-auto">
-  <h1 class="mb-4 text-3xl font-bold">Главная страница</h1>
+<section class="mx-auto mt-0! overflow-hidden rounded-2xl">
   <div class="block lg:hidden">
     <Slider imgPaths={mobileImages} />
   </div>

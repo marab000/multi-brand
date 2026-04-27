@@ -2,7 +2,7 @@ import type { LayoutServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { filterCatalogRootsByAvailability, getCatalogRoots } from '$lib/server/categories';
 
-export const load: LayoutServerLoad = async () => {
+export const load: LayoutServerLoad = async ({ locals }) => {
   const availabilityRows = await sql`
     SELECT DISTINCT
       catalog_root_slug AS root_slug,
@@ -19,6 +19,7 @@ export const load: LayoutServerLoad = async () => {
   );
 
   return {
-    catalogRoots: filteredRoots
+    catalogRoots: filteredRoots,
+    user: locals.user
   };
 };

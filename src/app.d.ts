@@ -1,13 +1,18 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
-import type { User, Session } from 'lucia';
 declare global {
   namespace App {
     interface Locals {
-      user: User | null;
-      session: Session | null;
+      user: {
+        id: number;
+        email: string;
+        phone: string | null;
+        full_name: string;
+        email_verified: boolean;
+      } | null;
+      session: {
+        id: string;
+        expires_at: string;
+      } | null;
     }
   }
 }
-
 export {};
