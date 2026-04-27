@@ -4,9 +4,8 @@
   // export let data: LayoutData;
 </script>
 
-<div class="user container mx-auto px-4">
+<div class="user container mx-auto">
   <aside class="user__nav">
-    <h1>Профиль</h1>
     <a href="/user/info" class:active={$page.url.pathname === '/user/info'}>Мои данные</a>
     <a href="/user/orders" class:active={$page.url.pathname === '/user/orders'}>Мои заказы</a>
   </aside>
@@ -20,7 +19,6 @@
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     gap: 24px;
-    padding-top: 28px;
     padding-bottom: 40px;
     &__nav {
       display: flex;
@@ -47,8 +45,6 @@
           border-color: rgba($yellow, 0.5);
         }
         &.active {
-          // background: rgba($green, 0.12);
-          // color: $green;
           border-color: $yellow;
         }
       }
