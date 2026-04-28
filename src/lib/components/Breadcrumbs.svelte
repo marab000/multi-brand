@@ -3,7 +3,6 @@
     items?: { name: string; href?: string }[];
     product?: string | null;
   }>();
-	console.log(items);
 </script>
 
 {#if items.length || product}

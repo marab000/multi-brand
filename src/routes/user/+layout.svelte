@@ -1,51 +1,63 @@
 <script lang="ts">
-  // import type { LayoutData } from './$types';
   import { page } from '$app/stores';
-  // export let data: LayoutData;
+
+  const links = [
+    { href: '/user/orders', label: 'Мои заказы' },
+    { href: '/user/info', label: 'Аккаунт' }
+  ];
 </script>
 
-<div class="user container mx-auto">
-  <aside class="user__nav">
-    <a href="/user/info" class:active={$page.url.pathname === '/user/info'}>Мои данные</a>
-    <a href="/user/orders" class:active={$page.url.pathname === '/user/orders'}>Мои заказы</a>
-  </aside>
-  <section class="user__content">
+<div class="user">
+  <div class="user__nav-wrap">
+    <nav class="user__nav container mx-auto" aria-label="Навигация личного кабинета">
+      {#each links as link}
+        <a href={link.href} class:active={$page.url.pathname === link.href}>{link.label}</a>
+      {/each}
+    </nav>
+  </div>
+  <section class="user__content container mx-auto">
     <slot />
   </section>
 </div>
 
 <style lang="scss">
   .user {
-    display: grid;
-    grid-template-columns: 240px minmax(0, 1fr);
-    gap: 24px;
     padding-bottom: 40px;
+    &__nav-wrap {
+      border-bottom: 1px solid #eee;
+    }
     &__nav {
       display: flex;
-      flex-direction: column;
-      align-self: flex-start;
-      gap: 8px;
-      padding: 16px;
-      border: 1px solid #eee;
-      border-radius: 14px;
-      background: #fff;
-      h1 {
-        margin: 0 0 6px;
-        font-size: 20px;
-        font-weight: 700;
-      }
+      align-items: center;
+      gap: 26px;
       a {
-        padding: 10px 12px;
-        border-radius: 10px;
-        text-decoration: none;
+        position: relative;
+        flex: 0 0 auto;
+        padding: 4px 0 18px;
         color: #202020;
-        background: rgba($green, 0.04);
-        border: 1px solid transparent;
-        &:hover:not(.active) {
-          border-color: rgba($yellow, 0.5);
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 0.2s ease;
+        &::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -1px;
+          height: 3px;
+          border-radius: 999px 999px 0 0;
+          background: $green-soft;
+          transform: scaleX(0);
+          transform-origin: center;
+          transition: transform 0.22s ease;
         }
+        &:hover,
         &.active {
-          border-color: $yellow;
+          color: $green-soft;
+        }
+        &.active::after {
+          transform: scaleX(1);
         }
       }
     }
@@ -53,7 +65,13 @@
       min-width: 0;
     }
     @media (max-width: 767px) {
-      grid-template-columns: 1fr;
+      &__nav {
+        gap: 20px;
+        a {
+          padding: 16px 0 15px;
+          font-size: 14px;
+        }
+      }
     }
   }
 </style>

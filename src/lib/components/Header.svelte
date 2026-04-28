@@ -11,7 +11,6 @@
     ShoppingCart,
     Heart,
     User,
-    UserCheck,
     CircleUserRound,
     Plus,
     Minus,
@@ -20,6 +19,14 @@
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
+  import {
+    SITE_EMAIL,
+    SITE_PHONE,
+    SITE_URL,
+    SITE_PHONE_MOBILE,
+    SITE_URL_NAME,
+    SITE_PHONE_HREF
+  } from '$lib/config/site';
 
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
@@ -52,8 +59,8 @@
 
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
-  const phoneNumber = '8 800 101 23 68';
-  const phoneHref = '+78001012368';
+  const phoneNumber = SITE_PHONE;
+  const phoneHref = SITE_PHONE_HREF;
 
   let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null } }>();
 
@@ -337,8 +344,8 @@
         </button>
         {#if user && userMenuOpen}
           <div class="user-menu">
-            <a href="/user/info" onclick={() => (userMenuOpen = false)}>Личный кабинет</a>
             <a href="/user/orders" onclick={() => (userMenuOpen = false)}>Мои заказы</a>
+            <a href="/user/info" onclick={() => (userMenuOpen = false)}>Аккаунт</a>
             <button type="button" onclick={logout}>Выйти</button>
           </div>
         {/if}

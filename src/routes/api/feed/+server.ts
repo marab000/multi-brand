@@ -35,8 +35,6 @@ export const GET: RequestHandler = async () => {
     group by p.id
   `;
   const filtered = products.filter(isProductAllowedForFeed);
-  console.log('[feed] products total:', products.length);
-  console.log('[feed] products after filters:', filtered.length);
   const header = [
     'ID',
     'URL',

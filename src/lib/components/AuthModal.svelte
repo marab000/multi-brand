@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher, onDestroy, tick } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import { toast } from 'svelte-sonner';
-  import IMask from 'imask';
+  import { phoneMask } from '$lib/actions/phoneMask';
+  import { isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
+  import { goto } from '$app/navigation';
 
   export let open = false;
   export let mode: 'login' | 'register' = 'login';
@@ -10,56 +12,30 @@
 
   let login = '';
   let email = '';
+  let phone = '';
   let password = '';
   let fullName = '';
   let loading = false;
-  let phoneInput: HTMLInputElement;
-  let mask: any = null;
-
-  $: if (open && mode === 'register') initPhoneMask();
-
-  async function initPhoneMask() {
-    await tick();
-    if (phoneInput && !mask) {
-      mask = IMask(phoneInput, {
-        mask: '000 000 00 00',
-        lazy: true
-      });
-    }
-  }
-
-  function destroyPhoneMask() {
-    if (!mask) return;
-    mask.destroy();
-    mask = null;
-  }
 
   function close() {
     open = false;
-    destroyPhoneMask();
     dispatch('close');
   }
 
   function switchMode(next: 'login' | 'register') {
     mode = next;
     password = '';
-    if (next === 'login') destroyPhoneMask();
   }
 
   function isValidEmail(value: string) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
   }
 
-  function isValidPhone() {
-    const digits = mask?.unmaskedValue || '';
-    return digits.length === 10 && digits.startsWith('9');
-  }
-
   async function handleAuth() {
     if (loading) return;
     if (mode === 'login') {
       if (!login.trim() || !password) {
-        toast.error('Введите email или телефон и пароль');
+        toast.error('Введите email и пароль');
         return;
       }
     }
@@ -72,7 +48,7 @@
         toast.error('Введите корректный email');
         return;
       }
-      if (!mask || !isValidPhone()) {
+      if (!isValidRuPhone(phone)) {
         toast.error('Введите корректный номер телефона');
         return;
       }
@@ -90,7 +66,7 @@
           : {
               fullName: fullName.trim(),
               email: email.trim(),
-              phone: `+7${mask.unmaskedValue}`,
+              phone: normalizeRuPhone(phone),
               password
             };
       const res = await fetch(url, {
@@ -100,9 +76,15 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.message || 'Ошибка авторизации');
+
       toast.success(mode === 'login' ? 'Вы вошли' : 'Вы зарегистрировались');
       dispatch('success');
       close();
+      if (mode === 'register') {
+        await goto('/verify-email?sent=1');
+        location.reload();
+        return;
+      }
       location.reload();
     } catch (e: any) {
       toast.error(e.message || 'Ошибка авторизации');
@@ -110,8 +92,6 @@
       loading = false;
     }
   }
-
-  onDestroy(destroyPhoneMask);
 </script>
 
 {#if open}
@@ -128,9 +108,10 @@
           <input
             class="input primary"
             placeholder="999 123 45 67"
-            bind:this={phoneInput}
             autocomplete="tel"
             inputmode="numeric"
+            value={phone}
+            use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
           />
         </div>
         <input class="input primary" placeholder="Email" bind:value={email} autocomplete="email" />

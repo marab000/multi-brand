@@ -4,54 +4,35 @@
   import { formatPrice } from '$lib/utils/formatPrice';
   import { apiFetch } from '$lib/api';
   import { toast } from 'svelte-sonner';
-  import IMask from 'imask';
   import Modal from '$lib/components/Modal.svelte';
   import { Minus, Plus, Trash, FileText } from 'lucide-svelte';
-  import { onMount, tick } from 'svelte';
+  import { phoneMask } from '$lib/actions/phoneMask';
+  import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   import logoUrl from '$lib/assets/logo1.png';
   import notoRegularUrl from '$lib/assets/fonts/NotoSans-Regular.ttf';
   import notoBoldUrl from '$lib/assets/fonts/NotoSans-Bold.ttf';
+  import {
+    SITE_EMAIL,
+    SITE_PHONE,
+    SITE_URL,
+    SITE_PHONE_MOBILE,
+    SITE_URL_NAME
+  } from '$lib/config/site';
 
   export let data: PageData;
 
   let name = data.user?.full_name ?? '';
+  let phone = getPhoneLocalDigits(data.user?.phone);
   let showModal = false;
-  let phoneInput: HTMLInputElement;
-  let mask: any = null;
   let total = 0;
   let isExporting = false;
-
-  const getLocalPhoneDigits = (phone?: string | null) => {
-    const digits = String(phone ?? '').replace(/\D/g, '');
-    if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8')))
-      return digits.slice(1);
-    if (digits.length > 10) return digits.slice(-10);
-    return digits;
-  };
-
-  onMount(async () => {
-    await tick();
-    if (phoneInput && !mask) {
-      mask = IMask(phoneInput, {
-        mask: '000 000 00 00',
-        lazy: true
-      });
-    }
-    const digits = getLocalPhoneDigits(data.user?.phone);
-    if (digits && mask) mask.unmaskedValue = digits;
-  });
-
-  const isValidPhone = () => {
-    const digits = mask?.unmaskedValue || '';
-    return digits.length === 10 && digits.startsWith('9');
-  };
 
   const submit = async () => {
     if (!name.trim()) {
       toast.error('Введите имя');
       return;
     }
-    if (!mask || !isValidPhone()) {
+    if (!isValidRuPhone(phone)) {
       toast.error('Введите корректный номер телефона');
       return;
     }
@@ -59,14 +40,15 @@
       id: i.id,
       name: i.name,
       price: i.price,
-      qty: i.qty
+      qty: i.qty,
+      slug: i.slug ?? null
     }));
     try {
       await apiFetch(fetch, '/api/orders', {
         method: 'POST',
         body: JSON.stringify({
           name,
-          phone: `+7${mask.unmaskedValue}`,
+          phone: normalizeRuPhone(phone),
           items
         }),
         headers: { 'Content-Type': 'application/json' }
@@ -75,7 +57,7 @@
       cart.clear();
       if (!data.user) {
         name = '';
-        mask.value = '';
+        phone = '';
       }
     } catch {
       toast.error('Ошибка при оформлении заказа');
@@ -110,7 +92,7 @@
 
   const getItemLink = (item: any) => {
     if (item.url) return item.url;
-    if (item.slug) return `https://multi-brand.online/products/${item.slug}`;
+    if (item.slug) return `${SITE_URL}/products/${item.slug}`;
     return '';
   };
 
@@ -190,17 +172,19 @@
       doc.setTextColor(20, 20, 20);
       doc.setFont('NotoSans', 'bold');
       doc.text('Тел.', contactX, 38);
-      doc.text('e-mail.', contactX, 58);
-      doc.text('Сайт.', contactX, 78);
+      doc.text('Моб.', contactX, 58);
+      doc.text('E-mail', contactX, 78);
+      doc.text('Сайт', contactX, 98);
       doc.setFont('NotoSans', 'normal');
-      doc.text('8 800 101 23 68', contactX + 48, 38);
-      doc.text('mebeliyer@gmail.com', contactX + 48, 58);
+      doc.text(SITE_PHONE, contactX + 48, 38);
+      doc.text(SITE_PHONE_MOBILE, contactX + 48, 58);
+      doc.text(SITE_EMAIL, contactX + 48, 78);
       doc.setTextColor(29, 78, 216);
-      doc.textWithLink('multi-brand.online', contactX + 48, 78, {
-        url: 'https://multi-brand.online'
+      doc.textWithLink(SITE_URL_NAME, contactX + 48, 98, {
+        url: SITE_URL
       });
-      const siteWidth = doc.getTextWidth('multi-brand.online');
-      doc.line(contactX + 48, 81, contactX + 48 + siteWidth, 81);
+      const siteWidth = doc.getTextWidth(SITE_URL_NAME);
+      doc.line(contactX + 48, 101, contactX + 48 + siteWidth, 101);
       doc.setTextColor(30, 30, 30);
 
       doc.setFont('NotoSans', 'bold');
@@ -303,7 +287,6 @@
 
 <div class="cart-page">
   <h1>Корзина</h1>
-
   {#if $cart.length === 0}
     <p class="empty">Корзина пуста</p>
   {:else}
@@ -312,34 +295,30 @@
         {#each $cart as item}
           <div class="item flex! justify-around lg:grid!">
             <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
-
             <div class="info">
               <h3>{item.name}</h3>
               <p>{formatPrice(item.price)} ₽</p>
             </div>
-
             <div class="qty flex flex-col gap-3">
               <p class="block text-center font-semibold lg:hidden">
                 {formatPrice(item.price * item.qty)} ₽
               </p>
               <div class="flex items-center gap-2">
-                <button on:click={() => cart.dec(item.id)}>
-                  <Minus size="14" strokeWidth="2.5" />
-                </button>
+                <button on:click={() => cart.dec(item.id)}
+                  ><Minus size="14" strokeWidth="2.5" /></button
+                >
                 <span>{item.qty}</span>
-                <button on:click={() => cart.inc(item.id)}>
-                  <Plus size="14" strokeWidth="2.5" />
-                </button>
+                <button on:click={() => cart.inc(item.id)}
+                  ><Plus size="14" strokeWidth="2.5" /></button
+                >
               </div>
             </div>
-
             <p class="hidden text-[0.9rem] font-semibold lg:block lg:text-[1rem]!">
               {formatPrice(item.price * item.qty)} ₽
             </p>
-
-            <button class="remove" on:click={() => cart.remove(item.id)}>
-              <Trash size="14" strokeWidth="2.5" />
-            </button>
+            <button class="remove" on:click={() => cart.remove(item.id)}
+              ><Trash size="14" strokeWidth="2.5" /></button
+            >
           </div>
         {/each}
       </div>
@@ -355,9 +334,10 @@
             <input
               class="input primary"
               placeholder="999 123 45 67"
-              bind:this={phoneInput}
               autocomplete="tel"
               inputmode="numeric"
+              value={phone}
+              use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
             />
           </div>
           <div class="actions">
