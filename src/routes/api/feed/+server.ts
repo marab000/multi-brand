@@ -12,16 +12,11 @@ type FeedProduct = Product & {
   }[];
 };
 
-const escapeXml = (str: string) =>
-  str
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+const csv = (value: string | number | null | undefined) =>
+  `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-export const GET: RequestHandler = async ({ request }) => {
-  const origin = new URL(request.url).origin;
+export const GET: RequestHandler = async () => {
+  const origin = 'https://multi-brand.online';
   const products = await sql<FeedProduct[]>`
     select
       p.*,
@@ -39,38 +34,41 @@ export const GET: RequestHandler = async ({ request }) => {
     left join product_images pi on pi.product_id = p.id
     group by p.id
   `;
-  const withImages = products.filter((p) => p.images?.length).length;
-  const withoutImages = products.length - withImages;
   const filtered = products.filter(isProductAllowedForFeed);
   console.log('[feed] products total:', products.length);
-  console.log('[feed] products with images:', withImages);
-  console.log('[feed] products without images:', withoutImages);
   console.log('[feed] products after filters:', filtered.length);
-  const offers = filtered
-    .map((p) => {
-      const image = [...p.images].sort((a, b) => a.position - b.position)[0]?.url ?? '';
-      const url = `${origin}/products/${slugify(p.name)}`;
-      const title = escapeXml(p.name);
-      const description = escapeXml(p.description ?? '');
-      const price = normalizePrice(p.price_rrc);
-      return `<offer>
-<id>${escapeXml(p.id)}</id>
-<url>${escapeXml(url)}</url>
-<image>${escapeXml(image)}</image>
-<title>${title}</title>
-<description>${description}</description>
-<price>${price}</price>
-<currency>RUB</currency>
-<custom_label_0>${escapeXml(p.brand?.name ?? '')}</custom_label_0>
-<custom_label_1>${escapeXml(p.category ?? '')}</custom_label_1>
-</offer>`;
-    })
-    .join('');
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<offers>${offers}</offers>`;
-  return new Response(xml, {
+  const header = [
+    'ID',
+    'URL',
+    'Image',
+    'Title',
+    'Description',
+    'Price',
+    'Currency',
+    'custom_label_0',
+    'custom_label_1'
+  ];
+  const rows = filtered.map((p) => {
+    const image = [...p.images].sort((a, b) => a.position - b.position)[0]?.url ?? '';
+    const url = `${origin}/products/${slugify(p.name)}`;
+    return [
+      p.id,
+      url,
+      image,
+      p.name,
+      p.description ?? '',
+      normalizePrice(p.price_rrc),
+      'RUB',
+      p.brand?.name ?? '',
+      p.category ?? ''
+    ]
+      .map(csv)
+      .join(',');
+  });
+  const body = [header.join(','), ...rows].join('\n');
+  return new Response(body, {
     headers: {
-      'Content-Type': 'application/xml; charset=utf-8'
+      'Content-Type': 'text/csv; charset=utf-8'
     }
   });
 };
