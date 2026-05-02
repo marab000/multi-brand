@@ -91,7 +91,7 @@ export async function sendVerificationEmail(email: string, url: string) {
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;">
                   <tr>
                     <td align="center" style="padding:18px 20px 0;font-size:12px;line-height:1.45;color:#999999;">
-                      ${SITE_NAME} · ${SITE_PHONE} · <a href="mailto:${SITE_EMAIL}" style="color:#999999;text-decoration:underline;">${SITE_EMAIL}</a>
+                      ${SITE_NAME} · ${SITE_PHONE} · <a href="mailto:${ORDER_NOTIFY_EMAIL}" style="color:#999999;text-decoration:underline;">${ORDER_NOTIFY_EMAIL}</a>
                     </td>
                   </tr>
                 </table>

@@ -20,11 +20,7 @@
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
   import {
-    SITE_EMAIL,
     SITE_PHONE,
-    SITE_URL,
-    SITE_PHONE_MOBILE,
-    SITE_URL_NAME,
     SITE_PHONE_HREF
   } from '$lib/config/site';
 
