@@ -35,7 +35,7 @@
 
 <div class="mx-auto grid gap-4 lg:gap-6">
   <section class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6">
-    <div class="about-hero-card relative overflow-hidden p-3 sm:p-4 lg:p-5">
+    <div class="about-hero-card relative overflow-hidden p-5 lg:p-6">
       <p class="about-eyebrow">MULTIBRAND</p>
       <h1>О компании</h1>
       <p>
@@ -44,7 +44,7 @@
       </p>
       <p>Мы помогаем подобрать и поставить технику под ключ — от квартир до крупных объектов.</p>
     </div>
-    <div class="about-years flex min-h-52 flex-col p-7 sm:min-h-0 lg:p-8">
+    <div class="about-years flex min-h-52 flex-col p-5 sm:min-h-0 lg:p-6">
       <img class="mr-auto mb-7 h-20 w-auto object-contain sm:h-16 lg:h-24" src={logo1} alt="" />
       <div class="my-auto">
         <span>более</span>
