@@ -15,14 +15,12 @@
     Plus,
     Minus,
     X,
-    Phone
+    Phone,
+    MapPin
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
-  import {
-    SITE_PHONE,
-    SITE_PHONE_HREF
-  } from '$lib/config/site';
+  import { SITE_PHONE, SITE_PHONE_HREF } from '$lib/config/site';
 
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
@@ -211,14 +209,20 @@
     <a class="nav__logo flex h-10 sm:hidden" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
-    <a
-      class="nav__phone whitespace-nowrap"
-      href={'tel:' + phoneHref}
-      aria-label={`Позвонить ${phoneNumber}`}
-    >
-      <Phone size={18} strokeWidth={2.1} />
-      <span>{phoneNumber}</span>
-    </a>
+    <div class="nav__top-links py-3">
+      <a class="nav__about flex gap-x-1.5" href="/about">
+        <MapPin size={18} strokeWidth={2.1} />
+        О компании</a
+      >
+      <a
+        class="nav__phone whitespace-nowrap"
+        href={'tel:' + phoneHref}
+        aria-label={`Позвонить ${phoneNumber}`}
+      >
+        <Phone size={18} strokeWidth={2.1} />
+        <span>{phoneNumber}</span>
+      </a>
+    </div>
   </div>
   <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo hidden h-11.5 sm:flex" href="/"
@@ -331,12 +335,20 @@
     <div class="hidden flex-1 lg:block"><ProductSearch /></div>
     <div class="nav__actions ml-auto lg:ml-0">
       <div class="user-menu-wrap">
-        <button title={user ? user.full_name : 'Войти'} type="button" onclick={handleUserClick}>
+        <button
+          title={user ? user.full_name : 'Войти'}
+          type="button"
+          onclick={handleUserClick}
+          class="flex items-center gap-2"
+        >
           {#if user}
             <CircleUserRound size="18" />
           {:else}
             <User size="18" />
           {/if}
+          <span class="absolute -bottom-4 text-[11px]"
+            >{#if user}Профиль{:else}Войти{/if}</span
+          >
         </button>
         {#if user && userMenuOpen}
           <div class="user-menu">
@@ -346,10 +358,14 @@
           </div>
         {/if}
       </div>
-      <button title="" class="disabled" style="cursor: default;"><Heart size="18" /></button>
+      <button title="" class="disabled relative flex-col" style="cursor: default;">
+        <Heart size="18" />
+        <span class="absolute -bottom-4 text-[11px]">Избранное</span>
+      </button>
       <a href="/cart" class="relative">
         <ShoppingCart size="18" />
         {#if $count > 0}<span class="badge">{$count}</span>{/if}
+        <span class="absolute -bottom-4 text-[11px]">Корзина</span>
       </a>
     </div>
   </div>
@@ -374,6 +390,23 @@
       justify-content: space-between;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
+    &__top-links {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      gap: 22px;
+      margin-left: auto;
+    }
+    &__about {
+      color: #202020;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.18s ease;
+      &:hover {
+        color: $green;
+      }
+    }
     &__phone {
       display: inline-flex;
       align-items: center;
@@ -382,7 +415,6 @@
       text-decoration: none;
       font-size: 1.05rem;
       font-weight: 700;
-      margin-left: auto;
       :global(svg) {
         color: $green;
         flex: 0 0 auto;
@@ -395,7 +427,6 @@
       display: flex;
       align-items: center;
       gap: 20px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     &__catalog {
       position: relative;
@@ -683,7 +714,7 @@
   }
   .nav__actions {
     display: flex;
-    gap: 12px;
+    gap: 20px;
     button,
     a {
       display: flex;
@@ -698,7 +729,7 @@
         color: $green;
       }
       &:hover:not(.disabled) {
-        color: #fff;
+        // color: #fff;
         background: $green-light;
         :global(svg) {
           color: #fff !important;
@@ -753,5 +784,17 @@
     background: red;
     color: #fff;
     font-size: 10px;
+  }
+  @media (max-width: 640px) {
+    .nav__top-links {
+      gap: 14px;
+    }
+    .nav__about {
+      font-size: 0.7rem;
+    }
+    .nav__phone {
+      gap: 7px;
+      font-size: 0.8rem;
+    }
   }
 </style>
