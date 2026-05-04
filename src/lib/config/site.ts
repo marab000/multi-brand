@@ -4,6 +4,7 @@ export const SITE_URL_NAME = 'multi-brand.online';
 export const SITE_PHONE = '8 800 101 23 68';
 export const SITE_PHONE_HREF = '+78001012368';
 export const SITE_PHONE_MOBILE = '+7(999)123-45-67';
+export const SITE_PHONE_MOBILE2 = '+7(927)670-78-17';
 export const SITE_EMAIL = 'Multibrend2005@yandex.ru';
 export const SITE_LOGO_URL = `${SITE_URL}/images/logo-email.png`;
 

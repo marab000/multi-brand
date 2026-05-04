@@ -1,7 +1,7 @@
 <script lang="ts">
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
-  import { SITE_PHONE, SITE_URL, SITE_URL_NAME, SITE_PHONE_MOBILE } from '$lib/config/site';
+  import { SITE_PHONE, SITE_URL, SITE_URL_NAME, SITE_PHONE_MOBILE2 } from '$lib/config/site';
   import { toast } from 'svelte-sonner';
   import { FileText } from 'lucide-svelte';
   import logoUrl from '$lib/assets/logo1.png';
@@ -146,7 +146,7 @@
     doc.text('Сайт', contactX, 98);
     doc.setFont('NotoSans', 'normal');
     doc.text(SITE_PHONE, contactX + 48, 38);
-    doc.text(SITE_PHONE_MOBILE, contactX + 48, 58);
+    doc.text(SITE_PHONE_MOBILE2, contactX + 48, 58);
     doc.text('Multibrend2005@yandex.ru', contactX + 48, 78);
     doc.setTextColor(29, 78, 216);
     doc.textWithLink(SITE_URL_NAME, contactX + 48, 98, { url: SITE_URL });
