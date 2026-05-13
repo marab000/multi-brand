@@ -18,7 +18,6 @@ type MinMax = {
   height: [number, number];
   depth: [number, number];
 };
-
 type ProductScopeRow = {
   brand_name: string | null;
   product_type: string | null;
@@ -28,8 +27,15 @@ type ProductScopeRow = {
   catalog_group_slug: string | null;
   catalog_leaf_slug: string | null;
 };
-
-type CategoryNavItem = { name: string; slug: string; href: string; level: 'group' | 'leaf' };
+type CategoryNavItem = {
+  name: string;
+  slug: string;
+  href: string;
+  level: 'root' | 'group' | 'leaf';
+  parentSlug?: string;
+  rootSlug?: string;
+  groupSlug?: string;
+};
 
 function parseSpecsValue(specs: Record<string, any> | null | undefined, keys: string[]) {
   for (const key of keys) {
@@ -43,6 +49,32 @@ function parseSpecsValue(specs: Record<string, any> | null | undefined, keys: st
     }
   }
   return null;
+}
+
+function buildSpecs(url: URL) {
+  const specs: Record<string, { min?: number; max?: number }> = {};
+  const widthMin = url.searchParams.get('width_min');
+  const widthMax = url.searchParams.get('width_max');
+  const heightMin = url.searchParams.get('height_min');
+  const heightMax = url.searchParams.get('height_max');
+  const depthMin = url.searchParams.get('depth_min');
+  const depthMax = url.searchParams.get('depth_max');
+  if (widthMin || widthMax)
+    specs.width = {
+      ...(widthMin ? { min: Math.floor(Number(widthMin)) } : {}),
+      ...(widthMax ? { max: Math.ceil(Number(widthMax)) } : {})
+    };
+  if (heightMin || heightMax)
+    specs.height = {
+      ...(heightMin ? { min: Math.floor(Number(heightMin)) } : {}),
+      ...(heightMax ? { max: Math.ceil(Number(heightMax)) } : {})
+    };
+  if (depthMin || depthMax)
+    specs.depth = {
+      ...(depthMin ? { min: Math.floor(Number(depthMin)) } : {}),
+      ...(depthMax ? { max: Math.ceil(Number(depthMax)) } : {})
+    };
+  return Object.keys(specs).length ? specs : undefined;
 }
 
 function buildScopeWhere(
@@ -69,10 +101,7 @@ function buildScopeWhere(
     values.push(selectedTypes);
     clauses.push(`TRIM(product_type) = ANY($${values.length}::text[])`);
   }
-  return {
-    where: `WHERE ${clauses.join(' AND ')}`,
-    values
-  };
+  return { where: `WHERE ${clauses.join(' AND ')}`, values };
 }
 
 function buildSearchCategoryNav(
@@ -86,38 +115,54 @@ function buildSearchCategoryNav(
     if (!row.catalog_root_slug) continue;
     const root = findCatalogRootBySlug(row.catalog_root_slug, filteredRoots);
     if (!root) continue;
-    if (row.catalog_group_slug) {
-      const group = root.groups.find((item) => item.slug === row.catalog_group_slug);
-      if (group && !group.isDefault) {
-        const href = `/catalog/${root.slug}/${group.slug}${searchParam ? `?${searchParam}` : ''}`;
-        const key = `group::${href}`;
-        if (!items.has(key)) {
-          items.set(key, {
-            name: group.name,
-            slug: group.slug,
-            href,
-            level: 'group'
-          });
-        }
-        if (row.catalog_leaf_slug && !group.isDynamicByProductType) {
-          const leaf = group.leaves.find((item) => item.slug === row.catalog_leaf_slug);
-          if (leaf) {
-            const leafHref = `/catalog/${root.slug}/${group.slug}/${leaf.slug}${searchParam ? `?${searchParam}` : ''}`;
-            const leafKey = `leaf::${leafHref}`;
-            if (!items.has(leafKey)) {
-              items.set(leafKey, {
-                name: `${group.name} — ${leaf.name}`,
-                slug: leaf.slug,
-                href: leafHref,
-                level: 'leaf'
-              });
-            }
-          }
-        }
-      }
+    const rootHref = `/catalog/${root.slug}${searchParam ? `?${searchParam}` : ''}`;
+    if (!items.has(`root::${root.slug}`))
+      items.set(`root::${root.slug}`, {
+        name: root.name,
+        slug: root.slug,
+        href: rootHref,
+        level: 'root',
+        rootSlug: root.slug
+      });
+    if (!row.catalog_group_slug) continue;
+    const group = root.groups.find((item) => item.slug === row.catalog_group_slug);
+    if (!group || group.isDefault) continue;
+    const groupHref = `/catalog/${root.slug}/${group.slug}${searchParam ? `?${searchParam}` : ''}`;
+    if (!items.has(`group::${root.slug}::${group.slug}`))
+      items.set(`group::${root.slug}::${group.slug}`, {
+        name: group.name,
+        slug: group.slug,
+        href: groupHref,
+        level: 'group',
+        parentSlug: root.slug,
+        rootSlug: root.slug,
+        groupSlug: group.slug
+      });
+    if (row.catalog_leaf_slug && !group.isDynamicByProductType) {
+      const leaf = group.leaves.find((item) => item.slug === row.catalog_leaf_slug);
+      if (!leaf) continue;
+      const leafHref = `/catalog/${root.slug}/${group.slug}/${leaf.slug}${searchParam ? `?${searchParam}` : ''}`;
+      if (!items.has(`leaf::${root.slug}::${group.slug}::${leaf.slug}`))
+        items.set(`leaf::${root.slug}::${group.slug}::${leaf.slug}`, {
+          name: leaf.name,
+          slug: leaf.slug,
+          href: leafHref,
+          level: 'leaf',
+          parentSlug: group.slug,
+          rootSlug: root.slug,
+          groupSlug: group.slug
+        });
     }
   }
-  return Array.from(items.values()).sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+  return Array.from(items.values()).sort((a, b) => {
+    const rootA = filteredRoots.find((root) => root.slug === a.rootSlug);
+    const rootB = filteredRoots.find((root) => root.slug === b.rootSlug);
+    const rootCompare = (rootA?.name ?? '').localeCompare(rootB?.name ?? '', 'ru');
+    if (rootCompare) return rootCompare;
+    if (a.level !== b.level)
+      return a.level === 'root' ? -1 : b.level === 'root' ? 1 : a.level === 'group' ? -1 : 1;
+    return a.name.localeCompare(b.name, 'ru');
+  });
 }
 
 export const load: LayoutServerLoad = async ({ url }) => {
@@ -132,13 +177,9 @@ export const load: LayoutServerLoad = async ({ url }) => {
     .filter(Boolean);
   const allRoots = getCatalogRoots();
   const availabilityRows = await sql`
-    SELECT DISTINCT
-      catalog_root_slug AS root_slug,
-      catalog_group_slug AS group_slug,
-      catalog_leaf_slug AS leaf_slug
+    SELECT DISTINCT catalog_root_slug AS root_slug, catalog_group_slug AS group_slug, catalog_leaf_slug AS leaf_slug
     FROM products
-    WHERE catalog_root_slug IS NOT NULL
-      AND price_rrc IS NOT NULL
+    WHERE catalog_root_slug IS NOT NULL AND price_rrc IS NOT NULL
   `;
   const filteredRoots = filterCatalogRootsByAvailability(allRoots, availabilityRows as any[]);
   const currentRoot = isSearchPage ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
@@ -157,46 +198,12 @@ export const load: LayoutServerLoad = async ({ url }) => {
       priceMax: url.searchParams.get('price_max')
         ? Number(url.searchParams.get('price_max')) / 1000
         : undefined,
-      specs: (() => {
-        const specs: Record<string, { min?: number; max?: number }> = {};
-        const widthMin = url.searchParams.get('width_min');
-        const widthMax = url.searchParams.get('width_max');
-        const heightMin = url.searchParams.get('height_min');
-        const heightMax = url.searchParams.get('height_max');
-        const depthMin = url.searchParams.get('depth_min');
-        const depthMax = url.searchParams.get('depth_max');
-        if (widthMin || widthMax) {
-          specs.width = {
-            ...(widthMin ? { min: Math.floor(Number(widthMin)) } : {}),
-            ...(widthMax ? { max: Math.ceil(Number(widthMax)) } : {})
-          };
-        }
-        if (heightMin || heightMax) {
-          specs.height = {
-            ...(heightMin ? { min: Math.floor(Number(heightMin)) } : {}),
-            ...(heightMax ? { max: Math.ceil(Number(heightMax)) } : {})
-          };
-        }
-        if (depthMin || depthMax) {
-          specs.depth = {
-            ...(depthMin ? { min: Math.floor(Number(depthMin)) } : {}),
-            ...(depthMax ? { max: Math.ceil(Number(depthMax)) } : {})
-          };
-        }
-        return Object.keys(specs).length ? specs : undefined;
-      })()
+      specs: buildSpecs(url)
     };
     const { whereClause, values } = buildWhere(filters);
     products = (await sql.unsafe(
       `
-        SELECT
-          brand->>'name' AS brand_name,
-          product_type,
-          price_rrc,
-          specs,
-          catalog_root_slug,
-          catalog_group_slug,
-          catalog_leaf_slug
+        SELECT brand->>'name' AS brand_name, product_type, price_rrc, specs, catalog_root_slug, catalog_group_slug, catalog_leaf_slug
         FROM products p
         ${whereClause}
       `,
@@ -216,29 +223,19 @@ export const load: LayoutServerLoad = async ({ url }) => {
     );
     products = (await sql.unsafe(
       `
-        SELECT
-          brand->>'name' AS brand_name,
-          product_type,
-          price_rrc,
-          specs,
-          catalog_root_slug,
-          catalog_group_slug,
-          catalog_leaf_slug
+        SELECT brand->>'name' AS brand_name, product_type, price_rrc, specs, catalog_root_slug, catalog_group_slug, catalog_leaf_slug
         FROM products
         ${where}
       `,
       values
     )) as unknown as ProductScopeRow[];
-    categoryNav = getCatalogNav(url.pathname, filteredRoots);
+    categoryNav = getCatalogNav(url.pathname, filteredRoots) as CategoryNavItem[];
     if (currentRoot && currentGroup?.isDynamicByProductType) {
       const dynamicTypeRows = await sql.unsafe(
         `
           SELECT DISTINCT product_type
           FROM products
-          WHERE catalog_root_slug = $1
-            AND catalog_group_slug = $2
-            AND product_type IS NOT NULL
-            AND price_rrc IS NOT NULL
+          WHERE catalog_root_slug = $1 AND catalog_group_slug = $2 AND product_type IS NOT NULL AND price_rrc IS NOT NULL
           ORDER BY product_type ASC
         `,
         [currentRoot.slug, currentGroup.slug]
@@ -250,7 +247,10 @@ export const load: LayoutServerLoad = async ({ url }) => {
           name,
           slug: slugifyCatalogValue(name),
           href: `/catalog/${currentRoot.slug}/${currentGroup.slug}?type=${encodeURIComponent(name)}`,
-          level: 'leaf' as const
+          level: 'leaf' as const,
+          parentSlug: currentGroup.slug,
+          rootSlug: currentRoot.slug,
+          groupSlug: currentGroup.slug
         }));
     }
   }
@@ -280,12 +280,5 @@ export const load: LayoutServerLoad = async ({ url }) => {
     height: [0, heights.length ? Math.max(...heights) : 0],
     depth: [0, depths.length ? Math.max(...depths) : 0]
   };
-  return {
-    categoryNav,
-    typeGroups: [],
-    brands,
-    colors,
-    minMax,
-    catalogRoots: filteredRoots
-  };
+  return { categoryNav, typeGroups: [], brands, colors, minMax, catalogRoots: filteredRoots };
 };

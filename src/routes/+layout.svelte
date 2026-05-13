@@ -4,6 +4,7 @@
   import { navigating } from '$app/stores';
   import './layout.css';
   import Header from '$lib/components/Header.svelte';
+  import FloatingMessengers from '$lib/components/FloatingMessengers.svelte';
   import { cart } from '$lib/stores/cart';
   import '$lib/styles/controls.scss';
   import '$lib/styles/typography.scss';
@@ -38,12 +39,15 @@
   <div class="mx-auto max-w-7xl px-6 py-8 text-sm">© 2026 MULTIBRAND</div>
 </footer>
 
+<FloatingMessengers />
+
 <style lang="scss">
   :global(.container) {
     @media (min-width: 1280px) {
       max-width: 1280px !important;
     }
   }
+
   .route-loader {
     position: fixed;
     top: 0;
@@ -55,15 +59,18 @@
     animation: route-loader 1s linear infinite;
     transform-origin: left;
   }
+
   @keyframes route-loader {
     0% {
       transform: scaleX(0);
       opacity: 0.35;
     }
+
     50% {
       transform: scaleX(0.65);
       opacity: 1;
     }
+
     100% {
       transform: scaleX(1);
       opacity: 0.35;

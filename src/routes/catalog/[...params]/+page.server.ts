@@ -19,7 +19,6 @@ function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | 
   const heightMax = url.searchParams.get('height_max');
   const depthMin = url.searchParams.get('depth_min');
   const depthMax = url.searchParams.get('depth_max');
-
   if (widthMin || widthMax) {
     specs.width = {
       ...(widthMin ? { min: Math.floor(Number(widthMin)) } : {}),
@@ -38,7 +37,6 @@ function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | 
       ...(depthMax ? { max: Math.ceil(Number(depthMax)) } : {})
     };
   }
-
   return Object.keys(specs).length ? specs : undefined;
 }
 
@@ -61,27 +59,18 @@ export const load: PageServerLoad = async ({ params, url }) => {
       AND price_rrc IS NOT NULL
   `;
 
-  const filteredRoots = filterCatalogRootsByAvailability(
-    getCatalogRoots(),
-    availabilityRows as any[]
-  );
-
+  const filteredRoots = filterCatalogRootsByAvailability(getCatalogRoots(), availabilityRows as any[]);
   const currentRoot = isSearchPage ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
   if (!isSearchPage && !currentRoot) {
     throw error(404, 'Раздел не найден');
   }
 
-  const currentGroup =
-    !isSearchPage && currentRoot ? findCatalogGroupBySlug(currentRoot, groupSlug) : null;
+  const currentGroup = !isSearchPage && currentRoot ? findCatalogGroupBySlug(currentRoot, groupSlug) : null;
   if (!isSearchPage && groupSlug && !currentGroup) {
     throw error(404, 'Группа не найдена');
   }
 
-  const currentLeaf =
-    !isSearchPage && currentGroup && !currentGroup.isDynamicByProductType
-      ? findCatalogLeafBySlug(currentGroup, leafSlug)
-      : null;
-
+  const currentLeaf = !isSearchPage && currentGroup && !currentGroup.isDynamicByProductType ? findCatalogLeafBySlug(currentGroup, leafSlug) : null;
   if (!isSearchPage && leafSlug && !currentGroup?.isDynamicByProductType && !currentLeaf) {
     throw error(404, 'Подкатегория не найдена');
   }
@@ -99,6 +88,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
     throw error(404, 'Страница поиска не найдена');
   }
 
+  const specs = buildSpecs(url);
+  const hasAppliedFilters =
+    selectedTypes.length > 0 ||
+    url.searchParams.getAll('brand').length > 0 ||
+    url.searchParams.getAll('color').length > 0 ||
+    Boolean(url.searchParams.get('search')?.trim()) ||
+    Boolean(url.searchParams.get('price_min')) ||
+    Boolean(url.searchParams.get('price_max')) ||
+    Boolean(specs);
+
   const filters: CatalogFilters = {
     search: url.searchParams.get('search')?.trim() || undefined,
     catalogRootSlug: isSearchPage ? undefined : currentRoot?.slug,
@@ -107,23 +106,18 @@ export const load: PageServerLoad = async ({ params, url }) => {
     types: selectedTypes.length ? selectedTypes : undefined,
     brands: url.searchParams.getAll('brand'),
     colors: url.searchParams.getAll('color'),
-    priceMin: url.searchParams.get('price_min')
-      ? Number(url.searchParams.get('price_min')) / 1000
-      : undefined,
-    priceMax: url.searchParams.get('price_max')
-      ? Number(url.searchParams.get('price_max')) / 1000
-      : undefined,
-    specs: buildSpecs(url),
+    priceMin: url.searchParams.get('price_min') ? Number(url.searchParams.get('price_min')) / 1000 : undefined,
+    priceMax: url.searchParams.get('price_max') ? Number(url.searchParams.get('price_max')) / 1000 : undefined,
+    specs,
     sort
   };
 
   const perPage = 30;
   let page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 1;
   const offset = (page - 1) * perPage;
-
   const { products, total } = await fetchProducts(filters, perPage, offset);
 
-  if (!isSearchPage && groupSlug && total === 0) {
+  if (!isSearchPage && groupSlug && total === 0 && !hasAppliedFilters) {
     throw error(404, 'Категория пуста');
   }
 
@@ -146,14 +140,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
     breadcrumbs.push({ name: 'Поиск' });
   } else if (currentRoot) {
     breadcrumbs.push({ name: currentRoot.name, href: `/catalog/${currentRoot.slug}` });
-
     if (currentGroup) {
       breadcrumbs.push({
         name: currentGroup.name,
         href: `/catalog/${currentRoot.slug}/${currentGroup.slug}`
       });
     }
-
     if (selectedTypes.length === 1) {
       breadcrumbs.push({ name: selectedTypes[0] });
     } else if (currentLeaf) {
@@ -170,13 +162,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
     title,
     breadcrumbs,
     category: isSearchPage ? null : title,
-    type: isSearchPage
-      ? null
-      : selectedTypes.length === 1
-        ? selectedTypes[0]
-        : (currentLeaf?.name ?? currentGroup?.name ?? null),
+    type: isSearchPage ? null : selectedTypes.length === 1 ? selectedTypes[0] : (currentLeaf?.name ?? currentGroup?.name ?? null),
     currentSearch: url.searchParams.toString(),
     catalogRoots: filteredRoots,
-    isSearchPage
+    isSearchPage,
+    hasAppliedFilters
   };
 };

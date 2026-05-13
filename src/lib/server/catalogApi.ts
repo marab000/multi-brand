@@ -38,15 +38,17 @@ export function buildWhere(filters: CatalogFilters) {
     }
   }
 
+  if (filters.catalogRootSlug) {
+    values.push(filters.catalogRootSlug.toLowerCase());
+    conditions.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
+  }
+  if (filters.catalogGroupSlug) {
+    values.push(filters.catalogGroupSlug.toLowerCase());
+    conditions.push(`LOWER(TRIM(p.catalog_group_slug)) = $${values.length}`);
+  }
   if (filters.catalogLeafSlug) {
     values.push(filters.catalogLeafSlug.toLowerCase());
     conditions.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
-  } else if (filters.catalogGroupSlug) {
-    values.push(filters.catalogGroupSlug.toLowerCase());
-    conditions.push(`LOWER(TRIM(p.catalog_group_slug)) = $${values.length}`);
-  } else if (filters.catalogRootSlug) {
-    values.push(filters.catalogRootSlug.toLowerCase());
-    conditions.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
   }
 
   if (filters.types?.length) {

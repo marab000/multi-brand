@@ -74,8 +74,6 @@
 {#if products.length === 0}
   <p>Товары не найдены</p>
 {:else}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div class="topbar">
     <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
 
@@ -187,13 +185,13 @@
       font-size: 0.95rem;
       font-weight: 500;
       line-height: 1.2;
-      &[aria-expanded='true'] {
-        border-color: #e6a73c;
-      }
       cursor: pointer;
       transition:
         background 0.18s ease,
         border-color 0.18s ease;
+      &[aria-expanded='true'] {
+        border-color: #e6a73c;
+      }
       &:hover {
         background: #fafafa;
       }
@@ -254,11 +252,12 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
     gap: 8px;
+    margin-bottom: 30px;
   }
   .pagination {
     display: flex;
     gap: 6px;
-    margin: 30px 0;
+    margin: -14px 0 30px 0;
     justify-content: center;
     flex-wrap: wrap;
     a {

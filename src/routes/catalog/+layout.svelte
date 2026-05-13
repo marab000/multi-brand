@@ -3,6 +3,8 @@
   import { onMount } from 'svelte';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import SidebarFilters from '$lib/components/filters/SidebarFilters.svelte';
+  import HelpWithSelection from '$lib/components/HelpWithSelection.svelte';
+  import RecentlyViewed from '$lib/components/RecentlyViewed.svelte';
 
   type TypeItem = { name: string; slug: string };
   type TypeGroup = { group: string; items: TypeItem[] };
@@ -88,6 +90,11 @@
     </div>
     <SidebarFilters {categoryNav} {brands} {typeGroups} {colors} {minMax} />
   </div>
+{/if}
+
+{#if !isCatalogRoot}
+  <RecentlyViewed />
+  <HelpWithSelection />
 {/if}
 
 <style lang="scss">

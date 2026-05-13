@@ -669,24 +669,28 @@ export function filterCatalogRootsByAvailability(
   roots: CatalogRoot[],
   rows: CatalogAvailabilityRow[]
 ): CatalogRoot[] {
-  const rootSet = new Set(rows.map((row) => row.root_slug).filter(Boolean));
-  const leafSet = new Set(rows.map((row) => row.leaf_slug).filter(Boolean));
+  const hasRoot = (rootSlug: string) => rows.some((row) => row.root_slug === rootSlug);
+  const hasRootLevelProducts = (rootSlug: string) =>
+    rows.some((row) => row.root_slug === rootSlug && !row.group_slug && !row.leaf_slug);
+  const hasGroup = (rootSlug: string, groupSlug: string) =>
+    rows.some((row) => row.root_slug === rootSlug && row.group_slug === groupSlug);
+  const hasLeaf = (rootSlug: string, groupSlug: string, leafSlug: string) =>
+    rows.some(
+      (row) =>
+        row.root_slug === rootSlug && row.group_slug === groupSlug && row.leaf_slug === leafSlug
+    );
 
   return roots
-    .filter((root) => rootSet.has(root.slug))
+    .filter((root) => hasRoot(root.slug))
     .map((root) => {
-      const hasRootLevelProducts = rows.some(
-        (row) => row.root_slug === root.slug && !row.group_slug && !row.leaf_slug
-      );
-
       const groups = root.groups
         .map((group) => ({
           ...group,
-          leaves: group.leaves.filter((leaf) => leafSet.has(leaf.slug))
+          leaves: group.leaves.filter((leaf) => hasLeaf(root.slug, group.slug, leaf.slug))
         }))
         .filter((group) => {
-          const keepDefaultRootGroup = !!group.isDefault && hasRootLevelProducts;
-          return group.leaves.length > 0 || keepDefaultRootGroup;
+          if (group.isDefault) return hasRootLevelProducts(root.slug);
+          return group.leaves.length > 0 || hasGroup(root.slug, group.slug);
         });
 
       return { ...root, groups };

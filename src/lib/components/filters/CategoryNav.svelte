@@ -1,296 +1,302 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ChevronDown } from 'lucide-svelte';
-
   export type CategoryNavItem = {
     name: string;
     slug: string;
     href: string;
-    level: 'group' | 'leaf';
+    level: 'root' | 'group' | 'leaf';
+    parentSlug?: string;
+    rootSlug?: string;
+    groupSlug?: string;
   };
-
-  type GroupNode = {
-    key: string;
-    name: string;
-    href: string;
-    active: boolean;
-    leaves: CategoryNavItem[];
-  };
-
+  type LeafNode = CategoryNavItem;
+  type GroupNode = CategoryNavItem & { leaves: LeafNode[] };
+  type RootNode = CategoryNavItem & { groups: GroupNode[] };
   let { items = [] } = $props<{ items?: CategoryNavItem[] }>();
-
-  function splitHref(href: string) {
-    const [pathname, query = ''] = href.split('?');
-    return { pathname, query };
-  }
-
-  function isSameUrl(a: string, b: string) {
-    return a === b;
-  }
-
-  function isChildOfGroup(groupHref: string, leafHref: string) {
-    const group = splitHref(groupHref);
-    const leaf = splitHref(leafHref);
-    return leaf.pathname.startsWith(`${group.pathname}/`) || leaf.pathname === group.pathname;
-  }
-
-  function normalizeGroupHrefForLeaf(groupHref: string, leafHref: string) {
-    const group = splitHref(groupHref);
-    const leaf = splitHref(leafHref);
-    return `${group.pathname}${leaf.query ? `?${leaf.query}` : group.query ? `?${group.query}` : ''}`;
-  }
-
-  function cleanupLeafName(groupName: string, leafName: string) {
-    const prefix = `${groupName} — `;
-    if (leafName.startsWith(prefix)) return leafName.slice(prefix.length).trim();
-    return leafName.trim();
-  }
-
   const pathname = $derived($page.url.pathname);
   const searchParams = $derived($page.url.searchParams.toString());
   const currentUrl = $derived(`${pathname}${searchParams ? `?${searchParams}` : ''}`);
-
-  const groupedItems = $derived.by(() => {
-    const groups: GroupNode[] = [];
-    const looseLeaves: CategoryNavItem[] = [];
+  let openRoot = $state<string | null>(null);
+  let openGroup = $state<string | null>(null);
+  function samePath(href: string) {
+    return href.split('?')[0] === pathname;
+  }
+  function hrefWithCurrentQuery(href: string) {
+    const [path, query = ''] = href.split('?');
+    const params = new URLSearchParams(query);
+    const current = new URLSearchParams($page.url.searchParams);
+    current.delete('page');
+    current.forEach((value, key) => {
+      if (!params.has(key)) params.append(key, value);
+    });
+    const qs = params.toString();
+    return qs ? `${path}?${qs}` : path;
+  }
+  function isActive(href: string) {
+    return currentUrl === hrefWithCurrentQuery(href);
+  }
+  function toggleRoot(slug: string) {
+    openRoot = isRootOpen(slug) ? null : slug;
+  }
+  function toggleGroup(key: string) {
+    openGroup = isGroupOpen(key) ? null : key;
+  }
+  const tree = $derived.by(() => {
+    const roots: RootNode[] = [];
+    const rootMap = new Map<string, RootNode>();
+    const looseGroups: GroupNode[] = [];
+    const looseLeaves: LeafNode[] = [];
     for (const item of items) {
-      if (item.level === 'group') {
-        groups.push({
-          key: item.href,
-          name: item.name,
-          href: item.href,
-          active: isSameUrl(currentUrl, item.href),
-          leaves: []
-        });
-        continue;
-      }
-      const parent = groups.findLast((group) => isChildOfGroup(group.href, item.href));
-      if (parent) {
-        const normalizedGroupHref = normalizeGroupHrefForLeaf(parent.href, item.href);
-        parent.href = normalizedGroupHref;
-        parent.active = parent.active || isSameUrl(currentUrl, normalizedGroupHref);
-        parent.leaves.push(item);
-      } else {
-        looseLeaves.push(item);
+      if (item.level === 'root') {
+        const root: RootNode = { ...item, groups: [] };
+        roots.push(root);
+        rootMap.set(item.slug, root);
       }
     }
-    return { groups, looseLeaves };
+    for (const item of items) {
+      if (item.level === 'group') {
+        const group: GroupNode = { ...item, leaves: [] };
+        const root = item.rootSlug ? rootMap.get(item.rootSlug) : null;
+        if (root) root.groups.push(group);
+        else looseGroups.push(group);
+      }
+    }
+    for (const item of items) {
+      if (item.level === 'leaf') {
+        const root = item.rootSlug ? rootMap.get(item.rootSlug) : null;
+        const group =
+          root?.groups.find((g) => g.slug === item.groupSlug) ??
+          looseGroups.find((g) => g.slug === item.groupSlug);
+        if (group) group.leaves.push(item);
+        else looseLeaves.push(item);
+      }
+    }
+    return { roots, looseGroups, looseLeaves };
   });
-
-  const hasTree = $derived(groupedItems.groups.some((group) => group.leaves.length > 0));
-
-  let openKey = $state<string | null>(null);
-
-  function isActive(href: string) {
-    return isSameUrl(currentUrl, href);
+  const hasRootTree = $derived(tree.roots.length > 0);
+  function rootHasActive(root: RootNode) {
+    return (
+      samePath(root.href) ||
+      root.groups.some(
+        (group) => samePath(group.href) || group.leaves.some((leaf) => samePath(leaf.href))
+      )
+    );
   }
-
-  function hasActiveLeaf(group: GroupNode) {
-    return group.leaves.some((leaf) => isSameUrl(currentUrl, leaf.href));
+  function groupHasActive(group: GroupNode) {
+    return samePath(group.href) || group.leaves.some((leaf) => samePath(leaf.href));
   }
-
-  function isGroupOpen(group: GroupNode) {
-    if (openKey !== null) return openKey === group.key;
-    return hasActiveLeaf(group) || group.active;
+  function isRootOpen(slug: string) {
+    const root = tree.roots.find((item) => item.slug === slug);
+    if (!root) return false;
+    if (openRoot !== null) return openRoot === slug;
+    return rootHasActive(root);
   }
-
-  function toggle(group: GroupNode) {
-    openKey = isGroupOpen(group) ? null : group.key;
+  function isGroupOpen(key: string) {
+    const group =
+      tree.roots
+        .flatMap((root) => root.groups)
+        .find((item) => `${item.rootSlug || ''}::${item.slug}` === key) ??
+      tree.looseGroups.find((item) => `${item.rootSlug || ''}::${item.slug}` === key);
+    if (!group) return false;
+    if (openGroup !== null) return openGroup === key;
+    return groupHasActive(group);
+  }
+  function showLeavesForGroup(group: GroupNode) {
+    return samePath(group.href) || group.leaves.some((leaf) => samePath(leaf.href));
   }
 </script>
 
-{#if hasTree}
+{#if hasRootTree}
   <div class="category-tree">
-    {#each groupedItems.groups as group}
-      <div class="tree-item" class:open={isGroupOpen(group)} class:active={group.active}>
-        <div class="tree-parent">
-          <a class="tree-parent-link" href={group.href}>{group.name}</a>
-          <div class="divider"></div>
-          <button
-            class="tree-toggle"
-            class:open={isGroupOpen(group)}
-            type="button"
-            on:click|preventDefault|stopPropagation={() => toggle(group)}
-          >
-            <span class:rotated={isGroupOpen(group)}>
-              <ChevronDown size={18} strokeWidth={2.2} />
-            </span>
-          </button>
+    {#each tree.roots as root}
+      <div class="root-item" class:open={isRootOpen(root.slug)} class:active={samePath(root.href)}>
+        <div class="root-head">
+          <a class="root-link" href={hrefWithCurrentQuery(root.href)}>{root.name}</a>
+          {#if root.groups.length}
+            <button
+              class="toggle"
+              type="button"
+              onclick={() => toggleRoot(root.slug)}
+              aria-label={isRootOpen(root.slug) ? 'Свернуть категорию' : 'Раскрыть категорию'}
+            >
+              <span class:open={isRootOpen(root.slug)}
+                ><ChevronDown size={16} strokeWidth={2.2} /></span
+              >
+            </button>
+          {/if}
         </div>
-
-        {#if isGroupOpen(group) && group.leaves.length}
-          <div class="tree-body">
-            <div class="tree-children">
-              {#each group.leaves as leaf}
-                <a class="tree-child" class:active={isActive(leaf.href)} href={leaf.href}>
-                  <span class="dot"></span>
-                  <span class="label">{cleanupLeafName(group.name, leaf.name)}</span>
-                </a>
-              {/each}
-            </div>
+        {#if isRootOpen(root.slug) && root.groups.length}
+          <div class="group-list">
+            {#each root.groups as group}
+              {@const groupKey = `${group.rootSlug || ''}::${group.slug}`}
+              <div class="group-item" class:active={samePath(group.href)}>
+                <div class="group-head">
+                  <a class="group-link" href={hrefWithCurrentQuery(group.href)}>{group.name}</a>
+                  {#if group.leaves.length && showLeavesForGroup(group)}
+                    <button
+                      class="toggle small"
+                      type="button"
+                      onclick={() => toggleGroup(groupKey)}
+                      aria-label={isGroupOpen(groupKey) ? 'Свернуть группу' : 'Раскрыть группу'}
+                    >
+                      <span class:open={isGroupOpen(groupKey)}
+                        ><ChevronDown size={16} strokeWidth={2.2} /></span
+                      >
+                    </button>
+                  {/if}
+                </div>
+                {#if isGroupOpen(groupKey) && group.leaves.length && showLeavesForGroup(group)}
+                  <div class="leaf-list">
+                    {#each group.leaves as leaf}
+                      <a
+                        class="leaf-link"
+                        class:active={samePath(leaf.href)}
+                        href={hrefWithCurrentQuery(leaf.href)}>{leaf.name}</a
+                      >
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/each}
           </div>
         {/if}
       </div>
-    {/each}
-
-    {#each groupedItems.looseLeaves as leaf}
-      <a class="tree-parent tree-parent--link" class:active={isActive(leaf.href)} href={leaf.href}>
-        <span>{leaf.name}</span>
-      </a>
     {/each}
   </div>
 {:else}
   <div class="nav">
     {#each items as item}
-      <a class="nav-item" class:active={isActive(item.href)} href={item.href}>
-        {item.name}
-      </a>
+      <a
+        class="nav-item"
+        class:active={isActive(item.href) || samePath(item.href)}
+        href={hrefWithCurrentQuery(item.href)}>{item.name}</a
+      >
     {/each}
   </div>
 {/if}
 
 <style lang="scss">
+  .category-tree,
   .nav {
     display: grid;
-    gap: 10px;
+    gap: 8px;
+    padding-top: 4px;
   }
-  .nav-item,
-  .tree-item,
-  .tree-parent {
-    display: block;
-    text-decoration: none;
-    color: #222;
+  .root-item,
+  .group-item,
+  .nav-item {
     border: 1px solid #eee;
-    border-radius: 12px;
+    border-radius: 10px;
     background: #fafafa;
+    overflow: hidden;
+  }
+  .root-item.open {
+    background: #fff;
+  }
+  .root-item.active,
+  .group-item.active,
+  .nav-item.active {
+    border-color: rgba($yellow, 0.35);
+    background: rgba($yellow, 0.035);
+  }
+  .root-head,
+  .group-head {
+    display: flex;
+    align-items: center;
+    background: #fafafa;
+  }
+  .root-link,
+  .group-link,
+  .leaf-link,
+  .nav-item {
+    color: #222;
+    text-decoration: none;
     transition: 0.15s;
   }
+  .root-link,
+  .group-link,
   .nav-item {
-    padding: 14px 16px;
-    line-height: 1.2;
-    &:hover {
-      background: #f4f4f4;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-    &.active {
-      border-color: $yellow;
-      background: #fffaf084;
-    }
-  }
-  .category-tree {
-    display: grid;
-    gap: 12px;
-  }
-  .tree-item {
-    overflow: hidden;
-    &.open {
-      border-color: $yellow;
-    }
-    &.active:not(.open) {
-      border-color: $yellow;
-      background: #fffaf0;
-    }
-    &:hover:not(.open) {
-      border-color: rgba($yellow, 0.3);
-    }
-  }
-  .tree-parent {
-    width: 100%;
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
-    overflow: hidden;
-    border: 0;
-    background: transparent;
-    &--link {
-      padding: 14px 16px;
-      line-height: 1.2;
-      &:hover {
-        background: #f4f4f4;
-        text-decoration: underline;
-        text-underline-offset: 3px;
-      }
-      &.active {
-        border-color: rgba($yellow, 0.5);
-        background: #fffaf0;
-      }
-    }
-  }
-  .tree-parent-link {
     flex: 1;
-    min-width: 0;
-    padding: 12px 14px;
-    color: inherit;
-    text-decoration: none;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 400;
     line-height: 1.2;
-    &:hover {
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
   }
-  .divider {
-    width: 1px;
-    background: #eee;
-    margin: 10px 0;
+  .root-item.active > .root-head .root-link,
+  .group-item.active > .group-head .group-link,
+  .nav-item.active {
+    font-weight: 500;
+    color: #111;
   }
-  .tree-toggle {
+  .root-link:hover,
+  .group-link:hover,
+  .nav-item:hover {
+    background: #f3f3f3;
+  }
+  .toggle {
+    width: 36px;
+    min-width: 36px;
+    align-self: stretch;
+    border: 0;
+    border-left: 1px solid #eee;
+    background: transparent;
+    color: #222;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    min-width: 48px;
-    background: transparent;
-    border: 0;
     cursor: pointer;
-    &:hover {
-      background: #efeded;
-    }
-  }
-  .tree-toggle :global(span) {
-    transition: 0.2s;
-  }
-  .tree-toggle :global(span.rotated) {
-    transform: rotate(-90deg);
-  }
-  .tree-body {
-    background: #fff;
-    padding: 18px;
-  }
-  .tree-children {
-    display: grid;
-    gap: 12px;
-  }
-  .tree-child {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    color: #5b5b5b;
-    text-decoration: none;
-    line-height: 1.35;
     transition: 0.15s;
-    .dot {
-      width: 7px;
-      height: 7px;
-      min-width: 7px;
-      border-radius: 999px;
-      background: rgba($green, 0.75);
-      margin-top: 6px;
-    }
-    .label {
-      display: block;
-    }
     &:hover {
-      color: #222;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+      background: #f3f3f3;
+    }
+    &.small {
+      width: 36px;
+      min-width: 36px;
+    }
+    span {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      &.open {
+        transform: rotate(180deg);
+      }
+    }
+  }
+  .group-list {
+    display: grid;
+    gap: 8px;
+    padding: 8px;
+    background: #fff;
+  }
+  .group-item {
+    background: #fafafa;
+  }
+  .leaf-list {
+    display: grid;
+    gap: 8px;
+    padding: 0 8px 8px;
+    background: #fff;
+  }
+  .leaf-link {
+    display: block;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    background: #fafafa;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.2;
+    &:hover {
+      color: #111;
+      background: #f3f3f3;
     }
     &.active {
-      color: #222;
+      color: #111;
       font-weight: 500;
-      .dot {
-        background: $yellow;
-      }
+      border-color: rgba($green, 0.35);
+      background: rgba($green, 0.035);
     }
   }
 </style>
