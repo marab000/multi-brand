@@ -6,16 +6,20 @@
   let items = $state<RecentlyViewedProduct[]>([]);
   let listEl = $state<HTMLDivElement | null>(null);
   let dragging = $state(false);
-  let moved = false;
+  let moved = $state(false);
+  let isDesktop = $state(false);
   let startX = 0;
   let scrollLeft = 0;
 
   function updateItems() {
     items = recentlyViewed.get();
   }
+  function updateDevice() {
+    isDesktop = window.innerWidth >= 1024;
+  }
 
   function onPointerDown(e: PointerEvent) {
-    if (!listEl || e.button !== 0) return;
+    if (!isDesktop || !listEl || e.button !== 0) return;
     dragging = true;
     moved = false;
     startX = e.clientX;
@@ -23,28 +27,33 @@
   }
 
   function onPointerMove(e: PointerEvent) {
-    if (!dragging || !listEl) return;
+    if (!isDesktop || !dragging || !listEl) return;
     const diff = e.clientX - startX;
     if (Math.abs(diff) > 6) moved = true;
     if (moved) listEl.scrollLeft = scrollLeft - diff;
   }
 
   function onPointerUp() {
+    if (!isDesktop) return;
     dragging = false;
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       moved = false;
-    }, 0);
+    });
   }
 
   function onItemClick(e: MouseEvent) {
-    if (!moved) return;
-    e.preventDefault();
+    if (isDesktop && moved) {
+      e.preventDefault();
+    }
   }
 
   onMount(() => {
     updateItems();
+    updateDevice();
+    window.addEventListener('resize', updateDevice);
     window.addEventListener('recently-viewed:updated', updateItems);
     return () => {
+      window.removeEventListener('resize', updateDevice);
       window.removeEventListener('recently-viewed:updated', updateItems);
     };
   });
@@ -93,6 +102,7 @@
     border: 1px solid #ececec;
     border-radius: 24px;
     background: #fff;
+    overflow: hidden;
     .head {
       margin-bottom: 14px;
       h2 {
@@ -108,22 +118,24 @@
       display: flex;
       gap: 10px;
       overflow-x: auto;
-      overflow-y: hidden;
-      padding: 0 2px 8px;
-      cursor: grab;
-      scroll-snap-type: x mandatory;
+      overflow-y: visible;
+      padding: 2px 2px 14px;
       scrollbar-width: thin;
       -webkit-overflow-scrolling: touch;
-      user-select: none;
-      touch-action: pan-y;
       &.dragging {
         cursor: grabbing;
-        scroll-snap-type: none;
+        user-select: none;
+      }
+      @media (min-width: 1024px) {
+        cursor: grab;
+      }
+      @media (max-width: 1023px) {
+        touch-action: auto;
+        scroll-snap-type: x proximity;
       }
     }
     .item {
       flex: 0 0 210px;
-      scroll-snap-align: start;
       display: grid;
       gap: 10px;
       padding: 12px;
@@ -133,13 +145,11 @@
       color: inherit;
       text-decoration: none;
       transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease,
-        border-color 0.18s ease;
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
       &:hover {
-        transform: translateY(-2px);
         border-color: rgba($yellow, 0.45);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
       }
       .image {
         height: 150px;
