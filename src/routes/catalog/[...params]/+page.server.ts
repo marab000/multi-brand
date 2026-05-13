@@ -59,18 +59,25 @@ export const load: PageServerLoad = async ({ params, url }) => {
       AND price_rrc IS NOT NULL
   `;
 
-  const filteredRoots = filterCatalogRootsByAvailability(getCatalogRoots(), availabilityRows as any[]);
+  const filteredRoots = filterCatalogRootsByAvailability(
+    getCatalogRoots(),
+    availabilityRows as any[]
+  );
   const currentRoot = isSearchPage ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
   if (!isSearchPage && !currentRoot) {
     throw error(404, 'Раздел не найден');
   }
 
-  const currentGroup = !isSearchPage && currentRoot ? findCatalogGroupBySlug(currentRoot, groupSlug) : null;
+  const currentGroup =
+    !isSearchPage && currentRoot ? findCatalogGroupBySlug(currentRoot, groupSlug) : null;
   if (!isSearchPage && groupSlug && !currentGroup) {
     throw error(404, 'Группа не найдена');
   }
 
-  const currentLeaf = !isSearchPage && currentGroup && !currentGroup.isDynamicByProductType ? findCatalogLeafBySlug(currentGroup, leafSlug) : null;
+  const currentLeaf =
+    !isSearchPage && currentGroup && !currentGroup.isDynamicByProductType
+      ? findCatalogLeafBySlug(currentGroup, leafSlug)
+      : null;
   if (!isSearchPage && leafSlug && !currentGroup?.isDynamicByProductType && !currentLeaf) {
     throw error(404, 'Подкатегория не найдена');
   }
@@ -106,13 +113,17 @@ export const load: PageServerLoad = async ({ params, url }) => {
     types: selectedTypes.length ? selectedTypes : undefined,
     brands: url.searchParams.getAll('brand'),
     colors: url.searchParams.getAll('color'),
-    priceMin: url.searchParams.get('price_min') ? Number(url.searchParams.get('price_min')) / 1000 : undefined,
-    priceMax: url.searchParams.get('price_max') ? Number(url.searchParams.get('price_max')) / 1000 : undefined,
+    priceMin: url.searchParams.get('price_min')
+      ? Number(url.searchParams.get('price_min')) / 1000
+      : undefined,
+    priceMax: url.searchParams.get('price_max')
+      ? Number(url.searchParams.get('price_max')) / 1000
+      : undefined,
     specs,
     sort
   };
 
-  const perPage = 30;
+  const perPage = 24;
   let page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 1;
   const offset = (page - 1) * perPage;
   const { products, total } = await fetchProducts(filters, perPage, offset);
@@ -162,7 +173,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
     title,
     breadcrumbs,
     category: isSearchPage ? null : title,
-    type: isSearchPage ? null : selectedTypes.length === 1 ? selectedTypes[0] : (currentLeaf?.name ?? currentGroup?.name ?? null),
+    type: isSearchPage
+      ? null
+      : selectedTypes.length === 1
+        ? selectedTypes[0]
+        : (currentLeaf?.name ?? currentGroup?.name ?? null),
     currentSearch: url.searchParams.toString(),
     catalogRoots: filteredRoots,
     isSearchPage,
