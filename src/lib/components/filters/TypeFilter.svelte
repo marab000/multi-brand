@@ -39,19 +39,15 @@
   function updateURL() {
     const params = new URLSearchParams($page.url.search);
     params.delete('type');
-
     const grouped: Record<string, string[]> = {};
-
     selected.forEach((s) => {
       if (!grouped[s.group]) grouped[s.group] = [];
       grouped[s.group].push(s.value);
     });
-
     for (const g of groups) {
       const sel = grouped[g.group] || [];
       sel.forEach((v) => params.append('type', v));
     }
-
     const query = params.toString();
     goto(query ? `?${query}` : '?', { keepFocus: true, noScroll: true });
   }
@@ -95,12 +91,10 @@
   $: {
     const types = $page.url.searchParams.getAll('type');
     const next: typeof selected = [];
-
     types.forEach((t) => {
       const g = groups.find((gr) => gr.items.some((i) => i.name === t));
       if (g) next.push({ group: g.group, value: t });
     });
-
     if (!isSame(selected, next)) selected = next;
   }
 
@@ -115,7 +109,7 @@
     const nextOpen: Record<string, boolean> = {};
     sortedGroups.forEach((g) => {
       const hasSelected = selected.some((s) => s.group === g.group);
-      nextOpen[g.group] = initialized ? open[g.group] ?? hasSelected : hasSelected;
+      nextOpen[g.group] = initialized ? (open[g.group] ?? hasSelected) : hasSelected;
     });
     open = nextOpen;
     initialized = true;
@@ -129,7 +123,7 @@
         <div class="row">
           <button
             title=""
-            class="check"
+            class="check secondary"
             class:checked={isGroupSelected(g.group, g.items)}
             class:partial={isPartial(g.group, g.items)}
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
@@ -148,7 +142,7 @@
                 on:click={() => toggleItem(g.group, item.name)}
               >
                 <div
-                  class="subcheck"
+                  class="subcheck secondary"
                   class:checked={selected.some((s) => s.value === item.name && s.group === g.group)}
                 ></div>
                 <span>{item.name}</span>
@@ -161,5 +155,4 @@
   </div>
 </div>
 
-<style lang="scss">
-</style>
+<style lang="scss"></style>

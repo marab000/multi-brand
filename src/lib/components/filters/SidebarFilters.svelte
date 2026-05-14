@@ -236,37 +236,6 @@
         :global(.arrow.open) {
           transform: rotate(-90deg) !important;
         }
-        :global(.check),
-        :global(.subcheck) {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 2px solid #bbb;
-          border-radius: 4px;
-          background: #fff;
-        }
-        :global(.check) {
-          width: 16px;
-          height: 16px;
-          min-width: 16px;
-        }
-        :global(.subcheck) {
-          width: 14px;
-          height: 14px;
-          min-width: 14px;
-        }
-        :global(.check.checked) {
-          background: $yellow;
-          border-color: $yellow;
-        }
-        :global(.subcheck.checked) {
-          background: rgba($yellow, 0.5);
-          border-color: rgba($yellow, 1);
-        }
-        :global(.check.partial) {
-          background: linear-gradient(135deg, rgba($yellow, 1) 40%, rgba($yellow, 0) 60%);
-          border-color: $yellow;
-        }
         :global(.sub) {
           font-size: 0.9rem;
           display: flex;

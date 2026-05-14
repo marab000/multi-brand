@@ -8,6 +8,7 @@
   import { cart } from '$lib/stores/cart';
   import '$lib/styles/controls.scss';
   import '$lib/styles/typography.scss';
+  import HelpWithSelection from '$lib/components/HelpWithSelection.svelte';
 
   let { data, children } = $props<{
     data: {
@@ -33,6 +34,7 @@
 >
   {@render children()}
   <Toaster richColors position="top-center" />
+  <HelpWithSelection />
 </main>
 
 <footer class="bg-slate-800 px-4 text-gray-300">

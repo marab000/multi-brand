@@ -79,7 +79,7 @@
         <div class="row">
           <button
             title=""
-            class="check"
+            class="check secondary"
             class:checked={isGroupSelected(g.items)}
             class:partial={isPartial(g.items)}
             on:click|stopPropagation={() => toggleGroup(g.group, g.items)}
@@ -89,13 +89,11 @@
               <span class="dot" style="background:{getGroupColor(g.group)}"></span>
               <span class="text">{g.group}</span>
             </span>
-
             <span class="arrow-icon" class:open={openGroups[g.group]}>
               <ChevronDown size={16} strokeWidth={2.2} />
             </span>
           </button>
         </div>
-
         {#if openGroups[g.group]}
           <div class="subs" transition:slide>
             {#each g.sorted as c}
@@ -104,7 +102,7 @@
                 class:selected={selectedColors.includes(c)}
                 on:click={() => toggleColor(c)}
               >
-                <div class="subcheck" class:checked={selectedColors.includes(c)}></div>
+                <div class="subcheck secondary" class:checked={selectedColors.includes(c)}></div>
                 <span>{c}</span>
               </button>
             {/each}
@@ -122,24 +120,19 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-
     margin: -10px;
     padding: 10px;
-
     border-radius: 10px;
   }
-
   .label-main {
     display: flex;
     align-items: center;
     min-width: 0;
     flex: 1;
   }
-
   .text {
     min-width: 0;
   }
-
   .dot {
     margin-right: 10px;
     width: 12px;
@@ -148,13 +141,11 @@
     border-radius: 50%;
     border: 1px solid #ccc;
   }
-
   .arrow-icon {
     display: flex;
     align-items: center;
     justify-content: center;
     transition: 0.2s;
-
     &.open {
       transform: rotate(180deg);
     }

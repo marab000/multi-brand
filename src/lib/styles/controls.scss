@@ -21,14 +21,14 @@ button {
   &.primary {
     background-color: $green-light;
     color: white;
-    &:hover:not(.disabled) {
+    &:hover:not(.disabled):not(:disabled) {
       background-color: color.scale($green-light, $lightness: -30%);
     }
   }
   &.secondary {
     background-color: $yellow;
     color: white;
-    &:hover:not(.disabled) {
+    &:hover:not(.disabled):not(:disabled) {
       background-color: color.scale($yellow, $lightness: -30%);
     }
   }
@@ -36,10 +36,14 @@ button {
     border: 1px solid rgba($yellow, 0.5);
     background-color: rgba($yellow, 0.05);
     color: color.scale($yellow, $lightness: -70%);
-    &:hover:not(.disabled) {
+    &:hover:not(.disabled):not(:disabled) {
       background-color: rgba($yellow, 0.2);
       border-color: $yellow;
     }
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 }
 
@@ -76,7 +80,89 @@ button {
       box-shadow: 0 0 2px 1px rgba($yellow, 0.15);
     }
   }
+  &:disabled {
+    opacity: 0.7;
+  }
 }
+
+.check,
+.subcheck {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  transition: 0.18s;
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  &.primary.checked {
+    background: $green-light;
+    border-color: $green-light;
+  }
+  &.primary.partial {
+    background: linear-gradient(135deg, rgba($green-light, 1) 40%, rgba($green-light, 0) 60%);
+    border-color: $green-light;
+  }
+  &.secondary.checked {
+    background: $yellow;
+    border-color: $yellow;
+  }
+  &.secondary.partial {
+    background: linear-gradient(135deg, rgba($yellow, 1) 40%, rgba($yellow, 0) 60%);
+    border-color: $yellow;
+  }
+}
+
+.subcheck {
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  &.primary.checked {
+    background: rgba($green-light, 0.5);
+    border-color: $green-light;
+  }
+  &.secondary.checked {
+    background: rgba($yellow, 0.5);
+    border-color: $yellow;
+  }
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .box {
+    @extend .check;
+  }
+  .text {
+    line-height: 1.35;
+  }
+  &.primary input:checked + .box {
+    background: $green-light;
+    border-color: $green-light;
+  }
+  &.secondary input:checked + .box {
+    background: $yellow;
+    border-color: $yellow;
+  }
+  input:disabled + .box,
+  input:disabled ~ .text {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .with-prefix {
   position: relative;
   width: 100%;

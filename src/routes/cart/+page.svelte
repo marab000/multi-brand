@@ -64,7 +64,7 @@
   {#if $cart.length === 0}
     <p class="empty">Корзина пуста</p>
   {:else}
-    <div class="cart flex flex-col gap-3 lg:grid lg:gap-5">
+    <div class="cart mb-3 flex flex-col gap-3 lg:mb-4 lg:grid lg:gap-5">
       <div class="items">
         {#each $cart as item}
           <div class="item flex! justify-around lg:grid!">
@@ -148,10 +148,9 @@
         gap: 12px;
         .item {
           display: grid;
-          grid-template-columns: minmax(50px, 80px) minmax(100px, 1fr) minmax(70px, 100px) minmax(
-              70px,
-              100px
-            ) minmax(20px, 40px);
+          grid-template-columns:
+            minmax(50px, 80px) minmax(100px, 1fr) minmax(70px, 100px) minmax(70px, 100px)
+            minmax(20px, 40px);
           align-items: center;
           gap: 12px;
           padding: 12px;

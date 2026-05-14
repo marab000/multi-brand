@@ -207,3 +207,61 @@ export async function sendNewOrderEmail(order: {
   if (res.error) throw res.error;
   return res;
 }
+
+export async function sendLeadEmail(lead: { name: string; phone: string; message?: string }) {
+  const res = await resend.emails.send({
+    from: RESEND_FROM_EMAIL,
+    to: ORDER_NOTIFY_EMAIL,
+    subject: 'Новая заявка на подбор техники',
+    html: `
+      <!doctype html>
+      <html lang="ru">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width,initial-scale=1" />
+          <title>Новая заявка</title>
+        </head>
+        <body style="margin:0;padding:0;background:#f5f6f7;font-family:Arial,Helvetica,sans-serif;color:#202020;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f6f7;padding:28px 14px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #eeeeee;">
+                  <tr>
+                    <td style="padding:28px 30px 18px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                        <tr>
+                          <td align="left"><a href="${SITE_URL}" target="_blank" style="text-decoration:none;"><img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" /></a></td>
+                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${SITE_PHONE}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:18px 30px 8px;">
+                      <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:800;color:#202020;">Новая заявка на подбор техники</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:8px 30px 30px;">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f8f8;border-radius:14px;">
+                        <tr>
+                          <td style="padding:16px 18px;font-size:15px;line-height:1.6;color:#333333;">
+                            <div><b>Имя:</b> ${escapeHtml(lead.name)}</div>
+                            <div><b>Телефон:</b> <a href="tel:${escapeHtml(lead.phone)}" style="color:#202020;text-decoration:none;">${escapeHtml(lead.phone)}</a></div>
+                            ${lead.message ? `<div style="margin-top:10px;"><b>Комментарий:</b><br />${escapeHtml(lead.message).replaceAll('\n', '<br />')}</div>` : ''}
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `
+  });
+  if (res.error) throw res.error;
+  return res;
+}

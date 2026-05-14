@@ -40,7 +40,7 @@
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="group" on:click={() => toggle(item)}>
         <div class="row">
-          <div class="check" class:checked={selected.includes(item)}></div>
+          <div class="check secondary" class:checked={selected.includes(item)}></div>
           <span>{item}</span>
         </div>
       </div>
