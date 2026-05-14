@@ -50,6 +50,7 @@
     text-decoration: none;
     color: #111;
     transition: 0.2s;
+    box-shadow: 0 8px 8px rgba($green, 0.1);
   }
   .brand:hover {
     transform: translateY(-2px);

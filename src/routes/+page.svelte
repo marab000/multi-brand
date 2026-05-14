@@ -8,7 +8,6 @@
   import freeze from '$lib/assets/links/freeze.webp';
   import dm from '$lib/assets/links/dm.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
-
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
     eager: true,
     import: 'default'
@@ -17,7 +16,6 @@
     eager: true,
     import: 'default'
   });
-
   const sortFn = (a: any, b: any) => {
     const getNum = (str: string) => {
       const match = str.match(/(\d+)/);
@@ -25,10 +23,8 @@
     };
     return getNum(a) - getNum(b);
   };
-
   const desktopImages = Object.values(desktopModules).sort(sortFn) as string[];
   const mobileImages = Object.values(mobileModules).sort(sortFn) as string[];
-
   const features = [
     {
       title: 'Рассрочка 0% на 12 месяцев',
@@ -46,7 +42,6 @@
       icon: ConciergeBell
     }
   ];
-
   const categories = [
     {
       title: 'Газовая поверхность',
@@ -81,11 +76,11 @@
   ];
 </script>
 
-<section class="mx-auto mt-0! overflow-hidden rounded-2xl">
-  <div class="block lg:hidden">
+<section class="hero-section">
+  <div class="hero-mobile">
     <Slider imgPaths={mobileImages} />
   </div>
-  <div class="hidden lg:block">
+  <div class="hero-desktop">
     <Slider imgPaths={desktopImages} />
   </div>
 </section>
@@ -107,38 +102,37 @@
 </section>
 
 <section class="mx-auto">
-  <div>
-    <h2 class="mb-6 text-2xl font-bold">Популярные категории</h2>
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {#each categories as c}
-        <a
-          href={c.link}
-          class="relative flex h-40 items-center justify-center overflow-hidden rounded-2xl bg-white shadow transition hover:shadow-lg"
-        >
-          <span
-            class="absolute bottom-6 left-6 z-10 rounded-2xl bg-white p-2.5 text-lg font-medium shadow shadow-blue-50"
-            >{c.title}</span
-          >
-          <div class="image">
-            <img src={c.img ?? ''} alt="" />
-          </div>
-        </a>
-      {/each}
-    </div>
+  <h2 class="mb-6 text-2xl font-bold">Популярные категории</h2>
+  <div class="categories-grid">
+    {#each categories as c}
+      <a href={c.link} class="category-card">
+        <span>{c.title}</span>
+        <img src={c.img} alt="" loading="lazy" decoding="async" width="480" height="240" />
+      </a>
+    {/each}
   </div>
 </section>
+
 <section class="mx-auto">
   <h2 class="mb-6 text-2xl font-bold">Бренды</h2>
-  <BrandsGrid></BrandsGrid>
+  <BrandsGrid />
 </section>
 
 <style lang="scss">
+  .hero-section {
+    margin-top: 0;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+  .hero-mobile {
+    display: block;
+  }
+  .hero-desktop {
+    display: none;
+  }
   .features-grid {
     display: grid;
     gap: 24px;
-    @media (min-width: 1024px) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
     .feature-card {
       display: flex;
       align-items: flex-start;
@@ -177,15 +171,69 @@
       }
     }
   }
-  .image {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+  .categories-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .category-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.08);
+    transition: box-shadow 0.2s ease;
+    span {
+      border: 1px solid rgba($green, 0.3);
+      position: absolute;
+      left: 24px;
+      bottom: 24px;
+      z-index: 2;
+      padding: 10px;
+      border-radius: 16px;
+      background: #fff;
+      color: #111;
+      font-size: 1.125rem;
+      font-weight: 500;
+      line-height: 1.25;
+      box-shadow: 0 8px 18px rgba($green, 0.2);
+    }
+    img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    &:hover {
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
   }
   section {
     margin-top: 20px;
     margin-bottom: 20px;
+  }
+  @media (min-width: 640px) {
+    .categories-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .hero-mobile {
+      display: none;
+    }
+    .hero-desktop {
+      display: block;
+    }
+    .features-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .categories-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 </style>
