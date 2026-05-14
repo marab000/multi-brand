@@ -1,64 +1,51 @@
 <script lang="ts">
+  import { register } from 'swiper/element/bundle';
   import { onMount } from 'svelte';
-
+  register();
   export let imgPaths: string[] = [];
-
-  let current = 0;
-  let interval: ReturnType<typeof setInterval>;
-
+  let mounted = false;
   onMount(() => {
-    if (imgPaths.length <= 1) return;
-
-    interval = setInterval(() => {
-      current = (current + 1) % imgPaths.length;
-    }, 5000);
-
-    return () => clearInterval(interval);
+    mounted = true;
   });
 </script>
 
-<div class="slider">
-  {#each imgPaths as imgPath, index}
-    <img
-      src={imgPath}
-      alt=""
-      class:active={index === current}
-      loading={index === 0 ? 'eager' : 'lazy'}
-      fetchpriority={index === 0 ? 'high' : 'auto'}
-      decoding="async"
-      width="1600"
-      height="900"
-    />
-  {/each}
-</div>
+{#if mounted}
+  <swiper-container slides-per-view={1} loop={true} autoplay={{ delay: 5000 }} speed={1000}>
+    {#each imgPaths as imgPath, index}
+      <swiper-slide>
+        <img
+          src={imgPath}
+          alt=""
+          loading={index === 0 ? 'eager' : 'lazy'}
+          fetchpriority={index === 0 ? 'high' : 'auto'}
+          decoding="async"
+          width="1600"
+          height="900"
+        />
+      </swiper-slide>
+    {/each}
+  </swiper-container>
+{/if}
 
 <style lang="scss">
-  .slider {
-    position: relative;
+  swiper-container {
     width: 100%;
     aspect-ratio: 16/9;
+    display: block;
     overflow: hidden;
     border-radius: 16px;
     background: #f5f5f5;
-
-    img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0;
-      transition: opacity 0.6s ease;
-      will-change: opacity;
-
-      &.active {
-        opacity: 1;
-        z-index: 1;
-      }
+    @media (max-width: 1023px) {
+      aspect-ratio: 4/5;
     }
-
-    @media (max-width: 768px) {
-      aspect-ratio: 9/14;
-    }
+  }
+  swiper-slide {
+    width: 100%;
+    height: 100%;
+  }
+  swiper-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 </style>

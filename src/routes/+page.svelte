@@ -76,11 +76,11 @@
   ];
 </script>
 
-<section class="hero-section">
-  <div class="hero-mobile">
+<section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
+  <div class="block lg:hidden">
     <Slider imgPaths={mobileImages} />
   </div>
-  <div class="hero-desktop">
+  <div class="hidden lg:block">
     <Slider imgPaths={desktopImages} />
   </div>
 </section>
@@ -121,14 +121,6 @@
 <style lang="scss">
   .hero-section {
     margin-top: 0;
-    overflow: hidden;
-    border-radius: 16px;
-  }
-  .hero-mobile {
-    display: block;
-  }
-  .hero-desktop {
-    display: none;
   }
   .features-grid {
     display: grid;
@@ -188,12 +180,12 @@
     box-shadow: 0 1px 8px rgba(15, 23, 42, 0.08);
     transition: box-shadow 0.2s ease;
     span {
-      border: 1px solid rgba($green, 0.3);
       position: absolute;
       left: 24px;
       bottom: 24px;
       z-index: 2;
       padding: 10px;
+      border: 1px solid rgba($green, 0.3);
       border-radius: 16px;
       background: #fff;
       color: #111;
@@ -223,12 +215,6 @@
     }
   }
   @media (min-width: 1024px) {
-    .hero-mobile {
-      display: none;
-    }
-    .hero-desktop {
-      display: block;
-    }
     .features-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
