@@ -10,5 +10,4 @@ export const SITE_LOGO_URL = `${SITE_URL}/images/logo-email.png`;
 export const ORDER_NOTIFY_EMAIL = 'mebeliyer@gmail.com';
 
 export const LINK_TG = 'https://t.me/+79375777751';
-export const LINK_MAX =
-  'https://max.ru/u/f9LHodD0cOJd3pqJtE3zs9SRYVMfnhHoWJKEYKq253D7DVbb1oMkXOZxb5g';
+export const LINK_MAX = 'https://max.ru/u/f9LHodD0cOJd3pqJtE3zs9SRYVMfnhHoWJKEYKq253D7DVbb1oMkXOZxb5g';

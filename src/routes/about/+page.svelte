@@ -1,6 +1,6 @@
 <script lang="ts">
   import { BadgeCheck, Building2, Users, Handshake } from 'lucide-svelte';
-  import logo1 from '$lib/assets/logo2.png';
+  import logo1 from '$lib/assets/logo2.webp';
   const advantages = [
     {
       icon: BadgeCheck,

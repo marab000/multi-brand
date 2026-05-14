@@ -3,7 +3,7 @@
 
   const brands: { name: string }[] = rawBrands;
 
-  const images = import.meta.glob('/src/lib/assets/brands/*.{png,jpg,jpeg}', {
+  const images = import.meta.glob('/src/lib/assets/brands/*.{png,jpg,jpeg,webp}', {
     eager: true,
     import: 'default'
   }) as Record<string, string>;
@@ -12,7 +12,7 @@
   const imageMap: Record<string, string> = {};
   for (const path in images) {
     const file = path.split('/').pop() || '';
-    const name = file.replace(/\.(png|jpg|jpeg)$/i, '');
+    const name = file.replace(/\.(png|jpg|jpeg|webp)$/i, '');
     imageMap[imageKey(name)] = images[path];
   }
   const getImage = (name: string) => imageMap[imageKey(name)];
@@ -71,6 +71,6 @@
     font-size: 1rem;
     text-align: center;
     line-height: 1.2;
-		color: #393e38;
+    color: #393e38;
   }
 </style>

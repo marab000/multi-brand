@@ -1,12 +1,12 @@
 <script lang="ts">
   import { BadgePercent, Warehouse, ConciergeBell } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
-  import gaz from '$lib/assets/links/gaz.jpg';
-  import coffee from '$lib/assets/links/coffee.jpg';
-  import vm from '$lib/assets/links/vm.png';
-  import oven from '$lib/assets/links/oven.png';
-  import freeze from '$lib/assets/links/freeze.jpg';
-  import dm from '$lib/assets/links/dm.jpg';
+  import gaz from '$lib/assets/links/gaz.webp';
+  import coffee from '$lib/assets/links/coffee.webp';
+  import vm from '$lib/assets/links/vm.webp';
+  import oven from '$lib/assets/links/oven.webp';
+  import freeze from '$lib/assets/links/freeze.webp';
+  import dm from '$lib/assets/links/dm.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
 
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
