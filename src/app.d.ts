@@ -14,5 +14,8 @@ declare global {
       } | null;
     }
   }
+  interface Window {
+    ym?: (counterId: number, method: 'reachGoal', goal: string) => void;
+  }
 }
 export {};

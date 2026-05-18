@@ -7,22 +7,18 @@
   import { onMount } from 'svelte';
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
-
   register();
-
   let { data } = $props<{ data: { product: Product | null } }>();
   const p = $derived(data.product);
-
   if (!p) {
     throw new Error('Product is null');
   }
-
   let mainSwiper = $state<any>(null);
   let thumbsSwiper = $state<any>(null);
   let zoom = $state(false);
   let zoomIndex = $state(0);
-
   const image = $derived(p.images?.[0]?.url);
+  const slug = $derived(slugify(p.name));
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -35,7 +31,6 @@
       return [];
     }
   });
-
   const breadcrumbs = $derived([
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
@@ -59,30 +54,28 @@
         ]
       : [])
   ]);
-
   function openZoom(i: number) {
     zoomIndex = i;
     zoom = true;
   }
-
   function closeZoom() {
     zoom = false;
   }
-
   function addToCart() {
     cart.add({
       id: p.id,
       name: p.name,
       price: p.price_rrc ?? p.price_ric ?? 0,
-      image
+      image,
+      slug,
+      description: p.description
     });
   }
-
   onMount(() => {
     recentlyViewed.add({
       id: p.id,
       name: p.name,
-      slug: slugify(p.name),
+      slug,
       image,
       price: p.price_rrc ?? p.price_ric ?? null,
       description: p.description
@@ -93,7 +86,6 @@
 {#if p}
   <div class="mx-auto flex flex-col items-start">
     <Breadcrumbs items={breadcrumbs} product={p.name} />
-
     <div class="mt-6 grid w-full gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
         <swiper-container
@@ -112,7 +104,6 @@
             </swiper-slide>
           {/each}
         </swiper-container>
-
         <div class="relative mt-4">
           <swiper-container
             bind:this={thumbsSwiper}
@@ -138,15 +129,12 @@
           </swiper-container>
         </div>
       </div>
-
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
         <div class="mb-6 text-3xl font-bold">{formatPrice(p.price_rrc ?? p.price_ric)} ₽</div>
-
         <div class="mb-8 flex gap-3">
           <button class="btn primary" onclick={addToCart}>В корзину</button>
         </div>
-
         <div>
           <h2 class="mb-4 font-semibold">Характеристики</h2>
           <div class="space-y-2 pb-5 text-sm">
@@ -164,7 +152,6 @@
       </div>
     </div>
   </div>
-
   {#if zoom}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
       <button title="" class="absolute flex h-full w-full opacity-0" onclick={closeZoom}></button>

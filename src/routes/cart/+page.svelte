@@ -10,14 +10,15 @@
   import { Minus, Plus, Trash } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
-
   export let data: PageData;
-
   let name = data.user?.full_name ?? '';
   let phone = getPhoneLocalDigits(data.user?.phone);
   let showModal = false;
   let total = 0;
-
+  const reachGoal = (goal: string) => {
+    if (typeof window === 'undefined') return;
+    window.ym?.(108518016, 'reachGoal', goal);
+  };
   const submit = async () => {
     if (!name.trim()) {
       toast.error('Введите имя');
@@ -40,6 +41,7 @@
         body: JSON.stringify({ name, phone: normalizeRuPhone(phone), items }),
         headers: { 'Content-Type': 'application/json' }
       });
+      reachGoal('cart_submit');
       cart.clear();
       if (data.user) {
         toast.success('Заказ создан');
@@ -53,9 +55,7 @@
       toast.error('Ошибка при оформлении заказа');
     }
   };
-
   $: total = $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-
   const closeModal = () => (showModal = false);
 </script>
 
@@ -67,17 +67,26 @@
     <div class="cart mb-3 flex flex-col gap-3 lg:mb-4 lg:grid lg:gap-5">
       <div class="items">
         {#each $cart as item}
-          <div class="item flex! justify-around lg:grid!">
-            <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
-            <div class="info">
-              <h3>{item.name}</h3>
-              <p>{formatPrice(item.price)} ₽</p>
+          <div class="item">
+            <div class="item-main">
+              <a
+                class="image-link"
+                href={item.slug ? `/products/${item.slug}` : undefined}
+                aria-label={item.name}
+              >
+                <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
+              </a>
+              <div class="info">
+                <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}
+                  >{item.name}</a
+                >
+                {#if item.description}
+                  <p class="description">{item.description}</p>
+                {/if}
+              </div>
             </div>
-            <div class="qty flex flex-col gap-3">
-              <p class="block text-center font-semibold lg:hidden">
-                {formatPrice(item.price * item.qty)} ₽
-              </p>
-              <div class="flex items-center gap-2">
+            <div class="item-actions">
+              <div class="qty">
                 <button on:click={() => cart.dec(item.id)}
                   ><Minus size="14" strokeWidth="2.5" /></button
                 >
@@ -86,13 +95,11 @@
                   ><Plus size="14" strokeWidth="2.5" /></button
                 >
               </div>
+              <p class="sum">{formatPrice(item.price * item.qty)} ₽</p>
+              <button class="remove" on:click={() => cart.remove(item.id)}
+                ><Trash size="14" strokeWidth="2.5" /></button
+              >
             </div>
-            <p class="hidden text-[0.9rem] font-semibold lg:block lg:text-[1rem]!">
-              {formatPrice(item.price * item.qty)} ₽
-            </p>
-            <button class="remove" on:click={() => cart.remove(item.id)}
-              ><Trash size="14" strokeWidth="2.5" /></button
-            >
           </div>
         {/each}
       </div>
@@ -146,62 +153,100 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        .item {
-          display: grid;
-          grid-template-columns:
-            minmax(50px, 80px) minmax(100px, 1fr) minmax(70px, 100px) minmax(70px, 100px)
-            minmax(20px, 40px);
+      }
+      .item {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 14px;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        background: #fff;
+      }
+      .item-main {
+        display: grid;
+        grid-template-columns: 86px minmax(0, 1fr);
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+      }
+      .image-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 86px;
+        height: 96px;
+      }
+      img {
+        width: 86px;
+        height: 96px;
+        object-fit: contain;
+      }
+      .info {
+        min-width: 0;
+      }
+      .name {
+        display: inline-block;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.25;
+        color: inherit;
+        text-decoration: none;
+        &:hover {
+          color: $green;
+        }
+      }
+      .description {
+        margin-top: 5px;
+        color: #777;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+      .item-actions {
+        display: grid;
+        grid-template-columns: 110px 110px 42px;
+        align-items: center;
+        gap: 14px;
+      }
+      .qty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        button {
+          display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
-          border: 1px solid #eee;
-          border-radius: 12px;
-          background: #fff;
-          img {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          background: #f3f3f3;
+          text-align: center;
+          &:hover {
+            background: #e6e4e4;
+            opacity: 0.9;
           }
-          .info {
-            h3 {
-              font-size: 14px;
-              font-weight: 600;
-            }
-            p {
-              font-size: 13px;
-              color: #777;
-            }
-          }
-          .qty {
-            button {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              width: 28px;
-              height: 28px;
-              border-radius: 6px;
-              background: #f3f3f3;
-              text-align: center;
-              &:hover {
-                background: #e6e4e4;
-                opacity: 0.9;
-              }
-            }
-          }
-          .remove {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 33px;
-            height: 33px;
-            border: 1px solid rgba(255, 0, 0, 0.25);
-            border-radius: 12px;
-            color: rgba(255, 0, 0, 0.5);
-            &:hover {
-              border: 1px solid rgba(255, 0, 0, 0.5);
-              background: rgba(255, 0, 0, 0.05);
-            }
-          }
+        }
+      }
+      .sum {
+        font-size: 16px;
+        font-weight: 700;
+        white-space: nowrap;
+        text-align: right;
+      }
+      .remove {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 33px;
+        height: 33px;
+        border: 1px solid rgba(255, 0, 0, 0.25);
+        border-radius: 12px;
+        color: rgba(255, 0, 0, 0.5);
+        &:hover {
+          border: 1px solid rgba(255, 0, 0, 0.5);
+          background: rgba(255, 0, 0, 0.05);
         }
       }
     }
@@ -223,6 +268,61 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+      }
+    }
+  }
+  @media (max-width: 1023px) {
+    .cart-page {
+      .cart {
+        .item {
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+          padding: 12px;
+        }
+        .item-main {
+          grid-template-columns: 90px minmax(0, 1fr);
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .image-link {
+          width: 90px;
+          height: 118px;
+          flex-shrink: 0;
+        }
+        img {
+          width: 90px;
+          height: 118px;
+          object-fit: contain;
+        }
+        .name {
+          font-size: 14px;
+        }
+        .description {
+          margin-top: 4px;
+          font-size: 12.5px;
+          line-height: 1.35;
+        }
+        .item-actions {
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          align-items: center;
+          gap: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #f1f1f1;
+        }
+        .qty {
+          justify-content: flex-start;
+        }
+        .sum {
+          font-size: 15px;
+          text-align: center;
+        }
+        .remove {
+          width: 34px;
+          height: 34px;
+        }
       }
     }
   }

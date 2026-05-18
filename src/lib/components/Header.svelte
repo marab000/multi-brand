@@ -1,6 +1,7 @@
 <script lang="ts">
   import ProductSearch from '$lib/components/ProductSearch.svelte';
   import AuthModal from '$lib/components/AuthModal.svelte';
+  import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import logo1 from '$lib/assets/logo1.png';
   import { cart } from '$lib/stores/cart';
   import { derived } from 'svelte/store';
@@ -16,12 +17,13 @@
     Minus,
     X,
     Phone,
-    MapPin
+    Truck,
+    MessageCircleMore,
+    Building2
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
   import { SITE_PHONE, SITE_PHONE_HREF } from '$lib/config/site';
-
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
     slug: string;
@@ -50,14 +52,11 @@
     }[];
   };
   type CatalogParent = { slug: string; name: string; items: CatalogMenuRoot[] };
-
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
   const phoneNumber = SITE_PHONE;
   const phoneHref = SITE_PHONE_HREF;
-
   let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null } }>();
-
   let open = $state(false);
   let timeout: ReturnType<typeof setTimeout> | undefined;
   let isMobile = $state(false);
@@ -68,11 +67,10 @@
   let authOpen = $state(false);
   let authMode = $state<'login' | 'register'>('login');
   let userMenuOpen = $state(false);
-
+  let requestOpen = $state(false);
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
   const catalogRoots = $derived((data?.catalogRoots ?? []) as CatalogRoot[]);
   const user = $derived(data?.user ?? null);
-
   function buildRoot(root: CatalogRoot): CatalogMenuRoot | null {
     const groups = root.groups
       .filter((group) => !group.isDefault)
@@ -91,7 +89,6 @@
     if (!groups.length) return null;
     return { slug: root.slug, name: root.name, href: `/catalog/${root.slug}`, groups };
   }
-
   const catalogParents = $derived.by(() => {
     const menuRoots = catalogRoots.map(buildRoot).filter(Boolean) as CatalogMenuRoot[];
     const groups: CatalogParent[] = [
@@ -129,34 +126,28 @@
     ];
     return groups.filter((group) => group.items.length > 0);
   });
-
   $effect(() => {
     pathname = $page.url.pathname;
     showSearch =
       pathname === '/' || pathname.startsWith('/catalog') || pathname.startsWith('/products');
   });
-
   function syncMobile() {
     isMobile = window.innerWidth < 1024;
   }
-
   onMount(() => {
     syncMobile();
     window.addEventListener('resize', syncMobile);
     return () => window.removeEventListener('resize', syncMobile);
   });
-
   function resetMenuState() {
     expandedGroupLeaves = {};
     openRootSlug = null;
   }
-
   function openMenu() {
     if (isMobile) return;
     clearTimeout(timeout);
     open = true;
   }
-
   function closeMenu() {
     if (isMobile) return;
     timeout = setTimeout(() => {
@@ -164,26 +155,24 @@
       resetMenuState();
     }, 160);
   }
-
   function toggleClick() {
     if (!isMobile) return;
     open = !open;
     if (!open) resetMenuState();
   }
-
   function closeCatalog() {
     open = false;
     resetMenuState();
   }
-
   function toggleRoot(rootSlug: string) {
     openRootSlug = openRootSlug === rootSlug ? null : rootSlug;
   }
-
   function toggleGroupLeaves(key: string) {
     expandedGroupLeaves = { ...expandedGroupLeaves, [key]: !expandedGroupLeaves[key] };
   }
-
+  function openRequestModal() {
+    requestOpen = true;
+  }
   function handleUserClick() {
     if (!user) {
       authMode = 'login';
@@ -192,7 +181,6 @@
     }
     userMenuOpen = !userMenuOpen;
   }
-
   async function logout() {
     const res = await fetch('/api/auth/logout', { method: 'POST' });
     if (!res.ok) {
@@ -204,31 +192,48 @@
   }
 </script>
 
-<nav class="nav container mx-auto px-4">
-  <div class="nav__top min-h-15 md:min-h-11">
-    <a class="nav__logo flex h-10 sm:hidden" href="/"
-      ><img class="object-contain" src={logo1} alt="logo" /></a
-    >
-    <div class="nav__top-links py-3">
-      <a class="nav__about flex gap-x-1.5" href="/about">
-        <MapPin size={18} strokeWidth={2.1} />
-        О компании</a
+<nav class="nav container mx-auto px-3 sm:px-4">
+  <div
+    class="nav__top flex min-h-15 flex-col gap-1.5 border-b border-black/5 py-2 md:min-h-11 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0"
+  >
+    <div class="flex w-full items-center justify-between gap-3 md:hidden">
+      <a class="nav__logo flex h-9 w-20 shrink-0" href="/"
+        ><img class="object-contain" src={logo1} alt="logo" /></a
       >
       <a
         class="nav__phone whitespace-nowrap"
         href={'tel:' + phoneHref}
         aria-label={`Позвонить ${phoneNumber}`}
+        ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
       >
-        <Phone size={18} strokeWidth={2.1} />
-        <span>{phoneNumber}</span>
-      </a>
+    </div>
+    <div
+      class="nav__top-links flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-1.5 py-0 md:ml-auto md:w-auto md:flex-nowrap md:gap-5 md:py-3"
+    >
+      <a class="nav__about flex gap-x-1.5" href="/delivery"
+        ><Truck size={16} strokeWidth={2.1} />Доставка</a
+      >
+      <button
+        class="nav__about nav__about-button flex gap-x-1.5"
+        type="button"
+        onclick={openRequestModal}
+        ><MessageCircleMore size={16} strokeWidth={2.1} />Оставить заявку</button
+      >
+      <a class="nav__about flex gap-x-1.5" href="/about"
+        ><Building2 size={16} strokeWidth={2.1} />О компании</a
+      >
+      <a
+        class="nav__phone hidden! whitespace-nowrap md:inline-flex!"
+        href={'tel:' + phoneHref}
+        aria-label={`Позвонить ${phoneNumber}`}
+        ><Phone size={18} strokeWidth={2.1} /><span>{phoneNumber}</span></a
+      >
     </div>
   </div>
   <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo hidden h-11.5 sm:flex" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
       {#if isMobile}
         <button class="catalog-trigger" type="button" onclick={toggleClick}
@@ -279,14 +284,13 @@
                             onclick={() => toggleRoot(root.slug)}
                             aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
                             aria-label="Показать группы"
-                          >
-                            <div class="toggle__circle">
+                            ><div class="toggle__circle">
                               {#if openRootSlug === root.slug}<Minus
                                   size={14}
                                   strokeWidth={2.25}
                                 />{:else}<Plus size={14} strokeWidth={2.25} />{/if}
-                            </div>
-                          </button>
+                            </div></button
+                          >
                         </div>
                       {/if}
                     </div>
@@ -341,11 +345,7 @@
           onclick={handleUserClick}
           class="flex items-center gap-2"
         >
-          {#if user}
-            <CircleUserRound size="18" />
-          {:else}
-            <User size="18" />
-          {/if}
+          {#if user}<CircleUserRound size="18" />{:else}<User size="18" />{/if}
           <span class="absolute -bottom-4 text-[11px]"
             >{#if user}Профиль{:else}Войти{/if}</span
           >
@@ -358,15 +358,14 @@
           </div>
         {/if}
       </div>
-      <button title="" class="disabled relative flex-col" style="cursor: default;">
-        <Heart size="18" />
-        <span class="absolute -bottom-4 text-[11px]">Избранное</span>
-      </button>
-      <a href="/cart" class="relative">
-        <ShoppingCart size="18" />
-        {#if $count > 0}<span class="badge">{$count}</span>{/if}
-        <span class="absolute -bottom-4 text-[11px]">Корзина</span>
-      </a>
+      <button title="" class="disabled relative flex-col" style="cursor: default;"
+        ><Heart size="18" /><span class="absolute -bottom-4 text-[11px]">Избранное</span></button
+      >
+      <a href="/cart" class="relative"
+        ><ShoppingCart size="18" />{#if $count > 0}<span class="badge">{$count}</span>{/if}<span
+          class="absolute -bottom-4 text-[11px]">Корзина</span
+        ></a
+      >
     </div>
   </div>
   <div class="my-3 block flex-1 lg:hidden">
@@ -379,42 +378,20 @@
     aria-label="Закрыть меню"
     onclick={() => (userMenuOpen = false)}
   ></button>{/if}
+<LeadRequestModal bind:open={requestOpen} />
 <AuthModal bind:open={authOpen} bind:mode={authMode} />
 
 <style lang="scss">
   .nav {
     background: #fff;
-    &__top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    &__top-links {
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-      gap: 22px;
-      margin-left: auto;
-    }
     &__about {
+      align-items: center;
       color: #202020;
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.1;
       text-decoration: none;
       transition: color 0.18s ease;
-      &:hover {
-        color: $green;
-      }
-    }
-    &__phone {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      color: #202020;
-      text-decoration: none;
-      font-size: 1.05rem;
-      font-weight: 700;
       :global(svg) {
         color: $green;
         flex: 0 0 auto;
@@ -422,11 +399,45 @@
       &:hover {
         color: $green;
       }
+      @media (min-width: 768px) {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+    }
+    &__about-button {
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+    &__phone {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: #202020;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1;
+      :global(svg) {
+        color: $green;
+        flex: 0 0 auto;
+      }
+      &:hover {
+        color: $green;
+      }
+      @media (min-width: 768px) {
+        gap: 10px;
+        font-size: 1.05rem;
+        font-weight: 700;
+      }
     }
     &__inner {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 10px;
+      @media (min-width: 1024px) {
+        gap: 20px;
+      }
     }
     &__catalog {
       position: relative;
@@ -729,7 +740,6 @@
         color: $green;
       }
       &:hover:not(.disabled) {
-        // color: #fff;
         background: $green-light;
         :global(svg) {
           color: #fff !important;
@@ -784,17 +794,5 @@
     background: red;
     color: #fff;
     font-size: 10px;
-  }
-  @media (max-width: 640px) {
-    .nav__top-links {
-      gap: 14px;
-    }
-    .nav__about {
-      font-size: 0.7rem;
-    }
-    .nav__phone {
-      gap: 7px;
-      font-size: 0.8rem;
-    }
   }
 </style>
