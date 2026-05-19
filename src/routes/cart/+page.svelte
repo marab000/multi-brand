@@ -61,7 +61,7 @@
 </script>
 
 <div class="cart-page">
-  <h1>Корзина</h1>
+  <h1 class="pt-3 pb-1">Корзина</h1>
   {#if $cart.length === 0}
     <div class="empty-state mb-4">
       <img src={cartEmptyImage} alt="Пустая корзина" />
