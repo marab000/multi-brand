@@ -1,25 +1,22 @@
 <script lang="ts">
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
   import { ChevronDown, ChevronUp, Check } from 'lucide-svelte';
   import ProductCard from '$lib/components/ProductCard.svelte';
-
   export let products: any[] = [];
   export let currentPage = 1;
   export let pages = 1;
   export let currentSearch = '';
-
   const sortOptions = [
     { value: 'default', label: 'По умолчанию' },
     { value: 'price_asc', label: 'Сначала дешевле' },
     { value: 'price_desc', label: 'Сначала дороже' }
   ];
-
   let isSortOpen = false;
-
-  $: currentSort = new URLSearchParams(currentSearch).get('sort') ?? 'default';
+  $: currentSort = $page.url.searchParams.get('sort') ?? 'default';
   $: currentSortLabel =
     sortOptions.find((item) => item.value === currentSort)?.label ?? 'По умолчанию';
   $: visiblePages = getVisiblePages(currentPage, pages);
-
   function getVisiblePages(current: number, total: number): (number | '...')[] {
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
     const result: (number | '...')[] = [];
@@ -40,30 +37,25 @@
     result.push(total);
     return result;
   }
-
-  function buildPageLink(p: number) {
-    const params = new URLSearchParams(currentSearch);
+  function goToPage(p: number) {
+    const params = new URLSearchParams($page.url.searchParams);
     params.set('page', String(p));
-    return `?${params.toString()}`;
+    goto(`${$page.url.pathname}?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
-
   function applySort(sort: string) {
-    const params = new URLSearchParams(currentSearch);
+    const params = new URLSearchParams($page.url.searchParams);
     if (sort === 'default') params.delete('sort');
     else params.set('sort', sort);
     params.set('page', '1');
     isSortOpen = false;
-    window.location.search = params.toString();
+    goto(`${$page.url.pathname}?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
-
   function toggleSort() {
     isSortOpen = !isSortOpen;
   }
-
   function closeSort() {
     isSortOpen = false;
   }
-
   function openFilters() {
     window.dispatchEvent(new CustomEvent('catalog:open-filters'));
   }
@@ -76,7 +68,6 @@
 {:else}
   <div class="topbar">
     <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
-
     <div class="sort" onclick={(e) => e.stopPropagation()}>
       <button
         class="sort__trigger"
@@ -91,7 +82,6 @@
           <ChevronDown size={18} strokeWidth={2.1} />
         {/if}
       </button>
-
       {#if isSortOpen}
         <div class="sort__dropdown">
           {#each sortOptions as option}
@@ -113,29 +103,29 @@
       {/if}
     </div>
   </div>
-
   <div class="grid">
     {#each products as product (product.id)}
       <ProductCard {product} />
     {/each}
   </div>
-
   {#if pages > 1}
     <div class="pagination">
       {#if currentPage > 1}
-        <a href={buildPageLink(currentPage - 1)}>‹</a>
+        <button type="button" onclick={() => goToPage(currentPage - 1)}>‹</button>
       {/if}
-
       {#each visiblePages as p}
         {#if p === '...'}
           <span class="dots">...</span>
         {:else}
-          <a href={buildPageLink(p as number)} class:active={p === currentPage}>{p}</a>
+          <button
+            type="button"
+            class:active={p === currentPage}
+            onclick={() => goToPage(p as number)}>{p}</button
+          >
         {/if}
       {/each}
-
       {#if currentPage < pages}
-        <a href={buildPageLink(currentPage + 1)}>›</a>
+        <button type="button" onclick={() => goToPage(currentPage + 1)}>›</button>
       {/if}
     </div>
   {/if}
@@ -260,20 +250,20 @@
     margin: -14px 0 30px 0;
     justify-content: center;
     flex-wrap: wrap;
-    a {
+    button {
       min-width: 38px;
       height: 38px;
       padding: 0 10px;
       border-radius: 10px;
       border: 1px solid #eee;
       background: #fff;
-      text-decoration: none;
       color: #222;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 500;
       transition: 0.2s;
+      cursor: pointer;
       &:hover {
         background: #f5f5f5;
       }

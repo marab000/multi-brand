@@ -1,25 +1,30 @@
 import { json } from '@sveltejs/kit';
 import { fetchProducts } from '$lib/server/catalogApi';
+import { toDbPrice } from '$lib/utils/formatPrice';
 
 export async function GET({ url }) {
   try {
-    const search = url.searchParams.get('search')?.trim();
-    const categories = url.searchParams.getAll('category');
+    const search = url.searchParams.get('search')?.trim() || undefined;
     const types = url.searchParams.getAll('type');
     const brands = url.searchParams.getAll('brand');
     const colors = url.searchParams.getAll('color');
-    const priceMin = url.searchParams.get('priceFrom') ? Number(url.searchParams.get('priceFrom')) / 1000 : undefined;
-    const priceMax = url.searchParams.get('priceTo') ? Number(url.searchParams.get('priceTo')) / 1000 : undefined;
+    const priceMin = toDbPrice(url.searchParams.get('priceFrom'));
+    const priceMax = toDbPrice(url.searchParams.get('priceTo'));
     const page = Number(url.searchParams.get('page') ?? 1);
     const limit = Number(url.searchParams.get('limit') ?? 9);
     const offset = (page - 1) * limit;
-
     const { products, total } = await fetchProducts(
-      { search, categories, types, brands, colors, priceMin, priceMax },
+      {
+        search,
+        types: types.length ? types : undefined,
+        brands: brands.length ? brands : undefined,
+        colors: colors.length ? colors : undefined,
+        priceMin,
+        priceMax
+      },
       limit,
       offset
     );
-
     return json({
       products,
       total,

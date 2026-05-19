@@ -1,10 +1,16 @@
-export function normalizePrice(price: number | null | undefined) {
-  if (!price) return 0;
-  return Math.round(price * 1000);
+export function toDisplayPrice(price: number | string | null | undefined) {
+  const value = Number(price);
+  if (!value || !Number.isFinite(value)) return 0;
+  return Math.round(value * 1000);
 }
-
-export function formatPrice(price: number | null | undefined) {
-  const value = normalizePrice(price);
+export function toDbPrice(price: number | string | null | undefined) {
+  const value = Number(price);
+  if (!value || !Number.isFinite(value)) return undefined;
+  return value / 1000;
+}
+export const normalizePrice = toDisplayPrice;
+export function formatPrice(price: number | string | null | undefined) {
+  const value = toDisplayPrice(price);
   if (!value) return '';
   return new Intl.NumberFormat('ru-RU', {
     maximumFractionDigits: 0

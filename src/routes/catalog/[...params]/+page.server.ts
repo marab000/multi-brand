@@ -10,6 +10,7 @@ import {
   getCatalogRoots
 } from '$lib/server/categories';
 import { sql } from '$lib/db';
+import { toDbPrice } from '$lib/utils/formatPrice';
 
 function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | undefined {
   const specs: Record<string, { min?: number; max?: number }> = {};
@@ -48,7 +49,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const isSearchPage = rootSlug === 'search';
   const sortParam = url.searchParams.get('sort');
   const sort = sortParam === 'price_asc' || sortParam === 'price_desc' ? sortParam : 'default';
-
   const availabilityRows = await sql`
     SELECT DISTINCT
       catalog_root_slug AS root_slug,
@@ -58,7 +58,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
     WHERE catalog_root_slug IS NOT NULL
       AND price_rrc IS NOT NULL
   `;
-
   const filteredRoots = filterCatalogRootsByAvailability(
     getCatalogRoots(),
     availabilityRows as any[]
@@ -67,13 +66,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
   if (!isSearchPage && !currentRoot) {
     throw error(404, 'Раздел не найден');
   }
-
   const currentGroup =
     !isSearchPage && currentRoot ? findCatalogGroupBySlug(currentRoot, groupSlug) : null;
   if (!isSearchPage && groupSlug && !currentGroup) {
     throw error(404, 'Группа не найдена');
   }
-
   const currentLeaf =
     !isSearchPage && currentGroup && !currentGroup.isDynamicByProductType
       ? findCatalogLeafBySlug(currentGroup, leafSlug)
@@ -81,20 +78,16 @@ export const load: PageServerLoad = async ({ params, url }) => {
   if (!isSearchPage && leafSlug && !currentGroup?.isDynamicByProductType && !currentLeaf) {
     throw error(404, 'Подкатегория не найдена');
   }
-
   const selectedTypes = url.searchParams
     .getAll('type')
     .map((item) => item.trim())
     .filter(Boolean);
-
   if (!isSearchPage && currentGroup?.isDynamicByProductType && leafSlug) {
     throw error(404, 'Подкатегория не найдена');
   }
-
   if (isSearchPage && (groupSlug || leafSlug)) {
     throw error(404, 'Страница поиска не найдена');
   }
-
   const specs = buildSpecs(url);
   const hasAppliedFilters =
     selectedTypes.length > 0 ||
@@ -104,7 +97,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
     Boolean(url.searchParams.get('price_min')) ||
     Boolean(url.searchParams.get('price_max')) ||
     Boolean(specs);
-
   const filters: CatalogFilters = {
     search: url.searchParams.get('search')?.trim() || undefined,
     catalogRootSlug: isSearchPage ? undefined : currentRoot?.slug,
@@ -113,40 +105,33 @@ export const load: PageServerLoad = async ({ params, url }) => {
     types: selectedTypes.length ? selectedTypes : undefined,
     brands: url.searchParams.getAll('brand'),
     colors: url.searchParams.getAll('color'),
-    priceMin: url.searchParams.get('price_min')
-      ? Number(url.searchParams.get('price_min')) / 1000
-      : undefined,
-    priceMax: url.searchParams.get('price_max')
-      ? Number(url.searchParams.get('price_max')) / 1000
-      : undefined,
+    priceMin: toDbPrice(url.searchParams.get('price_min')),
+    priceMax: toDbPrice(url.searchParams.get('price_max')),
     specs,
     sort
   };
-
   const perPage = 24;
   let page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 1;
-  const offset = (page - 1) * perPage;
-  const { products, total } = await fetchProducts(filters, perPage, offset);
-
+  if (!Number.isFinite(page) || page < 1) page = 1;
+  const firstLoad = await fetchProducts(filters, 1, 0);
+  const total = firstLoad.total;
   if (!isSearchPage && groupSlug && total === 0 && !hasAppliedFilters) {
     throw error(404, 'Категория пуста');
   }
-
-  const pages = Math.ceil(total / perPage) || 1;
+  const pages = Math.max(1, Math.ceil(total / perPage));
   if (page > pages) page = pages;
-
+  const offset = (page - 1) * perPage;
+  const { products } = await fetchProducts(filters, perPage, offset);
   let title = 'Каталог';
   if (isSearchPage) title = 'Поиск';
   else if (selectedTypes.length === 1) title = selectedTypes[0];
   else if (currentLeaf) title = currentLeaf.name;
   else if (currentGroup) title = currentGroup.name;
   else if (currentRoot) title = currentRoot.name;
-
   const breadcrumbs: { name: string; href?: string }[] = [
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' }
   ];
-
   if (isSearchPage) {
     breadcrumbs.push({ name: 'Поиск' });
   } else if (currentRoot) {
@@ -163,7 +148,6 @@ export const load: PageServerLoad = async ({ params, url }) => {
       breadcrumbs.push({ name: currentLeaf.name });
     }
   }
-
   return {
     products,
     total,

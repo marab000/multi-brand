@@ -4,6 +4,7 @@ import type { Product } from '$lib/types/product';
 import { isProductAllowedForFeed } from '$lib/server/feedFilters';
 import { slugify } from '$lib/utils/slugify';
 import { normalizePrice } from '$lib/utils/formatPrice';
+import { getProductPrice } from '$lib/utils/pricing';
 
 type FeedProduct = Product & {
   images: {
@@ -55,7 +56,7 @@ export const GET: RequestHandler = async () => {
       image,
       p.name,
       p.description ?? '',
-      normalizePrice(p.price_rrc),
+      normalizePrice(getProductPrice(p)),
       'RUB',
       p.brand?.name ?? '',
       p.category ?? ''

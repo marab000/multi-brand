@@ -2,6 +2,7 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { register } from 'swiper/element/bundle';
   import { formatPrice } from '$lib/utils/formatPrice';
+  import { getBaseProductPrice, getProductPrice, hasProductDiscount } from '$lib/utils/pricing';
   import { cart } from '$lib/stores/cart';
   import type { Product } from '$lib/types/product';
   import { onMount } from 'svelte';
@@ -19,6 +20,9 @@
   let zoomIndex = $state(0);
   const image = $derived(p.images?.[0]?.url);
   const slug = $derived(slugify(p.name));
+  const price = $derived(getProductPrice(p));
+  const oldPrice = $derived(getBaseProductPrice(p));
+  const hasDiscount = $derived(hasProductDiscount(p));
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -65,7 +69,7 @@
     cart.add({
       id: p.id,
       name: p.name,
-      price: p.price_rrc ?? p.price_ric ?? 0,
+      price,
       image,
       slug,
       description: p.description
@@ -77,7 +81,7 @@
       name: p.name,
       slug,
       image,
-      price: p.price_rrc ?? p.price_ric ?? null,
+      price,
       description: p.description
     });
   });
@@ -131,7 +135,15 @@
       </div>
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
-        <div class="mb-6 text-3xl font-bold">{formatPrice(p.price_rrc ?? p.price_ric)} ₽</div>
+        <div class="mb-6 flex flex-wrap items-end gap-3">
+          <div class="text-3xl font-bold">{formatPrice(price)} ₽</div>
+          {#if hasDiscount}
+            <div class="pb-1 text-lg text-gray-400 line-through">{formatPrice(oldPrice)} ₽</div>
+            <div class="mb-1 rounded-full bg-green-600 px-3 py-1 text-sm font-bold text-white">
+              -13%
+            </div>
+          {/if}
+        </div>
         <div class="mb-8 flex gap-3">
           <button class="btn primary" onclick={addToCart}>В корзину</button>
         </div>

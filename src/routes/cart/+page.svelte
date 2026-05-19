@@ -61,7 +61,6 @@
 </script>
 
 <div class="cart-page">
-  <h1 class="pt-3 pb-1">Корзина</h1>
   {#if $cart.length === 0}
     <div class="empty-state mb-4">
       <img src={cartEmptyImage} alt="Пустая корзина" />
@@ -70,6 +69,7 @@
       <a class="btn primary gap-3" href="/catalog"><Menu size={18} />Перейти в каталог</a>
     </div>
   {:else}
+    <h1 class="pt-3 pb-1">Корзина</h1>
     <div class="cart mb-3 flex flex-col gap-3 lg:mb-4 lg:grid lg:gap-5">
       <div class="items">
         {#each $cart as item}
@@ -145,21 +145,13 @@
 
 <style lang="scss">
   .cart-page {
-    h1 {
-      margin-bottom: 20px;
-      font-size: 28px;
-      font-weight: 600;
-    }
-    .empty {
-      color: #777;
-    }
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 36px 20px 30px;
       border: 1px solid #e9ece8;
-      border-radius: 28px;
+      border-radius: 16px;
       background: linear-gradient(180deg, #fff 0%, #f8faf8 100%);
       text-align: center;
       img {

@@ -10,7 +10,7 @@ import {
   getCatalogRoots,
   slugifyCatalogValue
 } from '$lib/server/categories';
-import { normalizePrice } from '$lib/utils/formatPrice';
+import { toDbPrice, toDisplayPrice } from '$lib/utils/formatPrice';
 
 type MinMax = {
   price: [number, number];
@@ -192,12 +192,8 @@ export const load: LayoutServerLoad = async ({ url }) => {
       types: selectedTypes.length ? selectedTypes : undefined,
       brands: url.searchParams.getAll('brand'),
       colors: url.searchParams.getAll('color'),
-      priceMin: url.searchParams.get('price_min')
-        ? Number(url.searchParams.get('price_min')) / 1000
-        : undefined,
-      priceMax: url.searchParams.get('price_max')
-        ? Number(url.searchParams.get('price_max')) / 1000
-        : undefined,
+      priceMin: toDbPrice(url.searchParams.get('price_min')),
+      priceMax: toDbPrice(url.searchParams.get('price_max')),
       specs: buildSpecs(url)
     };
     const { whereClause, values } = buildWhere(filters);
@@ -257,7 +253,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
   const brands = [...new Set(products.map((p) => p.brand_name?.trim()).filter(Boolean))];
   const colors = [...new Set(products.map((p) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
   const prices = products
-    .map((p) => normalizePrice(Number(p.price_rrc)))
+    .map((p) => toDisplayPrice(p.price_rrc))
     .filter((value) => Number.isFinite(value));
   const priceMax = prices.length ? Math.max(...prices) : 0;
   const sizeMap = {

@@ -3,61 +3,59 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
-
   export let paramMin: string;
   export let paramMax: string;
   export let min = 0;
   export let max = 100;
-
   let sliderValue: [number, number] = [min, max];
   let committedValue: [number, number] = [min, max];
   let inputValue: [string, string] = [String(min), String(max)];
-
   let isDragging = false;
   let initialized = false;
-
   function parseSafe(val: string) {
     if (!val) return null;
-    const cleaned = val.replace(',', '.').match(/^\d+(\.\d+)?/);
+    const cleaned = val
+      .replace(/\s/g, '')
+      .replace(',', '.')
+      .match(/^\d+(\.\d+)?/);
     if (!cleaned) return null;
     const num = Number(cleaned[0]);
-    return isNaN(num) ? null : num;
+    return Number.isFinite(num) ? num : null;
   }
-
   function roundBounds(minVal: number, maxVal: number) {
-    return [Math.floor(minVal), Math.ceil(maxVal)] as [number, number];
+    const a = Math.max(min, Math.floor(minVal));
+    const b = Math.min(max, Math.ceil(maxVal));
+    return a <= b ? ([a, b] as [number, number]) : ([b, a] as [number, number]);
   }
-
   onMount(() => {
     const params = new URLSearchParams($page.url.search);
     const vMin = parseSafe(params.get(paramMin) || '');
     const vMax = parseSafe(params.get(paramMax) || '');
-    let [initMin, initMax] = vMin != null && vMax != null ? roundBounds(vMin, vMax) : [min, max];
+    const [initMin, initMax] = vMin != null && vMax != null ? roundBounds(vMin, vMax) : [min, max];
     committedValue = [initMin, initMax];
     sliderValue = [...committedValue];
     inputValue = [String(initMin), String(initMax)];
     initialized = true;
     window.addEventListener('mouseup', handleRelease);
     window.addEventListener('touchend', handleRelease);
+    return () => {
+      window.removeEventListener('mouseup', handleRelease);
+      window.removeEventListener('touchend', handleRelease);
+    };
   });
-
   $: if (initialized && isDragging) inputValue = [String(sliderValue[0]), String(sliderValue[1])];
   $: if (initialized && !isDragging) {
     sliderValue = [...committedValue];
     inputValue = [String(committedValue[0]), String(committedValue[1])];
   }
-
   function handleStart() {
     isDragging = true;
   }
-
   function handleRelease() {
-    if (isDragging) {
-      isDragging = false;
-      commit();
-    }
+    if (!isDragging) return;
+    isDragging = false;
+    commit();
   }
-
   function commit() {
     let minVal = parseSafe(inputValue[0]);
     let maxVal = parseSafe(inputValue[1]);
@@ -65,7 +63,8 @@
     [minVal, maxVal] = roundBounds(minVal, maxVal);
     if (committedValue[0] === minVal && committedValue[1] === maxVal) return;
     committedValue = [minVal, maxVal];
-    const params = new URLSearchParams($page.url.search);
+    const params = new URLSearchParams($page.url.searchParams);
+    params.delete('page');
     if (minVal !== min || maxVal !== max) {
       params.set(paramMin, String(minVal));
       params.set(paramMax, String(maxVal));
@@ -75,9 +74,8 @@
     }
     sliderValue = [...committedValue];
     inputValue = [String(minVal), String(maxVal)];
-    goto(`?${params.toString()}`, { keepFocus: true, noScroll: true });
+    goto(`${$page.url.pathname}?${params.toString()}`, { keepFocus: true, noScroll: true });
   }
-
   function inputChange() {
     let minVal = parseSafe(inputValue[0]);
     let maxVal = parseSafe(inputValue[1]);
@@ -95,7 +93,6 @@
     <span>—</span>
     <input class="input secondary" type="text" bind:value={inputValue[1]} on:change={inputChange} />
   </div>
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div on:mousedown={handleStart} on:touchstart={handleStart}>
     <RangeSlider {min} {max} step={1} range bind:values={sliderValue} />
   </div>

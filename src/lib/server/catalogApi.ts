@@ -58,12 +58,16 @@ export function buildWhere(filters: CatalogFilters) {
   }
 
   if (filters.brands?.length) {
-    const uniq = Array.from(new Set(filters.brands.map((b) => b.toLowerCase())));
+    const uniq = Array.from(
+      new Set(filters.brands.map((b) => b.trim().toLowerCase()).filter(Boolean))
+    );
     const parts: string[] = [];
     for (const b of uniq) {
       const idx = values.length + 1;
       values.push(b);
-      parts.push(`LOWER(TRIM(p.brand->>'name')) = $${idx}`);
+      parts.push(`
+        LOWER(TRIM(COALESCE(p.brand->>'name', ''))) = $${idx}
+      `);
     }
     conditions.push(`(${parts.join(' OR ')})`);
   }
