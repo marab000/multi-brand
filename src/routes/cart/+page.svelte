@@ -7,9 +7,10 @@
   import { toast } from 'svelte-sonner';
   import Modal from '$lib/components/Modal.svelte';
   import CartPdfExport from '$lib/components/CartPdfExport.svelte';
-  import { Minus, Plus, Trash } from 'lucide-svelte';
+  import { Menu, Minus, Plus, Trash } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
+  import cartEmptyImage from '$lib/assets/cart-empty.webp';
   export let data: PageData;
   let name = data.user?.full_name ?? '';
   let phone = getPhoneLocalDigits(data.user?.phone);
@@ -62,7 +63,12 @@
 <div class="cart-page">
   <h1>Корзина</h1>
   {#if $cart.length === 0}
-    <p class="empty">Корзина пуста</p>
+    <div class="empty-state mb-4">
+      <img src={cartEmptyImage} alt="Пустая корзина" />
+      <h2>Корзина пуста</h2>
+      <p>Добавьте товары в корзину и оформите заказ</p>
+      <a class="btn primary gap-3" href="/catalog"><Menu size={18} />Перейти в каталог</a>
+    </div>
   {:else}
     <div class="cart mb-3 flex flex-col gap-3 lg:mb-4 lg:grid lg:gap-5">
       <div class="items">
@@ -146,6 +152,42 @@
     }
     .empty {
       color: #777;
+    }
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 20px 30px;
+      border: 1px solid #e9ece8;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #fff 0%, #f8faf8 100%);
+      text-align: center;
+      img {
+        width: min(100%, 560px);
+        margin-bottom: 8px;
+        object-fit: contain;
+      }
+      h2 {
+        margin: 0 0 10px;
+        font-size: 42px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+      p {
+        max-width: 420px;
+        margin: 0 0 24px;
+        color: #667085;
+        font-size: 17px;
+        line-height: 1.5;
+      }
+      .btn {
+        min-width: 220px;
+        height: 52px;
+        border-radius: 16px;
+        font-size: 15px;
+        font-weight: 700;
+      }
     }
     .cart {
       grid-template-columns: 1fr 320px;
@@ -273,6 +315,20 @@
   }
   @media (max-width: 1023px) {
     .cart-page {
+      .empty-state {
+        padding: 24px 16px;
+        border-radius: 22px;
+        img {
+          width: 100%;
+          max-width: 360px;
+        }
+        h2 {
+          font-size: 32px;
+        }
+        p {
+          font-size: 15px;
+        }
+      }
       .cart {
         .item {
           display: flex;

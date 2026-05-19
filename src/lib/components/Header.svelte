@@ -234,6 +234,7 @@
     <a class="nav__logo hidden h-11.5 sm:flex" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
       {#if isMobile}
         <button class="catalog-trigger" type="button" onclick={toggleClick}
