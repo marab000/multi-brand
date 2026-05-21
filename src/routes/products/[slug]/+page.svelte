@@ -2,7 +2,14 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { register } from 'swiper/element/bundle';
   import { formatPrice } from '$lib/utils/formatPrice';
-  import { getBaseProductPrice, getProductPrice, hasProductDiscount } from '$lib/utils/pricing';
+  import {
+    getBaseProductPrice,
+    getDiscountLabel,
+    getInstallmentLabel,
+    getMonthlyPayment,
+    getProductPrice,
+    hasProductDiscount
+  } from '$lib/utils/pricing';
   import { cart } from '$lib/stores/cart';
   import type { Product } from '$lib/types/product';
   import { onMount } from 'svelte';
@@ -23,6 +30,7 @@
   const price = $derived(getProductPrice(p));
   const oldPrice = $derived(getBaseProductPrice(p));
   const hasDiscount = $derived(hasProductDiscount(p));
+  const monthlyPayment = $derived(getMonthlyPayment(price));
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -141,10 +149,16 @@
             <div class="old-product-price">{formatPrice(oldPrice)} ₽</div>
             <div class="product-discount">
               <span>АКЦИЯ</span>
-              <b>-13%</b>
+              <b>{getDiscountLabel()}</b>
             </div>
           {/if}
         </div>
+        {#if hasDiscount}
+          <div class="product-installment">
+            от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}
+            <span>Подробности уточняйте у менеджера</span>
+          </div>
+        {/if}
         <div class="mb-8 flex gap-3">
           <button class="btn primary" onclick={addToCart}>В корзину</button>
         </div>
@@ -208,10 +222,10 @@
   }
   .product-price-row {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
   }
   .product-price {
     color: #111;
@@ -248,6 +262,24 @@
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
     b {
       font-size: 14px;
+    }
+  }
+  .product-installment {
+    width: fit-content;
+    margin: 0 0 24px;
+    padding: 8px 12px;
+    border: 1px solid rgba(227, 27, 35, 0.24);
+    border-radius: 8px;
+    color: #e31b23;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.25;
+    span {
+      display: block;
+      margin-top: 3px;
+      color: #000;
+      font-size: 11px;
+      font-weight: 600;
     }
   }
 </style>
