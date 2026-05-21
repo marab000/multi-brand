@@ -231,7 +231,7 @@
     </div>
   </div>
   <div class="nav__inner h-20 lg:h-25">
-    <a class="nav__logo hidden h-11.5 sm:flex" href="/"
+    <a class="nav__logo hidden h-11.5 md:flex" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
     <!-- svelte-ignore a11y_no_static_element_interactions -->
