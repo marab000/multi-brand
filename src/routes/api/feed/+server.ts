@@ -6,10 +6,7 @@ import { slugify } from '$lib/utils/slugify';
 import { normalizePrice } from '$lib/utils/formatPrice';
 import { getProductPrice } from '$lib/utils/pricing';
 
-type FeedProduct = Pick<
-  Product,
-  'id' | 'name' | 'description' | 'brand' | 'category' | 'price_rrc' | 'price_ric'
-> & {
+type FeedProduct = Product & {
   images: {
     url: string;
     position: number;
@@ -17,8 +14,7 @@ type FeedProduct = Pick<
 };
 
 const origin = 'https://multi-brand.online';
-const csv = (value: string | number | null | undefined) =>
-  `"${String(value ?? '').replace(/"/g, '""')}"`;
+const csv = (value: string | number | null | undefined) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 const xml = (value: string | number | null | undefined) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -40,31 +36,9 @@ function getFeedPrice(product: FeedProduct) {
 }
 
 function buildCsv(products: FeedProduct[]) {
-  const header = [
-    'ID',
-    'URL',
-    'Image',
-    'Title',
-    'Description',
-    'Price',
-    'Currency',
-    'custom_label_0',
-    'custom_label_1'
-  ];
+  const header = ['ID', 'URL', 'Image', 'Title', 'Description', 'Price', 'Currency', 'custom_label_0', 'custom_label_1'];
   const rows = products.map((p) =>
-    [
-      p.id,
-      getProductUrl(p),
-      getMainImage(p),
-      p.name,
-      p.description ?? '',
-      getFeedPrice(p),
-      'RUB',
-      p.brand?.name ?? '',
-      p.category ?? ''
-    ]
-      .map(csv)
-      .join(',')
+    [p.id, getProductUrl(p), getMainImage(p), p.name, p.description ?? '', getFeedPrice(p), 'RUB', p.brand?.name ?? '', p.category ?? ''].map(csv).join(',')
   );
   return [header.join(','), ...rows].join('\n');
 }
@@ -73,11 +47,7 @@ function buildYml(products: FeedProduct[]) {
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[];
   const categoryIds = new Map(categories.map((category, index) => [category, index + 1]));
   const date = new Date().toISOString().replace('T', ' ').slice(0, 16);
-  const categoryRows = categories
-    .map(
-      (category) => `      <category id="${categoryIds.get(category)}">${xml(category)}</category>`
-    )
-    .join('\n');
+  const categoryRows = categories.map((category) => `      <category id="${categoryIds.get(category)}">${xml(category)}</category>`).join('\n');
   const offerRows = products
     .map((p) => {
       const categoryId = p.category ? categoryIds.get(p.category) : undefined;
@@ -115,13 +85,7 @@ ${offerRows}
 export const GET: RequestHandler = async ({ url }) => {
   const products = await sql<FeedProduct[]>`
     select
-      p.id,
-      p.name,
-      p.description,
-      p.brand,
-      p.category,
-      p.price_rrc,
-      p.price_ric,
+      p.*,
       coalesce(
         json_agg(
           json_build_object(
@@ -138,14 +102,10 @@ export const GET: RequestHandler = async ({ url }) => {
   `;
   const filtered = products.filter(isProductAllowedForFeed);
   const format = url.searchParams.get('format')?.toLowerCase();
-  const body = format === 'yml' || format === 'xml' ? buildYml(filtered) : buildCsv(filtered);
-  return new Response(body, {
+  const isYml = format === 'yml' || format === 'xml';
+  return new Response(isYml ? buildYml(filtered) : buildCsv(filtered), {
     headers: {
-      'Content-Type':
-        format === 'yml' || format === 'xml'
-          ? 'application/xml; charset=utf-8'
-          : 'text/csv; charset=utf-8',
-      'Cache-Control': 'public, max-age=300'
+      'Content-Type': isYml ? 'application/xml; charset=utf-8' : 'text/csv; charset=utf-8'
     }
   });
 };
