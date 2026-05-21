@@ -135,12 +135,13 @@
       </div>
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
-        <div class="mb-6 flex flex-wrap items-end gap-3">
-          <div class="text-3xl font-bold">{formatPrice(price)} ₽</div>
+        <div class="product-price-row">
+          <div class:discount-price={hasDiscount} class="product-price">{formatPrice(price)} ₽</div>
           {#if hasDiscount}
-            <div class="pb-1 text-lg text-gray-400 line-through">{formatPrice(oldPrice)} ₽</div>
-            <div class="mb-1 rounded-full bg-green-600 px-3 py-1 text-sm font-bold text-white">
-              -13%
+            <div class="old-product-price">{formatPrice(oldPrice)} ₽</div>
+            <div class="product-discount">
+              <span>АКЦИЯ</span>
+              <b>-13%</b>
             </div>
           {/if}
         </div>
@@ -204,5 +205,49 @@
     border: 0;
     background: transparent;
     cursor: zoom-in;
+  }
+  .product-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .product-price {
+    color: #111;
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .discount-price {
+    color: #e31b23;
+  }
+  .old-product-price {
+    color: #111;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1;
+    text-decoration: line-through;
+    text-decoration-color: #e31b23;
+    text-decoration-thickness: 2px;
+    opacity: 0.55;
+  }
+  .product-discount {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    background: $yellow;
+    color: #111;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+    b {
+      font-size: 14px;
+    }
   }
 </style>

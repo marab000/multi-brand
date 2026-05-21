@@ -389,6 +389,7 @@
       align-items: center;
       color: #202020;
       font-size: 13px;
+      padding: 10px 0;
       font-weight: 700;
       line-height: 1.1;
       text-decoration: none;
@@ -795,5 +796,19 @@
     background: red;
     color: #fff;
     font-size: 10px;
+  }
+  @media (max-width: 379px) {
+    .nav {
+      &__about {
+        font-size: 12px;
+      }
+    }
+  }
+  @media (max-width: 359px) {
+    .nav {
+      &__about {
+        font-size: 11px;
+      }
+    }
   }
 </style>

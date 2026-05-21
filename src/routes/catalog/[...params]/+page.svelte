@@ -33,7 +33,7 @@
       currentSearch={data.currentSearch}
     />
   {:else}
-    <div class="empty-state">
+    <div class="empty-state mb-3 lg:mb-4">
       <div class="empty-state__title">Товаров в таком сочетании не нашлось</div>
       <div class="empty-state__text">
         Попробуйте убрать часть фильтров или вернуться к разделу без ограничений.
