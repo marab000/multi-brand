@@ -7,15 +7,16 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import fs from 'fs-extra'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
-const MODES = {
-	MISSING: 'missing',
-	FULL: 'full'
-}
+const MODES = { MISSING: 'missing', FULL: 'full' }
+const SOURCES = { DB: 'db', ERRORS: 'errors' }
 // MODE:
 // 'missing' — обработать только товары без fetch-картинок.
 // 'full' — обработать все товары и заменить старые fetch-картинки новыми.
-// Бренды в обоих режимах берутся из scripts/brands.json.
+// SOURCE:
+// 'db' — взять товары из базы.
+// 'errors' — взять только актуальные товары из scripts/fetch-images-errors.log и пересобрать лог ошибок заново.
 const MODE = MODES.FULL
+const SOURCE = SOURCES.DB
 const THREADS = 3
 const HEADLESS = true
 const BASE = 'https://tetrasis-bt.ru'
@@ -29,15 +30,9 @@ const JPEG_QUALITY = 78
 const MAX_SIZE = 1600
 const MIN_ORIGINAL_SIZE_KB = 120
 const progress = { total: 0, done: 0 }
-const colors = {
-	green: '\x1b[32m',
-	red: '\x1b[31m',
-	yellow: '\x1b[33m',
-	blue: '\x1b[36m',
-	gray: '\x1b[90m',
-	reset: '\x1b[0m'
-}
+const colors = { green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', blue: '\x1b[36m', gray: '\x1b[90m', reset: '\x1b[0m' }
 if (!Object.values(MODES).includes(MODE)) throw new Error(`Unknown MODE: ${MODE}. Use: ${Object.values(MODES).join(', ')}`)
+if (!Object.values(SOURCES).includes(SOURCE)) throw new Error(`Unknown SOURCE: ${SOURCE}. Use: ${Object.values(SOURCES).join(', ')}`)
 const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD })
 const s3 = new S3Client({ region: 'reg', endpoint: process.env.S3_ENDPOINT, credentials: { accessKeyId: process.env.S3_ACCESS_KEY, secretAccessKey: process.env.S3_SECRET_KEY }, forcePathStyle: true })
 const BUCKET = process.env.S3_BUCKET
@@ -71,22 +66,45 @@ function progressText(p) {
 	const percent = progress.total ? Math.round((current / progress.total) * 100) : 100
 	return `[${current}/${progress.total} ${percent}%] ${p.name}`
 }
-function cleanName(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/gi, ' ').trim() }
+function cleanName(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[сc]$/i, 's').replace(/[^a-zа-я0-9]+/gi, ' ').trim() }
 function brand(name) { return String(name || '').split(' ')[0].toLowerCase() }
 function normalizeName(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ') }
 function normalizeBrand(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/gi, ' ').trim() }
 function allowedBrands() { return brands.map(b => normalizeBrand(b.name)).filter(Boolean) }
 function productSlugVariants(name) {
 	const base = cleanName(name)
+	const parts = base.split(' ')
+	const brandPart = parts[0]
+	const model = parts.slice(1).join(' ')
 	const variants = [base]
 	if (!/\d$/.test(base)) variants.push(`${base}1`)
 	if (/\sg$/.test(base)) variants.push(base.replace(/\sg$/, ' b'))
+	const compactMatch = model.match(/^([a-zа-я]+)(\d+)([a-zа-я]+)$/i)
+	if (brandPart && compactMatch) {
+		const [, prefix, digits, suffix] = compactMatch
+		variants.push(`${brandPart} ${prefix} ${digits} ${suffix}`)
+	}
+	const prefixDigitsMatch = model.match(/^([a-zа-я]+)(\d+)$/i)
+	if (brandPart && prefixDigitsMatch) {
+		const [, prefix, digits] = prefixDigitsMatch
+		variants.push(`${brandPart} ${prefix} ${digits}`)
+	}
 	const result = []
 	for (const value of variants) {
 		result.push(value.replace(/\s+/g, '_'))
 		result.push(value.replace(/\s+/g, '-'))
 	}
 	return [...new Set(result)]
+}
+function parseErrorProductNames(content) {
+	const names = new Set()
+	for (const line of content.split('\n')) {
+		const clean = line.trim()
+		if (!clean) continue
+		const match = clean.match(/^\S+\s+(NOT_FOUND|NOT FOUND|NO_IMAGES_FOUND|NO IMAGES FOUND|ERROR|DELETE_OLD_ERROR|SKIP_ALREADY_EXISTS)\s+(.+?)(?:\s+stage:|\s+direct:|\s+imgs:|\s+https?:|$)/)
+		if (match?.[2]) names.add(match[2].replace(/^\[[^\]]+\]\s*/, '').trim())
+	}
+	return [...names]
 }
 function isNoImageUrl(url) { return /no[-_]?image|no_photo|nophoto|placeholder|zaglush/i.test(String(url || '')) }
 function s3KeyFromUrl(url) {
@@ -150,15 +168,7 @@ async function getImages(page, url) {
 				const url = new URL(value, location.origin).href
 				if (!urls.includes(url)) urls.push(url)
 			}
-			const selectors = [
-				'.item_slider ul li[id^="photo-"] a.popup_link[href]',
-				'.item_slider a.popup_link[href]',
-				'.product-detail-gallery a.popup_link[href]',
-				'.detail_picture a.popup_link[href]',
-				'.slides a.popup_link[href]',
-				'a.popup_link[href][data-fancybox]',
-				'a.popup_link[href][rel]'
-			]
+			const selectors = ['.item_slider ul li[id^="photo-"] a.popup_link[href]', '.item_slider a.popup_link[href]', '.product-detail-gallery a.popup_link[href]', '.detail_picture a.popup_link[href]', '.slides a.popup_link[href]', 'a.popup_link[href][data-fancybox]', 'a.popup_link[href][rel]']
 			selectors.forEach(selector => document.querySelectorAll(selector).forEach(a => push(a.getAttribute('href'))))
 			if (!urls.length) {
 				const imgSelectors = ['.item_slider img[src]', '.product-detail-gallery img[src]', '.detail_picture img[src]', '.slides img[src]', 'img.detail_picture[src]', 'img.product-detail-image[src]']
@@ -255,10 +265,8 @@ async function processProduct(page, p) {
 			if (search.url) url = search.url
 		}
 		if (!url) {
-			if (direct?.status === 'no-image') {
-				await logInfo('NO IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
-				await writeErrorLog('NO_IMAGE', p.name, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
-			} else {
+			if (direct?.status === 'no-image') await logInfo('NO IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
+			else {
 				await logError('NOT FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`)
 				await writeErrorLog('NOT_FOUND', p.name, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`)
 			}
@@ -268,10 +276,8 @@ async function processProduct(page, p) {
 		const imageResult = await getImages(page, url)
 		images = imageResult.images
 		if (!images.length) {
-			if (imageResult.status === 'no-image') {
-				await logInfo('NO IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `url:${url}`)
-				await writeErrorLog('NO_IMAGE', p.name, `stage:images`, `url:${url}`)
-			} else {
+			if (imageResult.status === 'no-image') await logInfo('NO IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `url:${url}`)
+			else {
 				await logError('NO IMAGES FOUND', label, 'stage:images', `reason:${imageResult.status}`, `url:${url}`)
 				await writeErrorLog('NO_IMAGES_FOUND', p.name, `stage:images`, `reason:${imageResult.status}`, `url:${url}`)
 			}
@@ -317,28 +323,46 @@ async function worker(browser, queue) {
 	}
 	await page.close()
 }
-async function main() {
-	await fs.writeFile(LOG, '')
-	await fs.writeFile(ERROR_LOG, '')
-	const selectedBrands = allowedBrands()
-	if (!selectedBrands.length) throw new Error('brands.json is empty')
-	await logInfo('BRANDS', selectedBrands.join(', '))
-	const browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
-	let products
+async function loadErrorProducts(oldErrorLog) {
+	const names = parseErrorProductNames(oldErrorLog)
+	if (!names.length) {
+		await logWarn('ERROR SOURCE EMPTY')
+		return []
+	}
+	const products = await sql`select id,name from products where name in ${sql(names)} order by name`
+	const foundNames = new Set(products.map(p => p.name))
+	const staleNames = names.filter(name => !foundNames.has(name))
+	await logInfo('ERROR SOURCE TOTAL', names.length)
+	await logInfo('ERROR SOURCE ACTIVE', products.length)
+	if (staleNames.length) await logWarn('STALE ERRORS SKIPPED', staleNames.length)
+	return products
+}
+async function loadDbProducts(selectedBrands) {
 	if (MODE === MODES.MISSING) {
-		products = await sql`
+		return await sql`
 			select p.id,p.name from products p
 			where not exists(select 1 from product_images pi where pi.product_id=p.id and pi.source='fetch')
 				and lower(trim(p.brand->>'name')) in ${sql(selectedBrands)}
 			order by p.name
 		`
-	} else if (MODE === MODES.FULL) {
-		products = await sql`
-			select id,name from products
-			where lower(trim(brand->>'name')) in ${sql(selectedBrands)}
-			order by name
-		`
 	}
+	return await sql`
+		select id,name from products
+		where lower(trim(brand->>'name')) in ${sql(selectedBrands)}
+		order by name
+	`
+}
+async function main() {
+	await fs.writeFile(LOG, '')
+	const oldErrorLog = SOURCE === SOURCES.ERRORS && await fs.pathExists(ERROR_LOG) ? await fs.readFile(ERROR_LOG, 'utf8') : ''
+	await fs.writeFile(ERROR_LOG, '')
+	if (SOURCE === SOURCES.ERRORS && oldErrorLog) await fs.writeFile(ERROR_LOG + '.previous', oldErrorLog)
+	const selectedBrands = allowedBrands()
+	if (!selectedBrands.length) throw new Error('brands.json is empty')
+	await logInfo('BRANDS', selectedBrands.join(', '))
+	await logInfo('SOURCE', SOURCE, 'MODE', MODE)
+	const browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+	const products = SOURCE === SOURCES.ERRORS ? await loadErrorProducts(oldErrorLog) : await loadDbProducts(selectedBrands)
 	progress.total = products.length
 	progress.done = 0
 	await logInfo('TOTAL', products.length)
