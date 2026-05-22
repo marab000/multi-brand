@@ -1,17 +1,15 @@
 <script lang="ts">
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
+  import { getDiscountLabel } from '$lib/utils/pricing';
   import { SITE_PHONE, SITE_URL, SITE_URL_NAME, SITE_PHONE_MOBILE2 } from '$lib/config/site';
   import { toast } from 'svelte-sonner';
   import { FileText } from 'lucide-svelte';
   import logoUrl from '$lib/assets/logo1.png';
   import notoRegularUrl from '$lib/assets/fonts/NotoSans-Regular.ttf';
   import notoBoldUrl from '$lib/assets/fonts/NotoSans-Bold.ttf';
-
   export let total = 0;
-
   let isExporting = false;
-
   const blobToDataUrl = (blob: Blob) =>
     new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -19,7 +17,6 @@
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-
   const compressImage = (dataUrl: string, max = 800, quality = 0.7) =>
     new Promise<string>((resolve) => {
       const img = new Image();
@@ -38,7 +35,6 @@
       img.onerror = () => resolve(dataUrl);
       img.src = dataUrl;
     });
-
   const loadLocalImage = async (url: string) => {
     try {
       const response = await fetch(url);
@@ -49,7 +45,6 @@
       return null;
     }
   };
-
   const loadRemoteImage = async (url: string) => {
     try {
       const response = await fetch(`/api/image-base64?url=${encodeURIComponent(url)}`);
@@ -61,19 +56,18 @@
       return null;
     }
   };
-
   const loadFontBase64 = async (url: string) => {
     const response = await fetch(url);
     const blob = await response.blob();
     const dataUrl = await blobToDataUrl(blob);
     return dataUrl.split(',')[1];
   };
-
   const createCartExport = async () => {
-    const items = $cart.map((item) => ({
+    const items = $cart.map((item: any) => ({
       id: item.id,
       name: item.name,
       price: item.price,
+      oldPrice: item.oldPrice ?? null,
       qty: item.qty,
       slug: item.slug ?? null,
       image: item.image ?? null
@@ -86,13 +80,11 @@
     if (!response.ok) throw new Error('Cart export create failed');
     return await response.json();
   };
-
   const getItemLink = (item: any) => {
     if (item?.url) return item.url;
     if (item?.slug) return `${SITE_URL}/products/${item.slug}`;
     return '';
   };
-
   const getItemDescription = (item: any) => {
     const parts: string[] = [];
     if (item.brand) parts.push(`Бренд: ${item.brand}`);
@@ -102,7 +94,6 @@
     if (item.description) parts.push(String(item.description).trim());
     return parts.filter(Boolean).join('\n\n');
   };
-
   const splitText = (text: string, maxLength = 72) => {
     if (!text) return '';
     const result: string[] = [];
@@ -124,7 +115,6 @@
     });
     return result.join('\n');
   };
-
   const drawHeader = (doc: any, logoDataUrl: string | null, pageWidth: number) => {
     if (logoDataUrl) {
       const props = doc.getImageProperties(logoDataUrl);
@@ -154,7 +144,6 @@
     doc.line(contactX + 48, 101, contactX + 48 + siteWidth, 101);
     doc.setTextColor(30, 30, 30);
   };
-
   const exportPdf = async () => {
     if (!$cart.length) {
       toast.error('Корзина пуста');
@@ -193,16 +182,22 @@
       doc.setFont('NotoSans', 'normal');
       doc.setFontSize(10);
       doc.text(`Дата: ${fileDate}`, 40, 140);
+      doc.setFont('NotoSans', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(210, 20, 30);
+      doc.text(`В предложении учтены акционные цены на товары, участвующие в распродаже.`, 40, 156);
+      doc.setTextColor(30, 30, 30);
       autoTable(doc, {
-        startY: 162,
-        head: [['Название', 'Фото', 'Цена', 'Ссылка/Описание']],
-        body: $cart.map((item) => {
+        startY: 176,
+        head: [['Название', 'Фото', 'Старая цена', 'Новая цена', 'Ссылка/Описание']],
+        body: $cart.map((item: any) => {
           const description = getItemDescription(item) || 'Описание отсутствует';
           return [
             splitText(item.name, 22),
             '',
+            item.oldPrice ? `${formatPrice(item.oldPrice)} ₽` : '',
             `${formatPrice(item.price)} ₽`,
-            splitText(description, 42)
+            splitText(description, 38)
           ];
         }),
         theme: 'grid',
@@ -227,10 +222,11 @@
           halign: 'center'
         },
         columnStyles: {
-          0: { cellWidth: 95, halign: 'center', fontStyle: 'bold' },
-          1: { cellWidth: 200, halign: 'center', valign: 'middle' },
-          2: { cellWidth: 86, halign: 'center', fontStyle: 'bold' },
-          3: { cellWidth: 134 }
+          0: { cellWidth: 88, halign: 'center', fontStyle: 'bold' },
+          1: { cellWidth: 184, halign: 'center', valign: 'middle' },
+          2: { cellWidth: 70, halign: 'center', textColor: [90, 90, 90] },
+          3: { cellWidth: 74, halign: 'center', fontStyle: 'bold', textColor: [210, 20, 30] },
+          4: { cellWidth: 99 }
         },
         didDrawPage: () => {
           drawHeader(doc, logoDataUrl, pageWidth);
@@ -254,7 +250,7 @@
               doc.addImage(image, 'JPEG', x, y, width, height);
             } catch {}
           }
-          if (data.section === 'body' && data.column.index === 3) {
+          if (data.section === 'body' && data.column.index === 4) {
             const item = $cart[data.row.index];
             if (!item) return;
             const url = getItemLink(item);
@@ -273,7 +269,7 @@
           }
         }
       });
-      const finalY = (doc as any).lastAutoTable?.finalY || 162;
+      const finalY = (doc as any).lastAutoTable?.finalY || 176;
       const hasSpaceForTotal = finalY + 160 < pageHeight - 54;
       if (!hasSpaceForTotal) doc.addPage();
       const totalStartY = hasSpaceForTotal ? finalY + 36 : 160;
@@ -314,8 +310,8 @@
           0: { cellWidth: 35, halign: 'right' },
           1: { cellWidth: 260 },
           2: { cellWidth: 58, halign: 'center' },
-          3: { cellWidth: 86, halign: 'right' },
-          4: { cellWidth: 86, halign: 'right' }
+          3: { cellWidth: 86, halign: 'right', textColor: [210, 20, 30] },
+          4: { cellWidth: 86, halign: 'right', textColor: [210, 20, 30] }
         }
       });
       doc.setFont('NotoSans', 'normal');
@@ -323,7 +319,7 @@
       doc.setTextColor(30, 30, 30);
       doc.text(
         doc.splitTextToSize(
-          '*Ценовое предложение действует ограниченный срок. Перед оформлением обязательно уточняйте конечную стоимость товаров у менеджера.',
+          `*Ценовое предложение действует ограниченный срок. Акция ${getDiscountLabel()} не распространяется на отдельные бренды и товары. Перед оформлением обязательно уточняйте конечную стоимость товаров у менеджера.`,
           pageWidth - 80
         ),
         40,

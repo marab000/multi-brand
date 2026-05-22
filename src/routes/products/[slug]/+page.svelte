@@ -15,6 +15,7 @@
   import { onMount } from 'svelte';
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
+  import { PiggyBank } from 'lucide-svelte';
   register();
   let { data } = $props<{ data: { product: Product | null } }>();
   const p = $derived(data.product);
@@ -29,8 +30,9 @@
   const slug = $derived(slugify(p.name));
   const price = $derived(getProductPrice(p));
   const oldPrice = $derived(getBaseProductPrice(p));
-  const hasDiscount = $derived(hasProductDiscount(p));
+  const hasDiscount = $derived(hasProductDiscount(p) && oldPrice !== null && oldPrice > price);
   const monthlyPayment = $derived(getMonthlyPayment(price));
+  const saving = $derived(hasDiscount && oldPrice !== null ? oldPrice - price : 0);
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -78,20 +80,14 @@
       id: p.id,
       name: p.name,
       price,
+      oldPrice: hasDiscount ? oldPrice : null,
       image,
       slug,
       description: p.description
     });
   }
   onMount(() => {
-    recentlyViewed.add({
-      id: p.id,
-      name: p.name,
-      slug,
-      image,
-      price,
-      description: p.description
-    });
+    recentlyViewed.add({ id: p.id, name: p.name, slug, image, price, description: p.description });
   });
 </script>
 
@@ -153,10 +149,19 @@
             </div>
           {/if}
         </div>
-        {#if hasDiscount}
-          <div class="product-installment">
-            от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}
-            <span>Подробности уточняйте у менеджера</span>
+        {#if hasDiscount && oldPrice !== null}
+          <div class="product-benefits">
+            <div class="product-installment">
+              от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}
+              <span>Подробности уточняйте у менеджера</span>
+            </div>
+            {#if saving > 0}
+              <div class="product-saving">
+                <PiggyBank size={18} strokeWidth={2.2} />
+                <span>Экономия</span>
+                <b>{formatPrice(saving)} ₽</b>
+              </div>
+            {/if}
           </div>
         {/if}
         <div class="mb-8 flex gap-3">
@@ -264,11 +269,17 @@
       font-size: 14px;
     }
   }
+  .product-benefits {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 24px;
+  }
   .product-installment {
     width: fit-content;
-    margin: 0 0 24px;
     padding: 8px 12px;
-    border: 1px solid rgba(227, 27, 35, 0.24);
+    border: 1px solid rgba(227, 27, 35, 0.35);
     border-radius: 8px;
     color: #e31b23;
     font-size: 13px;
@@ -280,6 +291,32 @@
       color: #000;
       font-size: 11px;
       font-weight: 600;
+    }
+  }
+  .product-saving {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    column-gap: 7px;
+    row-gap: 2px;
+    padding: 8px 12px;
+    border: 1px solid #dbe7f6;
+    border-radius: 8px;
+    background: #eef4fb;
+    color: #24466f;
+    line-height: 1;
+    :global(svg) {
+      grid-row: span 2;
+      color: #2f5f98;
+    }
+    span {
+      color: #24466f;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    b {
+      font-size: 16px;
+      font-weight: 900;
     }
   }
 </style>

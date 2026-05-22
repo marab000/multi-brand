@@ -1,5 +1,5 @@
 import type { Product } from '$lib/types/product';
-export const DISCOUNT_PERCENT = 17;
+export const DISCOUNT_PERCENT = 13;
 export const INSTALLMENT_MONTHS = 12;
 const EXCLUDED_BRANDS = ['asko', 'omoikiri'];
 const normalizeBrand = (brand?: string | null) =>

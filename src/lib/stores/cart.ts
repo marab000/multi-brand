@@ -5,6 +5,7 @@ export type CartItem = {
   id: string;
   name: string;
   price: number;
+  oldPrice?: number | null;
   image?: string;
   qty: number;
   slug?: string;
@@ -15,18 +16,15 @@ const STORAGE_KEY = 'cart';
 
 function createCart() {
   const { subscribe, set, update } = writable<CartItem[]>([]);
-
   const load = () => {
     if (typeof localStorage === 'undefined') return;
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) set(JSON.parse(raw));
   };
-
   const save = (items: CartItem[]) => {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   };
-
   return {
     subscribe,
     init: () => {

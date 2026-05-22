@@ -6,7 +6,9 @@
   import vm from '$lib/assets/links/vm.webp';
   import oven from '$lib/assets/links/oven.webp';
   import freeze from '$lib/assets/links/freeze.webp';
-  import dm from '$lib/assets/links/dm.webp';
+  // import dm from '$lib/assets/links/dm.webp';
+  // import mw from '$lib/assets/links/mw.webp';
+  import wm from '$lib/assets/links/wm.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
     eager: true,
@@ -56,7 +58,7 @@
     {
       title: 'Посудомоечные машины',
       link: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
-      img: dm
+      img: wm
     },
     {
       title: 'Духовые шкафы',
@@ -73,6 +75,16 @@
       link: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
       img: freeze
     }
+    // {
+    //   title: 'Микроволновые печи',
+    //   link: '/catalog/melkaya-bytovaya-tehnika/mikrovolnovye-pechi',
+    //   img: mw
+    // },
+    // {
+    //   title: 'Сушильные машины',
+    //   link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
+    //   img: dm
+    // },
   ];
 </script>
 
@@ -166,43 +178,41 @@
   .categories-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 16px;
   }
   .category-card {
-    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    min-height: 160px;
+    gap: 18px;
+    min-height: 116px;
+    padding: 16px 18px;
     overflow: hidden;
-    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 18px;
     background: #fff;
-    box-shadow: 0 1px 8px rgba(15, 23, 42, 0.08);
-    transition: box-shadow 0.2s ease;
+    color: #111827;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
     span {
-      position: absolute;
-      left: 24px;
-      bottom: 24px;
-      z-index: 2;
-      padding: 10px;
-      border: 1px solid rgba($green, 0.3);
-      border-radius: 16px;
-      background: #fff;
-      color: #111;
-      font-size: 1.125rem;
-      font-weight: 500;
+      order: 2;
+      font-size: 1.05rem;
+      font-weight: 700;
       line-height: 1.25;
-      box-shadow: 0 8px 18px rgba($green, 0.2);
     }
     img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      order: 1;
+      flex: 0 0 112px;
+      width: 112px;
+      height: 84px;
+      object-fit: contain;
     }
     &:hover {
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      transform: translateY(-2px);
+      border-color: rgba($green, 0.22);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
     }
   }
   section {

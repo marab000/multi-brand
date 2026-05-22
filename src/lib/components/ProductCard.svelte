@@ -1,5 +1,13 @@
 <script lang="ts">
-  import { ShieldCheck, BadgePercent, CalendarDays, Info } from 'lucide-svelte';
+  import {
+    ShieldCheck,
+    BadgePercent,
+    CalendarDays,
+    Info,
+    PiggyBank,
+    Minus,
+    Plus
+  } from 'lucide-svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
     getBaseProductPrice,
@@ -21,13 +29,17 @@
   const slug = slugify(product.name);
   const price = getProductPrice(product);
   const oldPrice = getBaseProductPrice(product);
-  const hasDiscount = hasProductDiscount(product);
+  const hasDiscount = hasProductDiscount(product) && oldPrice !== null && oldPrice > price;
   const monthlyPayment = getMonthlyPayment(price);
+  const saving = hasDiscount ? oldPrice - price : 0;
+  $: cartItem = $cart.find((item) => item.id === product.id);
+  $: qty = cartItem?.qty ?? 0;
   const addToCart = () => {
     cart.add({
       id: product.id,
       name: product.name,
       price,
+      oldPrice: hasDiscount ? oldPrice : null,
       image,
       slug,
       description: product.description
@@ -46,7 +58,16 @@
         </div>
       {/if}
     </div>
-    <h3>{product.name}</h3>
+    <div class="title-row">
+      <h3>{product.name}</h3>
+      {#if hasDiscount}
+        <div class="saving">
+          <PiggyBank size={17} strokeWidth={2.2} />
+          <span>Экономия</span>
+          <b>{formatPrice(saving)} ₽</b>
+        </div>
+      {/if}
+    </div>
     <p class="description mt-auto">{product.description}</p>
     <div class="price-row">
       <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
@@ -77,10 +98,32 @@
       </div>
     {/if}
   </a>
-  <button class="btn primary" on:click|stopPropagation={addToCart}> В корзину </button>
+  {#if qty > 0}
+    <div class="cart-counter">
+      <button
+        type="button"
+        aria-label="Уменьшить количество"
+        on:click|stopPropagation={() => cart.dec(product.id)}
+      >
+        <Minus size={16} strokeWidth={2.6} />
+      </button>
+      <span>{qty}</span>
+      <button
+        type="button"
+        aria-label="Увеличить количество"
+        on:click|stopPropagation={() => cart.inc(product.id)}
+      >
+        <Plus size={16} strokeWidth={2.6} />
+      </button>
+    </div>
+  {:else}
+    <button class="btn primary" on:click|stopPropagation={addToCart}> В корзину </button>
+  {/if}
 </div>
 
 <style lang="scss">
+  @use 'sass:color';
+
   .card {
     border: 1px solid #eee;
     background: #fff;
@@ -136,10 +179,42 @@
         font-size: 14px;
       }
     }
+    .title-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+    }
     h3 {
       font-size: 15px;
       font-weight: 700;
       line-height: 1.3;
+    }
+    .saving {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      column-gap: 6px;
+      row-gap: 1px;
+      padding: 7px 10px;
+      border: 1px solid #dbe7f6;
+      border-radius: 8px;
+      background: #eef4fb;
+      color: #24466f;
+      line-height: 1;
+      :global(svg) {
+        grid-row: span 2;
+        color: #2f5f98;
+      }
+      span {
+        font-size: 10px;
+        font-weight: 700;
+        color: #24466f;
+      }
+      b {
+        font-size: 14px;
+        font-weight: 900;
+      }
     }
     .description {
       font-size: 13px;
@@ -182,10 +257,9 @@
       width: 100%;
       min-height: 30px;
       padding: 6px 10px;
-      border: 1px solid rgba(55, 111, 211, 0.28);
+      border: 1px solid rgba(227, 27, 35, 0.35);
       border-radius: 8px;
-      background: rgba(55, 111, 211, 0.08);
-      color: #164194;
+      color: #e31b23;
       font-size: 11px;
       font-weight: 700;
       line-height: 1.25;
@@ -252,6 +326,76 @@
     .sale {
       background: #fdecec;
       color: #d92d20;
+    }
+    .cart-counter {
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      align-items: stretch;
+      width: 100%;
+      height: 42px;
+      min-height: 42px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 10px;
+      background: $green-light;
+      color: #fff;
+      font-weight: 800;
+      line-height: 1;
+      button,
+      span {
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 40px;
+        padding: 0;
+        line-height: 1;
+      }
+      button {
+        border: 0;
+        color: #fff;
+        background: transparent;
+        appearance: none;
+        transition: 0.18s ease;
+        &:first-child {
+          border-right: 1px solid rgba(255, 255, 255, 0.55);
+        }
+        &:last-child {
+          border-left: 1px solid rgba(255, 255, 255, 0.55);
+        }
+        &:hover {
+          background: color.scale($green-light, $lightness: -30%);
+        }
+      }
+      span {
+        font-size: 15px;
+        transform: translateY(-0.5px);
+      }
+    }
+  }
+  @media (max-width: 480px) {
+    .card .title-row {
+      align-items: start;
+    }
+    .card .saving {
+      padding: 6px 8px;
+      span {
+        font-size: 9px;
+      }
+      b {
+        font-size: 13px;
+      }
+    }
+    .card .cart-counter {
+      grid-template-columns: 40px 1fr 40px;
+      height: 40px;
+      min-height: 40px;
+      button,
+      span {
+        min-height: 38px;
+      }
     }
   }
 </style>

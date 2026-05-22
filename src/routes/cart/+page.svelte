@@ -33,6 +33,7 @@
       id: i.id,
       name: i.name,
       price: i.price,
+      oldPrice: i.oldPrice ?? null,
       qty: i.qty,
       slug: i.slug ?? null
     }));
@@ -101,7 +102,14 @@
                   ><Plus size="14" strokeWidth="2.5" /></button
                 >
               </div>
-              <p class="sum">{formatPrice(item.price * item.qty)} ₽</p>
+              <div class="sum-wrap">
+                {#if item.oldPrice}
+                  <p class="old-sum">{formatPrice(item.oldPrice * item.qty)} ₽</p>
+                {/if}
+                <p class:discount-sum={item.oldPrice} class="sum">
+                  {formatPrice(item.price * item.qty)} ₽
+                </p>
+              </div>
               <button class="remove" on:click={() => cart.remove(item.id)}
                 ><Trash size="14" strokeWidth="2.5" /></button
               >
@@ -263,11 +271,32 @@
           }
         }
       }
+      .sum-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        min-width: 0;
+      }
+      .old-sum {
+        color: #111;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1;
+        text-decoration: line-through;
+        text-decoration-color: #e31b23;
+        text-decoration-thickness: 1.5px;
+        opacity: 0.62;
+        white-space: nowrap;
+      }
       .sum {
         font-size: 16px;
         font-weight: 700;
         white-space: nowrap;
         text-align: right;
+      }
+      .discount-sum {
+        color: #e31b23;
       }
       .remove {
         display: flex;
@@ -362,6 +391,9 @@
         }
         .qty {
           justify-content: flex-start;
+        }
+        .sum-wrap {
+          align-items: center;
         }
         .sum {
           font-size: 15px;
