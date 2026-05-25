@@ -47,6 +47,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const groupSlug = segments[1] ?? null;
   const leafSlug = segments[2] ?? null;
   const isSearchPage = rootSlug === 'search';
+  const search = url.searchParams.get('search')?.trim() || undefined;
   const sortParam = url.searchParams.get('sort');
   const sort = sortParam === 'price_asc' || sortParam === 'price_desc' ? sortParam : 'default';
   const availabilityRows = await sql`
@@ -89,24 +90,36 @@ export const load: PageServerLoad = async ({ params, url }) => {
     throw error(404, 'Страница поиска не найдена');
   }
   const specs = buildSpecs(url);
-  const hasAppliedFilters =
+  const brands = url.searchParams
+    .getAll('brand')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const colors = url.searchParams
+    .getAll('color')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const priceMin = toDbPrice(url.searchParams.get('price_min'));
+  const priceMax = toDbPrice(url.searchParams.get('price_max'));
+  const hasSearch = Boolean(search);
+  const hasRealFilters =
     selectedTypes.length > 0 ||
-    url.searchParams.getAll('brand').length > 0 ||
-    url.searchParams.getAll('color').length > 0 ||
-    Boolean(url.searchParams.get('search')?.trim()) ||
-    Boolean(url.searchParams.get('price_min')) ||
-    Boolean(url.searchParams.get('price_max')) ||
-    Boolean(specs);
+    brands.length > 0 ||
+    colors.length > 0 ||
+    priceMin != null ||
+    priceMax != null ||
+    Boolean(specs) ||
+    sort !== 'default';
+  const hasAppliedFilters = hasSearch || hasRealFilters;
   const filters: CatalogFilters = {
-    search: url.searchParams.get('search')?.trim() || undefined,
+    search,
     catalogRootSlug: isSearchPage ? undefined : currentRoot?.slug,
     catalogGroupSlug: isSearchPage ? undefined : currentGroup?.slug || undefined,
     catalogLeafSlug: isSearchPage ? undefined : currentLeaf?.slug || undefined,
     types: selectedTypes.length ? selectedTypes : undefined,
-    brands: url.searchParams.getAll('brand'),
-    colors: url.searchParams.getAll('color'),
-    priceMin: toDbPrice(url.searchParams.get('price_min')),
-    priceMax: toDbPrice(url.searchParams.get('price_max')),
+    brands,
+    colors,
+    priceMin,
+    priceMax,
     specs,
     sort
   };
@@ -165,6 +178,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
     currentSearch: url.searchParams.toString(),
     catalogRoots: filteredRoots,
     isSearchPage,
+    hasSearch,
+    hasRealFilters,
     hasAppliedFilters
   };
 };

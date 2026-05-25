@@ -7,7 +7,11 @@
   $: searchValue = data.isSearchPage
     ? (new URLSearchParams(data.currentSearch ?? '').get('search')?.trim() ?? '')
     : '';
-  $: resetHref = $page.url.pathname;
+  $: resetHref =
+    data.isSearchPage && searchValue
+      ? `/catalog/search?search=${encodeURIComponent(searchValue)}`
+      : $page.url.pathname;
+  $: isOnlySearchEmpty = data.isSearchPage && data.hasSearch && !data.hasRealFilters;
 </script>
 
 <main class="catalog-content">
@@ -24,7 +28,6 @@
       Каталог
     {/if}
   </h1>
-
   {#if products.length}
     <ProductList
       {products}
@@ -34,11 +37,19 @@
     />
   {:else}
     <div class="empty-state mb-3 lg:mb-4">
-      <div class="empty-state__title">Товаров в таком сочетании не нашлось</div>
-      <div class="empty-state__text">
-        Попробуйте убрать часть фильтров или вернуться к разделу без ограничений.
-      </div>
-      <a class="reset-btn px-10!" href={resetHref}>Сбросить фильтры</a>
+      {#if isOnlySearchEmpty}
+        <div class="empty-state__title">По запросу ничего не найдено</div>
+        <div class="empty-state__text">
+          Проверьте написание модели или попробуйте поискать по бренду, артикулу или названию.
+        </div>
+        <a class="reset-btn px-10!" href="/catalog/search">Очистить поиск</a>
+      {:else}
+        <div class="empty-state__title">Товаров в таком сочетании не нашлось</div>
+        <div class="empty-state__text">
+          Попробуйте убрать часть фильтров или вернуться к разделу без ограничений.
+        </div>
+        <a class="reset-btn px-10!" href={resetHref}>Сбросить фильтры</a>
+      {/if}
     </div>
   {/if}
 </main>

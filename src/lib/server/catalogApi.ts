@@ -15,29 +15,36 @@ export interface CatalogFilters {
   sort?: 'default' | 'price_asc' | 'price_desc';
 }
 
+function getSearchWords(search: string) {
+  const raw = search.trim().toLowerCase();
+  const rawWords = raw.split(/\s+/).filter((w) => w.length >= 2);
+  const normalizedWords = expandQuery(normalize(raw)).filter((w) => w.length >= 2);
+  return Array.from(new Set([...rawWords, ...normalizedWords]));
+}
+
 export function buildWhere(filters: CatalogFilters) {
   const conditions: string[] = [];
   const values: any[] = [];
-
-  if (filters.search) {
-    const normalized = normalize(filters.search);
-    const words = expandQuery(normalized).filter((w) => w.length >= 3);
+  if (filters.search?.trim()) {
+    const words = getSearchWords(filters.search);
     if (words.length) {
       const parts: string[] = [];
       for (const word of words) {
         const idx = values.length + 1;
-        values.push(`%${word.toLowerCase()}%`);
+        values.push(`%${word}%`);
         parts.push(`
           LOWER(p.name) LIKE $${idx}
           OR LOWER(COALESCE(p.description,'')) LIKE $${idx}
-          OR LOWER(p.brand->>'name') LIKE $${idx}
+          OR LOWER(COALESCE(p.brand->>'name','')) LIKE $${idx}
           OR LOWER(COALESCE(p.product_type,'')) LIKE $${idx}
+          OR LOWER(COALESCE(p.raw->>'Артикул','')) LIKE $${idx}
+          OR LOWER(COALESCE(p.raw->>'Код','')) LIKE $${idx}
+          OR LOWER(COALESCE(p.raw->>'Штрихкод','')) LIKE $${idx}
         `);
       }
       conditions.push(`(${parts.join(' OR ')})`);
     }
   }
-
   if (filters.catalogRootSlug) {
     values.push(filters.catalogRootSlug.toLowerCase());
     conditions.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
@@ -50,39 +57,31 @@ export function buildWhere(filters: CatalogFilters) {
     values.push(filters.catalogLeafSlug.toLowerCase());
     conditions.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
   }
-
   if (filters.types?.length) {
-    const uniq = Array.from(new Set(filters.types.map((t) => t.toLowerCase())));
+    const uniq = Array.from(new Set(filters.types.map((t) => t.trim().toLowerCase()).filter(Boolean)));
     values.push(uniq);
     conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
   }
-
   if (filters.brands?.length) {
-    const uniq = Array.from(
-      new Set(filters.brands.map((b) => b.trim().toLowerCase()).filter(Boolean))
-    );
+    const uniq = Array.from(new Set(filters.brands.map((b) => b.trim().toLowerCase()).filter(Boolean)));
     const parts: string[] = [];
     for (const b of uniq) {
       const idx = values.length + 1;
       values.push(b);
-      parts.push(`
-        LOWER(TRIM(COALESCE(p.brand->>'name', ''))) = $${idx}
-      `);
+      parts.push(`LOWER(TRIM(COALESCE(p.brand->>'name', ''))) = $${idx}`);
     }
-    conditions.push(`(${parts.join(' OR ')})`);
+    if (parts.length) conditions.push(`(${parts.join(' OR ')})`);
   }
-
   if (filters.colors?.length) {
-    const uniq = Array.from(new Set(filters.colors.map((c) => c.toLowerCase())));
+    const uniq = Array.from(new Set(filters.colors.map((c) => c.trim().toLowerCase()).filter(Boolean)));
     const parts: string[] = [];
     for (const c of uniq) {
       const idx = values.length + 1;
       values.push(c);
       parts.push(`LOWER(TRIM(p.specs->>'Цвет')) = $${idx}`);
     }
-    conditions.push(`(${parts.join(' OR ')})`);
+    if (parts.length) conditions.push(`(${parts.join(' OR ')})`);
   }
-
   if (filters.priceMin != null) {
     conditions.push(`p.price_rrc >= $${values.length + 1}`);
     values.push(filters.priceMin);
@@ -91,7 +90,6 @@ export function buildWhere(filters: CatalogFilters) {
     conditions.push(`p.price_rrc <= $${values.length + 1}`);
     values.push(filters.priceMax);
   }
-
   function specNumericExpr(keys: string[]) {
     if (!keys.length) return 'NULL';
     const exprs = keys.map(
@@ -115,7 +113,6 @@ export function buildWhere(filters: CatalogFilters) {
     );
     return `COALESCE(${exprs.join(',')})`;
   }
-
   if (filters.specs) {
     const map: Record<string, string[]> = {
       width: ['Размер (Ширина)', 'Размер (Ширина), см', 'Ширина прибора'],
@@ -136,7 +133,6 @@ export function buildWhere(filters: CatalogFilters) {
       }
     }
   }
-
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
   return { whereClause, values };
 }

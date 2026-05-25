@@ -18,15 +18,20 @@
   let selected = -1;
   let timer: any;
   let suggestions: SearchSuggestion[] = [];
+  let loading = false;
 
   async function search() {
-    if (query.length < 2) {
+    const value = query.trim();
+    if (value.length < 2) {
       results = [];
       suggestions = [];
       open = false;
+      loading = false;
       return;
     }
-    const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+    loading = true;
+    const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(value)}`);
+    loading = false;
     if (!res.ok) {
       results = [];
       suggestions = [];
@@ -51,6 +56,7 @@
     suggestions = [];
     open = false;
     selected = -1;
+    loading = false;
   }
 
   function goToProduct(p: any) {
@@ -63,6 +69,11 @@
   }
 
   function handleKey(e: KeyboardEvent) {
+    if (e.key === 'Enter' && !open) {
+      e.preventDefault();
+      submitSearch();
+      return;
+    }
     if (!open) return;
     const total = suggestions.length + results.length;
     if (!total) return;
@@ -90,7 +101,10 @@
   }
 
   function submitSearch() {
-    window.location.href = `/catalog/search?search=${encodeURIComponent(query)}`;
+    const value = query.trim();
+    if (!value) return;
+    loading = true;
+    window.location.href = `/catalog/search?search=${encodeURIComponent(value)}`;
   }
 
   function handleClickOutside(e: MouseEvent) {
@@ -117,11 +131,14 @@
     {#if query}
       <button class="clear" on:click={clearInput}><X size={18} /></button>
     {/if}
-    <button class="btn-search" on:click={submitSearch}>
-      <Search size={18} />
+    <button class="btn-search" class:loading on:click={submitSearch} disabled={loading}>
+      {#if loading}
+        <span class="spinner"></span>
+      {:else}
+        <Search size={18} />
+      {/if}
     </button>
   </div>
-
   {#if open && (results.length || suggestions.length)}
     <div class="dropdown">
       {#each suggestions as s, i}
@@ -187,6 +204,18 @@
         transition: 0.2s;
         &:hover {
           background: linear-gradient(135deg, $green-light, $green);
+        }
+        &:disabled {
+          cursor: wait;
+          opacity: 0.85;
+        }
+        .spinner {
+          width: 18px;
+          height: 18px;
+          border: 2px solid rgba(255, 255, 255, 0.45);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
         }
       }
       .clear {
@@ -282,5 +311,10 @@
     cursor: pointer;
     background: #fafafa;
     width: 100%;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
