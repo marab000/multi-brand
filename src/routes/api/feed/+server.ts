@@ -14,7 +14,8 @@ type FeedProduct = Product & {
 };
 
 const origin = 'https://multi-brand.online';
-const csv = (value: string | number | null | undefined) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+const csv = (value: string | number | null | undefined) =>
+  `"${String(value ?? '').replace(/"/g, '""')}"`;
 const xml = (value: string | number | null | undefined) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -22,6 +23,10 @@ const xml = (value: string | number | null | undefined) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+
+function getOfferId(product: FeedProduct) {
+  return product.id.replace(/[^a-zA-Z0-9_]/g, '');
+}
 
 function getMainImage(product: FeedProduct) {
   return [...product.images].sort((a, b) => a.position - b.position)[0]?.url ?? '';
@@ -36,9 +41,31 @@ function getFeedPrice(product: FeedProduct) {
 }
 
 function buildCsv(products: FeedProduct[]) {
-  const header = ['ID', 'URL', 'Image', 'Title', 'Description', 'Price', 'Currency', 'custom_label_0', 'custom_label_1'];
+  const header = [
+    'ID',
+    'URL',
+    'Image',
+    'Title',
+    'Description',
+    'Price',
+    'Currency',
+    'custom_label_0',
+    'custom_label_1'
+  ];
   const rows = products.map((p) =>
-    [p.id, getProductUrl(p), getMainImage(p), p.name, p.description ?? '', getFeedPrice(p), 'RUB', p.brand?.name ?? '', p.category ?? ''].map(csv).join(',')
+    [
+      getOfferId(p),
+      getProductUrl(p),
+      getMainImage(p),
+      p.name,
+      p.description ?? '',
+      getFeedPrice(p),
+      'RUB',
+      p.brand?.name ?? '',
+      p.category ?? ''
+    ]
+      .map(csv)
+      .join(',')
   );
   return [header.join(','), ...rows].join('\n');
 }
@@ -47,11 +74,15 @@ function buildYml(products: FeedProduct[]) {
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))] as string[];
   const categoryIds = new Map(categories.map((category, index) => [category, index + 1]));
   const date = new Date().toISOString().replace('T', ' ').slice(0, 16);
-  const categoryRows = categories.map((category) => `      <category id="${categoryIds.get(category)}">${xml(category)}</category>`).join('\n');
+  const categoryRows = categories
+    .map(
+      (category) => `      <category id="${categoryIds.get(category)}">${xml(category)}</category>`
+    )
+    .join('\n');
   const offerRows = products
     .map((p) => {
       const categoryId = p.category ? categoryIds.get(p.category) : undefined;
-      return `      <offer id="${xml(p.id)}" available="true">
+      return `      <offer id="${xml(getOfferId(p))}" available="true">
         <url>${xml(getProductUrl(p))}</url>
         <price>${xml(getFeedPrice(p))}</price>
         <currencyId>RUR</currencyId>
