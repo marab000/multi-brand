@@ -28,3 +28,32 @@ export interface Product {
     position: number;
   }[];
 }
+export interface ProductKitItem {
+  id: string;
+  kit_product_id: string;
+  child_product_id: string | null;
+  name: string | null;
+  brand: string | null;
+  description: string | null;
+  price_rrc: number | null;
+  source_url: string | null;
+  preview_image: string | null;
+  position: number | null;
+  specs: Record<string, any> | null;
+  raw: Record<string, any> | null;
+  child_product?: Product | null;
+  child_slug?: string | null;
+  image?: string | null;
+}
+export interface ProductKitLink {
+  id: string;
+  name: string;
+  slug: string;
+  price_rrc: number | null;
+  image: string | null;
+  brand: {
+    name: string;
+    api?: string;
+    id?: string;
+  } | null;
+}

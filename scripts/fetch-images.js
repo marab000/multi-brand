@@ -16,21 +16,27 @@ const SOURCES = { DB: 'db', ERRORS: 'errors' }
 // 'db' — взять товары из базы.
 // 'errors' — взять только актуальные товары из scripts/fetch-images-errors.log и пересобрать лог ошибок заново.
 const MODE = MODES.FULL
-const SOURCE = SOURCES.DB
-const THREADS = 3
+const SOURCE = SOURCES.ERRORS
+const THREADS = 2
 const HEADLESS = true
 const BASE = 'https://tetrasis-bt.ru'
 const LOG = path.resolve('scripts/fetch-images.log')
 const ERROR_LOG = path.resolve('scripts/fetch-images-errors.log')
-const ACTION_DELAY = 900
-const IMAGE_DELAY = 250
+const ERROR_LOG_PREVIOUS = path.resolve('scripts/fetch-images-errors.log.previous')
+const ERROR_LOG_NEXT = path.resolve('scripts/fetch-images-errors.log.next')
+const ACTION_DELAY = 700
+const SEARCH_DELAY = 1200
+const PRODUCT_DELAY = 500
+const IMAGE_DELAY = 200
 const RETRIES = 3
 const RETRY_DELAY = 3000
 const JPEG_QUALITY = 78
 const MAX_SIZE = 1600
 const MIN_ORIGINAL_SIZE_KB = 120
+const SEARCH_MIN_SCORE = 0.72
 const progress = { total: 0, done: 0 }
 const colors = { green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', blue: '\x1b[36m', gray: '\x1b[90m', reset: '\x1b[0m' }
+let errorLogTarget = ERROR_LOG_NEXT
 if (!Object.values(MODES).includes(MODE)) throw new Error(`Unknown MODE: ${MODE}. Use: ${Object.values(MODES).join(', ')}`)
 if (!Object.values(SOURCES).includes(SOURCE)) throw new Error(`Unknown SOURCE: ${SOURCE}. Use: ${Object.values(SOURCES).join(', ')}`)
 const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD })
@@ -38,25 +44,24 @@ const s3 = new S3Client({ region: 'reg', endpoint: process.env.S3_ENDPOINT, cred
 const BUCKET = process.env.S3_BUCKET
 const S3_PUBLIC_PREFIX = `${process.env.S3_ENDPOINT.replace(/\/$/, '')}/${BUCKET}/`
 const sleep = ms => new Promise(r => setTimeout(r, ms))
-const delay = () => sleep(ACTION_DELAY)
+const delay = (ms = ACTION_DELAY) => sleep(ms)
 const now = () => new Date().toISOString()
+const ruMap = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' }
 function stripAnsi(value) { return String(value).replace(/\x1b\[[0-9;]*m/g, '') }
 async function writeLog(line) { console.log(line); await fs.appendFile(LOG, stripAnsi(line) + '\n') }
-async function writeErrorLog(...a) { await fs.appendFile(ERROR_LOG, `${now()} ${a.join(' ')}\n`) }
-async function logInfo(...a) { await writeLog(`${colors.gray}${now()}${colors.reset} ${colors.blue}${a.join(' ')}${colors.reset}`) }
-async function logSuccess(...a) { await writeLog(`${colors.gray}${now()}${colors.reset} ${colors.green}${a.join(' ')}${colors.reset}`) }
-async function logWarn(...a) { await writeLog(`${colors.gray}${now()}${colors.reset} ${colors.yellow}${a.join(' ')}${colors.reset}`) }
-async function logError(...a) { await writeLog(`${colors.gray}${now()}${colors.reset} ${colors.red}${a.join(' ')}${colors.reset}`) }
+async function writeErrorLog(...a) { await fs.appendFile(errorLogTarget, `${now()} ${a.join(' ')}\n`) }
+async function logLine(color, ...a) { await writeLog(`${colors.gray}${now()}${colors.reset} ${color}${a.join(' ')}${colors.reset}`) }
+async function logInfo(...a) { await logLine(colors.blue, ...a) }
+async function logSuccess(...a) { await logLine(colors.green, ...a) }
+async function logWarn(...a) { await logLine(colors.yellow, ...a) }
+async function logError(...a) { await logLine(colors.red, ...a) }
 async function withRetry(label, fn, retries = RETRIES) {
 	let lastError
 	for (let attempt = 1; attempt <= retries; attempt++) {
 		try { return await fn(attempt) }
 		catch (e) {
 			lastError = e
-			if (attempt < retries) {
-				await logWarn('RETRY', label, `attempt:${attempt}/${retries}`, e.message)
-				await sleep(RETRY_DELAY * attempt)
-			}
+			if (attempt < retries) await sleep(RETRY_DELAY * attempt)
 		}
 	}
 	throw lastError
@@ -66,35 +71,61 @@ function progressText(p) {
 	const percent = progress.total ? Math.round((current / progress.total) * 100) : 100
 	return `[${current}/${progress.total} ${percent}%] ${p.name}`
 }
-function cleanName(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[сc]$/i, 's').replace(/[^a-zа-я0-9]+/gi, ' ').trim() }
-function brand(name) { return String(name || '').split(' ')[0].toLowerCase() }
-function normalizeName(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ') }
-function normalizeBrand(value) { return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/gi, ' ').trim() }
+function removeDiacritics(value) { return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') }
+function translit(value) { return removeDiacritics(String(value || '').toLowerCase()).replace(/ё/g, 'е').replace(/[а-я]/g, ch => ruMap[ch] ?? ch) }
+function cleanName(value) { return translit(value).replace(/[^a-z0-9]+/gi, ' ').trim() }
+function brand(name) { return cleanName(name).split(' ')[0] || String(name || '').split(' ')[0].toLowerCase() }
+function normalizeName(value) { return translit(value).replace(/[^a-z0-9]+/gi, ' ').trim().replace(/\s+/g, ' ') }
+function compactName(value) { return normalizeName(value).replace(/\s+/g, '') }
+function normalizeBrand(value) { return normalizeName(value) }
 function allowedBrands() { return brands.map(b => normalizeBrand(b.name)).filter(Boolean) }
+function addVariant(list, value) {
+	const v = cleanName(value)
+	if (v) list.push(v)
+}
 function productSlugVariants(name) {
 	const base = cleanName(name)
 	const parts = base.split(' ')
 	const brandPart = parts[0]
-	const model = parts.slice(1).join(' ')
-	const variants = [base]
-	if (!/\d$/.test(base)) variants.push(`${base}1`)
-	if (/\sg$/.test(base)) variants.push(base.replace(/\sg$/, ' b'))
-	const compactMatch = model.match(/^([a-zа-я]+)(\d+)([a-zа-я]+)$/i)
+	const modelParts = parts.slice(1)
+	const model = modelParts.join(' ')
+	const compactModel = modelParts.join('')
+	const variants = []
+	addVariant(variants, base)
+	if (brandPart && compactModel) addVariant(variants, `${brandPart} ${compactModel}`)
+	if (!/\d$/.test(base)) addVariant(variants, `${base}1`)
+	if (brandPart && compactModel && !/\d$/.test(compactModel)) addVariant(variants, `${brandPart} ${compactModel}1`)
+	if (/\sg$/.test(base)) addVariant(variants, base.replace(/\sg$/, ' b'))
+	const compactMatch = model.match(/^([a-z]+)(\d+)([a-z]+)$/i)
 	if (brandPart && compactMatch) {
 		const [, prefix, digits, suffix] = compactMatch
-		variants.push(`${brandPart} ${prefix} ${digits} ${suffix}`)
+		addVariant(variants, `${brandPart} ${prefix} ${digits} ${suffix}`)
 	}
-	const prefixDigitsMatch = model.match(/^([a-zа-я]+)(\d+)$/i)
+	const prefixDigitsMatch = model.match(/^([a-z]+)(\d+)$/i)
 	if (brandPart && prefixDigitsMatch) {
 		const [, prefix, digits] = prefixDigitsMatch
-		variants.push(`${brandPart} ${prefix} ${digits}`)
+		addVariant(variants, `${brandPart} ${prefix} ${digits}`)
 	}
+	const lastNumberMatch = base.match(/^(.*?)(\d+)$/)
+	if (lastNumberMatch) addVariant(variants, `${lastNumberMatch[1]}${lastNumberMatch[2]}1`)
 	const result = []
-	for (const value of variants) {
+	for (const value of [...new Set(variants)]) {
 		result.push(value.replace(/\s+/g, '_'))
 		result.push(value.replace(/\s+/g, '-'))
 	}
 	return [...new Set(result)]
+}
+function searchQueries(name) {
+	const normalized = normalizeName(name)
+	const parts = normalized.split(' ').filter(Boolean)
+	const brandPart = parts[0] || ''
+	const model = parts.slice(1).join(' ')
+	const compactModel = parts.slice(1).join('')
+	const queries = [name, normalized]
+	if (brandPart && model) queries.push(`${brandPart} ${model}`)
+	if (brandPart && compactModel) queries.push(`${brandPart} ${compactModel}`)
+	if (model) queries.push(model)
+	return [...new Set(queries.map(q => String(q || '').trim()).filter(Boolean))]
 }
 function parseErrorProductNames(content) {
 	const names = new Set()
@@ -135,32 +166,49 @@ async function download(url) {
 		return Buffer.from(await r.arrayBuffer())
 	})
 }
-async function goto(page, url) {
+async function goto(page, url, wait = ACTION_DELAY) {
 	return await withRetry(`goto:${url}`, async () => {
-		await delay()
-		await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 })
-		await sleep(700)
+		await delay(wait)
+		const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 })
+		await sleep(wait)
+		return { response, status: response?.status() || 0 }
+	})
+}
+async function isProductPage(page) {
+	return await withRetry('is-product-page', async () => {
+		return await page.evaluate(() => {
+			const title = document.title || ''
+			const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || ''
+			const text = document.body?.innerText || ''
+			if (/страница не найдена|элемент не найден|товар не найден|раздел не найден|404/i.test(`${title} ${ogTitle} ${text}`)) return false
+			const h1 = document.querySelector('h1')?.textContent?.trim()
+			if (!h1) return false
+			return Boolean(document.querySelector('.item_slider,.product-detail-gallery,.detail_picture,.product-item-detail-slider,img.detail_picture,img.product-detail-image,img.xzoom-gallery'))
+		})
 	})
 }
 async function hasNoImage(page) {
 	return await withRetry('has-no-image', async () => {
 		return await page.evaluate(() => {
-			const selectors = ['.item_slider img', '.product-detail-gallery img', '.detail_picture img', '.slides img', '.product-item-detail-slider img', 'img.detail_picture', 'img.product-detail-image']
+			const selectors = ['.item_slider img', '.product-detail-gallery img', '.detail_picture img', '.slides img', '.product-item-detail-slider img', 'img.detail_picture', 'img.product-detail-image', 'img.xzoom-gallery']
 			const nodes = selectors.flatMap(selector => [...document.querySelectorAll(selector)])
 			return nodes.some(node => {
 				const src = node.getAttribute('src') || ''
 				const dataSrc = node.getAttribute('data-src') || ''
+				const dataXpreview = node.getAttribute('data-xpreview') || ''
+				const xoriginal = node.getAttribute('xoriginal') || ''
 				const alt = node.getAttribute('alt') || ''
 				const cls = node.getAttribute('class') || ''
-				return /no[-_]?image|no_photo|nophoto|placeholder|zaglush/i.test(src + ' ' + dataSrc + ' ' + alt + ' ' + cls)
+				return /no[-_]?image|no_photo|nophoto|placeholder|zaglush/i.test(src + ' ' + dataSrc + ' ' + dataXpreview + ' ' + xoriginal + ' ' + alt + ' ' + cls)
 			})
 		})
 	})
 }
 async function getImages(page, url) {
 	return await withRetry(`images:${url}`, async () => {
-		await goto(page, url)
-		if (await hasNoImage(page)) return { images: [], status: 'no-image' }
+		const { status } = await goto(page, url)
+		if (status === 404) return { images: [], rawCount: 0, status: 'not-found' }
+		if (!(await isProductPage(page))) return { images: [], rawCount: 0, status: 'not-found' }
 		const images = await page.evaluate(() => {
 			const urls = []
 			const push = value => {
@@ -168,58 +216,120 @@ async function getImages(page, url) {
 				const url = new URL(value, location.origin).href
 				if (!urls.includes(url)) urls.push(url)
 			}
-			const selectors = ['.item_slider ul li[id^="photo-"] a.popup_link[href]', '.item_slider a.popup_link[href]', '.product-detail-gallery a.popup_link[href]', '.detail_picture a.popup_link[href]', '.slides a.popup_link[href]', 'a.popup_link[href][data-fancybox]', 'a.popup_link[href][rel]']
-			selectors.forEach(selector => document.querySelectorAll(selector).forEach(a => push(a.getAttribute('href'))))
+			const attrSelectors = [
+				['.item_slider .thumbs li[data-big_img]', 'data-big_img'],
+				['.item_slider .thumbs li[data-small_img]', 'data-small_img'],
+				['.item_slider li[data-big_img]', 'data-big_img'],
+				['.item_slider li[data-small_img]', 'data-small_img'],
+				['.item_slider img[xoriginal]', 'xoriginal'],
+				['.item_slider img[data-xpreview]', 'data-xpreview'],
+				['.item_slider img[data-src]', 'data-src'],
+				['.item_slider a.popup_link[href]', 'href'],
+				['.product-detail-gallery a.popup_link[href]', 'href'],
+				['.detail_picture a.popup_link[href]', 'href'],
+				['.slides a.popup_link[href]', 'href']
+			]
+			attrSelectors.forEach(([selector, attr]) => document.querySelectorAll(selector).forEach(node => push(node.getAttribute(attr))))
 			if (!urls.length) {
-				const imgSelectors = ['.item_slider img[src]', '.product-detail-gallery img[src]', '.detail_picture img[src]', '.slides img[src]', 'img.detail_picture[src]', 'img.product-detail-image[src]']
-				imgSelectors.forEach(selector => document.querySelectorAll(selector).forEach(img => push(img.getAttribute('data-src') || img.getAttribute('src'))))
+				const imgSelectors = ['.item_slider img[src]', '.product-detail-gallery img[src]', '.detail_picture img[src]', '.slides img[src]', 'img.detail_picture[src]', 'img.product-detail-image[src]', 'img.xzoom-gallery[src]']
+				imgSelectors.forEach(selector => document.querySelectorAll(selector).forEach(img => push(img.getAttribute('src'))))
 			}
 			return urls
 		})
 		const filtered = images.filter(url => !isNoImageUrl(url) && /\.(jpe?g|png|webp)(\?|$)/i.test(url))
-		return { images: filtered, status: filtered.length ? 'ok' : 'empty' }
+		if (!filtered.length && await hasNoImage(page)) return { images: [], rawCount: images.length, status: 'no-image' }
+		return { images: filtered, rawCount: images.length, status: filtered.length ? 'ok' : 'empty' }
 	})
 }
 async function resolveDirect(page, name) {
 	return await withRetry(`direct:${name}`, async () => {
-		for (const s of productSlugVariants(name)) {
+		const variants = productSlugVariants(name)
+		for (const s of variants) {
 			const url = `${BASE}/product/${s}/`
-			await goto(page, url)
-			if (await hasNoImage(page)) return { url: null, status: 'no-image', tried: url }
+			const { status } = await goto(page, url)
+			if (status === 404) continue
+			if (!(await isProductPage(page))) continue
 			const hasProductImage = await page.evaluate(() => {
-				return Boolean(document.querySelector('.item_slider a.popup_link[href],.product-detail-gallery a.popup_link[href],.detail_picture a.popup_link[href],.slides a.popup_link[href],img.detail_picture[src],img.product-detail-image[src]'))
+				return Boolean(document.querySelector('.item_slider a.popup_link[href],.product-detail-gallery a.popup_link[href],.detail_picture a.popup_link[href],.slides a.popup_link[href],img.detail_picture[src],img.product-detail-image[src],.item_slider .thumbs li[data-big_img],.item_slider .thumbs li[data-small_img],img.xzoom-gallery[src],.item_slider img[xoriginal],.item_slider img[data-xpreview]'))
 			})
 			if (hasProductImage) return { url, status: 'ok', tried: url }
+			if (await hasNoImage(page)) return { url: null, status: 'no-image', tried: url }
 		}
-		return { url: null, status: 'not-found', tried: productSlugVariants(name).join(', ') }
+		return { url: null, status: 'not-found', tried: variants.slice(0, 6).join(', ') }
 	})
 }
 async function resolveSearch(page, name) {
 	return await withRetry(`search:${name}`, async () => {
-		const searchUrl = BASE + '/search/?q=' + encodeURIComponent(name)
-		await goto(page, searchUrl)
-		await page.waitForSelector('.catalog-item a,.item-title a,a[href*="/product/"]', { timeout: 7000 }).catch(() => null)
-		const result = await page.evaluate(name => {
-			const normalizeName = value => String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ')
-			const target = normalizeName(name)
-			const cards = [...document.querySelectorAll('.catalog-item,.item')]
-			const items = cards.length ? cards.map(card => {
-				const link = card.querySelector('.item-title a,a.item-title,a[href*="/product/"],a')
-				const titleNode = card.querySelector('.item-title,a.item-title,.name,.title,a[href*="/product/"]')
-				const title = titleNode?.textContent || link?.textContent || ''
-				const href = link?.getAttribute('href') || ''
-				return { title, href }
-			}) : [...document.querySelectorAll('.catalog-item a,.item-title a,a[href*="/product/"]')].map(a => ({ title: a.textContent || '', href: a.getAttribute('href') || '' }))
-			const exact = items.find(item => {
-				const title = normalizeName(item.title)
-				return title === target || title.startsWith(target + ' ')
-			})
-			if (!exact) return null
-			return exact.href ? { title: exact.title, href: exact.href } : null
-		}, name)
-		if (!result?.href) return { url: null, status: 'not-found' }
-		const full = result.href.startsWith('http') ? result.href : BASE + result.href
-		return { url: full, status: 'ok', title: result.title }
+		const queries = searchQueries(name)
+		let bestResult = null
+		let bestDebug = null
+		for (const query of queries) {
+			const searchUrl = BASE + '/search/?q=' + encodeURIComponent(query)
+			await goto(page, searchUrl, SEARCH_DELAY)
+			await page.waitForFunction(() => document.body && document.body.innerText.length > 100, { timeout: 15000 }).catch(() => null)
+			await sleep(SEARCH_DELAY)
+			const result = await page.evaluate(({ name, query, minScore }) => {
+				const ruMap = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' }
+				const removeDiacritics = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+				const translit = value => removeDiacritics(String(value || '').toLowerCase()).replace(/ё/g, 'е').replace(/[а-я]/g, ch => ruMap[ch] ?? ch)
+				const normalizeName = value => translit(value).replace(/[^a-z0-9]+/gi, ' ').trim().replace(/\s+/g, ' ')
+				const compactName = value => normalizeName(value).replace(/\s+/g, '')
+				const target = normalizeName(name)
+				const targetCompact = compactName(name)
+				const queryNormalized = normalizeName(query)
+				const queryCompact = compactName(query)
+				const targetBrand = target.split(' ')[0] || ''
+				const targetTokens = target.split(' ').filter(Boolean)
+				const targetModelCompact = targetTokens.slice(1).join('')
+				const scoreItem = item => {
+					const title = normalizeName(item.title)
+					const titleCompact = compactName(item.title)
+					const titleTokens = title.split(' ').filter(Boolean)
+					const titleBrand = titleTokens[0] || ''
+					const href = normalizeName(item.href)
+					const hrefCompact = compactName(item.href)
+					let score = 0
+					if (title === target) score += 1
+					if (title.startsWith(target + ' ')) score += 0.95
+					if (targetBrand && titleBrand === targetBrand) score += 0.25
+					if (targetCompact && titleCompact.includes(targetCompact)) score += 0.85
+					if (targetCompact && hrefCompact.includes(targetCompact)) score += 0.65
+					if (queryCompact && titleCompact.includes(queryCompact)) score += 0.5
+					if (queryCompact && hrefCompact.includes(queryCompact)) score += 0.35
+					if (queryNormalized && title.includes(queryNormalized)) score += 0.35
+					if (targetModelCompact && titleCompact.includes(targetModelCompact)) score += 0.65
+					if (targetModelCompact && hrefCompact.includes(targetModelCompact)) score += 0.55
+					const matchedTokens = targetTokens.filter(token => titleTokens.includes(token) || titleCompact.includes(token) || hrefCompact.includes(token)).length
+					score += targetTokens.length ? (matchedTokens / targetTokens.length) * 0.5 : 0
+					const numericTokens = targetTokens.filter(token => /\d/.test(token)).map(token => token.replace(/\D/g, '')).filter(Boolean)
+					const hrefMatchedNumbers = numericTokens.filter(token => hrefCompact.includes(token)).length
+					score += numericTokens.length ? (hrefMatchedNumbers / numericTokens.length) * 0.35 : 0
+					if (!target.includes('komplekt') && title.includes('komplekt')) score -= 0.5
+					if (!target.includes('komplekt') && item.title.includes('+')) score -= 0.35
+					if (targetBrand && titleBrand && targetBrand !== titleBrand) score -= 0.6
+					return score
+				}
+				const linkNodes = [...document.querySelectorAll('a[href*="/product/"]')]
+				const items = linkNodes.map(a => ({ title: a.textContent || '', href: a.getAttribute('href') || '' })).filter(item => item.title.trim() && item.href)
+				const ranked = items.map(item => ({ ...item, score: scoreItem(item) })).sort((a, b) => b.score - a.score)
+				const best = ranked[0]
+				return {
+					best: best && best.score >= minScore ? { title: best.title, href: best.href, score: best.score.toFixed(2), query } : null,
+					rawBest: best ? { title: best.title, href: best.href, score: best.score.toFixed(2), query } : null,
+					count: items.length,
+					linksCount: linkNodes.length,
+					top: ranked.slice(0, 3).map(x => `${x.score.toFixed(2)}:${String(x.title).trim().replace(/\s+/g, ' ')}`).join(' | ')
+				}
+			}, { name, query, minScore: SEARCH_MIN_SCORE })
+			if (!bestDebug || Number(result?.rawBest?.score || 0) > Number(bestDebug?.score || 0)) bestDebug = result?.rawBest ? { ...result.rawBest, count: result.count, linksCount: result.linksCount, top: result.top } : { query, score: '0.00', title: '-', href: '-', count: result?.count || 0, linksCount: result?.linksCount || 0, top: 'no-candidates' }
+			if (result?.best?.href) {
+				bestResult = result.best
+				break
+			}
+		}
+		if (!bestResult?.href) return { url: null, status: 'not-found', debug: bestDebug }
+		const full = bestResult.href.startsWith('http') ? bestResult.href : BASE + bestResult.href
+		return { url: full, status: 'ok', title: bestResult.title, score: bestResult.score, query: bestResult.query, debug: bestDebug }
 	})
 }
 async function prepareImage(p, imgUrl, pos) {
@@ -248,7 +358,7 @@ async function replaceProductImages(p, rows) {
 		const key = s3KeyFromUrl(old.url)
 		if (!key) continue
 		try { await deleteFromS3(key); deleted++ }
-		catch (e) { await logWarn('DELETE OLD ERROR', old.url, e.message); await writeErrorLog('DELETE_OLD_ERROR', p.name, old.url, e.message) }
+		catch (e) { await writeErrorLog('DELETE_OLD_ERROR', p.name, old.url, e.message) }
 	}
 	return deleted
 }
@@ -265,22 +375,25 @@ async function processProduct(page, p) {
 			if (search.url) url = search.url
 		}
 		if (!url) {
+			const debug = search?.debug
 			if (direct?.status === 'no-image') await logInfo('NO IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
 			else {
-				await logError('NOT FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`)
+				await logError('NOT FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`, debug ? `best:${debug.score}:${String(debug.title).trim().replace(/\s+/g, ' ')}` : 'best:-', debug ? `query:${debug.query}` : 'query:-')
 				await writeErrorLog('NOT_FOUND', p.name, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`)
 			}
+			await sleep(PRODUCT_DELAY)
 			return
 		}
 		stage = 'images'
 		const imageResult = await getImages(page, url)
 		images = imageResult.images
 		if (!images.length) {
-			if (imageResult.status === 'no-image') await logInfo('NO IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `url:${url}`)
+			if (imageResult.status === 'no-image') await logInfo('NO IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
 			else {
-				await logError('NO IMAGES FOUND', label, 'stage:images', `reason:${imageResult.status}`, `url:${url}`)
+				await logError('NO IMAGES FOUND', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
 				await writeErrorLog('NO_IMAGES_FOUND', p.name, `stage:images`, `reason:${imageResult.status}`, `url:${url}`)
 			}
+			await sleep(PRODUCT_DELAY)
 			return
 		}
 		stage = 'prepare'
@@ -296,7 +409,7 @@ async function processProduct(page, p) {
 		}
 		if (!rows.length) {
 			await logWarn('SKIP', label, `imgs:${images.length}`, `skip:${skipCount}`, 'reason:already-exists')
-			await writeErrorLog('SKIP_ALREADY_EXISTS', p.name, `imgs:${images.length}`, `skip:${skipCount}`)
+			await sleep(PRODUCT_DELAY)
 			return
 		}
 		stage = MODE === MODES.FULL ? 'replace' : 'insert'
@@ -306,10 +419,14 @@ async function processProduct(page, p) {
 		const optimizedCount = rows.filter(row => row.optimized).length
 		const originalCount = rows.length - optimizedCount
 		const source = direct?.url ? 'direct' : 'search'
-		await logSuccess('OK', label, `source:${source}`, `imgs:${rows.length}`, `size:${originalKb}KB -> ${finalKb}KB`, `optimized:${optimizedCount}`, `original:${originalCount}`, `replaced:${deleted}`, `skip:${skipCount}`)
+		const matched = source === 'direct' ? direct.tried : `${search?.score || '-'}:${String(search?.title || '-').trim().replace(/\s+/g, ' ')}`
+		const query = source === 'search' ? `query:${search?.query || '-'}` : 'query:-'
+		await logSuccess('OK', label, `source:${source}`, query, `matched:${matched}`, `imgs:${rows.length}/${images.length}`, `size:${originalKb}KB->${finalKb}KB`, `optimized:${optimizedCount}`, `original:${originalCount}`, `replaced:${deleted}`, `skip:${skipCount}`)
+		await sleep(PRODUCT_DELAY)
 	} catch (e) {
 		await logError('ERROR', label, `stage:${stage}`, e.message)
 		await writeErrorLog('ERROR', p.name, `stage:${stage}`, e.message)
+		await sleep(PRODUCT_DELAY)
 	}
 }
 async function worker(browser, queue) {
@@ -352,27 +469,45 @@ async function loadDbProducts(selectedBrands) {
 		order by name
 	`
 }
+async function commitErrorLog(oldErrorLog) {
+	if (await fs.pathExists(ERROR_LOG)) await fs.writeFile(ERROR_LOG_PREVIOUS, oldErrorLog)
+	else await fs.writeFile(ERROR_LOG_PREVIOUS, '')
+	if (await fs.pathExists(ERROR_LOG_NEXT)) await fs.move(ERROR_LOG_NEXT, ERROR_LOG, { overwrite: true })
+	else await fs.writeFile(ERROR_LOG, '')
+}
 async function main() {
-	await fs.writeFile(LOG, '')
-	const oldErrorLog = SOURCE === SOURCES.ERRORS && await fs.pathExists(ERROR_LOG) ? await fs.readFile(ERROR_LOG, 'utf8') : ''
-	await fs.writeFile(ERROR_LOG, '')
-	if (SOURCE === SOURCES.ERRORS && oldErrorLog) await fs.writeFile(ERROR_LOG + '.previous', oldErrorLog)
-	const selectedBrands = allowedBrands()
-	if (!selectedBrands.length) throw new Error('brands.json is empty')
-	await logInfo('BRANDS', selectedBrands.join(', '))
-	await logInfo('SOURCE', SOURCE, 'MODE', MODE)
-	const browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
-	const products = SOURCE === SOURCES.ERRORS ? await loadErrorProducts(oldErrorLog) : await loadDbProducts(selectedBrands)
-	progress.total = products.length
-	progress.done = 0
-	await logInfo('TOTAL', products.length)
-	const queue = [...products]
-	const workers = []
-	for (let i = 0; i < THREADS; i++) workers.push(worker(browser, queue))
-	await Promise.all(workers)
-	await browser.close()
-	await sql.end()
-	await logInfo('FINISHED')
+	let browser
+	let oldErrorLog = ''
+	try {
+		await fs.writeFile(LOG, '')
+		oldErrorLog = await fs.pathExists(ERROR_LOG) ? await fs.readFile(ERROR_LOG, 'utf8') : ''
+		await fs.remove(ERROR_LOG_NEXT)
+		await fs.writeFile(ERROR_LOG_NEXT, '')
+		const selectedBrands = allowedBrands()
+		if (!selectedBrands.length) throw new Error('brands.json is empty')
+		await logInfo('START', `source:${SOURCE}`, `mode:${MODE}`, `threads:${THREADS}`, `brands:${selectedBrands.length}`)
+		browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+		const products = SOURCE === SOURCES.ERRORS ? await loadErrorProducts(oldErrorLog) : await loadDbProducts(selectedBrands)
+		progress.total = products.length
+		progress.done = 0
+		await logInfo('TOTAL', products.length)
+		const queue = [...products]
+		const workers = []
+		for (let i = 0; i < THREADS; i++) workers.push(worker(browser, queue))
+		await Promise.all(workers)
+		await browser.close()
+		browser = null
+		await sql.end()
+		await commitErrorLog(oldErrorLog)
+		await logInfo('FINISHED')
+	} catch (e) {
+		await logError('FATAL', e.message)
+		await logWarn('ERROR LOG PRESERVED', ERROR_LOG)
+		await logWarn('NEW ERRORS DRAFT', ERROR_LOG_NEXT)
+		if (browser) await browser.close().catch(() => null)
+		await sql.end().catch(() => null)
+		process.exitCode = 1
+	}
 }
 export async function deleteImage(url) {
 	const key = s3KeyFromUrl(url)

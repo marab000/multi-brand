@@ -1,6 +1,7 @@
 import type { Product } from '$lib/types/product';
 export const DISCOUNT_PERCENT = 13;
 export const INSTALLMENT_MONTHS = 12;
+export const IS_KIT_DISCOUNT = true;
 const EXCLUDED_BRANDS = ['asko', 'omoikiri'];
 const normalizeBrand = (brand?: string | null) =>
   String(brand ?? '')
@@ -15,16 +16,24 @@ export function getInstallmentLabel() {
 export function isDiscountExcludedBrand(brand?: string | null) {
   return EXCLUDED_BRANDS.includes(normalizeBrand(brand));
 }
+export function isKitProduct(product: Pick<Product, 'external_id' | 'raw'>) {
+  return (
+    String(product.external_id || '').startsWith('kit:') ||
+    product.raw?.imported_from === 'tetrasis-kit' ||
+    product.raw?.source === 'tetrasis-kit'
+  );
+}
 export function getBaseProductPrice(product: Pick<Product, 'price_rrc' | 'price_ric'>) {
   return product.price_rrc ?? product.price_ric ?? null;
 }
 export function getDiscountedPrice(
   price: number | string | null | undefined,
-  brand?: string | null
+  brand?: string | null,
+  isKit = false
 ) {
   const value = Number(price);
   if (!value || !Number.isFinite(value)) return 0;
-  if (isDiscountExcludedBrand(brand)) return value;
+  if ((isKit && !IS_KIT_DISCOUNT) || isDiscountExcludedBrand(brand)) return value;
   return value * (1 - DISCOUNT_PERCENT / 100);
 }
 export function getMonthlyPayment(price: number | string | null | undefined) {
@@ -32,10 +41,18 @@ export function getMonthlyPayment(price: number | string | null | undefined) {
   if (!value || !Number.isFinite(value)) return 0;
   return value / INSTALLMENT_MONTHS;
 }
-export function getProductPrice(product: Pick<Product, 'price_rrc' | 'price_ric' | 'brand'>) {
-  return getDiscountedPrice(getBaseProductPrice(product), product.brand?.name);
+export function getProductPrice(
+  product: Pick<Product, 'price_rrc' | 'price_ric' | 'brand' | 'external_id' | 'raw'>
+) {
+  return getDiscountedPrice(
+    getBaseProductPrice(product),
+    product.brand?.name,
+    isKitProduct(product)
+  );
 }
-export function hasProductDiscount(product: Pick<Product, 'price_rrc' | 'price_ric' | 'brand'>) {
+export function hasProductDiscount(
+  product: Pick<Product, 'price_rrc' | 'price_ric' | 'brand' | 'external_id' | 'raw'>
+) {
   const basePrice = Number(getBaseProductPrice(product));
   return !!basePrice && getProductPrice(product) < basePrice;
 }

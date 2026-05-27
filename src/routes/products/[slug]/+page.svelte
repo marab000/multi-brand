@@ -11,28 +11,33 @@
     hasProductDiscount
   } from '$lib/utils/pricing';
   import { cart } from '$lib/stores/cart';
-  import type { Product } from '$lib/types/product';
+  import type { Product, ProductKitItem, ProductKitLink } from '$lib/types/product';
   import { onMount } from 'svelte';
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
   import { PiggyBank } from 'lucide-svelte';
   register();
-  let { data } = $props<{ data: { product: Product | null } }>();
+  type ProductPageProduct = Product & {
+    isKit?: boolean;
+    kitItems?: ProductKitItem[];
+    includedInKits?: ProductKitLink[];
+  };
+  let { data } = $props<{ data: { product: ProductPageProduct | null } }>();
   const p = $derived(data.product);
-  if (!p) {
-    throw new Error('Product is null');
-  }
+  if (!p) throw new Error('Product is null');
   let mainSwiper = $state<any>(null);
-  let thumbsSwiper = $state<any>(null);
   let zoom = $state(false);
   let zoomIndex = $state(0);
-  const image = $derived(p.images?.[0]?.url);
+  const images = $derived(p.images?.length ? p.images : []);
+  const image = $derived(images[0]?.url || '/images/no_image.png');
   const slug = $derived(slugify(p.name));
   const price = $derived(getProductPrice(p));
   const oldPrice = $derived(getBaseProductPrice(p));
   const hasDiscount = $derived(hasProductDiscount(p) && oldPrice !== null && oldPrice > price);
   const monthlyPayment = $derived(getMonthlyPayment(price));
   const saving = $derived(hasDiscount && oldPrice !== null ? oldPrice - price : 0);
+  const kitItems = $derived(p.kitItems || []);
+  const includedInKits = $derived(p.includedInKits || []);
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -68,6 +73,29 @@
         ]
       : [])
   ]);
+  function getKitItemName(item: ProductKitItem) {
+    return item.child_product?.name || item.name || 'Товар комплекта';
+  }
+  function getKitItemBrand(item: ProductKitItem) {
+    return item.child_product?.brand?.name || item.brand;
+  }
+  function getKitItemDescription(item: ProductKitItem) {
+    return item.child_product?.description || item.description || '';
+  }
+  function getKitItemPrice(item: ProductKitItem) {
+    return item.child_product ? getProductPrice(item.child_product) : Number(item.price_rrc || 0);
+  }
+  function getKitItemImage(item: ProductKitItem) {
+    return (
+      item.child_product?.images?.[0]?.url ||
+      item.image ||
+      item.preview_image ||
+      '/images/no_image.png'
+    );
+  }
+  function getKitItemHref(item: ProductKitItem) {
+    return item.child_slug ? `/products/${item.child_slug}` : null;
+  }
   function openZoom(i: number) {
     zoomIndex = i;
     zoom = true;
@@ -100,42 +128,55 @@
           bind:this={mainSwiper}
           class="aspect-square w-full rounded border bg-white"
         >
-          {#each p.images as img, i}
-            <swiper-slide>
-              <button class="gallery-image" type="button" onclick={() => openZoom(i)}>
-                <img
-                  src={img.url}
-                  alt={p.name}
-                  class="h-full w-full object-contain p-4 select-none"
-                />
-              </button>
-            </swiper-slide>
-          {/each}
-        </swiper-container>
-        <div class="relative mt-4">
-          <swiper-container
-            bind:this={thumbsSwiper}
-            class="thumbs"
-            slides-per-view="4"
-            space-between="10"
-            watch-slides-progress="true"
-          >
-            {#each p.images as img, i}
+          {#if images.length}
+            {#each images as img, i}
               <swiper-slide>
-                <button
-                  class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
-                  onclick={() => mainSwiper?.swiper?.slideTo(i)}
-                >
+                <button class="gallery-image" type="button" onclick={() => openZoom(i)}>
                   <img
                     src={img.url}
                     alt={p.name}
-                    class="pointer-events-none h-full w-full object-contain p-1"
+                    class="h-full w-full object-contain p-4 select-none"
                   />
                 </button>
               </swiper-slide>
             {/each}
-          </swiper-container>
-        </div>
+          {:else}
+            <swiper-slide>
+              <div class="gallery-image no-image">
+                <img
+                  src="/images/no_image.png"
+                  alt={p.name}
+                  class="h-full w-full object-contain p-4 select-none"
+                />
+              </div>
+            </swiper-slide>
+          {/if}
+        </swiper-container>
+        {#if images.length > 1}
+          <div class="relative mt-4">
+            <swiper-container
+              class="thumbs"
+              slides-per-view="4"
+              space-between="10"
+              watch-slides-progress="true"
+            >
+              {#each images as img, i}
+                <swiper-slide>
+                  <button
+                    class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
+                    onclick={() => mainSwiper?.swiper?.slideTo(i)}
+                  >
+                    <img
+                      src={img.url}
+                      alt={p.name}
+                      class="pointer-events-none h-full w-full object-contain p-1"
+                    />
+                  </button>
+                </swiper-slide>
+              {/each}
+            </swiper-container>
+          </div>
+        {/if}
       </div>
       <div>
         <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
@@ -143,23 +184,21 @@
           <div class:discount-price={hasDiscount} class="product-price">{formatPrice(price)} ₽</div>
           {#if hasDiscount}
             <div class="old-product-price">{formatPrice(oldPrice)} ₽</div>
-            <div class="product-discount">
-              <span>АКЦИЯ</span>
-              <b>{getDiscountLabel()}</b>
-            </div>
+            <div class="product-discount"><span>АКЦИЯ</span><b>{getDiscountLabel()}</b></div>
           {/if}
         </div>
         {#if hasDiscount && oldPrice !== null}
           <div class="product-benefits">
             <div class="product-installment">
-              от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}
-              <span>Подробности уточняйте у менеджера</span>
+              от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}<span
+                >Подробности уточняйте у менеджера</span
+              >
             </div>
             {#if saving > 0}
               <div class="product-saving">
-                <PiggyBank size={18} strokeWidth={2.2} />
-                <span>Экономия</span>
-                <b>{formatPrice(saving)} ₽</b>
+                <PiggyBank size={18} strokeWidth={2.2} /><span>Экономия</span><b
+                  >{formatPrice(saving)} ₽</b
+                >
               </div>
             {/if}
           </div>
@@ -167,20 +206,75 @@
         <div class="mb-8 flex gap-3">
           <button class="btn primary" onclick={addToCart}>В корзину</button>
         </div>
-        <div>
-          <h2 class="mb-4 font-semibold">Характеристики</h2>
-          <div class="space-y-2 pb-5 text-sm">
-            {#each specs as s}
-              <div class="flex items-end gap-2">
-                <span class="whitespace-nowrap text-gray-500">{s.name}</span>
-                <div class="flex-1 border-b border-dashed border-gray-300"></div>
-                <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap"
-                  >{s.value}</span
-                >
-              </div>
-            {/each}
+        {#if p.isKit && kitItems.length}
+          <section class="kit-block">
+            <h2>Состав комплекта</h2>
+            <div class="kit-items">
+              {#each kitItems as item}
+                {@const href = getKitItemHref(item)}
+                {@const itemDescription = getKitItemDescription(item)}
+                <article class="kit-item">
+                  {#if href}
+                    <a class="kit-image" {href}>
+                      <img src={getKitItemImage(item)} alt={getKitItemName(item)} loading="lazy" />
+                    </a>
+                  {:else}
+                    <div class="kit-image">
+                      <img src={getKitItemImage(item)} alt={getKitItemName(item)} loading="lazy" />
+                    </div>
+                  {/if}
+                  <div class="kit-info">
+                    {#if getKitItemBrand(item)}
+                      <div class="kit-brand">{getKitItemBrand(item)}</div>
+                    {/if}
+                    {#if href}
+                      <a class="kit-name" {href}>{getKitItemName(item)}</a>
+                    {:else}
+                      <div class="kit-name">{getKitItemName(item)}</div>
+                    {/if}
+                    {#if itemDescription}
+                      <div class="kit-description">{itemDescription}</div>
+                    {/if}
+                    {#if getKitItemPrice(item)}
+                      <div class="kit-price">{formatPrice(getKitItemPrice(item))} ₽</div>
+                    {/if}
+                  </div>
+                </article>
+              {/each}
+            </div>
+          </section>
+        {:else if !p.isKit && includedInKits.length}
+          <section class="kit-block">
+            <h2>Входит в комплекты</h2>
+            <div class="included-kits">
+              {#each includedInKits as kit}
+                <a class="included-kit" href={`/products/${kit.slug}`}>
+                  <img src={kit.image || '/images/no_image.png'} alt={kit.name} loading="lazy" />
+                  <span>{kit.name}</span>
+                  {#if kit.price_rrc}
+                    <b>{formatPrice(kit.price_rrc)} ₽</b>
+                  {/if}
+                </a>
+              {/each}
+            </div>
+          </section>
+        {/if}
+        {#if specs.length}
+          <div>
+            <h2 class="mb-4 font-semibold">Характеристики</h2>
+            <div class="space-y-2 pb-5 text-sm">
+              {#each specs as s}
+                <div class="flex items-end gap-2">
+                  <span class="whitespace-nowrap text-gray-500">{s.name}</span>
+                  <div class="flex-1 border-b border-dashed border-gray-300"></div>
+                  <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap"
+                    >{s.value}</span
+                  >
+                </div>
+              {/each}
+            </div>
           </div>
-        </div>
+        {/if}
       </div>
     </div>
   </div>
@@ -199,7 +293,7 @@
           slides-per-view="1"
           class="w-full"
         >
-          {#each p.images as img}
+          {#each images as img}
             <swiper-slide>
               <div class="flex aspect-square w-full items-center justify-center">
                 <img
@@ -224,6 +318,9 @@
     border: 0;
     background: transparent;
     cursor: zoom-in;
+  }
+  .no-image {
+    cursor: default;
   }
   .product-price-row {
     display: flex;
@@ -317,6 +414,138 @@
     b {
       font-size: 16px;
       font-weight: 900;
+    }
+  }
+  .kit-block {
+    margin: 0 0 32px;
+    padding: 18px;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    background: #fff;
+    h2 {
+      margin: 0 0 16px;
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+  }
+  .kit-items {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .kit-item {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 14px;
+    padding: 12px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background: #fafafa;
+  }
+  .kit-image {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 8px;
+    }
+  }
+  .kit-info {
+    min-width: 0;
+  }
+  .kit-brand {
+    margin-bottom: 3px;
+    color: #777;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .kit-name {
+    display: block;
+    color: #111;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.3;
+    text-decoration: none;
+    &:hover {
+      color: $green;
+    }
+  }
+  .kit-description {
+    margin-top: 4px;
+    color: #777;
+    font-size: 12px;
+    line-height: 1.35;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .kit-price {
+    margin-top: 8px;
+    color: $green;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .included-kits {
+    display: grid;
+    gap: 10px;
+  }
+  .included-kit {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    color: inherit;
+    text-decoration: none;
+    background: #fafafa;
+    img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #fff;
+    }
+    span {
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.25;
+    }
+    b {
+      color: $green;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    &:hover span {
+      color: $green;
+    }
+  }
+  @media (max-width: 640px) {
+    .kit-block {
+      padding: 14px;
+    }
+    .kit-item {
+      grid-template-columns: 76px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+    .included-kit {
+      grid-template-columns: 54px minmax(0, 1fr);
+      img {
+        width: 54px;
+        height: 54px;
+      }
+      b {
+        grid-column: 2;
+      }
     }
   }
 </style>

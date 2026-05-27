@@ -140,6 +140,8 @@
     </button>
   </div>
   {#if open && (results.length || suggestions.length)}
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="dropdown">
       {#each suggestions as s, i}
         <div class="item suggestion" class:selected={i === selected} on:click={() => goTo(s.url)}>
@@ -295,12 +297,12 @@
     &.selected {
       background: rgba($green, 0.06);
     }
-    &.suggestion {
-      svg {
-        flex: 0 0 18px;
-        color: $green;
-      }
-    }
+    // &.suggestion {
+    //   svg {
+    //     flex: 0 0 18px;
+    //     color: $green;
+    //   }
+    // }
   }
   .all {
     padding: 12px 14px;
