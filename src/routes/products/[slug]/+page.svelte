@@ -28,6 +28,7 @@
   let mainSwiper = $state<any>(null);
   let zoom = $state(false);
   let zoomIndex = $state(0);
+  let includedOpen = $state(false);
   const images = $derived(p.images?.length ? p.images : []);
   const image = $derived(images[0]?.url || '/images/no_image.png');
   const slug = $derived(slugify(p.name));
@@ -38,6 +39,9 @@
   const saving = $derived(hasDiscount && oldPrice !== null ? oldPrice - price : 0);
   const kitItems = $derived(p.kitItems || []);
   const includedInKits = $derived(p.includedInKits || []);
+  const visibleIncludedInKits = $derived(
+    includedOpen ? includedInKits : includedInKits.slice(0, 3)
+  );
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -214,15 +218,9 @@
                 {@const href = getKitItemHref(item)}
                 {@const itemDescription = getKitItemDescription(item)}
                 <article class="kit-item">
-                  {#if href}
-                    <a class="kit-image" {href}>
-                      <img src={getKitItemImage(item)} alt={getKitItemName(item)} loading="lazy" />
-                    </a>
-                  {:else}
-                    <div class="kit-image">
-                      <img src={getKitItemImage(item)} alt={getKitItemName(item)} loading="lazy" />
-                    </div>
-                  {/if}
+                  <div class="kit-image">
+                    <img src={getKitItemImage(item)} alt={getKitItemName(item)} loading="lazy" />
+                  </div>
                   <div class="kit-info">
                     {#if getKitItemBrand(item)}
                       <div class="kit-brand">{getKitItemBrand(item)}</div>
@@ -247,7 +245,7 @@
           <section class="kit-block">
             <h2>Входит в комплекты</h2>
             <div class="included-kits">
-              {#each includedInKits as kit}
+              {#each visibleIncludedInKits as kit}
                 <a class="included-kit" href={`/products/${kit.slug}`}>
                   <img src={kit.image || '/images/no_image.png'} alt={kit.name} loading="lazy" />
                   <span>{kit.name}</span>
@@ -257,6 +255,15 @@
                 </a>
               {/each}
             </div>
+            {#if includedInKits.length > 3}
+              <button
+                class="kit-show-more"
+                type="button"
+                onclick={() => (includedOpen = !includedOpen)}
+              >
+                {includedOpen ? 'Свернуть' : `Показать ещё ${includedInKits.length - 3}`}
+              </button>
+            {/if}
           </section>
         {/if}
         {#if specs.length}
@@ -526,6 +533,21 @@
     }
     &:hover span {
       color: $green;
+    }
+  }
+  .kit-show-more {
+    margin-top: 12px;
+    width: 100%;
+    height: 42px;
+    border: 1px solid #dbe7f6;
+    border-radius: 10px;
+    background: #eef4fb;
+    color: #24466f;
+    font-size: 14px;
+    font-weight: 800;
+    transition: 0.18s ease;
+    &:hover {
+      background: #e4edf8;
     }
   }
   @media (max-width: 640px) {
