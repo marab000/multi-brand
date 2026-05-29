@@ -9,10 +9,10 @@
   // import dm from '$lib/assets/links/dm.webp';
   // import mw from '$lib/assets/links/mw.webp';
   import wm from '$lib/assets/links/wm.webp';
-  import kit1 from '$lib/assets/kits/1.png';
-  import kit2 from '$lib/assets/kits/2.png';
-  import kit3 from '$lib/assets/kits/3.png';
-  import kit4 from '$lib/assets/kits/4.png';
+  import kit1 from '$lib/assets/kits/1.webp';
+  import kit2 from '$lib/assets/kits/2.webp';
+  import kit3 from '$lib/assets/kits/3.webp';
+  import kit4 from '$lib/assets/kits/4.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   const kitColor = '#3e6f4f';
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
