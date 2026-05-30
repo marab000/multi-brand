@@ -30,13 +30,13 @@
 <style lang="scss">
   swiper-container {
     width: 100%;
-    aspect-ratio: 16/9;
+    aspect-ratio: 21/7;
     display: block;
     overflow: hidden;
     border-radius: 16px;
     background: #f5f5f5;
     @media (max-width: 1023px) {
-      aspect-ratio: 4/5;
+      aspect-ratio: 4/3;
     }
   }
   swiper-slide {

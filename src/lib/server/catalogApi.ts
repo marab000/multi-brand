@@ -15,10 +15,26 @@ export interface CatalogFilters {
   sort?: 'default' | 'price_asc' | 'price_desc';
 }
 
+function hasLatin(text: string) {
+  return /[a-z]/i.test(text);
+}
+
+function hasCyrillic(text: string) {
+  return /[а-яё]/i.test(text);
+}
+
+function isMixedScript(text: string) {
+  return hasLatin(text) && hasCyrillic(text);
+}
+
 function getSearchWords(search: string) {
   const raw = search.trim().toLowerCase();
-  const rawWords = raw.split(/\s+/).filter((w) => w.length >= 2);
-  const normalizedWords = expandQuery(normalize(raw)).filter((w) => w.length >= 2);
+  const rawTokens = raw.split(/\s+/).filter((w) => w.length >= 1);
+  const rawHasModelLikeToken = rawTokens.some((w) => /\d/.test(w));
+  const rawWords = rawTokens.filter((w) => w.length >= 2 || rawHasModelLikeToken);
+  const normalizedWords = expandQuery(normalize(raw)).filter(
+    (w) => w.length >= 2 && !w.includes(' ') && !isMixedScript(w)
+  );
   return Array.from(new Set([...rawWords, ...normalizedWords]));
 }
 
@@ -32,7 +48,7 @@ export function buildWhere(filters: CatalogFilters) {
       for (const word of words) {
         const idx = values.length + 1;
         values.push(`%${word}%`);
-        parts.push(`
+        parts.push(`(
           LOWER(p.name) LIKE $${idx}
           OR LOWER(COALESCE(p.description,'')) LIKE $${idx}
           OR LOWER(COALESCE(p.brand->>'name','')) LIKE $${idx}
@@ -40,9 +56,9 @@ export function buildWhere(filters: CatalogFilters) {
           OR LOWER(COALESCE(p.raw->>'Артикул','')) LIKE $${idx}
           OR LOWER(COALESCE(p.raw->>'Код','')) LIKE $${idx}
           OR LOWER(COALESCE(p.raw->>'Штрихкод','')) LIKE $${idx}
-        `);
+        )`);
       }
-      conditions.push(`(${parts.join(' OR ')})`);
+      conditions.push(`(${parts.join(' AND ')})`);
     }
   }
   if (filters.catalogRootSlug) {
@@ -58,12 +74,16 @@ export function buildWhere(filters: CatalogFilters) {
     conditions.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
   }
   if (filters.types?.length) {
-    const uniq = Array.from(new Set(filters.types.map((t) => t.trim().toLowerCase()).filter(Boolean)));
+    const uniq = Array.from(
+      new Set(filters.types.map((t) => t.trim().toLowerCase()).filter(Boolean))
+    );
     values.push(uniq);
     conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
   }
   if (filters.brands?.length) {
-    const uniq = Array.from(new Set(filters.brands.map((b) => b.trim().toLowerCase()).filter(Boolean)));
+    const uniq = Array.from(
+      new Set(filters.brands.map((b) => b.trim().toLowerCase()).filter(Boolean))
+    );
     const parts: string[] = [];
     for (const b of uniq) {
       const idx = values.length + 1;
@@ -73,7 +93,9 @@ export function buildWhere(filters: CatalogFilters) {
     if (parts.length) conditions.push(`(${parts.join(' OR ')})`);
   }
   if (filters.colors?.length) {
-    const uniq = Array.from(new Set(filters.colors.map((c) => c.trim().toLowerCase()).filter(Boolean)));
+    const uniq = Array.from(
+      new Set(filters.colors.map((c) => c.trim().toLowerCase()).filter(Boolean))
+    );
     const parts: string[] = [];
     for (const c of uniq) {
       const idx = values.length + 1;
