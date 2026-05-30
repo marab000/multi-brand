@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 import { sql } from '$lib/db';
-import type { CatalogFilters } from '$lib/server/catalogApi';
+import type { CatalogFilters, CatalogScope } from '$lib/server/catalogApi';
 import { buildWhere } from '$lib/server/catalogApi';
 import {
   filterCatalogRootsByAvailability,
@@ -75,6 +75,17 @@ function buildSpecs(url: URL) {
       ...(depthMax ? { max: Math.ceil(Number(depthMax)) } : {})
     };
   return Object.keys(specs).length ? specs : undefined;
+}
+
+function getLandingScopes(rootSlug: string | null): CatalogScope[] | null {
+  if (rootSlug === 'mikrovolnovye-pechi') {
+    return [
+      { rootSlug: 'melkaya-bytovaya-tehnika', groupSlug: 'mikrovolnovye-pechi' },
+      { rootSlug: 'vstraivaemaya-tehnika', groupSlug: 'mikrovolnovye-pechi' }
+    ];
+  }
+  if (rootSlug === 'vytyazhki') return [{ rootSlug: 'kuhonnye-vytyazhki' }];
+  return null;
 }
 
 function buildScopeWhere(
@@ -171,6 +182,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
   const groupSlug = segments[2] ?? null;
   const leafSlug = segments[3] ?? null;
   const isSearchPage = rootSlug === 'search';
+  const landingScopes = getLandingScopes(rootSlug);
   const selectedTypes = url.searchParams
     .getAll('type')
     .map((item) => item.trim())
@@ -182,8 +194,10 @@ export const load: LayoutServerLoad = async ({ url }) => {
     WHERE catalog_root_slug IS NOT NULL AND price_rrc IS NOT NULL
   `;
   const filteredRoots = filterCatalogRootsByAvailability(allRoots, availabilityRows as any[]);
-  const currentRoot = isSearchPage ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
-  const currentGroup = isSearchPage ? null : findCatalogGroupBySlug(currentRoot, groupSlug);
+  const currentRoot =
+    isSearchPage || landingScopes ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
+  const currentGroup =
+    isSearchPage || landingScopes ? null : findCatalogGroupBySlug(currentRoot, groupSlug);
   let products: ProductScopeRow[] = [];
   let categoryNav: CategoryNavItem[] = [];
   if (isSearchPage) {
@@ -210,6 +224,55 @@ export const load: LayoutServerLoad = async ({ url }) => {
       filteredRoots,
       url.searchParams.get('search')?.trim() || ''
     );
+  } else if (landingScopes) {
+    const filters: CatalogFilters = {
+      catalogScopes: landingScopes,
+      types: selectedTypes.length ? selectedTypes : undefined,
+      brands: url.searchParams.getAll('brand'),
+      colors: url.searchParams.getAll('color'),
+      priceMin: toDbPrice(url.searchParams.get('price_min')),
+      priceMax: toDbPrice(url.searchParams.get('price_max')),
+      specs: buildSpecs(url)
+    };
+    const { whereClause, values } = buildWhere(filters);
+    products = (await sql.unsafe(
+      `
+        SELECT brand->>'name' AS brand_name, product_type, price_rrc, specs, catalog_root_slug, catalog_group_slug, catalog_leaf_slug
+        FROM products p
+        ${whereClause}
+      `,
+      values
+    )) as unknown as ProductScopeRow[];
+    categoryNav =
+      rootSlug === 'mikrovolnovye-pechi'
+        ? [
+            {
+              name: 'Отдельностоящие микроволновые печи',
+              slug: 'otdelnostoyaschie-mikrovolnovye-pechi',
+              href: '/catalog/melkaya-bytovaya-tehnika/mikrovolnovye-pechi',
+              level: 'leaf' as const
+            },
+            {
+              name: 'Встраиваемые микроволновые печи',
+              slug: 'vstraivaemye-mikrovolnovye-pechi',
+              href: '/catalog/vstraivaemaya-tehnika/mikrovolnovye-pechi/vstraivaemye-mikrovolnovye-pechi',
+              level: 'leaf' as const
+            }
+          ]
+        : [
+            {
+              name: 'Вытяжки встраиваемые',
+              slug: 'vytyazhki-vstraivaemye',
+              href: '/catalog/kuhonnye-vytyazhki/vytyazhki-vstraivaemye',
+              level: 'leaf' as const
+            },
+            {
+              name: 'Вытяжки отдельностоящие',
+              slug: 'vytyazhki-otdelnostoyaschie',
+              href: '/catalog/kuhonnye-vytyazhki/vytyazhki-otdelnostoyaschie',
+              level: 'leaf' as const
+            }
+          ];
   } else {
     const { where, values } = buildScopeWhere(
       rootSlug,

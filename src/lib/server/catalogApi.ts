@@ -1,11 +1,18 @@
 import { sql } from '$lib/db';
 import { normalize, expandQuery } from '$lib/search/normalize';
 
+export interface CatalogScope {
+  rootSlug: string;
+  groupSlug?: string;
+  leafSlug?: string;
+}
+
 export interface CatalogFilters {
   search?: string;
   catalogRootSlug?: string;
   catalogGroupSlug?: string;
   catalogLeafSlug?: string;
+  catalogScopes?: CatalogScope[];
   types?: string[];
   brands?: string[];
   colors?: string[];
@@ -61,17 +68,36 @@ export function buildWhere(filters: CatalogFilters) {
       conditions.push(`(${parts.join(' AND ')})`);
     }
   }
-  if (filters.catalogRootSlug) {
-    values.push(filters.catalogRootSlug.toLowerCase());
-    conditions.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
-  }
-  if (filters.catalogGroupSlug) {
-    values.push(filters.catalogGroupSlug.toLowerCase());
-    conditions.push(`LOWER(TRIM(p.catalog_group_slug)) = $${values.length}`);
-  }
-  if (filters.catalogLeafSlug) {
-    values.push(filters.catalogLeafSlug.toLowerCase());
-    conditions.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
+  if (filters.catalogScopes?.length) {
+    const scopeParts: string[] = [];
+    for (const scope of filters.catalogScopes) {
+      const parts: string[] = [];
+      values.push(scope.rootSlug.toLowerCase());
+      parts.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
+      if (scope.groupSlug) {
+        values.push(scope.groupSlug.toLowerCase());
+        parts.push(`LOWER(TRIM(p.catalog_group_slug)) = $${values.length}`);
+      }
+      if (scope.leafSlug) {
+        values.push(scope.leafSlug.toLowerCase());
+        parts.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
+      }
+      scopeParts.push(`(${parts.join(' AND ')})`);
+    }
+    conditions.push(`(${scopeParts.join(' OR ')})`);
+  } else {
+    if (filters.catalogRootSlug) {
+      values.push(filters.catalogRootSlug.toLowerCase());
+      conditions.push(`LOWER(TRIM(p.catalog_root_slug)) = $${values.length}`);
+    }
+    if (filters.catalogGroupSlug) {
+      values.push(filters.catalogGroupSlug.toLowerCase());
+      conditions.push(`LOWER(TRIM(p.catalog_group_slug)) = $${values.length}`);
+    }
+    if (filters.catalogLeafSlug) {
+      values.push(filters.catalogLeafSlug.toLowerCase());
+      conditions.push(`LOWER(TRIM(p.catalog_leaf_slug)) = $${values.length}`);
+    }
   }
   if (filters.types?.length) {
     const uniq = Array.from(

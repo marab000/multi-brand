@@ -4,12 +4,10 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import SidebarFilters from '$lib/components/filters/SidebarFilters.svelte';
   import RecentlyViewed from '$lib/components/RecentlyViewed.svelte';
-
   type TypeItem = { name: string; slug: string };
   type TypeGroup = { group: string; items: TypeItem[] };
   type CategoryNavItem = { name: string; slug: string; href: string; level: 'group' | 'leaf' };
   type BreadcrumbItem = { name: string; href?: string };
-
   let { data } = $props<{
     data?: {
       categoryNav?: CategoryNavItem[];
@@ -25,34 +23,26 @@
       category?: string;
     };
   }>();
-
   let showFilters = $state(false);
-
   const isLoading = $derived($navigating !== null);
   const pathname = $derived($page.url.pathname);
   const isCatalogRoot = $derived(pathname === '/catalog');
-
+  const isCatalogLanding = $derived(Boolean($page.data?.isCatalogLanding));
+  const hideSidebar = $derived(isCatalogRoot);
   const breadcrumbs = $derived(
     ($page.data?.breadcrumbs ?? [
       { name: 'Главная', href: '/' },
       { name: 'Каталог', href: '/catalog' }
     ]) as BreadcrumbItem[]
   );
-
   const product = $derived($page.data?.product ?? null);
   const categoryNav = $derived(data?.categoryNav ?? []);
   const typeGroups = $derived(data?.typeGroups ?? []);
   const brands = $derived(data?.brands ?? []);
   const colors = $derived(data?.colors ?? []);
   const minMax = $derived(
-    data?.minMax ?? {
-      price: [0, 999999],
-      width: [0, 300],
-      height: [0, 300],
-      depth: [0, 300]
-    }
+    data?.minMax ?? { price: [0, 999999], width: [0, 300], height: [0, 300], depth: [0, 300] }
   );
-
   onMount(() => {
     const handleOpenFilters = () => {
       showFilters = true;
@@ -68,19 +58,18 @@
 
 <Breadcrumbs items={breadcrumbs} {product} />
 
-<div class="catalog-layout" class:catalog-layout--root={isCatalogRoot}>
-  {#if !isCatalogRoot}
+<div class="catalog-layout" class:catalog-layout--root={hideSidebar}>
+  {#if !hideSidebar}
     <div class="sidebar">
       <SidebarFilters {categoryNav} {brands} {typeGroups} {colors} {minMax} />
     </div>
   {/if}
-
   <div class="catalog-content">
     <slot />
   </div>
 </div>
 
-{#if showFilters && !isCatalogRoot}
+{#if showFilters && !hideSidebar}
   <button class="overlay" onclick={() => (showFilters = false)}></button>
   <div class="drawer">
     <div class="drawer-header">

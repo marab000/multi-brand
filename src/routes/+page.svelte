@@ -6,9 +6,10 @@
   import vm from '$lib/assets/links/vm.webp';
   import oven from '$lib/assets/links/oven.webp';
   import freeze from '$lib/assets/links/freeze.webp';
-  // import dm from '$lib/assets/links/dm.webp';
-  // import mw from '$lib/assets/links/mw.webp';
+  import dm from '$lib/assets/links/dm.webp';
+  import mw from '$lib/assets/links/mw.webp';
   import wm from '$lib/assets/links/wm.webp';
+  import hood from '$lib/assets/links/hood.webp';
   import kit1 from '$lib/assets/kits/1.webp';
   import kit2 from '$lib/assets/kits/2.webp';
   import kit3 from '$lib/assets/kits/3.webp';
@@ -79,17 +80,22 @@
       title: 'Холодильники',
       link: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
       img: freeze
+    },
+    {
+      title: 'Микроволновые печи',
+      link: '/catalog/mikrovolnovye-pechi',
+      img: mw
+    },
+    {
+      title: 'Сушильные машины',
+      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
+      img: dm
+    },
+    {
+      title: 'Вытяжки',
+      link: '/catalog/vytyazhki',
+      img: hood
     }
-    // {
-    //   title: 'Микроволновые печи',
-    //   link: '/catalog/melkaya-bytovaya-tehnika/mikrovolnovye-pechi',
-    //   img: mw
-    // },
-    // {
-    //   title: 'Сушильные машины',
-    //   link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
-    //   img: dm
-    // },
   ];
   const kits = [
     {

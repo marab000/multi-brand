@@ -7,6 +7,7 @@
   export let currentPage = 1;
   export let pages = 1;
   export let currentSearch = '';
+  export let showFiltersButton = true;
   const sortOptions = [
     { value: 'default', label: 'По умолчанию' },
     { value: 'price_asc', label: 'Сначала дешевле' },
@@ -14,8 +15,7 @@
   ];
   let isSortOpen = false;
   $: currentSort = $page.url.searchParams.get('sort') ?? 'default';
-  $: currentSortLabel =
-    sortOptions.find((item) => item.value === currentSort)?.label ?? 'По умолчанию';
+  $: currentSortLabel = sortOptions.find((item) => item.value === currentSort)?.label ?? 'По умолчанию';
   $: visiblePages = getVisiblePages(currentPage, pages);
   function getVisiblePages(current: number, total: number): (number | '...')[] {
     if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -66,15 +66,12 @@
 {#if products.length === 0}
   <p>Товары не найдены</p>
 {:else}
-  <div class="topbar">
-    <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
+  <div class="topbar" class:topbar--right={!showFiltersButton}>
+    {#if showFiltersButton}
+      <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
+    {/if}
     <div class="sort" onclick={(e) => e.stopPropagation()}>
-      <button
-        class="sort__trigger"
-        type="button"
-        onclick={toggleSort}
-        aria-expanded={isSortOpen ? 'true' : 'false'}
-      >
+      <button class="sort__trigger" type="button" onclick={toggleSort} aria-expanded={isSortOpen ? 'true' : 'false'}>
         <span>{currentSortLabel}</span>
         {#if isSortOpen}
           <ChevronUp size={18} strokeWidth={2.1} />
@@ -85,12 +82,7 @@
       {#if isSortOpen}
         <div class="sort__dropdown">
           {#each sortOptions as option}
-            <button
-              class="sort__option"
-              class:sort__option--active={option.value === currentSort}
-              type="button"
-              onclick={() => applySort(option.value)}
-            >
+            <button class="sort__option" class:sort__option--active={option.value === currentSort} type="button" onclick={() => applySort(option.value)}>
               <span class="sort__check">
                 {#if option.value === currentSort}
                   <Check size={18} strokeWidth={2.4} />
@@ -117,11 +109,7 @@
         {#if p === '...'}
           <span class="dots">...</span>
         {:else}
-          <button
-            type="button"
-            class:active={p === currentPage}
-            onclick={() => goToPage(p as number)}>{p}</button
-          >
+          <button type="button" class:active={p === currentPage} onclick={() => goToPage(p as number)}>{p}</button>
         {/if}
       {/each}
       {#if currentPage < pages}
@@ -138,6 +126,9 @@
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 8px;
+    &.topbar--right {
+      justify-content: flex-end;
+    }
     @media (min-width: 1024px) {
       justify-content: flex-end;
     }
@@ -176,9 +167,7 @@
       font-weight: 500;
       line-height: 1.2;
       cursor: pointer;
-      transition:
-        background 0.18s ease,
-        border-color 0.18s ease;
+      transition: background 0.18s ease, border-color 0.18s ease;
       &[aria-expanded='true'] {
         border-color: #e6a73c;
       }
