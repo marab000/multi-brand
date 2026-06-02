@@ -1,9 +1,9 @@
 <script lang="ts">
   import { BadgePercent, Warehouse, ConciergeBell, Sparkles, ArrowRight } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
-  import gaz from '$lib/assets/links/gaz.webp';
+  import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
-  import vm from '$lib/assets/links/vm.webp';
+  import dw from '$lib/assets/links/dw.webp';
   import oven from '$lib/assets/links/oven.webp';
   import freeze from '$lib/assets/links/freeze.webp';
   import dm from '$lib/assets/links/dm.webp';
@@ -52,9 +52,9 @@
   ];
   const categories = [
     {
-      title: 'Газовая поверхность',
-      link: '/catalog/vstraivaemaya-tehnika/varochnye-poverhnosti/gazovye',
-      img: gaz
+      title: 'Варочные поверхности',
+      link: '/catalog/vstraivaemaya-tehnika/varochnye-poverhnosti',
+      img: hob
     },
     {
       title: 'Кофемашины',
@@ -64,7 +64,7 @@
     {
       title: 'Посудомоечные машины',
       link: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
-      img: wm
+      img: dw
     },
     {
       title: 'Духовые шкафы',
@@ -74,7 +74,7 @@
     {
       title: 'Стиральные машины',
       link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny',
-      img: vm
+      img: wm
     },
     {
       title: 'Холодильники',

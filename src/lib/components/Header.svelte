@@ -797,7 +797,7 @@
     color: #fff;
     font-size: 10px;
   }
-  @media (max-width: 379px) {
+  @media (max-width: 395px) {
     .nav {
       &__about {
         font-size: 12px;
