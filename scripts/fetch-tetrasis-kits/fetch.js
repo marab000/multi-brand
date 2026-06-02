@@ -3,20 +3,19 @@ import puppeteer from 'puppeteer'
 import postgres from 'postgres'
 import fs from 'fs-extra'
 import path from 'path'
-import brands from './brands.json' with { type: 'json' }
+import brands from '../sync-tetrasis-products/brands.json' with { type: 'json' }
 const BASE = 'https://tetrasis-bt.ru'
+const SOURCE = 'tetrasis-kit'
 const START_URL = `${BASE}/catalog/10917-komplekty2/`
-const MAX_PAGES = Number(process.env.TETRASIS_KITS_MAX_PAGES || 100)
+const ROOT = 'scripts/fetch-tetrasis-kits'
+const LOG = path.resolve(`${ROOT}/fetch.log`)
+const OUT_JSONL = path.resolve(`${ROOT}/kits-data.jsonl`)
+const MAX_PAGES = Number(process.env.TETRASIS_KITS_MAX_PAGES || 999)
 const THREADS = Number(process.env.TETRASIS_KITS_THREADS || 3)
-const HEADLESS = true
-const PAGE_DELAY = 900
-const DETAIL_DELAY = 500
-const RETRIES = 3
-const OUT_JSON = path.resolve('scripts/tetrasis-kits.json')
-const OUT_JSONL = path.resolve('scripts/tetrasis-kits.jsonl')
-const IMAGE_LOG = path.resolve('scripts/tetrasis-kits-images.log')
-const LOG = path.resolve('scripts/tetrasis-kits.log')
-const ERROR_LOG = path.resolve('scripts/tetrasis-kits-errors.log')
+const HEADLESS = process.env.TETRASIS_KITS_HEADLESS !== 'false'
+const PAGE_DELAY = Number(process.env.TETRASIS_KITS_PAGE_DELAY || 900)
+const DETAIL_DELAY = Number(process.env.TETRASIS_KITS_DETAIL_DELAY || 500)
+const RETRIES = Number(process.env.TETRASIS_KITS_RETRIES || 3)
 const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD, max: Math.max(THREADS + 2, 5) })
 const colors = { green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', blue: '\x1b[36m', gray: '\x1b[90m', reset: '\x1b[0m' }
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -36,8 +35,6 @@ async function logInfo(...a) { await logLine(colors.blue, ...a) }
 async function logSuccess(...a) { await logLine(colors.green, ...a) }
 async function logWarn(...a) { await logLine(colors.yellow, ...a) }
 async function logError(...a) { await logLine(colors.red, ...a) }
-async function writeError(...a) { await fs.appendFile(ERROR_LOG, `${now()} ${a.join(' ')}\n`) }
-async function writeImageLog(name, stage, url) { await fs.appendFile(IMAGE_LOG, `${now()} ERROR ${name} stage:${stage}${url ? ` url:${url}` : ''}\n`) }
 async function withRetry(label, fn) {
 	let lastError
 	for (let attempt = 1; attempt <= RETRIES; attempt++) {
@@ -165,7 +162,6 @@ async function collectCatalogItems(page) {
 			await logSuccess(`CATALOG PAGE ${pageNumber}/${MAX_PAGES} found:${pageItems.length} added:${added} total:${items.length}`)
 		} catch (e) {
 			await logError(`CATALOG PAGE ${pageNumber} ERROR ${e.message}`)
-			await writeError(`CATALOG PAGE ${pageNumber}`, e.stack || e.message)
 		}
 	}
 	return items
@@ -199,14 +195,10 @@ async function processKit(page, item, index, total, state) {
 		await logWarn(`SKIP [${index}/${total}] ITEM_MISSING ${item.name} found:${kitItems.length}/${detail.items.length} missing:${missingItems.join(' | ') || '-'}`)
 		return null
 	}
-	const row = { ...item, brand: { name: allowedBrand.name, api: allowedBrand.name }, description: detail.description, image: detail.image || item.image, source: 'tetrasis-kit', category: 'Встраиваемая техника', product_type: getKitType(item.name), kit_items: kitItems, raw: { catalog_item: item, detail }, fetched_at: now() }
+	const row = { ...item, brand: { name: allowedBrand.name, api: allowedBrand.name }, description: detail.description, image: detail.image || item.image, source: SOURCE, category: 'Встраиваемая техника', product_type: getKitType(item.name), kit_items: kitItems, raw: { catalog_item: item, detail }, fetched_at: now() }
 	state.rows.push(row)
 	await fs.appendFile(OUT_JSONL, JSON.stringify(row) + '\n')
-	if (!state.imageNames.has(row.name)) {
-		state.imageNames.add(row.name)
-		await writeImageLog(row.name, 'kit', row.url)
-	}
-	await logSuccess(`KIT [${state.rows.length}] source:${index}/${total} ${row.name} brand:${allowedBrand.name} items:${kitItems.length} linked:${kitItems.length}`)
+	await logSuccess(`KIT [${state.rows.length}] source:${index}/${total} ${row.name} brand:${allowedBrand.name} items:${kitItems.length}`)
 	return row
 }
 async function worker(id, browser, queue, state) {
@@ -217,28 +209,22 @@ async function worker(id, browser, queue, state) {
 		while (queue.length) {
 			const task = queue.shift()
 			if (!task) break
-			try {
-				await processKit(page, task.item, task.index, task.total, state)
-			} catch (e) {
-				await logError(`THREAD ${id} KIT_ERROR [${task.index}/${task.total}] ${task.item.name} ${e.message}`)
-				await writeError(`THREAD ${id} KIT_ERROR`, task.item.name, task.item.url, e.stack || e.message)
-			}
+			try { await processKit(page, task.item, task.index, task.total, state) }
+			catch (e) { await logError(`THREAD ${id} KIT_ERROR [${task.index}/${task.total}] ${task.item.name} ${e.stack || e.message}`) }
 		}
 	} finally {
 		await page.close().catch(() => null)
 	}
 }
 async function main() {
-	await fs.remove(LOG)
-	await fs.remove(ERROR_LOG)
-	await fs.remove(OUT_JSON)
+	await fs.ensureDir(ROOT)
+	await fs.writeFile(LOG, '')
 	await fs.remove(OUT_JSONL)
-	await fs.remove(IMAGE_LOG)
 	const browser = await puppeteer.launch({ headless: HEADLESS, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
 	const catalogPage = await browser.newPage()
 	await catalogPage.setViewport({ width: 1365, height: 900 })
 	await catalogPage.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36')
-	const state = { rows: [], imageNames: new Set(), skippedExists: 0, skippedBrand: 0, skippedMissingItems: 0 }
+	const state = { rows: [], skippedExists: 0, skippedBrand: 0, skippedMissingItems: 0 }
 	try {
 		await logInfo(`START ${START_URL} pages:${MAX_PAGES} threads:${THREADS} brands:${allowedBrands.length}`)
 		const catalogItems = await collectCatalogItems(catalogPage)
@@ -246,15 +232,14 @@ async function main() {
 		const queue = catalogItems.map((item, index) => ({ item, index: index + 1, total: catalogItems.length }))
 		const workers = Array.from({ length: Math.max(1, THREADS) }, (_, index) => worker(index + 1, browser, queue, state))
 		await Promise.all(workers)
-		await fs.writeJson(OUT_JSON, state.rows, { spaces: 2 })
-		await logSuccess(`DONE total:${state.rows.length} skippedExists:${state.skippedExists} skippedBrand:${state.skippedBrand} skippedMissingItems:${state.skippedMissingItems} json:${OUT_JSON} jsonl:${OUT_JSONL} imageLog:${IMAGE_LOG}`)
+		await logSuccess(`DONE total:${state.rows.length} skippedExists:${state.skippedExists} skippedBrand:${state.skippedBrand} skippedMissingItems:${state.skippedMissingItems} data:${OUT_JSONL}`)
 	} finally {
 		await browser.close().catch(() => null)
 		await sql.end().catch(() => null)
 	}
 }
 main().catch(async e => {
-	await logError(`FATAL ${e.stack || e.message}`)
+	await logError(`FATAL ${e.stack || e.message}`).catch(() => null)
 	await sql.end().catch(() => null)
 	process.exit(1)
 })

@@ -2,49 +2,34 @@ import 'dotenv/config'
 import postgres from 'postgres'
 import brands from './brands.json' with { type: 'json' }
 import excludedCategories from './excluded-categories.json' with { type: 'json' }
-import { resolveCatalog } from '../src/lib/server/categories.ts'
-
-const sql = postgres({
-	host: process.env.DB_HOST,
-	port: Number(process.env.DB_PORT || 5432),
-	database: process.env.DB_NAME,
-	username: process.env.DB_USER,
-	password: process.env.DB_PASSWORD
-})
-
+import { resolveCatalog } from '../../src/lib/server/categories.ts'
+const SOURCE = 'tetrasis-api'
+const LOG = 'scripts/sync-tetrasis-products/sync.log'
 const API_KEY = process.env.TETRAIS_API_KEY
 if (!API_KEY) throw new Error('TETRAIS_API_KEY missing')
-
-const normalizeCompare = s =>
-	String(s || '')
-		.toLowerCase()
-		.replace(/['"]/g, '')
-		.trim()
-
-const cleanBrand = s =>
-	String(s || '')
-		.replace(/['"]/g, '')
-		.trim()
-
+const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD })
+const now = () => new Date().toISOString()
+async function log(...a) {
+	const line = `${now()} ${a.join(' ')}`
+	console.log(line)
+	await (await import('fs-extra')).default.appendFile(LOG, line + '\n')
+}
+const normalizeCompare = s => String(s || '').toLowerCase().replace(/['"]/g, '').trim()
+const cleanBrand = s => String(s || '').replace(/['"]/g, '').trim()
 function findMatchedBrand(apiName) {
 	const n = normalizeCompare(apiName)
 	return brands.find(b => n.startsWith(normalizeCompare(b.name)))
 }
-
 async function safeJsonFetch(url) {
 	const r = await fetch(url)
 	const t = await r.text()
-	try {
-		return JSON.parse(t)
-	} catch {
-		throw new Error(`Not JSON: ${t.slice(0, 200)}`)
+	try { return JSON.parse(t) }
+	catch {
+		await log('API_ERROR', url, t.slice(0, 500))
+		return null
 	}
 }
-
-function cleanSpecKey(key) {
-	return key.replace(/_[a-f0-9]{32}$/, '').trim()
-}
-
+function cleanSpecKey(key) { return key.replace(/_[a-f0-9]{32}$/, '').trim() }
 function extractSpecs(item) {
 	const values = item['ДопРеквизиты'] || {}
 	const names = item['ДопРеквизитыНаименование'] || {}
@@ -52,14 +37,12 @@ function extractSpecs(item) {
 	for (const key in values) {
 		const rawValue = values[key]
 		if (rawValue == null || rawValue === '') continue
-		const label = names[key] || cleanSpecKey(key)
-		specs[label] = rawValue
+		specs[names[key] || cleanSpecKey(key)] = rawValue
 	}
 	if (item['Вес']) specs['Вес'] = item['Вес']
 	if (item['Объем']) specs['Объем'] = item['Объем']
 	return specs
 }
-
 function toNumber(v) {
 	if (v == null) return null
 	let s = String(v).trim()
@@ -67,36 +50,22 @@ function toNumber(v) {
 	s = s.replace(/\s/g, '').replace(/[^0-9,.\-]/g, '')
 	const lastComma = s.lastIndexOf(',')
 	const lastDot = s.lastIndexOf('.')
-	if (lastComma !== -1 && lastDot !== -1) {
-		if (lastDot > lastComma) {
-			s = s.replace(/,/g, '')
-		} else {
-			s = s.replace(/\./g, '').replace(',', '.')
-		}
-	} else if (lastComma !== -1) {
-		const fractionalLength = s.length - lastComma - 1
-		if (fractionalLength === 1 || fractionalLength === 2) {
-			s = s.replace(/\./g, '').replace(',', '.')
-		} else {
-			s = s.replace(/,/g, '')
-		}
+	if (lastComma !== -1 && lastDot !== -1) s = lastDot > lastComma ? s.replace(/,/g, '') : s.replace(/\./g, '').replace(',', '.')
+	else if (lastComma !== -1) {
+		const len = s.length - lastComma - 1
+		s = len === 1 || len === 2 ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '')
 	} else if (lastDot !== -1) {
-		const fractionalLength = s.length - lastDot - 1
-		if (!(fractionalLength === 1 || fractionalLength === 2)) {
-			s = s.replace(/\./g, '')
-		}
+		const len = s.length - lastDot - 1
+		if (!(len === 1 || len === 2)) s = s.replace(/\./g, '')
 	}
 	const n = Number(s)
 	return Number.isFinite(n) ? n / 1000 : null
 }
-
 function extractPrices(rows) {
 	const map = new Map()
 	for (const p of rows) {
 		const id = String(p['НоменклатураID'])
-		if (!map.has(id)) {
-			map.set(id, { price_rrc: null, price_opt: null, price_ric: null })
-		}
+		if (!map.has(id)) map.set(id, { price_rrc: null, price_opt: null, price_ric: null })
 		const row = map.get(id)
 		const type = (p['ТипЦены'] || p['ВидЦены'] || '').toLowerCase()
 		const val = toNumber(p['Цена'])
@@ -107,31 +76,30 @@ function extractPrices(rows) {
 	}
 	return map
 }
-
 async function syncBrand(apiBrand) {
 	const brand = findMatchedBrand(apiBrand.NAME)
 	if (!brand) return
 	const cleanName = cleanBrand(brand.name)
-	console.log('Sync:', cleanName, '| API:', apiBrand.NAME)
+	await log('SYNC_BRAND', cleanName, 'api:', apiBrand.NAME)
 	const products = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/0/`)
 	const pricesRaw = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/2/`)
+	if (!products || !pricesRaw) {
+		await log('SKIP_BRAND', apiBrand.NAME)
+		return
+	}
 	const priceMap = extractPrices(pricesRaw)
 	const rows = []
 	for (const item of products) {
 		const id = String(item.ID)
 		const prices = priceMap.get(id)
-		if (!prices) continue
-		if (!(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
-		const specs = extractSpecs(item)
+		if (!prices || !(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
 		const rawCategory = item['ГруппаАналитическогоУчета'] ?? null
 		const rawType = item['ЦеноваяГруппа'] ?? null
 		const catalog = resolveCatalog(rawCategory, rawType)
 		rows.push({
 			external_id: id,
-			brand: sql.json({
-				name: cleanName,
-				api: apiBrand.NAME
-			}),
+			source: SOURCE,
+			brand: sql.json({ name: cleanName, api: apiBrand.NAME }),
 			name: item['РабочееНаименование'] ?? null,
 			description: item['ТекстовоеОписание'] ?? null,
 			category: rawCategory,
@@ -145,17 +113,18 @@ async function syncBrand(apiBrand) {
 			price_rrc: prices.price_rrc,
 			price_opt: prices.price_opt,
 			price_ric: prices.price_ric,
-			specs: sql.json(specs),
-			raw: sql.json(item)
+			specs: sql.json(extractSpecs(item)),
+			raw: sql.json({ ...item, imported_from: SOURCE, imported_at: now() })
 		})
 	}
 	if (!rows.length) {
-		console.log('No rows with price')
+		await log('NO_ROWS_WITH_PRICE', cleanName)
 		return
 	}
 	await sql`
 		insert into products ${sql(rows)}
 		on conflict (external_id) do update set
+		source=excluded.source,
 		brand=excluded.brand,
 		name=excluded.name,
 		description=excluded.description,
@@ -177,48 +146,43 @@ async function syncBrand(apiBrand) {
 	const ids = rows.map(r => r.external_id)
 	await sql`
 		delete from products
-		where brand->>'api'=${String(apiBrand.NAME)}
+		where source=${SOURCE}
+		and brand->>'api'=${String(apiBrand.NAME)}
 		and external_id not in ${sql(ids)}
 	`
-	console.log('Done:', rows.length)
+	await log('DONE_BRAND', cleanName, 'rows:', rows.length)
 }
-
 async function removeExcludedCategories() {
 	const { categories = [], category_product_types = {} } = excludedCategories
 	if (categories.length) {
-		await sql`
-			delete from products
-			where category = ANY(${sql.array(categories)})
-		`
+		await sql`delete from products where source=${SOURCE} and category = ANY(${sql.array(categories)})`
 	}
 	let query = sql``
 	let first = true
 	for (const [category, types] of Object.entries(category_product_types)) {
 		if (!types.length) continue
 		const condition = sql`(category = ${category} and product_type = ANY(${sql.array(types)}))`
-		if (first) {
-			query = sql`${condition}`
-			first = false
-		} else {
-			query = sql`${query} OR ${condition}`
-		}
+		query = first ? sql`${condition}` : sql`${query} OR ${condition}`
+		first = false
 	}
-	if (!first) {
-		await sql`
-			delete from products
-			where ${query}
-		`
-	}
-	console.log('Excluded categories & product_types removed')
+	if (!first) await sql`delete from products where source=${SOURCE} and (${query})`
+	await log('EXCLUDED_REMOVED')
 }
-
 async function main() {
+	const fs = (await import('fs-extra')).default
+	await fs.writeFile(LOG, '')
 	const apiBrands = await safeJsonFetch(`https://tetrasis-bt.ru/exch_api.php?CODE=${API_KEY}`)
+	if (!apiBrands) throw new Error('Brands list fetch failed')
 	for (const b of apiBrands) {
-		await syncBrand(b)
+		try { await syncBrand(b) }
+		catch (e) { await log('FAILED_BRAND', b?.NAME, e.stack || e.message) }
 	}
 	await removeExcludedCategories()
 	await sql.end()
+	await log('FINISHED')
 }
-
-main()
+main().catch(async e => {
+	await log('FATAL', e.stack || e.message).catch(() => null)
+	await sql.end().catch(() => null)
+	process.exit(1)
+})

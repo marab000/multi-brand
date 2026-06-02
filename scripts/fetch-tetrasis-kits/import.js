@@ -2,12 +2,13 @@ import 'dotenv/config'
 import postgres from 'postgres'
 import fs from 'fs-extra'
 import path from 'path'
-import { resolveCatalog } from '../src/lib/server/categories.ts'
-const INPUT_FILE = path.resolve(process.env.TETRASIS_KITS_INPUT || 'scripts/tetrasis-kits.jsonl')
+import { resolveCatalog } from '../../src/lib/server/categories.ts'
+const ROOT = 'scripts/fetch-tetrasis-kits'
+const INPUT_FILE = path.resolve(process.env.TETRASIS_KITS_INPUT || `${ROOT}/kits-data.jsonl`)
+const LOG = path.resolve(`${ROOT}/import.log`)
+const IMAGE_QUEUE = path.resolve(process.env.FETCH_IMAGES_QUEUE || 'scripts/fetch-tetrasis-images/image-queue.json')
 const LIMIT = Number(process.env.TETRASIS_KITS_LIMIT || 0)
 const DRY_RUN = process.env.TETRASIS_KITS_DRY_RUN !== 'false'
-const REPORT_LOG = path.resolve('scripts/tetrasis-kits-import-report.log')
-const IMAGE_ERROR_LOG = path.resolve('scripts/fetch-images-errors.log')
 const KIT_CATEGORY = 'Встраиваемая техника'
 const SOURCE = 'tetrasis-kit'
 const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD })
@@ -30,15 +31,15 @@ function kitSpecs(kit) {
 }
 function kitRaw(kit) { return { ...kit, imported_from: SOURCE, imported_at: now() } }
 function itemRaw(kit, item, childProduct) { return { ...item, kit_name: kit.name, kit_external_id: kit.external_id, child_product_id: childProduct?.id || item.child_product_id || null, imported_from: SOURCE, imported_at: now() } }
-async function report(line) {
+async function log(...a) {
+	const line = `${now()} ${a.join(' ')}`
 	console.log(line)
-	await fs.appendFile(REPORT_LOG, line + '\n')
+	await fs.appendFile(LOG, line + '\n')
 }
 async function readKits() {
 	if (!(await fs.pathExists(INPUT_FILE))) throw new Error(`File not found: ${INPUT_FILE}`)
 	const content = await fs.readFile(INPUT_FILE, 'utf8')
-	let kits = INPUT_FILE.endsWith('.jsonl') ? content.split('\n').map(line => line.trim()).filter(Boolean).map(line => JSON.parse(line)) : JSON.parse(content)
-	if (!Array.isArray(kits)) throw new Error('tetrasis kits input must be an array')
+	let kits = content.split('\n').map(line => line.trim()).filter(Boolean).map(line => JSON.parse(line))
 	if (LIMIT > 0) kits = kits.slice(0, LIMIT)
 	return kits
 }
@@ -100,31 +101,29 @@ async function inspectKits(kits) {
 	let itemsExist = 0
 	let itemsMissing = 0
 	const validKits = []
-	await fs.writeFile(REPORT_LOG, '')
-	await report(`START dryRun:${DRY_RUN} input:${INPUT_FILE} limit:${LIMIT || 'all'}`)
+	await log(`START dryRun:${DRY_RUN} input:${INPUT_FILE} limit:${LIMIT || 'all'}`)
 	for (const [index, kit] of kits.entries()) {
 		const kitProduct = await findKitProduct(kit)
 		if (kitProduct) kitsExist++
 		else kitsMissing++
 		let missingInKit = 0
 		const resolvedItems = []
-		await report(`${kitProduct ? 'KIT_EXISTS' : 'KIT_MISSING'} [${index + 1}/${kits.length}] ${kit.name} external:${kitExternalId(kit)} items:${kit.kit_items?.length || 0}`)
+		await log(`${kitProduct ? 'KIT_EXISTS' : 'KIT_MISSING'} [${index + 1}/${kits.length}] ${kit.name} external:${kitExternalId(kit)} items:${kit.kit_items?.length || 0}`)
 		for (const item of kit.kit_items || []) {
 			const childProduct = await findChildProduct(item)
 			if (childProduct) {
 				itemsExist++
 				resolvedItems.push({ ...item, child_product_id: childProduct.id, matched_name: childProduct.name, match: childProduct.match })
-				await report(`  ITEM_EXISTS ${item.name || item.raw?.list_item?.name} match:${childProduct.match} db:${childProduct.name}`)
 			} else {
 				itemsMissing++
 				missingInKit++
-				await report(`  ITEM_MISSING ${item.name || item.raw?.list_item?.name} article:${item.specs?.['Артикул'] || '-'}`)
+				await log(`ITEM_MISSING ${kit.name} item:${item.name || item.raw?.list_item?.name} article:${item.specs?.['Артикул'] || '-'}`)
 			}
 		}
 		if (!kitProduct && missingInKit === 0 && resolvedItems.length) validKits.push({ ...kit, kit_items: resolvedItems })
-		else if (!kitProduct && missingInKit > 0) await report(`  KIT_SKIP_IMPORT reason:item_missing missing:${missingInKit}`)
+		else if (!kitProduct && missingInKit > 0) await log(`KIT_SKIP_IMPORT ${kit.name} reason:item_missing missing:${missingInKit}`)
 	}
-	await report(`SUMMARY kits:${kits.length} kitsExist:${kitsExist} kitsMissing:${kitsMissing} itemsExist:${itemsExist} itemsMissing:${itemsMissing} validForImport:${validKits.length} dryRun:${DRY_RUN}`)
+	await log(`SUMMARY kits:${kits.length} kitsExist:${kitsExist} kitsMissing:${kitsMissing} itemsExist:${itemsExist} itemsMissing:${itemsMissing} validForImport:${validKits.length} dryRun:${DRY_RUN}`)
 	return validKits
 }
 async function upsertKitProduct(kit) {
@@ -133,6 +132,7 @@ async function upsertKitProduct(kit) {
 	const rows = await sql`
 		insert into products (
 			external_id,
+			source,
 			brand,
 			name,
 			description,
@@ -151,6 +151,7 @@ async function upsertKitProduct(kit) {
 			raw
 		) values (
 			${kitExternalId(kit)},
+			${SOURCE},
 			${sql.json({ name: brandName, api: kit.brand?.api || SOURCE })},
 			${kit.name},
 			${kit.description || null},
@@ -169,6 +170,7 @@ async function upsertKitProduct(kit) {
 			${sql.json(kitRaw(kit))}
 		)
 		on conflict (external_id) do update set
+			source=excluded.source,
 			brand=excluded.brand,
 			name=excluded.name,
 			description=excluded.description,
@@ -232,14 +234,15 @@ async function upsertKitItems(kitProductId, kit) {
 	}
 }
 async function writeImageQueue(kits) {
-	const lines = []
+	const items = []
 	const names = new Set()
 	for (const kit of kits) {
 		if (!kit.name || names.has(kit.name)) continue
 		names.add(kit.name)
-		lines.push(`${now()} ERROR ${kit.name} stage:kit url:${kit.url || ''}`)
+		items.push({ name: kit.name, source: SOURCE })
 	}
-	await fs.writeFile(IMAGE_ERROR_LOG, lines.join('\n') + '\n')
+	await fs.ensureDir(path.dirname(IMAGE_QUEUE))
+	await fs.writeJson(IMAGE_QUEUE, items, { spaces: 2 })
 }
 async function importKits(kits) {
 	await ensureKitItemsTable()
@@ -250,25 +253,27 @@ async function importKits(kits) {
 		await upsertKitItems(kitProductId, kit)
 		imported++
 		itemCount += kit.kit_items?.length || 0
-		console.log(`OK ${imported}/${kits.length} ${kit.name} items:${kit.kit_items?.length || 0}`)
+		await log(`OK ${imported}/${kits.length} ${kit.name} items:${kit.kit_items?.length || 0}`)
 	}
 	await writeImageQueue(kits)
-	await report(`IMPORT_DONE kits:${imported} kitItems:${itemCount} imageQueue:${IMAGE_ERROR_LOG}`)
+	await log(`IMPORT_DONE kits:${imported} kitItems:${itemCount} imageQueue:${IMAGE_QUEUE}`)
 }
 async function main() {
+	await fs.ensureDir(ROOT)
+	await fs.writeFile(LOG, '')
 	const kits = await readKits()
 	const validKits = await inspectKits(kits)
 	if (DRY_RUN) {
 		await sql.end()
-		console.log(`DRY RUN DONE. В БД ничего не записано. report:${REPORT_LOG}`)
+		await log('DRY_RUN_DONE')
 		return
 	}
 	await importKits(validKits)
 	await sql.end()
-	console.log(`DONE input:${INPUT_FILE} limit:${LIMIT || 'all'} imported:${validKits.length} report:${REPORT_LOG}`)
+	await log(`DONE input:${INPUT_FILE} limit:${LIMIT || 'all'} imported:${validKits.length}`)
 }
 main().catch(async e => {
-	console.error('FATAL', e)
+	await log('FATAL', e.stack || e.message).catch(() => null)
 	await sql.end().catch(() => null)
 	process.exit(1)
 })

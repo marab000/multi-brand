@@ -1,5 +1,5 @@
 <script lang="ts">
-  import rawBrands from '../../../scripts/brands.json';
+  import rawBrands from '../../../scripts/sync-tetrasis-products/brands.json';
 
   const brands: { name: string }[] = rawBrands;
 

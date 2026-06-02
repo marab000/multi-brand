@@ -2,54 +2,53 @@ import 'dotenv/config'
 import puppeteer from 'puppeteer'
 import postgres from 'postgres'
 import sharp from 'sharp'
-import brands from './brands.json' with { type: 'json' }
+import brands from '../sync-tetrasis-products/brands.json' with { type: 'json' }
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import fs from 'fs-extra'
 import path from 'path'
 import { v4 as uuid } from 'uuid'
-const MODES = { MISSING: 'missing', FULL: 'full' }
-const SOURCES = { DB: 'db', ERRORS: 'errors' }
+// не удалять!!
 // MODE:
 // 'missing' — обработать только товары без fetch-картинок.
 // 'full' — обработать все товары и заменить старые fetch-картинки новыми.
 // SOURCE:
 // 'db' — взять товары из базы.
-// 'errors' — взять только актуальные товары из scripts/fetch-images-errors.log и пересобрать лог ошибок заново.
-const MODE = MODES.FULL
-const SOURCE = SOURCES.ERRORS
-const THREADS = 2
-const HEADLESS = true
+// 'queue' — взять товары из scripts/fetch-tetrasis-images/image-queue.json.
+const MODES = { MISSING: 'missing', FULL: 'full' }
+const SOURCES = { DB: 'db', QUEUE: 'queue' }
+const ROOT = 'scripts/fetch-tetrasis-images'
+const MODE = process.env.FETCH_IMAGES_MODE || MODES.FULL
+const SOURCE = process.env.FETCH_IMAGES_SOURCE || SOURCES.DB
+const THREADS = Number(process.env.FETCH_IMAGES_THREADS || 2)
+const HEADLESS = process.env.FETCH_IMAGES_HEADLESS !== 'false'
 const BASE = 'https://tetrasis-bt.ru'
-const LOG = path.resolve('scripts/fetch-images.log')
-const ERROR_LOG = path.resolve('scripts/fetch-images-errors.log')
-const ERROR_LOG_PREVIOUS = path.resolve('scripts/fetch-images-errors.log.previous')
-const ERROR_LOG_NEXT = path.resolve('scripts/fetch-images-errors.log.next')
-const ACTION_DELAY = 700
-const SEARCH_DELAY = 1200
-const PRODUCT_DELAY = 500
-const IMAGE_DELAY = 200
-const RETRIES = 3
-const RETRY_DELAY = 3000
-const JPEG_QUALITY = 78
-const MAX_SIZE = 1600
-const MIN_ORIGINAL_SIZE_KB = 120
-const SEARCH_MIN_SCORE = 0.72
-const progress = { total: 0, done: 0 }
-const colors = { green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', blue: '\x1b[36m', gray: '\x1b[90m', reset: '\x1b[0m' }
-let errorLogTarget = ERROR_LOG_NEXT
-if (!Object.values(MODES).includes(MODE)) throw new Error(`Unknown MODE: ${MODE}. Use: ${Object.values(MODES).join(', ')}`)
-if (!Object.values(SOURCES).includes(SOURCE)) throw new Error(`Unknown SOURCE: ${SOURCE}. Use: ${Object.values(SOURCES).join(', ')}`)
+const LOG = path.resolve(`${ROOT}/fetch-images.log`)
+const QUEUE_FILE = path.resolve(process.env.FETCH_IMAGES_QUEUE || `${ROOT}/image-queue.json`)
+const ACTION_DELAY = Number(process.env.FETCH_IMAGES_ACTION_DELAY || 700)
+const SEARCH_DELAY = Number(process.env.FETCH_IMAGES_SEARCH_DELAY || 1200)
+const PRODUCT_DELAY = Number(process.env.FETCH_IMAGES_PRODUCT_DELAY || 500)
+const IMAGE_DELAY = Number(process.env.FETCH_IMAGES_IMAGE_DELAY || 200)
+const RETRIES = Number(process.env.FETCH_IMAGES_RETRIES || 3)
+const RETRY_DELAY = Number(process.env.FETCH_IMAGES_RETRY_DELAY || 3000)
+const JPEG_QUALITY = Number(process.env.FETCH_IMAGES_JPEG_QUALITY || 78)
+const MAX_SIZE = Number(process.env.FETCH_IMAGES_MAX_SIZE || 1600)
+const MIN_ORIGINAL_SIZE_KB = Number(process.env.FETCH_IMAGES_MIN_ORIGINAL_SIZE_KB || 120)
+const SEARCH_MIN_SCORE = Number(process.env.FETCH_IMAGES_SEARCH_MIN_SCORE || 0.72)
+if (!Object.values(MODES).includes(MODE)) throw new Error(`Unknown FETCH_IMAGES_MODE: ${MODE}. Use: ${Object.values(MODES).join(', ')}`)
+if (!Object.values(SOURCES).includes(SOURCE)) throw new Error(`Unknown FETCH_IMAGES_SOURCE: ${SOURCE}. Use: ${Object.values(SOURCES).join(', ')}`)
 const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD })
 const s3 = new S3Client({ region: 'reg', endpoint: process.env.S3_ENDPOINT, credentials: { accessKeyId: process.env.S3_ACCESS_KEY, secretAccessKey: process.env.S3_SECRET_KEY }, forcePathStyle: true })
 const BUCKET = process.env.S3_BUCKET
 const S3_PUBLIC_PREFIX = `${process.env.S3_ENDPOINT.replace(/\/$/, '')}/${BUCKET}/`
+const progress = { total: 0, done: 0 }
+const failedQueue = []
+const colors = { green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', blue: '\x1b[36m', gray: '\x1b[90m', reset: '\x1b[0m' }
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 const delay = (ms = ACTION_DELAY) => sleep(ms)
 const now = () => new Date().toISOString()
 const ruMap = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' }
 function stripAnsi(value) { return String(value).replace(/\x1b\[[0-9;]*m/g, '') }
 async function writeLog(line) { console.log(line); await fs.appendFile(LOG, stripAnsi(line) + '\n') }
-async function writeErrorLog(...a) { await fs.appendFile(errorLogTarget, `${now()} ${a.join(' ')}\n`) }
 async function logLine(color, ...a) { await writeLog(`${colors.gray}${now()}${colors.reset} ${color}${a.join(' ')}${colors.reset}`) }
 async function logInfo(...a) { await logLine(colors.blue, ...a) }
 async function logSuccess(...a) { await logLine(colors.green, ...a) }
@@ -126,16 +125,6 @@ function searchQueries(name) {
 	if (brandPart && compactModel) queries.push(`${brandPart} ${compactModel}`)
 	if (model) queries.push(model)
 	return [...new Set(queries.map(q => String(q || '').trim()).filter(Boolean))]
-}
-function parseErrorProductNames(content) {
-	const names = new Set()
-	for (const line of content.split('\n')) {
-		const clean = line.trim()
-		if (!clean) continue
-		const match = clean.match(/^\S+\s+(NOT_FOUND|NOT FOUND|NO_IMAGES_FOUND|NO IMAGES FOUND|ERROR|DELETE_OLD_ERROR|SKIP_ALREADY_EXISTS)\s+(.+?)(?:\s+stage:|\s+direct:|\s+imgs:|\s+https?:|$)/)
-		if (match?.[2]) names.add(match[2].replace(/^\[[^\]]+\]\s*/, '').trim())
-	}
-	return [...names]
 }
 function isNoImageUrl(url) { return /no[-_]?image|no_photo|nophoto|placeholder|zaglush/i.test(String(url || '')) }
 function s3KeyFromUrl(url) {
@@ -321,7 +310,7 @@ async function resolveSearch(page, name) {
 					top: ranked.slice(0, 3).map(x => `${x.score.toFixed(2)}:${String(x.title).trim().replace(/\s+/g, ' ')}`).join(' | ')
 				}
 			}, { name, query, minScore: SEARCH_MIN_SCORE })
-			if (!bestDebug || Number(result?.rawBest?.score || 0) > Number(bestDebug?.score || 0)) bestDebug = result?.rawBest ? { ...result.rawBest, count: result.count, linksCount: result.linksCount, top: result.top } : { query, score: '0.00', title: '-', href: '-', count: result?.count || 0, linksCount: result?.linksCount || 0, top: 'no-candidates' }
+			if (!bestDebug || Number(result?.rawBest?.score || 0) > Number(bestDebug?.score || 0)) bestDebug = result?.rawBest ? { ...result.rawBest, count: result.count, linksCount: result.linksCount, top: result.top } : { query, score: '0.00', title: '-', href: '-', count: result?.count || 0, linksCount: result.linksCount || 0, top: 'no-candidates' }
 			if (result?.best?.href) {
 				bestResult = result.best
 				break
@@ -358,9 +347,12 @@ async function replaceProductImages(p, rows) {
 		const key = s3KeyFromUrl(old.url)
 		if (!key) continue
 		try { await deleteFromS3(key); deleted++ }
-		catch (e) { await writeErrorLog('DELETE_OLD_ERROR', p.name, old.url, e.message) }
+		catch (e) { await logError('DELETE_OLD_ERROR', p.name, old.url, e.message) }
 	}
 	return deleted
+}
+function failQueueItem(p, reason) {
+	failedQueue.push({ name: p.name, source: p.source || null, reason })
 }
 async function processProduct(page, p) {
 	const label = progressText(p)
@@ -376,10 +368,10 @@ async function processProduct(page, p) {
 		}
 		if (!url) {
 			const debug = search?.debug
-			if (direct?.status === 'no-image') await logInfo('NO IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
+			if (direct?.status === 'no-image') await logInfo('NO_IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
 			else {
-				await logError('NOT FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`, debug ? `best:${debug.score}:${String(debug.title).trim().replace(/\s+/g, ' ')}` : 'best:-', debug ? `query:${debug.query}` : 'query:-')
-				await writeErrorLog('NOT_FOUND', p.name, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`)
+				await logError('NOT_FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`, debug ? `best:${debug.score}:${String(debug.title).trim().replace(/\s+/g, ' ')}` : 'best:-', debug ? `query:${debug.query}` : 'query:-')
+				failQueueItem(p, 'not-found')
 			}
 			await sleep(PRODUCT_DELAY)
 			return
@@ -388,10 +380,10 @@ async function processProduct(page, p) {
 		const imageResult = await getImages(page, url)
 		images = imageResult.images
 		if (!images.length) {
-			if (imageResult.status === 'no-image') await logInfo('NO IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
+			if (imageResult.status === 'no-image') await logInfo('NO_IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
 			else {
-				await logError('NO IMAGES FOUND', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
-				await writeErrorLog('NO_IMAGES_FOUND', p.name, `stage:images`, `reason:${imageResult.status}`, `url:${url}`)
+				await logError('NO_IMAGES_FOUND', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
+				failQueueItem(p, 'no-images')
 			}
 			await sleep(PRODUCT_DELAY)
 			return
@@ -418,14 +410,14 @@ async function processProduct(page, p) {
 		const finalKb = kb(sum(rows, 'finalSize'))
 		const optimizedCount = rows.filter(row => row.optimized).length
 		const originalCount = rows.length - optimizedCount
-		const source = direct?.url ? 'direct' : 'search'
-		const matched = source === 'direct' ? direct.tried : `${search?.score || '-'}:${String(search?.title || '-').trim().replace(/\s+/g, ' ')}`
-		const query = source === 'search' ? `query:${search?.query || '-'}` : 'query:-'
-		await logSuccess('OK', label, `source:${source}`, query, `matched:${matched}`, `imgs:${rows.length}/${images.length}`, `size:${originalKb}KB->${finalKb}KB`, `optimized:${optimizedCount}`, `original:${originalCount}`, `replaced:${deleted}`, `skip:${skipCount}`)
+		const foundSource = direct?.url ? 'direct' : 'search'
+		const matched = foundSource === 'direct' ? direct.tried : `${search?.score || '-'}:${String(search?.title || '-').trim().replace(/\s+/g, ' ')}`
+		const query = foundSource === 'search' ? `query:${search?.query || '-'}` : 'query:-'
+		await logSuccess('OK', label, `source:${foundSource}`, query, `matched:${matched}`, `imgs:${rows.length}/${images.length}`, `size:${originalKb}KB->${finalKb}KB`, `optimized:${optimizedCount}`, `original:${originalCount}`, `replaced:${deleted}`, `skip:${skipCount}`)
 		await sleep(PRODUCT_DELAY)
 	} catch (e) {
 		await logError('ERROR', label, `stage:${stage}`, e.message)
-		await writeErrorLog('ERROR', p.name, `stage:${stage}`, e.message)
+		failQueueItem(p, `error:${stage}`)
 		await sleep(PRODUCT_DELAY)
 	}
 }
@@ -440,54 +432,61 @@ async function worker(browser, queue) {
 	}
 	await page.close()
 }
-async function loadErrorProducts(oldErrorLog) {
-	const names = parseErrorProductNames(oldErrorLog)
-	if (!names.length) {
-		await logWarn('ERROR SOURCE EMPTY')
+async function loadQueueProducts() {
+	if (!(await fs.pathExists(QUEUE_FILE))) {
+		await fs.writeJson(QUEUE_FILE, [], { spaces: 2 })
+		await logWarn('QUEUE_NOT_FOUND_CREATED', QUEUE_FILE)
 		return []
 	}
-	const products = await sql`select id,name from products where name in ${sql(names)} order by name`
-	const foundNames = new Set(products.map(p => p.name))
-	const staleNames = names.filter(name => !foundNames.has(name))
-	await logInfo('ERROR SOURCE TOTAL', names.length)
-	await logInfo('ERROR SOURCE ACTIVE', products.length)
-	if (staleNames.length) await logWarn('STALE ERRORS SKIPPED', staleNames.length)
-	return products
+	const raw = await fs.readJson(QUEUE_FILE)
+	const items = Array.isArray(raw) ? raw : []
+	const names = items.map(item => typeof item === 'string' ? item : item?.name).filter(Boolean)
+	if (!names.length) return []
+	const rows = await sql`select id,name,source from products where name in ${sql(names)} order by name`
+	const found = new Set(rows.map(row => row.name))
+	for (const name of names) {
+		if (!found.has(name)) failedQueue.push({ name, source: null, reason: 'not-in-db' })
+	}
+	return rows
 }
 async function loadDbProducts(selectedBrands) {
 	if (MODE === MODES.MISSING) {
 		return await sql`
-			select p.id,p.name from products p
+			select p.id,p.name,p.source from products p
 			where not exists(select 1 from product_images pi where pi.product_id=p.id and pi.source='fetch')
 				and lower(trim(p.brand->>'name')) in ${sql(selectedBrands)}
 			order by p.name
 		`
 	}
 	return await sql`
-		select id,name from products
+		select id,name,source from products
 		where lower(trim(brand->>'name')) in ${sql(selectedBrands)}
 		order by name
 	`
 }
-async function commitErrorLog(oldErrorLog) {
-	if (await fs.pathExists(ERROR_LOG)) await fs.writeFile(ERROR_LOG_PREVIOUS, oldErrorLog)
-	else await fs.writeFile(ERROR_LOG_PREVIOUS, '')
-	if (await fs.pathExists(ERROR_LOG_NEXT)) await fs.move(ERROR_LOG_NEXT, ERROR_LOG, { overwrite: true })
-	else await fs.writeFile(ERROR_LOG, '')
+async function saveQueueAfterRun() {
+	if (SOURCE !== SOURCES.QUEUE) return
+	const unique = []
+	const seen = new Set()
+	for (const item of failedQueue) {
+		if (!item.name || seen.has(item.name)) continue
+		seen.add(item.name)
+		unique.push(item)
+	}
+	await fs.ensureDir(path.dirname(QUEUE_FILE))
+	await fs.writeJson(QUEUE_FILE, unique, { spaces: 2 })
+	await logInfo('QUEUE_UPDATED', `failed:${unique.length}`, `file:${QUEUE_FILE}`)
 }
 async function main() {
 	let browser
-	let oldErrorLog = ''
 	try {
+		await fs.ensureDir(ROOT)
 		await fs.writeFile(LOG, '')
-		oldErrorLog = await fs.pathExists(ERROR_LOG) ? await fs.readFile(ERROR_LOG, 'utf8') : ''
-		await fs.remove(ERROR_LOG_NEXT)
-		await fs.writeFile(ERROR_LOG_NEXT, '')
 		const selectedBrands = allowedBrands()
 		if (!selectedBrands.length) throw new Error('brands.json is empty')
-		await logInfo('START', `source:${SOURCE}`, `mode:${MODE}`, `threads:${THREADS}`, `brands:${selectedBrands.length}`)
+		await logInfo('START', `source:${SOURCE}`, `mode:${MODE}`, `threads:${THREADS}`, `brands:${selectedBrands.length}`, `queue:${QUEUE_FILE}`)
 		browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
-		const products = SOURCE === SOURCES.ERRORS ? await loadErrorProducts(oldErrorLog) : await loadDbProducts(selectedBrands)
+		const products = SOURCE === SOURCES.QUEUE ? await loadQueueProducts() : await loadDbProducts(selectedBrands)
 		progress.total = products.length
 		progress.done = 0
 		await logInfo('TOTAL', products.length)
@@ -495,15 +494,14 @@ async function main() {
 		const workers = []
 		for (let i = 0; i < THREADS; i++) workers.push(worker(browser, queue))
 		await Promise.all(workers)
+		await saveQueueAfterRun()
 		await browser.close()
 		browser = null
 		await sql.end()
-		await commitErrorLog(oldErrorLog)
 		await logInfo('FINISHED')
 	} catch (e) {
-		await logError('FATAL', e.message)
-		await logWarn('ERROR LOG PRESERVED', ERROR_LOG)
-		await logWarn('NEW ERRORS DRAFT', ERROR_LOG_NEXT)
+		await logError('FATAL', e.stack || e.message)
+		if (SOURCE === SOURCES.QUEUE) await saveQueueAfterRun().catch(() => null)
 		if (browser) await browser.close().catch(() => null)
 		await sql.end().catch(() => null)
 		process.exitCode = 1
