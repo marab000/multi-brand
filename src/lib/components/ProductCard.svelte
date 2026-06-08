@@ -6,7 +6,8 @@
     Info,
     PiggyBank,
     Minus,
-    Plus
+    Plus,
+    Star
   } from 'lucide-svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
@@ -17,6 +18,7 @@
     getProductPrice,
     hasProductDiscount
   } from '$lib/utils/pricing';
+  import { getProductRating } from '$lib/utils/productRating';
   import { slugify } from '$lib/utils/slugify';
   import { cart } from '$lib/stores/cart';
   export let product;
@@ -32,6 +34,7 @@
   const hasDiscount = hasProductDiscount(product) && oldPrice !== null && oldPrice > price;
   const monthlyPayment = getMonthlyPayment(price);
   const saving = hasDiscount ? oldPrice - price : 0;
+  const ratingData = getProductRating(product.external_id || product.id || product.name);
   $: cartItem = $cart.find((item) => item.id === product.id);
   $: qty = cartItem?.qty ?? 0;
   const addToCart = () => {
@@ -69,6 +72,13 @@
       {/if}
     </div>
     <p class="description mt-auto">{product.description}</p>
+    <div class="rating-row">
+      <div class="rating">
+        <Star size={14} fill="currentColor" strokeWidth={0} />
+        <span>{ratingData.rating}</span>
+      </div>
+      <span class="reviews-count">{ratingData.reviews.toLocaleString('ru-RU')} отзывов</span>
+    </div>
     <div class="price-row">
       <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
       {#if hasDiscount}
@@ -123,7 +133,6 @@
 
 <style lang="scss">
   @use 'sass:color';
-
   .card {
     border: 1px solid #eee;
     background: #fff;
@@ -222,6 +231,28 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: -2px;
+      font-size: 13px;
+      line-height: 1;
+    }
+    .rating {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #ffb81c;
+      font-weight: 800;
+      span {
+        color: #111;
+      }
+    }
+    .reviews-count {
+      color: #777;
+      font-weight: 600;
     }
     .price-row {
       display: flex;

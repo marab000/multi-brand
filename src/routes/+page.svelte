@@ -15,6 +15,7 @@
   import kit3 from '$lib/assets/kits/3.webp';
   import kit4 from '$lib/assets/kits/4.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
+  import ReviewsSection from '$lib/components/ReviewsSection.svelte';
   const kitColor = '#3e6f4f';
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
     eager: true,
@@ -210,6 +211,11 @@
   <h2 class="section-title">Бренды</h2>
   <BrandsGrid />
 </section>
+
+<section class="mx-auto"> 
+	<ReviewsSection />
+</section>
+
 
 <style lang="scss">
   .hero-section {

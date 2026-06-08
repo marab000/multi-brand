@@ -1,5 +1,5 @@
 import type { Product } from '$lib/types/product';
-export const DISCOUNT_PERCENT = 13;
+export const DISCOUNT_PERCENT = 0;
 export const INSTALLMENT_MONTHS = 12;
 export const IS_KIT_DISCOUNT = true;
 const EXCLUDED_BRANDS = ['asko', 'omoikiri'];

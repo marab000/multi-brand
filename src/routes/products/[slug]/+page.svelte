@@ -10,12 +10,13 @@
     getProductPrice,
     hasProductDiscount
   } from '$lib/utils/pricing';
+  import { getProductRating } from '$lib/utils/productRating';
   import { cart } from '$lib/stores/cart';
   import type { Product, ProductKitItem, ProductKitLink } from '$lib/types/product';
   import { onMount } from 'svelte';
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
-  import { PiggyBank } from 'lucide-svelte';
+  import { PiggyBank, Star } from 'lucide-svelte';
   register();
   type ProductPageProduct = Product & {
     isKit?: boolean;
@@ -37,6 +38,7 @@
   const hasDiscount = $derived(hasProductDiscount(p) && oldPrice !== null && oldPrice > price);
   const monthlyPayment = $derived(getMonthlyPayment(price));
   const saving = $derived(hasDiscount && oldPrice !== null ? oldPrice - price : 0);
+  const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
   const kitItems = $derived(p.kitItems || []);
   const includedInKits = $derived(p.includedInKits || []);
   const visibleIncludedInKits = $derived(
@@ -183,7 +185,16 @@
         {/if}
       </div>
       <div>
-        <h1 class="mb-4 text-2xl font-semibold">{p.name}</h1>
+        <h1 class="mb-3 text-2xl font-semibold">{p.name}</h1>
+        <div class="product-rating">
+          <div class="product-rating__value">
+            <Star size={16} fill="currentColor" strokeWidth={0} />
+            <span>{ratingData.rating}</span>
+          </div>
+          <span class="product-rating__reviews"
+            >{ratingData.reviews.toLocaleString('ru-RU')} отзывов</span
+          >
+        </div>
         <div class="product-price-row">
           <div class:discount-price={hasDiscount} class="product-price">{formatPrice(price)} ₽</div>
           {#if hasDiscount}
@@ -191,22 +202,20 @@
             <div class="product-discount"><span>АКЦИЯ</span><b>{getDiscountLabel()}</b></div>
           {/if}
         </div>
-        {#if hasDiscount && oldPrice !== null}
-          <div class="product-benefits">
-            <div class="product-installment">
-              от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}<span
-                >Подробности уточняйте у менеджера</span
+        <div class="product-benefits">
+          <div class="product-installment">
+            от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}<span
+              >Подробности уточняйте у менеджера</span
+            >
+          </div>
+          {#if saving > 0}
+            <div class="product-saving">
+              <PiggyBank size={18} strokeWidth={2.2} /><span>Экономия</span><b
+                >{formatPrice(saving)} ₽</b
               >
             </div>
-            {#if saving > 0}
-              <div class="product-saving">
-                <PiggyBank size={18} strokeWidth={2.2} /><span>Экономия</span><b
-                  >{formatPrice(saving)} ₽</b
-                >
-              </div>
-            {/if}
-          </div>
-        {/if}
+          {/if}
+        </div>
         <div class="mb-8 flex gap-3">
           <button class="btn primary" onclick={addToCart}>В корзину</button>
         </div>
@@ -260,9 +269,8 @@
                 class="kit-show-more"
                 type="button"
                 onclick={() => (includedOpen = !includedOpen)}
+                >{includedOpen ? 'Свернуть' : `Показать ещё ${includedInKits.length - 3}`}</button
               >
-                {includedOpen ? 'Свернуть' : `Показать ещё ${includedInKits.length - 3}`}
-              </button>
             {/if}
           </section>
         {/if}
@@ -328,6 +336,28 @@
   }
   .no-image {
     cursor: default;
+  }
+  .product-rating {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -4px 0 18px;
+  }
+  .product-rating__value {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #ffb81c;
+    font-size: 16px;
+    font-weight: 800;
+    span {
+      color: #111;
+    }
+  }
+  .product-rating__reviews {
+    color: #777;
+    font-size: 14px;
+    font-weight: 600;
   }
   .product-price-row {
     display: flex;

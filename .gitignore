@@ -7,7 +7,15 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
-/scripts/fetch-images*
+
+# Script logs
+scripts/fetch-images*
+scripts/fetch-tetrasis-images/*.log
+scripts/fetch-tetrasis-images/image-queue.json
+scripts/fetch-tetrasis-images/*.json
+scripts/fetch-tetrasis-kits/*.log
+scripts/fetch-tetrasis-kits/*.jsonl
+scripts/sync-tetrasis-products/*.log
 
 # OS
 .DS_Store
@@ -23,6 +31,6 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# log
+# Misc
 WORKSPACE-NOTE.txt
 structure.txt

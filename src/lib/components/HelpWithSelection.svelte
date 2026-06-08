@@ -40,7 +40,7 @@
     overflow: hidden;
     padding: 34px;
     border: 1px solid rgba($green, 0.12);
-    border-radius: 28px;
+    border-radius: 20px;
     background:
       radial-gradient(circle at 85% 50%, rgba($green, 0.09), transparent 30%),
       linear-gradient(135deg, #fff 0%, #f7faf8 100%);
