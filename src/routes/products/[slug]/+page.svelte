@@ -128,7 +128,7 @@
 {#if p}
   <div class="mx-auto flex flex-col items-start">
     <Breadcrumbs items={breadcrumbs} product={p.name} />
-    <div class="mt-6 grid w-full gap-12 lg:grid-cols-2">
+    <div class="mt-6 mb-3 grid w-full gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
         <swiper-container
           bind:this={mainSwiper}
@@ -186,7 +186,7 @@
       </div>
       <div>
         <h1 class="mb-3 text-2xl font-semibold">{p.name}</h1>
-        <div class="product-rating">
+        <div class="product-rating mt-0.5">
           <div class="product-rating__value">
             <Star size={16} fill="currentColor" strokeWidth={0} />
             <span>{ratingData.rating}</span>
