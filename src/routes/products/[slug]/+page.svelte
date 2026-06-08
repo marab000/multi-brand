@@ -186,12 +186,12 @@
       </div>
       <div>
         <h1 class="mb-3 text-2xl font-semibold">{p.name}</h1>
-        <div class="product-rating mt-0.5">
+        <div class="product-rating">
           <div class="product-rating__value">
             <Star size={16} fill="currentColor" strokeWidth={0} />
             <span>{ratingData.rating}</span>
           </div>
-          <span class="product-rating__reviews"
+          <span class="product-rating__reviews mt-0.5"
             >{ratingData.reviews.toLocaleString('ru-RU')} отзывов</span
           >
         </div>
