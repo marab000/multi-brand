@@ -85,17 +85,17 @@
         <p class="old-price">{formatPrice(oldPrice)} ₽</p>
       {/if}
     </div>
+    <div class="installment">
+      <CalendarDays size={14} strokeWidth={2.2} />
+      <span class="installment-text">
+        от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}
+      </span>
+      <span class="installment-info" aria-label="Информация о рассрочке">
+        <Info size={14} strokeWidth={2.2} />
+        <span class="installment-tooltip">Подробности уточняйте у менеджера</span>
+      </span>
+    </div>
     {#if hasDiscount}
-      <div class="installment">
-        <CalendarDays size={14} strokeWidth={2.2} />
-        <span class="installment-text"
-          >от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}</span
-        >
-        <span class="installment-info" aria-label="Информация о рассрочке">
-          <Info size={14} strokeWidth={2.2} />
-          <span class="installment-tooltip">Подробности уточняйте у менеджера</span>
-        </span>
-      </div>
       <div class="badges my-1">
         <span class="badge good">
           <ShieldCheck size={14} strokeWidth={2.2} />
