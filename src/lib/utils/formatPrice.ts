@@ -8,7 +8,6 @@ export function toDbPrice(price: number | string | null | undefined) {
   if (!value || !Number.isFinite(value)) return undefined;
   return value / 1000;
 }
-export const normalizePrice = toDisplayPrice;
 export function formatPrice(price: number | string | null | undefined) {
   const value = toDisplayPrice(price);
   if (!value) return '';

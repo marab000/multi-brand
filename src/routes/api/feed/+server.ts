@@ -4,7 +4,7 @@ import type { Product } from '$lib/types/product';
 import { isProductAllowedForFeed } from '$lib/server/feedFilters';
 import { catalogTree } from '$lib/server/categories';
 import { slugify } from '$lib/utils/slugify';
-import { normalizePrice } from '$lib/utils/formatPrice';
+import { toDisplayPrice } from '$lib/utils/formatPrice';
 import { getProductPrice } from '$lib/utils/pricing';
 type FeedProduct = Product & {
   catalog_root_slug?: string | null;
@@ -39,7 +39,7 @@ function getProductUrl(product: FeedProduct) {
   return `${origin}/products/${slugify(product.name)}`;
 }
 function getFeedPrice(product: FeedProduct) {
-  return normalizePrice(getProductPrice(product));
+  return toDisplayPrice(getProductPrice(product));
 }
 function getCollectionId(path: string) {
   return path.replace(/[^a-zA-Z0-9_/-]/g, '').replace(/\//g, '_');

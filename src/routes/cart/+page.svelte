@@ -11,6 +11,7 @@
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   import cartEmptyImage from '$lib/assets/cart-empty.webp';
+  import { openOtp } from '$lib/utils/otp';
   export let data: PageData;
   let name = data.user?.full_name ?? '';
   let phone = getPhoneLocalDigits(data.user?.phone);
@@ -84,9 +85,9 @@
                 <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
               </a>
               <div class="info">
-                <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}
-                  >{item.name}</a
-                >
+                <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>
+                  {item.name}
+                </a>
                 {#if item.description}
                   <p class="description">{item.description}</p>
                 {/if}
@@ -137,6 +138,22 @@
           </div>
           <div class="actions">
             <button class="btn primary" on:click={submit}>Перейти к оплате</button>
+          </div>
+        </div>
+        <div class="installment-banner mt-3">
+          <div class="text gap-4">
+            <h3>Вы можете приобрести товары в рассрочку</h3>
+            <button
+              class="btn secondary"
+              on:click|stopPropagation={() =>
+                openOtp({
+                  cart: $cart.map((i) => ({
+                    name: i.name,
+                    price: i.price,
+                    quantity: i.qty
+                  }))
+                })}>Оформить заявку</button
+            >
           </div>
         </div>
         <CartPdfExport {total} />
@@ -331,6 +348,20 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+      }
+    }
+    .installment-banner {
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba($yellow, 0.5);
+      .text {
+        display: flex;
+        flex-direction: column;
+        h3 {
+          font-size: 16px;
+          font-weight: 700;
+          margin: 0;
+        }
       }
     }
   }
