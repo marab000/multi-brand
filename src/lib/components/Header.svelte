@@ -804,7 +804,10 @@
       }
     }
   }
-  @media (max-width: 359px) {
+  @media (max-width: 378px) {
+    .nav__top-links {
+      gap: 10px;
+    }
     .nav {
       &__about {
         font-size: 11px;
