@@ -279,12 +279,10 @@
             <h2 class="mb-4 font-semibold">Характеристики</h2>
             <div class="space-y-2 pb-5 text-sm">
               {#each specs as s}
-                <div class="flex items-end gap-2">
+                <div class="flex items-baseline gap-2">
                   <span class="whitespace-nowrap text-gray-500">{s.name}</span>
-                  <div class="flex-1 border-b border-dashed border-gray-300"></div>
-                  <span class="max-w-50 overflow-hidden text-right text-ellipsis whitespace-nowrap"
-                    >{s.value}</span
-                  >
+                  <span class="flex-1 border-b border-dashed border-gray-300"></span>
+                  <span class="max-w-50 shrink-0">{s.value}</span>
                 </div>
               {/each}
             </div>
