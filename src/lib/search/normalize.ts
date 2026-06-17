@@ -17,6 +17,7 @@ function replaceSimilarLetters(text: string) {
     .replace(/P/g, 'Р')
     .replace(/p/g, 'р')
     .replace(/C/g, 'С')
+    .replace(/s/g, 'с')
     .replace(/c/g, 'с')
     .replace(/T/g, 'Т')
     .replace(/X/g, 'Х')
