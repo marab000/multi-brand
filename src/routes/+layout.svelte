@@ -6,6 +6,7 @@
   import Header from '$lib/components/Header.svelte';
   import FloatingMessengers from '$lib/components/FloatingMessengers.svelte';
   import { cart } from '$lib/stores/cart';
+  import { favorites } from '$lib/stores/favorites';
   import '$lib/styles/controls.scss';
   import '$lib/styles/typography.scss';
   import HelpWithSelection from '$lib/components/HelpWithSelection.svelte';
@@ -20,6 +21,7 @@
 
   onMount(() => {
     cart.init();
+    favorites.init();
   });
 </script>
 

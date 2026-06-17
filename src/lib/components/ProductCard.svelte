@@ -7,7 +7,8 @@
     PiggyBank,
     Minus,
     Plus,
-    Star
+    Star,
+    Heart
   } from 'lucide-svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
@@ -21,6 +22,7 @@
   import { getProductRating } from '$lib/utils/productRating';
   import { slugify } from '$lib/utils/slugify';
   import { cart } from '$lib/stores/cart';
+  import { favorites } from '$lib/stores/favorites';
   export let product;
   const image =
     product.images && product.images.length
@@ -37,6 +39,18 @@
   const ratingData = getProductRating(product.external_id || product.id || product.name);
   $: cartItem = $cart.find((item) => item.id === product.id);
   $: qty = cartItem?.qty ?? 0;
+  $: isFavorite = $favorites.some((item) => item.id === product.id);
+  const toggleFavorite = () => {
+    favorites.toggle({
+      id: product.id,
+      name: product.name,
+      price,
+      oldPrice: hasDiscount ? oldPrice : null,
+      image,
+      slug,
+      description: product.description
+    });
+  };
   const addToCart = () => {
     cart.add({
       id: product.id,
@@ -53,6 +67,15 @@
 <div class="card">
   <a href={'/products/' + slug} data-sveltekit-preload-data="off">
     <div class="image">
+      <button
+        type="button"
+        class="fav-btn"
+        class:active={isFavorite}
+        on:click|preventDefault|stopPropagation={toggleFavorite}
+        aria-label={isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}
+      >
+        <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
+      </button>
       <img src={image} alt={product.name} loading="lazy" />
       {#if hasDiscount}
         <div class="discount">
@@ -163,6 +186,32 @@
       background: #fafafa;
       border-radius: 12px;
       overflow: hidden;
+      .fav-btn {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+        color: #bbb;
+        cursor: pointer;
+        transition: 0.18s ease;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        &:hover {
+          background: rgba(255, 255, 255, 1);
+          color: #e31b23;
+        }
+        &.active {
+          color: #e31b23;
+        }
+      }
       img {
         max-height: 180px;
         object-fit: contain;

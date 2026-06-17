@@ -4,6 +4,7 @@
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import logo1 from '$lib/assets/logo1.png';
   import { cart } from '$lib/stores/cart';
+  import { favorites } from '$lib/stores/favorites';
   import { derived } from 'svelte/store';
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
@@ -69,6 +70,7 @@
   let userMenuOpen = $state(false);
   let requestOpen = $state(false);
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
+  const favCount = derived(favorites, ($f) => $f.length);
   const catalogRoots = $derived((data?.catalogRoots ?? []) as CatalogRoot[]);
   const user = $derived(data?.user ?? null);
   function buildRoot(root: CatalogRoot): CatalogMenuRoot | null {
@@ -359,8 +361,10 @@
           </div>
         {/if}
       </div>
-      <button title="" class="disabled relative flex-col" style="cursor: default;"
-        ><Heart size="18" /><span class="absolute -bottom-4 text-[11px]">Избранное</span></button
+      <a href="/favorites" class="relative"
+        ><Heart size="18" />{#if $favCount > 0}<span class="badge">{$favCount}</span>{/if}<span
+          class="absolute -bottom-4 text-[11px]">Избранное</span
+        ></a
       >
       <a href="/cart" class="relative"
         ><ShoppingCart size="18" />{#if $count > 0}<span class="badge">{$count}</span>{/if}<span
