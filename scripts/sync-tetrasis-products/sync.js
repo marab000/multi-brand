@@ -1,3 +1,18 @@
+// # Синк товаров тетриса по апи
+// caffeinate -dims node scripts/sync-tetrasis-products/sync.js
+
+// # Фетч комплектов тетриса с сайта
+// caffeinate -dims node scripts/fetch-tetrasis-kits/sync.js
+
+// # Докачать недостающие картинки с сайта тетриса
+// FETCH_IMAGES_SOURCE=db FETCH_IMAGES_MODE=missing caffeinate -dims node scripts/fetch-tetrasis-images/fetch.js
+
+// # Скачать ВСЕ картинки с сайта тетриса, в т.ч перезаписать существующие
+// FETCH_IMAGES_SOURCE=db FETCH_IMAGES_MODE=full caffeinate -dims node scripts/fetch-tetrasis-images/fetch.js
+
+// # FETCH_IMAGES_SOURCE=queue означает что скрипт будет смотреть продукты из файла-очереди, который создается, например, после скачивания комплектов
+// FETCH_IMAGES_SOURCE=queue FETCH_IMAGES_MODE=missing caffeinate -dims node scripts/fetch-tetrasis-images/fetch.js
+
 import 'dotenv/config'
 import postgres from 'postgres'
 import brands from './brands.json' with { type: 'json' }

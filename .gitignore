@@ -16,6 +16,9 @@ scripts/fetch-tetrasis-images/*.json
 scripts/fetch-tetrasis-kits/*.log
 scripts/fetch-tetrasis-kits/*.jsonl
 scripts/sync-tetrasis-products/*.log
+scripts/fetch-grandex-aqua/*.log
+scripts/fetch-grandex-aqua/image-queue.json
+scripts/fetch-grandex-aqua/products-data.jsonl
 
 # OS
 .DS_Store

@@ -1,0 +1,36 @@
+# ── tetrasis ────────────────────────────────────────────────────────────
+# Синк товаров тетриса по апи
+caffeinate -dims node scripts/sync-tetrasis-products/sync.js
+
+# Фетч комплектов тетриса с сайта
+caffeinate -dims node scripts/fetch-tetrasis-kits/sync.js
+
+# Докачать недостающие картинки с сайта тетриса
+FETCH_IMAGES_SOURCE=db FETCH_IMAGES_MODE=missing caffeinate -dims node scripts/fetch-tetrasis-images/fetch.js
+
+# Скачать ВСЕ картинки с сайта тетриса, в т.ч перезаписать существующие
+FETCH_IMAGES_SOURCE=db FETCH_IMAGES_MODE=full caffeinate -dims node scripts/fetch-tetrasis-images/fetch.js
+
+# FETCH_IMAGES_SOURCE=queue означает что скрипт будет смотреть продукты из файла-очереди, который создается, например, после скачивания комплектов
+FETCH_IMAGES_SOURCE=queue FETCH_IMAGES_MODE=missing caffeinate -dims node scripts/fetch-tetrasis-images/fetch.js
+
+# Прочие скрипты
+caffeinate -dims node scripts/fetch-images.js
+caffeinate -dims node scripts/sync-brands.js
+
+# ── grandex-aqua ────────────────────────────────────────────────────────────
+
+# Полный цикл: парсинг сайта → БД → картинки
+caffeinate -dims node scripts/fetch-grandex-aqua/sync.js
+
+# Только парсинг сайта (→ products-data.jsonl + image-queue.json)
+caffeinate -dims node scripts/fetch-grandex-aqua/fetch.js
+
+# Только импорт в БД (--limit 5 для теста)
+caffeinate -dims node scripts/fetch-grandex-aqua/import.js
+
+# Докачать недостающие картинки (skip если уже есть)
+caffeinate -dims node scripts/fetch-grandex-aqua/fetch-images.js
+
+# Перезалить ВСЕ картинки (удалить старые, скачать заново)
+FETCH_IMAGES_MODE=full caffeinate -dims node scripts/fetch-grandex-aqua/fetch-images.js
