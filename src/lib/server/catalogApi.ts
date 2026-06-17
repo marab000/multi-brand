@@ -42,28 +42,46 @@ function getSearchWords(search: string) {
   const normalizedWords = expandQuery(normalize(raw)).filter(
     (w) => w.length >= 2 && !w.includes(' ') && !isMixedScript(w)
   );
-  return Array.from(new Set([...rawWords, ...normalizedWords]));
+  const groups: string[][] = [];
+  for (const rawWord of rawWords) {
+    const forms = new Set<string>([rawWord]);
+    const norm = normalize(rawWord);
+    forms.add(norm);
+    for (const w of normalizedWords) {
+      if (w === norm || normalize(w) === norm) forms.add(w);
+    }
+    groups.push([...forms]);
+  }
+  const usedForms = new Set<string>(groups.flat());
+  for (const w of normalizedWords) {
+    if (!usedForms.has(w) && w.length >= 2) groups.push([w]);
+  }
+  return groups;
 }
 
 export function buildWhere(filters: CatalogFilters) {
   const conditions: string[] = [];
   const values: any[] = [];
   if (filters.search?.trim()) {
-    const words = getSearchWords(filters.search);
-    if (words.length) {
+    const groups = getSearchWords(filters.search);
+    if (groups.length) {
       const parts: string[] = [];
-      for (const word of words) {
-        const idx = values.length + 1;
-        values.push(`%${word}%`);
-        parts.push(`(
-          LOWER(p.name) LIKE $${idx}
-          OR LOWER(COALESCE(p.description,'')) LIKE $${idx}
-          OR LOWER(COALESCE(p.brand->>'name','')) LIKE $${idx}
-          OR LOWER(COALESCE(p.product_type,'')) LIKE $${idx}
-          OR LOWER(COALESCE(p.raw->>'Артикул','')) LIKE $${idx}
-          OR LOWER(COALESCE(p.raw->>'Код','')) LIKE $${idx}
-          OR LOWER(COALESCE(p.raw->>'Штрихкод','')) LIKE $${idx}
-        )`);
+      for (const forms of groups) {
+        const orParts: string[] = [];
+        for (const form of forms) {
+          const idx = values.length + 1;
+          values.push(`%${form}%`);
+          orParts.push(`(
+            LOWER(p.name) LIKE $${idx}
+            OR LOWER(COALESCE(p.description,'')) LIKE $${idx}
+            OR LOWER(COALESCE(p.brand->>'name','')) LIKE $${idx}
+            OR LOWER(COALESCE(p.product_type,'')) LIKE $${idx}
+            OR LOWER(COALESCE(p.raw->>'Артикул','')) LIKE $${idx}
+            OR LOWER(COALESCE(p.raw->>'Код','')) LIKE $${idx}
+            OR LOWER(COALESCE(p.raw->>'Штрихкод','')) LIKE $${idx}
+          )`);
+        }
+        parts.push(`(${orParts.join(' OR ')})`);
       }
       conditions.push(`(${parts.join(' AND ')})`);
     }
