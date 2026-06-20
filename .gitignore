@@ -37,3 +37,7 @@ vite.config.ts.timestamp-*
 # Misc
 WORKSPACE-NOTE.txt
 structure.txt
+scripts/fetch-rusklimat/*.log
+scripts/fetch-rusklimat/categories.json
+scripts/fetch-rusklimat/image-queue.json
+scripts/fetch-rusklimat/products-data.jsonl

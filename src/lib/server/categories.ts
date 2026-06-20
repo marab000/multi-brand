@@ -512,7 +512,13 @@ export const catalogTree: CatalogRoot[] = [
         makeLeaf('Фанкойлы', ['Фанкойл'])
       ]
     }),
-    makeGroup('Кондиционеры', [KLIMAT], { leaves: [] }),
+    makeGroup('Кондиционеры', [KLIMAT], {
+      leaves: [
+        makeLeaf('Сплит-системы on/off', ['Сплит-система on/off']),
+        makeLeaf('Инверторные сплит-системы', ['Инверторная сплит-система']),
+        makeLeaf('Мобильные кондиционеры', ['Кондиционер мобильный'])
+      ]
+    }),
     makeGroup(KLIMAT, [KLIMAT], { isDefault: true })
   ]),
   makeRoot(SMESITELI, [

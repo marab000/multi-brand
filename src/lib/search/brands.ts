@@ -17,6 +17,7 @@ export const brandAliases: Record<string, string[]> = {
   falmec: ['falmec', 'фалмек'],
   franke: ['franke', 'франке'],
   gorenje: ['gorenje', 'горенье', 'горение'],
+  'grandex aqua': ['grandex aqua', 'grandex aqua', 'грандекс аква', 'грандекс аква'],
   granfest: ['granfest', 'гранфест'],
   graude: ['graude', 'грауде'],
   grundig: ['grundig', 'грундиг'],
@@ -47,7 +48,14 @@ export const brandAliases: Record<string, string[]> = {
   seaman: ['seaman', 'симан', 'сеаман'],
   siemens: ['siemens', 'сименс'],
   smeg: ['smeg', 'смег'],
-  teka: ['teka', 'тека']
+  teka: ['teka', 'тека'],
+  'ac electric': ['ac electric', 'ac-electric', 'ас электрик', 'эй си электрик'],
+  'aurus': ['aurus', 'аурус'],
+  'ballu': ['ballu', 'балу', 'баллу'],
+  'royal thermo': ['royal thermo', 'royalthermo', 'роял термо', 'роялтермо'],
+  'shuft': ['shuft', 'шуфт'],
+  'toshiba': ['toshiba', 'тошиба', 'тошыба'],
+  'zanussi': ['zanussi', 'занусси']
 };
 
 export const brandCanonicalNames: Record<string, string> = {
@@ -69,6 +77,7 @@ export const brandCanonicalNames: Record<string, string> = {
   falmec: 'FALMEC',
   franke: 'Franke',
   gorenje: 'GORENJE',
+  'grandex aqua': 'Grandex Aqua',
   granfest: 'GranFest',
   graude: 'GRAUDE',
   grundig: 'Grundig',
@@ -99,5 +108,12 @@ export const brandCanonicalNames: Record<string, string> = {
   seaman: 'SEAMAN',
   siemens: 'SIEMENS',
   smeg: 'SMEG',
-  teka: 'Teka'
+  teka: 'Teka',
+  'ac electric': 'AC ELECTRIC',
+  'aurus': 'AURUS',
+  'ballu': 'BALLU',
+  'royal thermo': 'Royal Thermo',
+  'shuft': 'SHUFT',
+  'toshiba': 'TOSHIBA',
+  'zanussi': 'Zanussi'
 };

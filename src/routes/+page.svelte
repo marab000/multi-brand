@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BadgePercent, Warehouse, ConciergeBell, Sparkles, ArrowRight } from 'lucide-svelte';
+  import { BadgePercent, Warehouse, ConciergeBell, Sparkles, ArrowRight, Wind } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
@@ -16,6 +16,12 @@
   import kit4 from '$lib/assets/kits/4.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
+  import grandexLogo from '$lib/assets/brands/Grandex Aqua.webp';
+  import grandexMoiki from '$lib/assets/promo/grandex-moiki.webp';
+  import grandexSmesiteli from '$lib/assets/promo/grandex-smesiteli.webp';
+  import acSplit from '$lib/assets/promo/ac-split.webp';
+  import acInvertor from '$lib/assets/promo/ac-invertor.webp';
+  import acMobile from '$lib/assets/promo/ac-mobile.webp';
   const kitColor = '#3e6f4f';
   const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
     eager: true,
@@ -203,6 +209,58 @@
           </div>
         </a>
       {/each}
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto">
+  <div class="promo-banner promo-banner--grandex">
+    <div class="promo-banner__head">
+      <div class="promo-banner__icon">
+        <img src={grandexLogo} alt="Grandex Aqua" loading="lazy" />
+      </div>
+      <div class="promo-banner__text">
+        <strong>Grandex Aqua</strong>
+        <span>Бренд кухонных моек и смесителей с корнями в мире каменных столешниц. Созданы, чтобы служить рядом с камнем — эстетично, долго, безупречно.</span>
+      </div>
+    </div>
+    <div class="promo-cards">
+      <a href="/catalog/kuhonnye-moyki?brand=Grandex+Aqua" class="promo-card">
+        <img class="promo-card__img" src={grandexMoiki} alt="Мойки Grandex Aqua" loading="lazy" />
+        <span class="promo-card__name">Мойки</span>
+      </a>
+      <a href="/catalog/smesiteli?brand=Grandex+Aqua" class="promo-card">
+        <img class="promo-card__img" src={grandexSmesiteli} alt="Смесители Grandex Aqua" loading="lazy" />
+        <span class="promo-card__name">Смесители</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto">
+  <div class="promo-banner promo-banner--ac">
+    <div class="promo-banner__head">
+      <div class="promo-banner__icon">
+        <Wind size={26} strokeWidth={2} />
+      </div>
+      <div class="promo-banner__text">
+        <strong>Кондиционеры</strong>
+        <span>Сплит-системы, инверторные и мобильные кондиционеры от проверенных брендов — Electrolux, Ballu, Toshiba, Midea и другие.</span>
+      </div>
+    </div>
+    <div class="promo-cards">
+      <a href="/catalog/klimaticheskaya-tehnika/kondicionery/split-sistemy-on-off" class="promo-card">
+        <img class="promo-card__img" src={acSplit} alt="Сплит-система" loading="lazy" />
+        <span class="promo-card__name">Сплит-системы</span>
+      </a>
+      <a href="/catalog/klimaticheskaya-tehnika/kondicionery/invertornye-split-sistemy" class="promo-card">
+        <img class="promo-card__img" src={acInvertor} alt="Инверторная сплит-система" loading="lazy" />
+        <span class="promo-card__name">Инверторные</span>
+      </a>
+      <a href="/catalog/klimaticheskaya-tehnika/kondicionery/mobilnye-kondicionery" class="promo-card">
+        <img class="promo-card__img" src={acMobile} alt="Мобильный кондиционер" loading="lazy" />
+        <span class="promo-card__name">Мобильные</span>
+      </a>
     </div>
   </div>
 </section>
@@ -478,6 +536,112 @@
       }
     }
   }
+  // ─── Promo banners (Grandex / AC) ───
+  .promo-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  }
+  .promo-banner--grandex {
+    border: 1px solid rgba(62, 111, 79, 0.12);
+    background: linear-gradient(135deg, rgba(62, 111, 79, 0.06), rgba(62, 111, 79, 0.02));
+  }
+  .promo-banner--ac {
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(59, 130, 246, 0.02));
+  }
+  .promo-banner__head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .promo-banner__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+  .promo-banner--grandex .promo-banner__icon {
+    background: rgba(62, 111, 79, 0.1);
+  }
+  .promo-banner--ac .promo-banner__icon {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+  }
+  .promo-banner__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    strong {
+      font-size: 1.35rem;
+      font-weight: 850;
+      line-height: 1.15;
+      color: #111827;
+    }
+    span {
+      font-size: 0.92rem;
+      line-height: 1.4;
+      color: #475569;
+    }
+  }
+  // ─── Promo cards ───
+  .promo-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .promo-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid #e8e8ec;
+    border-radius: 16px;
+    background: #fff;
+    color: #111827;
+    text-decoration: none;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      .promo-card__img {
+        transform: scale(1.03);
+      }
+    }
+  }
+  .promo-banner--grandex .promo-card:hover {
+    border-color: rgba(62, 111, 79, 0.3);
+  }
+  .promo-banner--ac .promo-card:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  .promo-card__img {
+    width: 100%;
+    height: 120px;
+    object-fit: contain;
+    transition: transform 0.22s ease;
+  }
+  .promo-card__name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-align: center;
+    color: #111827;
+  }
   section {
     margin-top: 18px;
     margin-bottom: 18px;
@@ -489,11 +653,36 @@
     .kits-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+    .promo-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   @media (max-width: 639px) {
     .section-title {
       margin-bottom: 14px;
       font-size: 1.45rem;
+    }
+    .promo-banner {
+      padding: 18px;
+      border-radius: 16px;
+    }
+    .promo-banner__head {
+      justify-content: center;
+    }
+    .promo-banner__icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+    }
+    .promo-banner__text {
+      align-items: center;
+      text-align: center;
+      strong {
+        font-size: 1.2rem;
+      }
+    }
+    .promo-card__img {
+      height: 100px;
     }
     .features-grid {
       gap: 12px;
@@ -533,6 +722,9 @@
     }
     .kits-grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .promo-banner--ac .promo-cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 </style>
