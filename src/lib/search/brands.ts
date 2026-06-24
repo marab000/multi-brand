@@ -36,7 +36,6 @@ export const brandAliases: Record<string, string[]> = {
   liebherr: ['liebherr', 'либхер', 'либер'],
   maunfeld: ['maunfeld', 'маунфелд', 'маунфельд'],
   meyvel: ['meyvel', 'мейвел'],
-  midea: ['midea', 'мидеа'],
   miele: ['miele', 'миеле'],
   millen: ['millen', 'миллен'],
   monsher: ['monsher', 'моншер'],
@@ -50,12 +49,12 @@ export const brandAliases: Record<string, string[]> = {
   smeg: ['smeg', 'смег'],
   teka: ['teka', 'тека'],
   'ac electric': ['ac electric', 'ac-electric', 'ас электрик', 'эй си электрик'],
-  'aurus': ['aurus', 'аурус'],
-  'ballu': ['ballu', 'балу', 'баллу'],
+  aurus: ['aurus', 'аурус'],
+  ballu: ['ballu', 'балу', 'баллу'],
   'royal thermo': ['royal thermo', 'royalthermo', 'роял термо', 'роялтермо'],
-  'shuft': ['shuft', 'шуфт'],
-  'toshiba': ['toshiba', 'тошиба', 'тошыба'],
-  'zanussi': ['zanussi', 'занусси']
+  shuft: ['shuft', 'шуфт'],
+  toshiba: ['toshiba', 'тошиба', 'тошыба'],
+  zanussi: ['zanussi', 'занусси']
 };
 
 export const brandCanonicalNames: Record<string, string> = {
@@ -96,7 +95,6 @@ export const brandCanonicalNames: Record<string, string> = {
   liebherr: 'LIEBHERR',
   maunfeld: 'Maunfeld',
   meyvel: 'Meyvel',
-  midea: 'Midea',
   miele: 'MIELE',
   millen: 'MILLEN',
   monsher: 'Monsher',
@@ -110,10 +108,10 @@ export const brandCanonicalNames: Record<string, string> = {
   smeg: 'SMEG',
   teka: 'Teka',
   'ac electric': 'AC ELECTRIC',
-  'aurus': 'AURUS',
-  'ballu': 'BALLU',
+  aurus: 'AURUS',
+  ballu: 'BALLU',
   'royal thermo': 'Royal Thermo',
-  'shuft': 'SHUFT',
-  'toshiba': 'TOSHIBA',
-  'zanussi': 'Zanussi'
+  shuft: 'SHUFT',
+  toshiba: 'TOSHIBA',
+  zanussi: 'Zanussi'
 };
