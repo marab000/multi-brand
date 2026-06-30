@@ -245,7 +245,7 @@
       </div>
       <div class="promo-banner__text">
         <strong>Кондиционеры</strong>
-        <span>Сплит-системы, инверторные и мобильные кондиционеры от проверенных брендов — Electrolux, Ballu, Toshiba, и другие.</span>
+        <span>Сплит-системы, инверторные и мобильные кондиционеры от проверенных брендов — Electrolux, Ballu, Toshiba и другие.</span>
       </div>
     </div>
     <div class="promo-cards">
