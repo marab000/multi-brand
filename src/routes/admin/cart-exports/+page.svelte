@@ -46,6 +46,9 @@
   .empty {
     color: #888;
   }
+  :global(.pagination) {
+    margin-top: 24px;
+  }
   .table {
     display: flex;
     flex-direction: column;
