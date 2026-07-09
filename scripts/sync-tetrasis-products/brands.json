@@ -1,101 +1,59 @@
 [
-	{
-		"name": "AEG"
-	},
-	{
-		"name": "ASKO"
-	},
-	{
-		"name": "Bone Crusher"
-	},
-	{
-		"name": "BOSCH"
-	},
-	{
-		"name": "De Dietrich"
-	},
-	{
-		"name": "DeLonghi"
-	},
-	{
-		"name": "Electrolux"
-	},
-	{
-		"name": "ELICA"
-	},
-	{
-		"name": "Evelux"
-	},
-	{
-		"name": "FALMEC"
-	},
-	{
-		"name": "Franke"
-	},
-	{
-		"name": "Grandex Aqua"
-	},
-	{
-		"name": "GranFest"
-	},
-	{
-		"name": "Haier"
-	},
-	{
-		"name": "HIBERG"
-	},
-	{
-		"name": "Jacky's"
-	},
-	{
-		"name": "KORTING"
-	},
-	{
-		"name": "Kuppersberg"
-	},
-	{
-		"name": "KUPPERSBUSCH"
-	},
-	{
-		"name": "LIEBHERR"
-	},
-	{
-		"name": "Maunfeld"
-	},
-	{
-		"name": "MIELE"
-	},
-	{
-		"name": "NEFF"
-	},
-	{
-		"name": "Omoikiri"
-	},
-	{
-		"name": "SMEG"
-	},
-	{
-		"name": "Teka"
-	},
-	{
-		"name": "BALLU"
-	},
-	{
-		"name": "AC ELECTRIC"
-	},
-	{
-		"name": "AURUS"
-	},
-	{
-		"name": "Royal Thermo"
-	},
-	{
-		"name": "SHUFT"
-	},
-	{
-		"name": "TOSHIBA"
-	},
-	{
-		"name": "Zanussi"
-	}
+  "AEG",
+  "ASKO",
+  "BEKO",
+  "Bone Crusher",
+  "BOSCH",
+  "Brandt",
+  "CANDY",
+  "De Dietrich",
+  "DeLonghi",
+  "Dunavox",
+  "Electrolux",
+  "ELICA",
+  "Elikor",
+  "Evelux",
+  "FABER",
+  "FALMEC",
+  "Franke",
+  "GORENJE",
+  "Grandex Aqua",
+  "GranFest",
+  "GRAUDE",
+  "Grundig",
+  "Haier",
+  "Hebermann",
+  "HIBERG",
+  "Hitachi",
+  "Hotpoint",
+  "INDESIT",
+  "Jacky's",
+  "KORTING",
+  "KRONA",
+  "Kuppersberg",
+  "KUPPERSBUSCH",
+  "LEX",
+  "LIEBHERR",
+  "Maunfeld",
+  "Meyvel",
+  "MIELE",
+  "MILLEN",
+  "Monsher",
+  "NEFF",
+  "Omoikiri",
+  "Rivelato",
+  "Schaub Lorenz",
+  "Schulthess",
+  "SEAMAN",
+  "SIEMENS",
+  "SMEG",
+  "Teka",
+	
+  "AC ELECTRIC",
+  "AURUS",
+  "BALLU",
+  "Royal Thermo",
+  "SHUFT",
+  "TOSHIBA",
+  "Zanussi"
 ]

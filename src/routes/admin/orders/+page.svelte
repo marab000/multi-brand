@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Pencil, Check, X, Truck, BadgeRussianRuble, PackagePlus } from 'lucide-svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
   export let data: any;
 
   function formatDate(d: string | number | Date) {
-    const [date, time] = new Date(d).toLocaleString().split(', ');
+    const [date, time] = new Date(d).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }).split(', ');
     return `${date}<br>${time}`;
   }
 
@@ -34,17 +35,15 @@
     tempStatus = '';
   }
 
-  $: sortedOrders = [...data.orders].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  $: orders = data.orders;
 </script>
 
 <h1>Заказы</h1>
-{#if !sortedOrders.length}
+{#if !orders.length}
   <p class="empty">Нет заказов</p>
 {:else}
   <div class="table">
-    {#each sortedOrders as o}
+    {#each orders as o}
       <div class="row">
         <div class="cell id">#{o.id}</div>
         <div class="cell user">
@@ -90,6 +89,7 @@
       </div>
     {/each}
   </div>
+  <Pagination page={data.page} totalPages={data.totalPages} href="/admin/orders" />
 {/if}
 
 <style lang="scss">

@@ -1,3 +1,6 @@
 # allow crawling everything by default
 User-agent: *
 Disallow:
+
+Host: https://multi-brand.online
+Sitemap: https://multi-brand.online/sitemap.xml

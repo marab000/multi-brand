@@ -77,7 +77,7 @@ function brand(name) { return cleanName(name).split(' ')[0] || String(name || ''
 function normalizeName(value) { return translit(value).replace(/[^a-z0-9]+/gi, ' ').trim().replace(/\s+/g, ' ') }
 function compactName(value) { return normalizeName(value).replace(/\s+/g, '') }
 function normalizeBrand(value) { return normalizeName(value) }
-function allowedBrands() { return brands.map(b => normalizeBrand(b.name)).filter(Boolean) }
+function allowedBrands() { return brands.map(b => normalizeBrand(b)).filter(Boolean) }
 function addVariant(list, value) {
 	const v = cleanName(value)
 	if (v) list.push(v)

@@ -33,7 +33,7 @@ const normalizeCompare = s => String(s || '').toLowerCase().replace(/['"]/g, '')
 const cleanBrand = s => String(s || '').replace(/['"]/g, '').trim()
 function findMatchedBrand(apiName) {
 	const n = normalizeCompare(apiName)
-	return brands.find(b => n.startsWith(normalizeCompare(b.name)))
+	return brands.find(b => n.startsWith(normalizeCompare(b)))
 }
 async function safeJsonFetch(url) {
 	const r = await fetch(url)
@@ -94,7 +94,7 @@ function extractPrices(rows) {
 async function syncBrand(apiBrand) {
 	const brand = findMatchedBrand(apiBrand.NAME)
 	if (!brand) return
-	const cleanName = cleanBrand(brand.name)
+	const cleanName = cleanBrand(brand)
 	await log('SYNC_BRAND', cleanName, 'api:', apiBrand.NAME)
 	const products = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/0/`)
 	const pricesRaw = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/2/`)

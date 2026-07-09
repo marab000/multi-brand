@@ -24,7 +24,7 @@ import brandsList from './brands.json' with { type: 'json' }
 const SOURCE = 'grandex-aqua'
 // Whitelist брендов: если карточка не матчит ни один — пропускаем.
 // today = ['Grandex Aqua']; tomorrow = добавь строку в brands.json и перезапусти.
-const ALLOWED_BRANDS = brandsList.map(b => String(b.name || '').trim().toLowerCase()).filter(Boolean)
+const ALLOWED_BRANDS = brandsList.map(b => String(b || '').trim().toLowerCase()).filter(Boolean)
 // Все известные бренды сайта — для распознавания бренда в названии.
 const KNOWN_BRANDS = ['Grandex Aqua', 'ALVEUS', 'INTERSTONE', 'Schock', 'Longer', 'Reginox', 'Blanco', 'Franke', 'Teka', 'Ruhens', 'Gidromix']
 const BRAND = { name: 'Grandex Aqua', api: SOURCE } // fallback, если бренд не распознан

@@ -1,7 +1,7 @@
 <script lang="ts">
   import rawBrands from '../../../scripts/sync-tetrasis-products/brands.json';
 
-  const brands: { name: string }[] = rawBrands;
+  const brands: string[] = rawBrands;
 
   const images = import.meta.glob('/src/lib/assets/brands/*.{png,jpg,jpeg,webp}', {
     eager: true,
@@ -21,13 +21,13 @@
 
 <div class="brands">
   {#each brands as brand}
-    <a href={`/catalog?brand=${encodeURIComponent(urlBrand(brand.name))}`} class="brand">
+    <a href={`/catalog?brand=${encodeURIComponent(urlBrand(brand))}`} class="brand">
       <div class="logo">
-        {#if getImage(brand.name)}
-          <img src={getImage(brand.name)} alt={brand.name} loading="lazy" />
+        {#if getImage(brand)}
+          <img src={getImage(brand)} alt={brand} loading="lazy" />
         {/if}
       </div>
-      <div class="name">{brand.name}</div>
+      <div class="name">{brand}</div>
     </a>
   {/each}
 </div>

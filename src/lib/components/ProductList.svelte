@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { ChevronDown, ChevronUp, Check } from 'lucide-svelte';
   import ProductCard from '$lib/components/ProductCard.svelte';
+  import Pagination from '$lib/components/Pagination.svelte';
   export let products: any[] = [];
   export let currentPage = 1;
   export let pages = 1;
@@ -16,27 +17,6 @@
   let isSortOpen = false;
   $: currentSort = $page.url.searchParams.get('sort') ?? 'default';
   $: currentSortLabel = sortOptions.find((item) => item.value === currentSort)?.label ?? 'По умолчанию';
-  $: visiblePages = getVisiblePages(currentPage, pages);
-  function getVisiblePages(current: number, total: number): (number | '...')[] {
-    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-    const result: (number | '...')[] = [];
-    result.push(1);
-    let start = Math.max(2, current - 2);
-    let end = Math.min(total - 1, current + 2);
-    if (current <= 3) {
-      start = 2;
-      end = 5;
-    }
-    if (current >= total - 2) {
-      start = total - 4;
-      end = total - 1;
-    }
-    if (start > 2) result.push('...');
-    for (let i = start; i <= end; i++) result.push(i);
-    if (end < total - 1) result.push('...');
-    result.push(total);
-    return result;
-  }
   function goToPage(p: number) {
     const params = new URLSearchParams($page.url.searchParams);
     params.set('page', String(p));
@@ -101,21 +81,7 @@
     {/each}
   </div>
   {#if pages > 1}
-    <div class="pagination">
-      {#if currentPage > 1}
-        <button type="button" onclick={() => goToPage(currentPage - 1)}>‹</button>
-      {/if}
-      {#each visiblePages as p}
-        {#if p === '...'}
-          <span class="dots">...</span>
-        {:else}
-          <button type="button" class:active={p === currentPage} onclick={() => goToPage(p as number)}>{p}</button>
-        {/if}
-      {/each}
-      {#if currentPage < pages}
-        <button type="button" onclick={() => goToPage(currentPage + 1)}>›</button>
-      {/if}
-    </div>
+    <Pagination page={currentPage} totalPages={pages} onPageChange={goToPage} />
   {/if}
 {/if}
 
@@ -232,39 +198,5 @@
     grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
     gap: 8px;
     margin-bottom: 30px;
-  }
-  .pagination {
-    display: flex;
-    gap: 6px;
-    margin: -14px 0 30px 0;
-    justify-content: center;
-    flex-wrap: wrap;
-    button {
-      min-width: 38px;
-      height: 38px;
-      padding: 0 10px;
-      border-radius: 10px;
-      border: 1px solid #eee;
-      background: #fff;
-      color: #222;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 500;
-      transition: 0.2s;
-      cursor: pointer;
-      &:hover {
-        background: #f5f5f5;
-      }
-      &.active {
-        background: $green;
-        color: #fff;
-        border-color: $green;
-      }
-    }
-    .dots {
-      padding: 0 8px;
-      color: #aaa;
-    }
   }
 </style>

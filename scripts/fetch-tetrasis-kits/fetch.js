@@ -23,7 +23,7 @@ const now = () => new Date().toISOString()
 function stripAnsi(value) { return String(value).replace(/\x1b\[[0-9;]*m/g, '') }
 function clean(value) { return String(value || '').replace(/\s+/g, ' ').trim() }
 function normalize(value) { return clean(value).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9&+]+/gi, ' ').replace(/\s+/g, ' ').trim() }
-const allowedBrands = brands.map(b => ({ name: clean(b.name), normalized: normalize(b.name) })).filter(b => b.normalized)
+const allowedBrands = brands.map(b => ({ name: clean(b), normalized: normalize(b) })).filter(b => b.normalized)
 function getAllowedBrand(name) {
 	const n = normalize(name)
 	return allowedBrands.find(b => n === b.normalized || n.startsWith(`${b.normalized} `) || n.startsWith(`${b.normalized}+`)) || null

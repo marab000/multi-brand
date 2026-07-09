@@ -12,7 +12,8 @@
       <div class="logo">ADMIN</div>
       <nav>
         <a href="/admin/orders" class={$activePath === '/admin/orders' ? 'active' : ''}>Заказы</a>
-        <a class="mt-3" href="/admin/logout">Выйти</a>
+        <a href="/admin/cart-exports" class={$activePath.startsWith('/admin/cart-exports') ? 'active' : ''}>Корзины (PDF)</a>
+        <a class="logout" href="/admin/logout">Выйти</a>
       </nav>
     </aside>
     <main class="content">
@@ -52,6 +53,7 @@
     border-radius: 10px;
     color: #333;
     background: #fff;
+    border: 1px solid rgba($yellow, 0.4);
     transition: 0.2s;
     &:hover {
       background: rgba($yellow, 0.5);
@@ -61,6 +63,17 @@
     background: $yellow;
     color: #000;
     font-weight: 600;
+    border-color: $yellow;
+  }
+  a.logout {
+    margin-top: 16px;
+    color: $error;
+    border: 1px solid rgba($error, 0.3);
+    &:hover {
+      background: $error;
+      color: #fff;
+      border-color: $error;
+    }
   }
   .content {
     flex: 1;
