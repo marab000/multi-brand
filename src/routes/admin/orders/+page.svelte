@@ -8,6 +8,9 @@
     return `${date}<br>${time}`;
   }
 
+  const fmtPrice = (v: number | null) =>
+    v == null ? '—' : Math.round(v * 1000).toLocaleString('ru-RU') + ' ₽';
+
   const statusIcons: Record<string, any> = {
     created: { label: 'Создан', icon: PackagePlus },
     paid: { label: 'Оплачен', icon: BadgeRussianRuble },
@@ -85,6 +88,7 @@
             >
           {/if}
         </div>
+        <div class="cell total">{fmtPrice(o.total_price)}</div>
         <div class="cell date">{@html formatDate(o.created_at)}</div>
       </div>
     {/each}
@@ -108,7 +112,7 @@
     gap: 12px;
     .row {
       display: grid;
-      grid-template-columns: 80px 200px 1fr 125px 74px;
+      grid-template-columns: 80px 200px 1fr 125px 110px 74px;
       align-items: center;
       background: #fff;
       padding: 14px;
@@ -224,6 +228,12 @@
           text-align: end;
           font-size: 12px;
           color: #666;
+        }
+        &.total {
+          font-weight: 700;
+          text-align: right;
+          white-space: nowrap;
+          color: $green;
         }
       }
     }
