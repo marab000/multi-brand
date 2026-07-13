@@ -3,16 +3,20 @@
   import { goto } from '$app/navigation';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
+  import { applyCartDiscount, CART_DISCOUNT_PERCENT, isDiscountExcludedBrand } from '$lib/utils/pricing';
   import { apiFetch } from '$lib/api';
   import { toast } from 'svelte-sonner';
   import Modal from '$lib/components/Modal.svelte';
   import CartPdfExport from '$lib/components/CartPdfExport.svelte';
-  import { Menu, Minus, Plus, Trash } from 'lucide-svelte';
+  import { Menu, Minus, Plus, Trash, BadgePercent, ArrowRight } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   import cartEmptyImage from '$lib/assets/cart-empty.webp';
+  import cartSaleImage from '$lib/assets/cart-sale.webp';
   import { openOtp } from '$lib/utils/otp';
   export let data: PageData;
+  let nameInput: HTMLInputElement;
+  let phoneInput: HTMLInputElement;
   let name = data.user?.full_name ?? '';
   let phone = getPhoneLocalDigits(data.user?.phone);
   let showModal = false;
@@ -21,13 +25,19 @@
     if (typeof window === 'undefined') return;
     window.ym?.(108518016, 'reachGoal', goal);
   };
+  function focusField(el: HTMLInputElement) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.focus();
+  }
   const submit = async () => {
     if (!name.trim()) {
       toast.error('Введите имя');
+      focusField(nameInput);
       return;
     }
     if (!isValidRuPhone(phone)) {
       toast.error('Введите корректный номер телефона');
+      focusField(phoneInput);
       return;
     }
     const items = $cart.map((i) => ({
@@ -58,7 +68,13 @@
       toast.error('Ошибка при оформлении заказа');
     }
   };
+  // Скидка применяется только к товарам, чей бренд не в списке исключений (защищённый ассортимент)
+  const itemDiscountedPrice = (i: { price: number; qty: number; brand?: string | null }) =>
+    isDiscountExcludedBrand(i.brand) ? i.price : applyCartDiscount(i.price);
   $: total = $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  $: totalWithDiscount = $cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0);
+  $: savings = total - totalWithDiscount;
+  $: hasDiscount = savings > 0;
   const closeModal = () => (showModal = false);
 </script>
 
@@ -104,12 +120,14 @@
                 >
               </div>
               <div class="sum-wrap">
-                {#if item.oldPrice}
-                  <p class="old-sum">{formatPrice(item.oldPrice * item.qty)} ₽</p>
+                {#if !isDiscountExcludedBrand(item.brand)}
+                  <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
+                  <p class="discount-sum sum">
+                    {formatPrice(itemDiscountedPrice(item) * item.qty)} ₽
+                  </p>
+                {:else}
+                  <p class="sum">{formatPrice(item.price * item.qty)} ₽</p>
                 {/if}
-                <p class:discount-sum={item.oldPrice} class="sum">
-                  {formatPrice(item.price * item.qty)} ₽
-                </p>
               </div>
               <button class="remove" on:click={() => cart.remove(item.id)}
                 ><Trash size="14" strokeWidth="2.5" /></button
@@ -117,14 +135,38 @@
             </div>
           </div>
         {/each}
+        {#if hasDiscount}
+          <div class="cart-promo">
+            <img class="cart-promo__img" src={cartSaleImage} alt="Скидка на оформление заказа" />
+            <div class="cart-promo__body">
+              <div class="cart-promo__head">
+                <BadgePercent size={20} strokeWidth={2.2} />
+                <span>Скидка {CART_DISCOUNT_PERCENT}% при оформлении сейчас</span>
+              </div>
+              <div class="cart-promo__prices">
+                <span class="old-sum">{formatPrice(total)} ₽</span>
+                <ArrowRight size={18} strokeWidth={2.5} />
+                <span class="cart-promo__new">{formatPrice(totalWithDiscount)} ₽</span>
+              </div>
+              <p class="cart-promo__save">Ваша выгода: {formatPrice(savings)} ₽</p>
+              <button class="btn primary cart-promo__btn" on:click={submit}>
+                Оформить заказ
+                <ArrowRight size={18} strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+        {/if}
       </div>
       <div>
         <div class="checkout">
           <div class="total">
             <span>Итого:</span>
-            <b>{formatPrice(total)} ₽</b>
+            <div class="total-prices">
+              <span class="old-sum">{formatPrice(total)} ₽</span>
+              <b class="discount-sum">{formatPrice(totalWithDiscount)} ₽</b>
+            </div>
           </div>
-          <input class="input primary" placeholder="Ваше имя" bind:value={name} />
+          <input class="input primary" placeholder="Ваше имя" bind:value={name} bind:this={nameInput} />
           <div class="with-prefix">
             <span class="prefix">+7</span>
             <input
@@ -133,6 +175,7 @@
               autocomplete="tel"
               inputmode="numeric"
               value={phone}
+              bind:this={phoneInput}
               use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
             />
           </div>
@@ -206,6 +249,20 @@
         font-weight: 700;
       }
     }
+    .old-sum {
+      color: #111;
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1;
+      text-decoration: line-through;
+      text-decoration-color: #e31b23;
+      text-decoration-thickness: 1.5px;
+      opacity: 0.62;
+      white-space: nowrap;
+    }
+    .discount-sum {
+      color: #e31b23;
+    }
     .cart {
       grid-template-columns: 1fr 320px;
       .items {
@@ -236,11 +293,11 @@
         justify-content: center;
         width: 86px;
         height: 96px;
-      }
-      img {
-        width: 86px;
-        height: 96px;
-        object-fit: contain;
+        img {
+          width: 86px;
+          height: 96px;
+          object-fit: contain;
+        }
       }
       .info {
         min-width: 0;
@@ -295,25 +352,11 @@
         gap: 2px;
         min-width: 0;
       }
-      .old-sum {
-        color: #111;
-        font-size: 12px;
-        font-weight: 500;
-        line-height: 1;
-        text-decoration: line-through;
-        text-decoration-color: #e31b23;
-        text-decoration-thickness: 1.5px;
-        opacity: 0.62;
-        white-space: nowrap;
-      }
       .sum {
         font-size: 16px;
         font-weight: 700;
         white-space: nowrap;
         text-align: right;
-      }
-      .discount-sum {
-        color: #e31b23;
       }
       .remove {
         display: flex;
@@ -342,7 +385,17 @@
       .total {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         font-size: 18px;
+        .total-prices {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 2px;
+          b {
+            font-size: 20px;
+          }
+        }
       }
       .actions {
         display: flex;
@@ -363,6 +416,72 @@
           margin: 0;
         }
       }
+    }
+    .cart-promo {
+      display: grid;
+      grid-template-columns: 7fr 3fr;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba($green, 0.3);
+      background: linear-gradient(135deg, rgba($green, 0.08), rgba($green, 0.02));
+    }
+    .cart-promo__img {
+      width: 100%;
+      height: 100%;
+      min-height: 240px;
+      object-fit: cover;
+      object-position: center;
+    }
+    .cart-promo__body {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px 26px;
+    }
+    .cart-promo__head {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 800;
+      color: $green;
+      letter-spacing: -0.01em;
+    }
+    .cart-promo__prices {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #999;
+      .old-sum,
+      .cart-promo__new {
+        white-space: nowrap;
+      }
+      .cart-promo__new {
+        font-size: 30px;
+        font-weight: 800;
+        color: #e31b23;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+    }
+    .cart-promo__save {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: #667085;
+    }
+    .cart-promo__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      height: 48px;
+      padding: 0 22px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 12px;
     }
   }
   @media (max-width: 1023px) {
@@ -398,11 +517,11 @@
           width: 90px;
           height: 118px;
           flex-shrink: 0;
-        }
-        img {
-          width: 90px;
-          height: 118px;
-          object-fit: contain;
+          img {
+            width: 90px;
+            height: 118px;
+            object-fit: contain;
+          }
         }
         .name {
           font-size: 14px;
@@ -434,6 +553,26 @@
           width: 34px;
           height: 34px;
         }
+      }
+      .cart-promo {
+        grid-template-columns: 1fr;
+      }
+      .cart-promo__img {
+        min-height: 180px;
+        max-height: 220px;
+      }
+      .cart-promo__body {
+        padding: 18px;
+      }
+      .cart-promo__head {
+        font-size: 15px;
+      }
+      .cart-promo__prices .cart-promo__new {
+        font-size: 26px;
+      }
+      .cart-promo__btn {
+        width: 100%;
+        justify-content: center;
       }
     }
   }

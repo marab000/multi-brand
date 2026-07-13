@@ -16,7 +16,7 @@
   import { onMount } from 'svelte';
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
-  import { PiggyBank, Star } from 'lucide-svelte';
+  import { PiggyBank, Star, Minus, Plus } from 'lucide-svelte';
   register();
   type ProductPageProduct = Product & {
     isKit?: boolean;
@@ -29,7 +29,7 @@
   let mainSwiper = $state<any>(null);
   let zoom = $state(false);
   let zoomIndex = $state(0);
-  let includedOpen = $state(false);
+  let includedVisibleCount = $state(8);
   const images = $derived(p.images?.length ? p.images : []);
   const image = $derived(images[0]?.url || '/images/no_image.png');
   const slug = $derived(slugify(p.name));
@@ -41,9 +41,8 @@
   const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
   const kitItems = $derived(p.kitItems || []);
   const includedInKits = $derived(p.includedInKits || []);
-  const visibleIncludedInKits = $derived(
-    includedOpen ? includedInKits : includedInKits.slice(0, 3)
-  );
+  const visibleIncludedInKits = $derived(includedInKits.slice(0, includedVisibleCount));
+  const includedRemaining = $derived(includedInKits.length - visibleIncludedInKits.length);
   const specs = $derived.by(() => {
     try {
       const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
@@ -117,9 +116,12 @@
       oldPrice: hasDiscount ? oldPrice : null,
       image,
       slug,
-      description: p.description
+      description: p.description,
+      brand: p.brand?.name
     });
   }
+  const cartItem = $derived($cart.find((i) => i.id === p.id));
+  const qty = $derived(cartItem?.qty ?? 0);
   onMount(() => {
     recentlyViewed.add({ id: p.id, name: p.name, slug, image, price, description: p.description });
   });
@@ -217,7 +219,19 @@
           {/if}
         </div>
         <div class="mb-8 flex gap-3">
-          <button class="btn primary" onclick={addToCart}>В корзину</button>
+          {#if qty > 0}
+            <div class="cart-counter">
+              <button type="button" aria-label="Уменьшить количество" onclick={() => cart.dec(p.id)}>
+                <Minus size={18} strokeWidth={2.6} />
+              </button>
+              <span>{qty}</span>
+              <button type="button" aria-label="Увеличить количество" onclick={() => cart.inc(p.id)}>
+                <Plus size={18} strokeWidth={2.6} />
+              </button>
+            </div>
+          {:else}
+            <button class="btn primary" onclick={addToCart}>В корзину</button>
+          {/if}
         </div>
         {#if p.isKit && kitItems.length}
           <section class="kit-block">
@@ -264,12 +278,19 @@
                 </a>
               {/each}
             </div>
-            {#if includedInKits.length > 3}
+            {#if includedRemaining > 0}
               <button
                 class="kit-show-more"
                 type="button"
-                onclick={() => (includedOpen = !includedOpen)}
-                >{includedOpen ? 'Свернуть' : `Показать ещё ${includedInKits.length - 3}`}</button
+                onclick={() => (includedVisibleCount += 8)}
+                >Показать ещё {Math.min(8, includedRemaining)} (осталось {includedRemaining})</button
+              >
+            {:else if includedInKits.length > 8}
+              <button
+                class="kit-show-more"
+                type="button"
+                onclick={() => (includedVisibleCount = 8)}
+                >Свернуть</button
               >
             {/if}
           </section>
@@ -576,6 +597,47 @@
     transition: 0.18s ease;
     &:hover {
       background: #e4edf8;
+    }
+  }
+  .cart-counter {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 52px 1fr 52px;
+    align-items: stretch;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: $green-light;
+    color: #fff;
+    font-weight: 800;
+    line-height: 1;
+    button,
+    span {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    button {
+      border: 0;
+      color: #fff;
+      background: transparent;
+      cursor: pointer;
+      transition: 0.18s ease;
+      &:first-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.55);
+      }
+      &:last-child {
+        border-left: 1px solid rgba(255, 255, 255, 0.55);
+      }
+      &:hover {
+        filter: brightness(0.82);
+      }
+    }
+    span {
+      font-size: 18px;
+      min-width: 60px;
     }
   }
   @media (max-width: 640px) {

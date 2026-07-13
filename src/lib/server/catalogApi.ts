@@ -1,5 +1,6 @@
 import { sql } from '$lib/db';
-import { normalize, expandQuery } from '$lib/search/normalize';
+import { normalize, expandQuery, resolveBrands } from '$lib/search/normalize';
+import { brandAliases } from '$lib/search/brands';
 
 export interface CatalogScope {
   rootSlug: string;
@@ -42,13 +43,36 @@ function getSearchWords(search: string) {
   const normalizedWords = expandQuery(normalize(raw)).filter(
     (w) => w.length >= 2 && !w.includes(' ') && !isMixedScript(w)
   );
+
+  // Маппинг: нормализованное слово → набор брендов, которым оно принадлежит
+  // (чтобы alias-ы одного бренда попадали в одну группу, а не создавали AND-условия)
+  const wordToBrands = new Map<string, Set<string>>();
+  for (const canonical in brandAliases) {
+    for (const alias of brandAliases[canonical]) {
+      const normAlias = normalize(alias);
+      if (!wordToBrands.has(normAlias)) wordToBrands.set(normAlias, new Set());
+      wordToBrands.get(normAlias)!.add(canonical);
+    }
+  }
+  function brandsOfWord(word: string): Set<string> {
+    return wordToBrands.get(normalize(word)) ?? new Set();
+  }
+  function shareBrand(a: string, b: string): boolean {
+    const ba = brandsOfWord(a);
+    const bb = brandsOfWord(b);
+    if (!ba.size || !bb.size) return false;
+    for (const x of ba) if (bb.has(x)) return true;
+    return false;
+  }
+
   const groups: string[][] = [];
   for (const rawWord of rawWords) {
     const forms = new Set<string>([rawWord]);
     const norm = normalize(rawWord);
     forms.add(norm);
     for (const w of normalizedWords) {
-      if (w === norm || normalize(w) === norm) forms.add(w);
+      // Объединяем, если нормформа совпадает ИЛИ это alias того же бренда
+      if (w === norm || normalize(w) === norm || shareBrand(rawWord, w)) forms.add(w);
     }
     groups.push([...forms]);
   }
@@ -203,10 +227,22 @@ export function buildWhere(filters: CatalogFilters) {
   return { whereClause, values };
 }
 
-function buildOrderBy(sort?: CatalogFilters['sort']) {
+function buildOrderBy(sort?: CatalogFilters['sort'], search?: string, searchParamIdx?: number) {
+  // При поиске — товары с точным совпадением имени идут первыми,
+  // затем те где имя начинается с запроса, потом остальные.
+  const relevance = search?.trim() && searchParamIdx
+    ? `
+      CASE
+        WHEN LOWER(p.name) = LOWER($${searchParamIdx}) THEN 0
+        WHEN LOWER(p.name) LIKE LOWER($${searchParamIdx}) || '%' THEN 1
+        ELSE 2
+      END,
+    `
+    : '';
   if (sort === 'price_asc') {
     return `
       ORDER BY
+        ${relevance}
         CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
         COALESCE(p.price_rrc, p.price_ric) ASC NULLS LAST,
         p.created_at DESC
@@ -215,6 +251,7 @@ function buildOrderBy(sort?: CatalogFilters['sort']) {
   if (sort === 'price_desc') {
     return `
       ORDER BY
+        ${relevance}
         CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
         COALESCE(p.price_rrc, p.price_ric) DESC NULLS LAST,
         p.created_at DESC
@@ -222,6 +259,7 @@ function buildOrderBy(sort?: CatalogFilters['sort']) {
   }
   return `
     ORDER BY
+      ${relevance}
       CASE WHEN COUNT(pi.id) > 0 THEN 0 ELSE 1 END,
       p.created_at DESC
   `;
@@ -230,7 +268,13 @@ function buildOrderBy(sort?: CatalogFilters['sort']) {
 export async function fetchProducts(filters: CatalogFilters, limit = 50, offset = 0) {
   try {
     const { whereClause, values } = buildWhere(filters);
-    const orderBy = buildOrderBy(filters.sort);
+    // Добавляем поисковый запрос для сортировки по релевантности (точное совпадение имени — первым)
+    let searchParamIdx: number | undefined;
+    if (filters.search?.trim()) {
+      values.push(filters.search.trim());
+      searchParamIdx = values.length;
+    }
+    const orderBy = buildOrderBy(filters.sort, filters.search, searchParamIdx);
     const query = `
       SELECT 
         p.*,

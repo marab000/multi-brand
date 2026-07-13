@@ -48,7 +48,8 @@
       oldPrice: hasDiscount ? oldPrice : null,
       image,
       slug,
-      description: product.description
+      description: product.description,
+      brand: product.brand?.name
     });
   };
   const addToCart = () => {
@@ -59,7 +60,8 @@
       oldPrice: hasDiscount ? oldPrice : null,
       image,
       slug,
-      description: product.description
+      description: product.description,
+      brand: product.brand?.name
     });
   };
 </script>

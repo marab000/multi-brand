@@ -13,7 +13,8 @@
       oldPrice: item.oldPrice ?? null,
       image: item.image,
       slug: item.slug,
-      description: item.description
+      description: item.description,
+      brand: item.brand
     });
   };
 </script>

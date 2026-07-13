@@ -9,6 +9,7 @@ export type FavoriteItem = {
 	image?: string;
 	slug?: string;
 	description?: string | null;
+	brand?: string | null;
 };
 
 const STORAGE_KEY = 'favorites';

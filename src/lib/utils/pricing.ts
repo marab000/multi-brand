@@ -2,6 +2,7 @@ import type { Product } from '$lib/types/product';
 export const DISCOUNT_PERCENT = 0;
 export const INSTALLMENT_MONTHS = 12;
 export const IS_KIT_DISCOUNT = true;
+export const CART_DISCOUNT_PERCENT = 15;
 const EXCLUDED_BRANDS = ['asko', 'omoikiri', 'franke'];
 const normalizeBrand = (brand?: string | null) =>
   String(brand ?? '')
@@ -14,7 +15,11 @@ export function getInstallmentLabel() {
   return `рассрочка ${INSTALLMENT_MONTHS} мес.`;
 }
 export function isDiscountExcludedBrand(brand?: string | null) {
-  return EXCLUDED_BRANDS.includes(normalizeBrand(brand));
+  const normalized = normalizeBrand(brand);
+  if (EXCLUDED_BRANDS.includes(normalized)) return true;
+  // Тетрасис помечает защищённый ассортимент: «Midea защищенный ассортимент» и т.п.
+  if (/защищен|защищён/.test(normalized)) return true;
+  return false;
 }
 export function isKitProduct(product: Pick<Product, 'external_id' | 'raw'>) {
   return (
@@ -40,6 +45,11 @@ export function getMonthlyPayment(price: number | string | null | undefined) {
   const value = Number(price);
   if (!value || !Number.isFinite(value)) return 0;
   return value / INSTALLMENT_MONTHS;
+}
+export function applyCartDiscount(price: number | string | null | undefined) {
+  const value = Number(price);
+  if (!value || !Number.isFinite(value)) return 0;
+  return value * (1 - CART_DISCOUNT_PERCENT / 100);
 }
 export function getProductPrice(
   product: Pick<Product, 'price_rrc' | 'price_ric' | 'brand' | 'external_id' | 'raw'>

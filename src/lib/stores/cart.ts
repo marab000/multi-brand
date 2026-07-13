@@ -10,6 +10,7 @@ export type CartItem = {
   qty: number;
   slug?: string;
   description?: string | null;
+  brand?: string | null;
 };
 
 const STORAGE_KEY = 'cart';
