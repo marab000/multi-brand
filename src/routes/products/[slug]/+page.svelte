@@ -8,7 +8,8 @@
     getInstallmentLabel,
     getMonthlyPayment,
     getProductPrice,
-    hasProductDiscount
+    hasProductDiscount,
+    isDiscountExcludedBrand
   } from '$lib/utils/pricing';
   import { getProductRating } from '$lib/utils/productRating';
   import { cart } from '$lib/stores/cart';
@@ -117,7 +118,8 @@
       image,
       slug,
       description: p.description,
-      brand: p.brand?.name
+      brand: p.brand?.name,
+      protected: isDiscountExcludedBrand(p.brand)
     });
   }
   const cartItem = $derived($cart.find((i) => i.id === p.id));

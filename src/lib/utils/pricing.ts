@@ -14,11 +14,25 @@ export function getDiscountLabel() {
 export function getInstallmentLabel() {
   return `рассрочка ${INSTALLMENT_MONTHS} мес.`;
 }
-export function isDiscountExcludedBrand(brand?: string | null) {
-  const normalized = normalizeBrand(brand);
+type BrandLike =
+  | string
+  | null
+  | undefined
+  | { name?: string | null; api?: string | null; protected?: boolean };
+export function isDiscountExcludedBrand(brand?: BrandLike, protectedFlag?: boolean) {
+  if (protectedFlag) return true;
+  if (!brand) return false;
+  // Поддерживаем как строку (CartItem.brand), так и объект бренда с полями name/api/protected
+  if (typeof brand !== 'string' && brand.protected) return true;
+  const name = typeof brand === 'string' ? brand : brand.name;
+  const api = typeof brand === 'string' ? '' : brand.api;
+  const normalized = normalizeBrand(name);
+  const normalizedApi = normalizeBrand(api);
   if (EXCLUDED_BRANDS.includes(normalized)) return true;
   // Тетрасис помечает защищённый ассортимент: «Midea защищенный ассортимент» и т.п.
+  // Метка может быть в name (старые записи) или в api (оригинальное название из тетрасиса)
   if (/защищен|защищён/.test(normalized)) return true;
+  if (/защищен|защищён/.test(normalizedApi)) return true;
   return false;
 }
 export function isKitProduct(product: Pick<Product, 'external_id' | 'raw'>) {
@@ -33,7 +47,7 @@ export function getBaseProductPrice(product: Pick<Product, 'price_rrc' | 'price_
 }
 export function getDiscountedPrice(
   price: number | string | null | undefined,
-  brand?: string | null,
+  brand?: BrandLike,
   isKit = false
 ) {
   const value = Number(price);
@@ -56,7 +70,7 @@ export function getProductPrice(
 ) {
   return getDiscountedPrice(
     getBaseProductPrice(product),
-    product.brand?.name,
+    product.brand,
     isKitProduct(product)
   );
 }

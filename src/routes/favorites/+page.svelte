@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { favorites } from '$lib/stores/favorites';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
@@ -14,9 +15,14 @@
       image: item.image,
       slug: item.slug,
       description: item.description,
-      brand: item.brand
+      brand: item.brand,
+      protected: item.protected
     });
   };
+
+  onMount(() => {
+    favorites.sync();
+  });
 </script>
 
 <svelte:head>

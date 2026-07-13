@@ -20,8 +20,7 @@
   }>();
 
   onMount(() => {
-    cart.init();
-    favorites.init();
+    // cart/favorites инициализируются автоматически при создании store
   });
 </script>
 

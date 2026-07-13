@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
   import { applyCartDiscount, CART_DISCOUNT_PERCENT, isDiscountExcludedBrand } from '$lib/utils/pricing';
@@ -69,13 +70,16 @@
     }
   };
   // Скидка применяется только к товарам, чей бренд не в списке исключений (защищённый ассортимент)
-  const itemDiscountedPrice = (i: { price: number; qty: number; brand?: string | null }) =>
-    isDiscountExcludedBrand(i.brand) ? i.price : applyCartDiscount(i.price);
+  const itemDiscountedPrice = (i: { price: number; qty: number; brand?: string | null; protected?: boolean }) =>
+    isDiscountExcludedBrand(i.brand, i.protected) ? i.price : applyCartDiscount(i.price);
   $: total = $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   $: totalWithDiscount = $cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0);
   $: savings = total - totalWithDiscount;
   $: hasDiscount = savings > 0;
   const closeModal = () => (showModal = false);
+  onMount(() => {
+    cart.sync();
+  });
 </script>
 
 <div class="cart-page">
@@ -120,7 +124,7 @@
                 >
               </div>
               <div class="sum-wrap">
-                {#if !isDiscountExcludedBrand(item.brand)}
+                {#if !isDiscountExcludedBrand(item.brand, item.protected)}
                   <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
                   <p class="discount-sum sum">
                     {formatPrice(itemDiscountedPrice(item) * item.qty)} ₽

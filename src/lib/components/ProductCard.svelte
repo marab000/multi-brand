@@ -17,7 +17,8 @@
     getInstallmentLabel,
     getMonthlyPayment,
     getProductPrice,
-    hasProductDiscount
+    hasProductDiscount,
+    isDiscountExcludedBrand
   } from '$lib/utils/pricing';
   import { getProductRating } from '$lib/utils/productRating';
   import { slugify } from '$lib/utils/slugify';
@@ -37,6 +38,7 @@
   const monthlyPayment = getMonthlyPayment(price);
   const saving = hasDiscount ? oldPrice - price : 0;
   const ratingData = getProductRating(product.external_id || product.id || product.name);
+  const isProtected = isDiscountExcludedBrand(product.brand);
   $: cartItem = $cart.find((item) => item.id === product.id);
   $: qty = cartItem?.qty ?? 0;
   $: isFavorite = $favorites.some((item) => item.id === product.id);
@@ -49,7 +51,8 @@
       image,
       slug,
       description: product.description,
-      brand: product.brand?.name
+      brand: product.brand?.name,
+      protected: isProtected
     });
   };
   const addToCart = () => {
@@ -61,7 +64,8 @@
       image,
       slug,
       description: product.description,
-      brand: product.brand?.name
+      brand: product.brand?.name,
+      protected: isProtected
     });
   };
 </script>
