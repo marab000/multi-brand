@@ -1,0 +1,34 @@
+[
+  {
+    "src": "/videos/video-1.mp4",
+    "poster": "/videos/video-1.jpg"
+  },
+  {
+    "src": "/videos/video-2.mp4",
+    "poster": "/videos/video-2.jpg"
+  },
+  {
+    "src": "/videos/video-3.mp4",
+    "poster": "/videos/video-3.jpg"
+  },
+  {
+    "src": "/videos/video-4.mp4",
+    "poster": "/videos/video-4.jpg"
+  },
+  {
+    "src": "/videos/video-5.mp4",
+    "poster": "/videos/video-5.jpg"
+  },
+  {
+    "src": "/videos/video-6.mp4",
+    "poster": "/videos/video-6.jpg"
+  },
+  {
+    "src": "/videos/video-7.mp4",
+    "poster": "/videos/video-7.jpg"
+  },
+  {
+    "src": "/videos/video-8.mp4",
+    "poster": "/videos/video-8.jpg"
+  }
+]
