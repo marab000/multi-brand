@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Truck, MapPin, PackageCheck, MessageCircleMore } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
+  import deliveryBanner from '$lib/assets/delivery.webp';
   let requestOpen = $state(false);
 </script>
 
@@ -11,15 +12,20 @@
 
 <div class="mx-auto grid gap-4 pb-4 lg:gap-6 lg:pb-6">
   <section class="delivery-hero-card relative overflow-hidden p-5 lg:p-6">
-    <div class="delivery-eyebrow"><Truck size={18} strokeWidth={2.3} /><span>Доставка</span></div>
-    <h1>Доставим технику удобным для вас способом</h1>
-    <p>
-      Организуем доставку по городу и поможем подобрать подходящий вариант отправки в другие регионы
-      России.
-    </p>
-    <button class="btn primary gap-2 mt-4 lg:mt-5" type="button" onclick={() => (requestOpen = true)}
-      ><MessageCircleMore size={19} strokeWidth={2.2} /><span>Оставить заявку</span></button
-    >
+    <div class="delivery-banner">
+      <img src={deliveryBanner} alt="Доставка Мультибренд" />
+    </div>
+    <div class="delivery-hero-content">
+      <div class="delivery-eyebrow"><Truck size={18} strokeWidth={2.3} /><span>Доставка</span></div>
+      <h1>Доставим технику удобным для вас способом</h1>
+      <p>
+        Организуем доставку по городу и поможем подобрать подходящий вариант отправки в другие регионы
+        России.
+      </p>
+      <button class="btn primary gap-2 mt-4 lg:mt-5" type="button" onclick={() => (requestOpen = true)}
+        ><MessageCircleMore size={19} strokeWidth={2.2} /><span>Оставить заявку</span></button
+      >
+    </div>
   </section>
   <section class="grid gap-3 sm:grid-cols-3 lg:gap-5">
     <article class="delivery-card p-5 lg:p-6">
@@ -62,6 +68,7 @@
   .delivery-hero-card {
     border-color: rgba($green, 0.3);
     background: linear-gradient(135deg, rgba($green, 0.06), rgba($yellow, 0.08));
+    padding: 0;
     &::after {
       content: '';
       position: absolute;
@@ -71,13 +78,26 @@
       height: 12.5rem;
       background: rgba($green, 0.15);
       filter: blur(3.75rem);
+      z-index: 0;
     }
-    h1,
-    p,
-    button,
-    .delivery-eyebrow {
-      position: relative;
-      z-index: 1;
+  }
+  .delivery-banner {
+    border-radius: 1.375rem 1.375rem 0 0;
+    overflow: hidden;
+    img {
+      width: 100%;
+      height: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      display: block;
+    }
+  }
+  .delivery-hero-content {
+    position: relative;
+    z-index: 1;
+    padding: 1.25rem 1.25rem 1.5rem;
+    @media (min-width: 1024px) {
+      padding: 1.5rem 1.5rem 1.75rem;
     }
     h1 {
       max-width: 48.75rem;
