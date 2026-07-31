@@ -78,7 +78,9 @@
       body: JSON.stringify({ items, total_price: total })
     });
     if (!response.ok) throw new Error('Cart export create failed');
-    return await response.json();
+    const result = await response.json();
+    // Сервер пересчитывает цены из БД — используем их для PDF
+    return result;
   };
   const getItemLink = (item: any) => {
     if (item?.url) return item.url;
@@ -153,6 +155,8 @@
     try {
       const cartExport = await createCartExport();
       const exportNumber = cartExport.export_number ?? cartExport.id;
+      // Серверные цены из БД — гарантия совпадения КП и PDF
+      const pdfItems = (cartExport.items ?? $cart) as any[];
       const [{ default: jsPDF }, autoTableModule, logoDataUrl, notoRegular, notoBold, itemImages] =
         await Promise.all([
           import('jspdf'),
@@ -161,7 +165,7 @@
           loadFontBase64(notoRegularUrl),
           loadFontBase64(notoBoldUrl),
           Promise.all(
-            $cart.map((item) => (item.image ? loadRemoteImage(item.image) : Promise.resolve(null)))
+            pdfItems.map((item) => (item.image ? loadRemoteImage(item.image) : Promise.resolve(null)))
           )
         ]);
       const autoTable = autoTableModule.default;
@@ -190,7 +194,7 @@
       autoTable(doc, {
         startY: 176,
         head: [['Название', 'Фото', 'Старая цена', 'Новая цена', 'Ссылка/Описание']],
-        body: $cart.map((item: any) => {
+        body: pdfItems.map((item: any) => {
           const description = getItemDescription(item) || 'Описание отсутствует';
           return [
             splitText(item.name, 22),
@@ -251,7 +255,7 @@
             } catch {}
           }
           if (data.section === 'body' && data.column.index === 4) {
-            const item = $cart[data.row.index];
+            const item = pdfItems[data.row.index];
             if (!item) return;
             const url = getItemLink(item);
             if (!url) return;
@@ -279,14 +283,14 @@
       autoTable(doc, {
         startY: totalStartY,
         head: [['№', 'Товар', 'Кол-во', 'Цена', 'Сумма']],
-        body: $cart.map((item, index) => [
+        body: pdfItems.map((item, index) => [
           String(index + 1),
           item.name,
           String(item.qty),
           `${formatPrice(item.price)} ₽`,
           `${formatPrice(item.price * item.qty)} ₽`
         ]),
-        foot: [['', '', '', 'Итого', `${formatPrice(total)} ₽`]],
+        foot: [['', '', '', 'Итого', `${formatPrice(cartExport.total_price ?? total)} ₽`]],
         showFoot: 'lastPage',
         theme: 'grid',
         margin: { left: 40, right: 40, bottom: 70 },

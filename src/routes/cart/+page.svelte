@@ -139,6 +139,10 @@
             </div>
           </div>
         {/each}
+        <button class="clear-cart" on:click={() => cart.clear()}>
+          <Trash size={14} strokeWidth={2.5} />
+          Очистить корзину
+        </button>
         {#if hasDiscount}
           <div class="cart-promo">
             <img class="cart-promo__img" src={cartSaleImage} alt="Скидка на оформление заказа" />
@@ -184,12 +188,12 @@
             />
           </div>
           <div class="actions">
-            <button class="btn primary" on:click={submit}>Перейти к оплате</button>
+            <button class="btn primary" on:click={submit}>Узнать больше</button>
           </div>
         </div>
         <div class="installment-banner mt-3">
           <div class="text gap-4">
-            <h3>Вы можете приобрести товары в рассрочку</h3>
+            <h3>Вы можете приобрести товары в рассрочку на 0-0-12 без %</h3>
             <button
               class="btn secondary"
               on:click|stopPropagation={() =>
@@ -375,6 +379,26 @@
           border: 1px solid rgba(255, 0, 0, 0.5);
           background: rgba(255, 0, 0, 0.05);
         }
+      }
+    }
+    .clear-cart {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      padding: 8px 16px;
+      border: 1px solid rgba(255, 0, 0, 0.2);
+      border-radius: 10px;
+      background: transparent;
+      color: rgba(255, 0, 0, 0.6);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s ease;
+      &:hover {
+        border-color: rgba(255, 0, 0, 0.4);
+        background: rgba(255, 0, 0, 0.04);
+        color: rgba(255, 0, 0, 0.8);
       }
     }
     .checkout {
