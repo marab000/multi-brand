@@ -3,6 +3,8 @@
   import AuthModal from '$lib/components/AuthModal.svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import logo1 from '$lib/assets/logo1.png';
+  import tgIcon from '$lib/assets/social/tg.svg';
+  import maxIcon from '$lib/assets/social/max.svg';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
   import { derived } from 'svelte/store';
@@ -24,7 +26,7 @@
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
-  import { SITE_PHONE, SITE_PHONE_HREF } from '$lib/config/site';
+  import { SITE_PHONE, SITE_PHONE_HREF, LINK_TG, LINK_MAX } from '$lib/config/site';
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
     slug: string;
@@ -202,18 +204,28 @@
       <a class="nav__logo flex h-9 w-20 shrink-0" href="/"
         ><img class="object-contain" src={logo1} alt="logo" /></a
       >
-      <a
-        class="nav__phone whitespace-nowrap"
-        href={'tel:' + phoneHref}
-        aria-label={`Позвонить ${phoneNumber}`}
-        ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
-      >
+      <div class="nav__contact">
+        <div class="nav__social">
+          <a href={LINK_TG} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
+            ><img src={tgIcon} alt="Telegram" width="22" height="22" /></a
+          >
+          <a href={LINK_MAX} target="_blank" rel="noopener noreferrer" aria-label="Макс"
+            ><img src={maxIcon} alt="Макс" width="22" height="22" /></a
+          >
+        </div>
+        <a
+          class="nav__phone whitespace-nowrap"
+          href={'tel:' + phoneHref}
+          aria-label={`Позвонить ${phoneNumber}`}
+          ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
+        >
+      </div>
     </div>
     <div
       class="nav__top-links flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-1.5 py-0 md:ml-auto md:w-auto md:flex-nowrap md:gap-5 md:py-3"
     >
       <a class="nav__about flex gap-x-1.5" href="/delivery"
-        ><Truck size={16} strokeWidth={2.1} />Доставка</a
+        ><Truck size={16} strokeWidth={2.1} />Доставка по Казани и РТ</a
       >
       <button
         class="nav__about nav__about-button flex gap-x-1.5"
@@ -224,12 +236,22 @@
       <a class="nav__about flex gap-x-1.5" href="/about"
         ><Building2 size={16} strokeWidth={2.1} />О компании</a
       >
-      <a
-        class="nav__phone hidden! whitespace-nowrap md:inline-flex!"
-        href={'tel:' + phoneHref}
-        aria-label={`Позвонить ${phoneNumber}`}
-        ><Phone size={18} strokeWidth={2.1} /><span>{phoneNumber}</span></a
-      >
+      <div class="nav__contact !hidden md:!flex">
+        <div class="nav__social">
+          <a href={LINK_TG} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
+            ><img src={tgIcon} alt="Telegram" width="20" height="20" /></a
+          >
+          <a href={LINK_MAX} target="_blank" rel="noopener noreferrer" aria-label="Макс"
+            ><img src={maxIcon} alt="Макс" width="20" height="20" /></a
+          >
+        </div>
+        <a
+          class="nav__phone hidden! whitespace-nowrap md:inline-flex!"
+          href={'tel:' + phoneHref}
+          aria-label={`Позвонить ${phoneNumber}`}
+          ><Phone size={18} strokeWidth={2.1} /><span>{phoneNumber}</span></a
+        >
+      </div>
     </div>
   </div>
   <div class="nav__inner h-20 lg:h-25">
@@ -432,7 +454,7 @@
         color: $green;
       }
       @media (min-width: 768px) {
-        gap: 10px;
+        gap: 6px;
         font-size: 1.05rem;
         font-weight: 700;
       }
@@ -815,6 +837,34 @@
     .nav {
       &__about {
         font-size: 11px;
+      }
+    }
+  }
+  .nav__contact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav__social {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      overflow: hidden;
+      transition: transform 0.15s ease;
+      &:hover {
+        transform: scale(1.1);
+      }
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
     }
   }
