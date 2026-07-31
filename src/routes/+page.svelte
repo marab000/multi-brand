@@ -1,6 +1,7 @@
 <script lang="ts">
   import { BadgePercent, Warehouse, ConciergeBell, Sparkles, ArrowRight, Wind } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
+  import VideoSection from '$lib/components/VideoSection.svelte';
   import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
   import dw from '$lib/assets/links/dw.webp';
@@ -42,19 +43,39 @@
   const mobileImages = Object.values(mobileModules).sort(sortFn) as string[];
   const features = [
     {
-      title: 'Рассрочка 0% на 12 месяцев',
-      text: 'Без переплат и скрытых комиссий. Техника в проект сегодня оплата частями. Оформляем онлайн за 5 минут.',
+      title: 'Оформим честную рассрочку на 12 месяцев без процентов, переплат и скрытых комиссий всего за 5 минут',
+      pointsTitle: 'Как это работает?',
+      points: [
+        'Техника сразу: забираете оборудование сейчас, а первый платеж — только через месяц.',
+        'Без переплат: общая сумма просто делится на 12 равных частей.',
+        'Все онлайн: никуда ехать не нужно, оформление происходит удаленно.'
+      ],
       icon: BadgePercent
     },
     {
-      title: 'Бесплатное хранение',
-      text: 'Ваш заказ хранится на нашем складе 1600 м² без оплаты, пока не потребуется доставка на объект. Удобно, если ремонт затягивается.',
-      icon: Warehouse
+      title: 'Ваш персональный менеджер 24/7',
+      pointsTitle: 'Почему это удобно для вас',
+      points: [
+        'Экономия времени: вам не нужно часами искать модели на разных сайтах — мы всё сделаем сами.',
+        'Строго в бюджет: подбираем технику под ваши финансовые рамки без переплат.',
+        'Точно в срок: учитываем даты поставки, чтобы ваш проект запустился вовремя.',
+        'Любые бренды: соберём комплект из оборудования разных марок в одном месте.',
+        'Один контакт: вы общаетесь только с одним человеком, который решает все вопросы.'
+      ],
+      icon: ConciergeBell
     },
     {
-      title: 'Личный менеджер подберет всё под ключ',
-      text: 'Вы отправляете список мы подбираем технику по брендам, бюджету и срокам. Экономим ваши часы.',
-      icon: ConciergeBell
+      title: 'Ваш личный склад бесплатно: храним технику, пока идёт ремонт!',
+      text: 'Закажите оборудование сейчас по выгодной цене, а мы бесплатно сохраним его на нашем охраняемом складе площадью 1600 м². Привезем технику на объект ровно к тому моменту, когда она вам понадобится.',
+      pointsTitle: 'Почему это выгодно и удобно',
+      points: [
+        'Защита от задержек: ремонт затягивается — техника бесплатно ждет вас на складе.',
+        'Фиксация цены: покупайте выгодно сегодня, не боясь подорожания к концу ремонта.',
+        'Свободное место: вам не придется захламлять квартиру или объект коробками.',
+        'Безопасность: гарантируем полную сохранность оборудования на охраняемом складе.',
+        'Доставка вовремя: привезем весь заказ в один день по первому вашему звонку.'
+      ],
+      icon: Warehouse
     }
   ];
   const categories = [
@@ -132,6 +153,14 @@
   ];
 </script>
 
+<svelte:head>
+  <title>Мультибренд Казань — интернет-магазин бытовой техники</title>
+  <meta
+    name="description"
+    content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
+  />
+</svelte:head>
+
 <section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
   <div class="block lg:hidden">
     <Slider imgPaths={mobileImages} />
@@ -141,7 +170,10 @@
   </div>
 </section>
 
+<VideoSection />
+
 <section class="mx-auto">
+  <h2 class="section-title">Преимущества</h2>
   <div class="features-grid">
     {#each features as f}
       <div class="feature-card">
@@ -150,7 +182,15 @@
         </div>
         <div class="feature-card__content">
           <h3>{f.title}</h3>
-          <p>{f.text}</p>
+          {#if f.text}<p>{f.text}</p>{/if}
+          {#if f.points}
+            {#if f.pointsTitle}<h4>{f.pointsTitle}</h4>{/if}
+            <ul>
+              {#each f.points as point}
+                <li>{point}</li>
+              {/each}
+            </ul>
+          {/if}
         </div>
       </div>
     {/each}
@@ -270,8 +310,33 @@
   <BrandsGrid />
 </section>
 
-<section class="mx-auto"> 
+<section class="mx-auto">
 	<ReviewsSection />
+</section>
+
+<section class="about-seo mx-auto">
+  <div class="about-seo__inner">
+    <h2>Магазин бытовой техники «Мультибренд» в Казани</h2>
+    <p>
+      Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации кухни и дома современной бытовой техникой в Казани. Мы собрали в одном каталоге продукцию ведущих мировых производителей, чтобы вы могли легко подобрать технику под любой интерьер, кухонный проект или готовый дизайн.
+    </p>
+    <p>
+      В нашем ассортименте представлена как крупная, так и мелкая бытовая техника, встраиваемые духовые шкафы и варочные панели, современные кухонные вытяжки и климатические системы для создания идеального микроклимата.
+    </p>
+    <p>
+      Мы уделяем особое внимание деталям, поэтому у нас вы найдете большой выбор кухонных моек, смесителей, измельчителей пищевых отходов (диспоузеров) и оригинальных запчастей к ним. Также мы поставляем профессиональную технику для бизнеса.
+    </p>
+
+    <h3>Почему выбирают «Мультибренд»?</h3>
+    <ul>
+      <li><strong>Индивидуальный подбор:</strong> Поможем подобрать технику под ваши задачи. Подскажем по точным размерам, брендам, цветам, совместимости и комплектации.</li>
+      <li><strong>Шоурум в Казани:</strong> Вы можете оформить быструю доставку на сайте или посетить наш офлайн-магазин в Казани, чтобы вживую оценить качество товаров.</li>
+      <li><strong>Официальная гарантия:</strong> Работаем только с проверенными брендами и гарантируем высокое качество каждого прибора.</li>
+    </ul>
+    <p>
+      Оставьте заявку на сайте или свяжитесь с нами в Макс — эксперты «Мультибренд» помогут сделать вашу кухню функциональной, стильной и уютной!
+    </p>
+  </div>
 </section>
 
 
@@ -285,6 +350,10 @@
     font-weight: 800;
     line-height: 1.15;
     color: #111827;
+  }
+  .features-grid {
+    display: grid;
+    gap: 18px;
   }
   .features-grid {
     display: grid;
@@ -323,6 +392,35 @@
           font-size: 0.92rem;
           line-height: 1.45;
           color: #475569;
+        }
+        h4 {
+          margin: 12px 0 6px;
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: $green;
+        }
+        ul {
+          margin: 10px 0 0;
+          padding: 0;
+          list-style: none;
+          li {
+            position: relative;
+            padding-left: 18px;
+            margin-bottom: 7px;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            color: #475569;
+            &::before {
+              content: '';
+              position: absolute;
+              top: 7px;
+              left: 0;
+              width: 6px;
+              height: 6px;
+              border-radius: 50%;
+              background: $green;
+            }
+          }
         }
       }
     }
@@ -725,6 +823,57 @@
     }
     .promo-banner--ac .promo-cards {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .about-seo {
+    margin: 0 0 24px;
+    &__inner {
+      padding: 28px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 20px;
+      background: #fff;
+    }
+    h2 {
+      margin: 0 0 16px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #111827;
+    }
+    h3 {
+      margin: 24px 0 12px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #111827;
+    }
+    p {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #475569;
+    }
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      li {
+        position: relative;
+        padding-left: 22px;
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #475569;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 9px;
+          left: 0;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: $green;
+        }
+      }
     }
   }
 </style>

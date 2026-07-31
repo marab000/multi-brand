@@ -5,6 +5,7 @@
     author: string;
     date: string;
     source: '2ГИС' | 'Яндекс';
+    url: string;
     text: string;
   };
 
@@ -13,48 +14,56 @@
       author: 'Айнур Асатов',
       date: '21 апреля 2026',
       source: '2ГИС',
+      url: 'https://2gis.ru/reviews/70000001103891779/review/237493147',
       text: 'Купили у MultiBrand кухонную технику марки Kuppersberg. Ребята всё сами привезли и установили. Всем им спасибо. Все отлично, рекомендую 👍'
     },
     {
       author: 'Александр Макушкин',
       date: '2 марта 2026',
       source: 'Яндекс',
+      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=yzt619ttnmpr0m05x7uuqvee7r&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
       text: 'Заказывали телевизор Samsung 75”. Всё чётко в срок, помогли с выбором и доставкой прямо до дверей, так как это был принципиальный вопрос из-за больших габаритов. Рекомендую!'
     },
     {
       author: 'Ренат',
       date: '24 января 2026',
       source: '2ГИС',
+      url: 'https://2gis.ru/reviews/70000001103891779/review/214176851',
       text: 'Впервые обратился в магазин Мультибренд, когда понадобилась новая стиральная машина. Консультант Александр спокойно объяснил различия между моделями и помог подобрать лучший вариант. Доставили быстро, впечатления только положительные.'
-    },
-    {
-      author: 'Денис Солянкин',
-      date: '25 января 2026',
-      source: 'Яндекс',
-      text: 'Хочу выразить огромную благодарность компании Мультибренд за отличную организацию покупки. Помогли подобрать технику под бюджет, всё привезли вовремя, аккуратно подняли и занесли. Очень достойный сервис.'
-    },
-    {
-      author: 'Илья Буданов',
-      date: '24 января 2026',
-      source: '2ГИС',
-      text: 'Нам посоветовали этот магазин. Менеджер Максим буквально за час помог собрать полный комплект техники для новой кухни. Учли все пожелания и бюджет. Получилось очень удобно и выгодно.'
     },
     {
       author: 'Дмитрий Альбертович',
       date: '23 января 2026',
       source: 'Яндекс',
+      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=0k9f1304yj71j6zt6ukag21n94&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
       text: 'Заказывали большой холодильник и ни разу не пожалели. Было страшно покупать такую технику онлайн, но консультант подробно всё рассказал. Привезли аккуратно, всё проверили на месте.'
+    },
+    {
+      author: 'Денис Солянкин',
+      date: '25 января 2026',
+      source: '2ГИС',
+      url: 'https://2gis.ru/reviews/70000001103891779/review/214369071',
+      text: 'Хочу выразить огромную благодарность компании Мультибренд за отличную организацию покупки. Помогли подобрать технику под бюджет, всё привезли вовремя, аккуратно подняли и занесли. Очень достойный сервис.'
     },
     {
       author: 'Альберт Хабреев',
       date: '23 января 2026',
-      source: '2ГИС',
+      source: 'Яндекс',
+      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=c1jg4fxg5rdy94pbp33c9g70n4&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
       text: 'Ребята настоящие профессионалы. Они помогают подобрать оптимальный вариант по цене и качеству, а не просто продают самое дорогое. Отличная компания и отличный сервис.'
+    },
+    {
+      author: 'Илья Буданов',
+      date: '24 января 2026',
+      source: '2ГИС',
+      url: 'https://2gis.ru/reviews/70000001103891779/review/214072505',
+      text: 'Нам посоветовали этот магазин. Менеджер Максим буквально за час помог собрать полный комплект техники для новой кухни. Учли все пожелания и бюджет. Получилось очень удобно и выгодно.'
     },
     {
       author: 'Алмаз Милаев',
       date: '23 января 2026',
       source: 'Яндекс',
+      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=503bfz5kzv77nn4hhkmhk7tbn8&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
       text: 'Первый раз выбирал крупную бытовую технику и немного растерялся от количества моделей. Консультанты подробно всё объяснили, помогли определиться и подобрать именно то, что было нужно. Очень доволен покупкой.'
     }
   ];
@@ -79,19 +88,27 @@
   <div class="reviews-grid">
     {#each reviews as review, index}
       <article class="review-card">
-        <div class="review-card__top">
-          <div class="review-card__avatar">
-            {review.author.slice(0, 1)}
-          </div>
+        <a
+          href={review.url}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          class="review-card__link"
+          aria-label={`Отзыв ${review.author} — ${review.source}`}
+        >
+          <div class="review-card__top">
+            <div class="review-card__avatar">
+              {review.author.slice(0, 1)}
+            </div>
 
-          <div class="review-card__info">
-            <strong>{review.author}</strong>
-            <div class="review-card__meta">
-              <span>{review.date}</span>
-              <span class="review-source">{review.source}</span>
+            <div class="review-card__info">
+              <strong>{review.author}</strong>
+              <div class="review-card__meta">
+                <span>{review.date}</span>
+                <span class="review-source">{review.source}</span>
+              </div>
             </div>
           </div>
-        </div>
+        </a>
 
         <div class="review-card__stars">
           {#each Array(5) as _}
@@ -169,6 +186,12 @@
     border-radius: 16px;
     background: #fff;
     scroll-snap-align: start;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: rgba($green, 0.4);
+      box-shadow: 0 8px 22px rgba($green, 0.08);
+    }
 
     p {
       margin: 10px 0 0;
@@ -176,6 +199,11 @@
       line-height: 1.45;
       color: #334155;
     }
+  }
+
+  .review-card__link {
+    text-decoration: none;
+    color: inherit;
   }
 
   .review-card__top {

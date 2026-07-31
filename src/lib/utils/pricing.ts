@@ -2,7 +2,7 @@ import type { Product } from '$lib/types/product';
 export const DISCOUNT_PERCENT = 0;
 export const INSTALLMENT_MONTHS = 12;
 export const IS_KIT_DISCOUNT = true;
-export const CART_DISCOUNT_PERCENT = 15;
+export const CART_DISCOUNT_PERCENT = 10;
 const EXCLUDED_BRANDS = ['asko', 'omoikiri', 'franke'];
 const normalizeBrand = (brand?: string | null) =>
   String(brand ?? '')

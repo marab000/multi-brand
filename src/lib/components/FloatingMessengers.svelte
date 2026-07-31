@@ -1,6 +1,5 @@
 <script lang="ts">
   import { fly } from 'svelte/transition';
-  import { MessageCircle } from 'lucide-svelte';
   import { LINK_MAX, LINK_TG } from '$lib/config/site';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
@@ -68,7 +67,7 @@
     onclick={toggle}
     aria-label={open ? 'Закрыть мессенджеры' : 'Открыть мессенджеры'}
   >
-    <MessageCircle size={22} strokeWidth={2.2} />
+    <img src={maxIcon} alt="" />
   </button>
 </div>
 
@@ -192,35 +191,36 @@
 
     border: 0;
     border-radius: 999px;
+    overflow: hidden;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    background: linear-gradient(
-      180deg,
-      $green-light 0%,
-      color.scale($green, $lightness: -12%) 100%
-    );
-
-    color: #fff;
+    background: #fff;
 
     cursor: pointer;
 
     box-shadow:
-      0 14px 34px rgba($green, 0.34),
+      0 14px 34px rgba(0, 0, 0, 0.18),
       0 4px 12px rgba(0, 0, 0, 0.12);
 
     transition:
       transform 0.18s ease,
-      box-shadow 0.18s ease,
-      background 0.18s ease;
+      box-shadow 0.18s ease;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
 
     &:hover {
       transform: translateY(-2px) scale(1.03);
 
       box-shadow:
-        0 18px 38px rgba($green, 0.42),
+        0 18px 38px rgba(0, 0, 0, 0.22),
         0 6px 14px rgba(0, 0, 0, 0.14);
     }
 
