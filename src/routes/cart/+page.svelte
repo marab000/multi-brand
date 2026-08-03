@@ -4,24 +4,24 @@
   import { onMount } from 'svelte';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
-  import { applyCartDiscount, CART_DISCOUNT_PERCENT, isDiscountExcludedBrand } from '$lib/utils/pricing';
+  import { applyCartDiscount, isDiscountExcludedBrand } from '$lib/utils/pricing';
   import { apiFetch } from '$lib/api';
   import { toast } from 'svelte-sonner';
   import Modal from '$lib/components/Modal.svelte';
   import CartPdfExport from '$lib/components/CartPdfExport.svelte';
-  import { Menu, Minus, Plus, Trash, BadgePercent, ArrowRight } from 'lucide-svelte';
+  import { Menu, Minus, Plus, Trash, BadgePercent, ArrowRight, Truck, CreditCard, Wallet, Banknote, QrCode, Smartphone, ChevronDown } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   import cartEmptyImage from '$lib/assets/cart-empty.webp';
-  import cartSaleImage from '$lib/assets/cart-sale.webp';
   import { openOtp } from '$lib/utils/otp';
-  export let data: PageData;
+  let { data } = $props<{ data: PageData }>();
   let nameInput: HTMLInputElement;
   let phoneInput: HTMLInputElement;
   let name = data.user?.full_name ?? '';
   let phone = getPhoneLocalDigits(data.user?.phone);
+  const cartDiscountPercent = data.cartDiscountPercent ?? 0;
+  const excludedBrands = data.excludedBrands ?? [];
   let showModal = false;
-  let total = 0;
   const reachGoal = (goal: string) => {
     if (typeof window === 'undefined') return;
     window.ym?.(108518016, 'reachGoal', goal);
@@ -71,12 +71,16 @@
   };
   // Скидка применяется только к товарам, чей бренд не в списке исключений (защищённый ассортимент)
   const itemDiscountedPrice = (i: { price: number; qty: number; brand?: string | null; protected?: boolean }) =>
-    isDiscountExcludedBrand(i.brand, i.protected) ? i.price : applyCartDiscount(i.price);
-  $: total = $cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  $: totalWithDiscount = $cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0);
-  $: savings = total - totalWithDiscount;
-  $: hasDiscount = savings > 0;
+    isDiscountExcludedBrand(i.brand, i.protected, excludedBrands) ? i.price : applyCartDiscount(i.price, cartDiscountPercent);
+  const total = $derived($cart.reduce((sum, i) => sum + i.price * i.qty, 0));
+  const totalWithDiscount = $derived($cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0));
+  const savings = $derived(total - totalWithDiscount);
+  const hasDiscount = $derived(savings > 0);
   const closeModal = () => (showModal = false);
+  let openAccordion = $state<string | null>('installment');
+  const toggleAccordion = (id: string) => {
+    openAccordion = openAccordion === id ? null : id;
+  };
   onMount(() => {
     cart.sync();
   });
@@ -115,16 +119,16 @@
             </div>
             <div class="item-actions">
               <div class="qty">
-                <button on:click={() => cart.dec(item.id)}
+                <button onclick={() => cart.dec(item.id)}
                   ><Minus size="14" strokeWidth="2.5" /></button
                 >
                 <span>{item.qty}</span>
-                <button on:click={() => cart.inc(item.id)}
+                <button onclick={() => cart.inc(item.id)}
                   ><Plus size="14" strokeWidth="2.5" /></button
                 >
               </div>
               <div class="sum-wrap">
-                {#if !isDiscountExcludedBrand(item.brand, item.protected)}
+                {#if !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
                   <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
                   <p class="discount-sum sum">
                     {formatPrice(itemDiscountedPrice(item) * item.qty)} ₽
@@ -133,40 +137,41 @@
                   <p class="sum">{formatPrice(item.price * item.qty)} ₽</p>
                 {/if}
               </div>
-              <button class="remove" on:click={() => cart.remove(item.id)}
+              <button class="remove" onclick={() => cart.remove(item.id)}
                 ><Trash size="14" strokeWidth="2.5" /></button
               >
             </div>
           </div>
         {/each}
-        <button class="clear-cart" on:click={() => cart.clear()}>
-          <Trash size={14} strokeWidth={2.5} />
-          Очистить корзину
-        </button>
         {#if hasDiscount}
           <div class="cart-promo">
-            <img class="cart-promo__img" src={cartSaleImage} alt="Скидка на оформление заказа" />
-            <div class="cart-promo__body">
-              <div class="cart-promo__head">
-                <BadgePercent size={20} strokeWidth={2.2} />
-                <span>Скидка {CART_DISCOUNT_PERCENT}% при оформлении сейчас</span>
-              </div>
-              <div class="cart-promo__prices">
-                <span class="old-sum">{formatPrice(total)} ₽</span>
-                <ArrowRight size={18} strokeWidth={2.5} />
-                <span class="cart-promo__new">{formatPrice(totalWithDiscount)} ₽</span>
-              </div>
-              <p class="cart-promo__save">Ваша выгода: {formatPrice(savings)} ₽</p>
-              <button class="btn primary cart-promo__btn" on:click={submit}>
-                Оформить заказ
-                <ArrowRight size={18} strokeWidth={2.5} />
-              </button>
+            <div class="cart-promo__badge">
+              <BadgePercent size={16} strokeWidth={2.4} />
+              <span>Скидка {cartDiscountPercent}%</span>
             </div>
+            <div class="cart-promo__title">Оформи заказ сейчас</div>
+            <div class="cart-promo__prices">
+              <span class="old-sum">{formatPrice(total)} ₽</span>
+              <ArrowRight size={18} strokeWidth={2.5} />
+              <span class="cart-promo__new">{formatPrice(totalWithDiscount)} ₽</span>
+            </div>
+            <div class="cart-promo__save-row">
+              <span class="cart-promo__save">Ваша выгода</span>
+              <span class="cart-promo__save-value">{formatPrice(savings)} ₽</span>
+            </div>
+            <button class="btn primary cart-promo__btn" onclick={submit}>
+              Оформить заказ
+              <ArrowRight size={18} strokeWidth={2.5} />
+            </button>
           </div>
         {/if}
       </div>
-      <div>
-        <div class="checkout">
+      <div class="sidebar">
+        <div class="sidebar-card checkout">
+          <div class="sidebar-card__head-static">
+            <span class="sidebar-card__icon"><BadgePercent size={18} strokeWidth={2.2} /></span>
+            <span class="sidebar-card__title">Оформление</span>
+          </div>
           <div class="total">
             <span>Итого:</span>
             <div class="total-prices">
@@ -188,26 +193,77 @@
             />
           </div>
           <div class="actions">
-            <button class="btn primary" on:click={submit}>Узнать больше</button>
+            <button class="btn primary" onclick={submit}>Узнать больше</button>
           </div>
         </div>
-        <div class="installment-banner mt-3">
-          <div class="text gap-4">
-            <h3>Вы можете приобрести товары в рассрочку на 0-0-12 без %</h3>
-            <button
-              class="btn secondary"
-              on:click|stopPropagation={() =>
-                openOtp({
-                  cart: $cart.map((i) => ({
-                    name: i.name,
-                    price: i.price,
-                    quantity: i.qty
-                  }))
-                })}>Оформить заявку</button
-            >
-          </div>
+
+        <div class="sidebar-card accordion">
+          <button class="sidebar-card__head" onclick={() => toggleAccordion('delivery')}>
+            <span class="sidebar-card__head-left">
+              <span class="sidebar-card__icon"><Truck size={18} strokeWidth={2.2} /></span>
+              <span class="sidebar-card__title">Доставка</span>
+            </span>
+            <ChevronDown size={18} strokeWidth={2.2} class={'chevron' + (openAccordion === 'delivery' ? ' chevron--open' : '')} />
+          </button>
+          {#if openAccordion === 'delivery'}
+            <div class="accordion-body">
+              <p class="sidebar-card__text">Бесплатная доставка по Казани и РТ. После оформления заказа менеджер свяжется с вами и согласует удобное время.</p>
+            </div>
+          {/if}
         </div>
+
+        <div class="sidebar-card accordion">
+          <button class="sidebar-card__head" onclick={() => toggleAccordion('payment')}>
+            <span class="sidebar-card__head-left">
+              <span class="sidebar-card__icon"><Wallet size={18} strokeWidth={2.2} /></span>
+              <span class="sidebar-card__title">Оплата</span>
+            </span>
+            <ChevronDown size={18} strokeWidth={2.2} class={'chevron' + (openAccordion === 'payment' ? ' chevron--open' : '')} />
+          </button>
+          {#if openAccordion === 'payment'}
+            <div class="accordion-body">
+              <div class="payment-icons">
+                <div class="payment-icon" title="Оплата по QR"><QrCode size={22} strokeWidth={1.8} /></div>
+                <div class="payment-icon" title="Терминал"><Smartphone size={22} strokeWidth={1.8} /></div>
+                <div class="payment-icon" title="Картой"><CreditCard size={22} strokeWidth={1.8} /></div>
+                <div class="payment-icon" title="Наличные"><Banknote size={22} strokeWidth={1.8} /></div>
+              </div>
+            </div>
+          {/if}
+        </div>
+
+        <div class="sidebar-card accordion">
+          <button class="sidebar-card__head" onclick={() => toggleAccordion('installment')}>
+            <span class="sidebar-card__head-left">
+              <span class="sidebar-card__icon"><BadgePercent size={18} strokeWidth={2.2} /></span>
+              <span class="sidebar-card__title">Рассрочка 0-0-12</span>
+            </span>
+            <ChevronDown size={18} strokeWidth={2.2} class={'chevron' + (openAccordion === 'installment' ? ' chevron--open' : '')} />
+          </button>
+          {#if openAccordion === 'installment'}
+            <div class="accordion-body">
+              <p class="sidebar-card__text">Без переплат и скрытых комиссий на 12 месяцев. Техника сразу, первый платёж через месяц.</p>
+              <button
+                class="btn secondary mt-2"
+                onclick={(e) => { e.stopPropagation();
+                  openOtp({
+                    cart: $cart.map((i) => ({
+                      name: i.name,
+                      price: i.price,
+                      quantity: i.qty
+                    }))
+                  }); }}>Оформить заявку</button
+              >
+            </div>
+          {/if}
+        </div>
+
         <CartPdfExport {total} />
+
+        <button class="clear-cart" onclick={() => cart.clear()}>
+          <Trash size={15} strokeWidth={2.4} />
+          Очистить корзину
+        </button>
       </div>
     </div>
   {/if}
@@ -216,7 +272,7 @@
 <Modal
   open={showModal}
   text="Мы получили ваш заказ! Скоро свяжемся с вами, чтобы уточнить детали."
-  on:close={closeModal}
+  onClose={closeModal}
 />
 
 <style lang="scss">
@@ -382,34 +438,112 @@
       }
     }
     .clear-cart {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 6px;
-      align-self: flex-start;
-      padding: 8px 16px;
-      border: 1px solid rgba(255, 0, 0, 0.2);
-      border-radius: 10px;
-      background: transparent;
-      color: rgba(255, 0, 0, 0.6);
-      font-size: 13px;
-      font-weight: 600;
+      justify-content: center;
+      gap: 8px;
+      height: 44px;
+      border: 1.5px solid rgba(255, 0, 0, 0.25);
+      border-radius: 12px;
+      background: #fff;
+      color: rgba(255, 0, 0, 0.7);
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
       transition: 0.15s ease;
       &:hover {
-        border-color: rgba(255, 0, 0, 0.4);
-        background: rgba(255, 0, 0, 0.04);
-        color: rgba(255, 0, 0, 0.8);
+        border-color: rgba(255, 0, 0, 0.5);
+        background: rgba(255, 0, 0, 0.05);
+        color: #e31b23;
       }
     }
-    .checkout {
+    .sidebar {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin-bottom: auto;
+    }
+    .sidebar-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
       padding: 16px;
       border: 1px solid #eee;
       border-radius: 12px;
       background: #fff;
+    }
+    .sidebar-card__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+    .sidebar-card__head-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .accordion-body {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    :global(.chevron) {
+      color: #94a3b8;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+    :global(.chevron--open) {
+      transform: rotate(180deg);
+    }
+    .sidebar-card__head-static {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-card__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba($green, 0.08);
+      color: $green;
+      flex-shrink: 0;
+    }
+    .sidebar-card__title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #111827;
+    }
+    .sidebar-card__text {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: #667085;
+    }
+    .payment-icons {
+      display: flex;
+      gap: 8px;
+    }
+    .payment-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: #f8f9fa;
+      color: #64748b;
+    }
+    .checkout {
       .total {
         display: flex;
         justify-content: space-between;
@@ -431,51 +565,35 @@
         gap: 10px;
       }
     }
-    .installment-banner {
-      padding: 16px;
-      border-radius: 12px;
-      border: 1px solid rgba($yellow, 0.5);
-      .text {
-        display: flex;
-        flex-direction: column;
-        h3 {
-          font-size: 16px;
-          font-weight: 700;
-          margin: 0;
-        }
-      }
-    }
     .cart-promo {
-      display: grid;
-      grid-template-columns: 7fr 3fr;
-      overflow: hidden;
-      border-radius: 16px;
-      border: 1px solid rgba($green, 0.3);
-      background: linear-gradient(135deg, rgba($green, 0.08), rgba($green, 0.02));
-    }
-    .cart-promo__img {
-      width: 100%;
-      height: 100%;
-      min-height: 240px;
-      object-fit: cover;
-      object-position: center;
-    }
-    .cart-promo__body {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
-      justify-content: center;
-      gap: 12px;
-      padding: 24px 26px;
+      gap: 10px;
+      padding: 20px;
+      border-radius: 14px;
+      border: 2px solid rgba($green, 0.4);
+      background: linear-gradient(135deg, rgba($green, 0.1), rgba($green, 0.03));
+      box-shadow: 0 4px 16px rgba($green, 0.08);
     }
-    .cart-promo__head {
+    .cart-promo__badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 17px;
+      gap: 5px;
+      align-self: flex-start;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: $green;
+      color: #fff;
+      font-size: 12px;
       font-weight: 800;
-      color: $green;
-      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .cart-promo__title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #111827;
+      line-height: 1.2;
     }
     .cart-promo__prices {
       display: flex;
@@ -487,26 +605,37 @@
         white-space: nowrap;
       }
       .cart-promo__new {
-        font-size: 30px;
+        font-size: 28px;
         font-weight: 800;
         color: #e31b23;
         line-height: 1;
         letter-spacing: -0.02em;
       }
     }
+    .cart-promo__save-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba($green, 0.08);
+    }
     .cart-promo__save {
-      margin: 0;
-      font-size: 14px;
-      font-weight: 500;
-      color: #667085;
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .cart-promo__save-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: $green;
     }
     .cart-promo__btn {
-      display: inline-flex;
+      display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      margin-top: 4px;
       height: 48px;
-      padding: 0 22px;
       font-size: 15px;
       font-weight: 700;
       border-radius: 12px;

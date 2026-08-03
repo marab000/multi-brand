@@ -2,8 +2,8 @@ import type { Product } from '$lib/types/product';
 export const DISCOUNT_PERCENT = 0;
 export const INSTALLMENT_MONTHS = 12;
 export const IS_KIT_DISCOUNT = true;
-export const CART_DISCOUNT_PERCENT = 10;
-const EXCLUDED_BRANDS = ['asko', 'omoikiri', 'franke'];
+export const DEFAULT_CART_DISCOUNT_PERCENT = 15;
+export const DEFAULT_EXCLUDED_BRANDS = ['asko', 'omoikiri', 'franke'];
 const normalizeBrand = (brand?: string | null) =>
   String(brand ?? '')
     .trim()
@@ -19,7 +19,11 @@ type BrandLike =
   | null
   | undefined
   | { name?: string | null; api?: string | null; protected?: boolean };
-export function isDiscountExcludedBrand(brand?: BrandLike, protectedFlag?: boolean) {
+export function isDiscountExcludedBrand(
+  brand?: BrandLike,
+  protectedFlag?: boolean,
+  excludedBrands?: string[]
+) {
   if (protectedFlag) return true;
   if (!brand) return false;
   // Поддерживаем как строку (CartItem.brand), так и объект бренда с полями name/api/protected
@@ -28,7 +32,8 @@ export function isDiscountExcludedBrand(brand?: BrandLike, protectedFlag?: boole
   const api = typeof brand === 'string' ? '' : brand.api;
   const normalized = normalizeBrand(name);
   const normalizedApi = normalizeBrand(api);
-  if (EXCLUDED_BRANDS.includes(normalized)) return true;
+  const excludedList = excludedBrands ?? DEFAULT_EXCLUDED_BRANDS;
+  if (excludedList.map((b) => b.toLowerCase()).includes(normalized)) return true;
   // Тетрасис помечает защищённый ассортимент: «Midea защищенный ассортимент» и т.п.
   // Метка может быть в name (старые записи) или в api (оригинальное название из тетрасиса)
   if (/защищен|защищён/.test(normalized)) return true;
@@ -60,10 +65,11 @@ export function getMonthlyPayment(price: number | string | null | undefined) {
   if (!value || !Number.isFinite(value)) return 0;
   return value / INSTALLMENT_MONTHS;
 }
-export function applyCartDiscount(price: number | string | null | undefined) {
+export function applyCartDiscount(price: number | string | null | undefined, percent = DEFAULT_CART_DISCOUNT_PERCENT) {
   const value = Number(price);
   if (!value || !Number.isFinite(value)) return 0;
-  return value * (1 - CART_DISCOUNT_PERCENT / 100);
+  if (!percent || percent <= 0) return value;
+  return value * (1 - percent / 100);
 }
 export function getProductPrice(
   product: Pick<Product, 'price_rrc' | 'price_ric' | 'brand' | 'external_id' | 'raw'>
