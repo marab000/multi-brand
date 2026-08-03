@@ -13,6 +13,8 @@
       <nav>
         <a href="/admin/orders" class={$activePath === '/admin/orders' ? 'active' : ''}>Заказы</a>
         <a href="/admin/cart-exports" class={$activePath.startsWith('/admin/cart-exports') ? 'active' : ''}>Корзины (PDF)</a>
+        <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''}>Слайдер</a>
+        <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''}>Скидка</a>
         <a class="logout" href="/admin/logout">Выйти</a>
       </nav>
     </aside>
@@ -27,7 +29,7 @@
 <style lang="scss">
   .admin {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
     background: #fafafa;
   }
   .sidebar {
@@ -78,6 +80,6 @@
   .content {
     flex: 1;
     padding: 25px;
-    overflow: auto;
+    overflow-y: visible;
   }
 </style>

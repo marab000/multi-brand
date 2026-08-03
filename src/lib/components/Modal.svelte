@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   export let open = false;
   export let text = '';
   export let buttonText = 'Понятно';
-  const dispatch = createEventDispatcher();
-  const close = () => dispatch('close');
+  export let onClose: (() => void) | undefined = undefined;
+  const close = () => onClose?.();
 </script>
 
 {#if open}

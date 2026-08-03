@@ -2,6 +2,7 @@
   import ProductSearch from '$lib/components/ProductSearch.svelte';
   import AuthModal from '$lib/components/AuthModal.svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
+  import CityDetector from '$lib/components/CityDetector.svelte';
   import logo1 from '$lib/assets/logo1.png';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
@@ -22,7 +23,8 @@
     Phone,
     Truck,
     MessageCircleMore,
-    Building2
+    Building2,
+    Clock
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
@@ -197,6 +199,14 @@
 </script>
 
 <nav class="nav container mx-auto px-3 sm:px-4">
+  <div class="nav__info-bar">
+    <span class="nav__info-bar-item"
+      ><Clock size={14} strokeWidth={2.2} />Ежедневно с 09:00 до 21:00</span
+    >
+    <div class="nav__info-bar-right">
+      <CityDetector />
+    </div>
+  </div>
   <div
     class="nav__top flex min-h-15 flex-col gap-1.5 border-b border-black/5 py-2 md:min-h-11 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0"
   >
@@ -411,6 +421,30 @@
 <style lang="scss">
   .nav {
     background: #fff;
+
+    &__info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #f1f1f1;
+    }
+    &__info-bar-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #64748b;
+      :global(svg) {
+        color: $green;
+      }
+    }
+    &__info-bar-right {
+      display: flex;
+      align-items: center;
+    }
+
     &__about {
       align-items: center;
       color: #202020;
