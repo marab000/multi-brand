@@ -24,23 +24,10 @@
   import acInvertor from '$lib/assets/promo/ac-invertor.webp';
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
   const kitColor = '#3e6f4f';
-  const desktopModules = import.meta.glob('$lib/assets/main_slider/desktop/*.{jpg,jpeg,png,webp}', {
-    eager: true,
-    import: 'default'
-  });
-  const mobileModules = import.meta.glob('$lib/assets/main_slider/mobile/*.{jpg,jpeg,png,webp}', {
-    eager: true,
-    import: 'default'
-  });
-  const sortFn = (a: any, b: any) => {
-    const getNum = (str: string) => {
-      const match = str.match(/(\d+)/);
-      return match ? parseInt(match[0]) : 0;
-    };
-    return getNum(a) - getNum(b);
-  };
-  const desktopImages = Object.values(desktopModules).sort(sortFn) as string[];
-  const mobileImages = Object.values(mobileModules).sort(sortFn) as string[];
+
+  let { data } = $props();
+  const desktopImages = $derived(data.desktopSlides || []);
+  const mobileImages = $derived(data.mobileSlides || []);
   const features = [
     {
       title: 'Оформим честную рассрочку на 12 месяцев без процентов, переплат и скрытых комиссий всего за 5 минут',
