@@ -74,19 +74,21 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
   const desktopBuffer = Buffer.from(await desktop.arrayBuffer());
   const mobileBuffer = Buffer.from(await mobile.arrayBuffer());
 
-  // Проверка aspect ratio
+  // Проверка aspect ratio (тут же валидируется что файл читается)
   const desktopCheck = await validateAspectRatio(desktopBuffer, 'desktop');
-  if (!desktopCheck.ok) throw error(400, desktopCheck.message);
+  if (!desktopCheck.ok) throw error(400, `Десктоп: ${desktopCheck.message}`);
 
   const mobileCheck = await validateAspectRatio(mobileBuffer, 'mobile');
-  if (!mobileCheck.ok) throw error(400, mobileCheck.message);
+  if (!mobileCheck.ok) throw error(400, `Мобильная: ${mobileCheck.message}`);
 
-  const timestamp = Date.now();
-  const desktopKey = `slides/desktop-${timestamp}.webp`;
-  const mobileKey = `slides/mobile-${timestamp}.webp`;
-
-  const desktopUrl = await uploadWebpImage(desktopBuffer, desktopKey, 1920);
-  const mobileUrl = await uploadWebpImage(mobileBuffer, mobileKey, 800);
+  let desktopUrl: string, mobileUrl: string;
+  try {
+    desktopUrl = await uploadWebpImage(desktopBuffer, `slides/desktop-${Date.now()}.webp`, 1920);
+    mobileUrl = await uploadWebpImage(mobileBuffer, `slides/mobile-${Date.now()}.webp`, 800);
+  } catch (e: any) {
+    console.error('Slide upload error:', e);
+    throw error(400, 'Не удалось обработать изображение. Поддерживаются JPG, PNG, WebP. Если это фото с iPhone (HEIC) — конвертируйте в JPG.');
+  }
 
   // position = max + 1
   const maxPos = await sql`SELECT COALESCE(MAX(position), -1) as max_pos FROM slides`;
