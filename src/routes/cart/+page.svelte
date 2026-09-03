@@ -9,7 +9,21 @@
   import { toast } from 'svelte-sonner';
   import Modal from '$lib/components/Modal.svelte';
   import CartPdfExport from '$lib/components/CartPdfExport.svelte';
-  import { Menu, Minus, Plus, Trash, BadgePercent, ArrowRight, Truck, CreditCard, Wallet, Banknote, QrCode, Smartphone, ChevronDown } from 'lucide-svelte';
+  import {
+    Menu,
+    Minus,
+    Plus,
+    Trash,
+    BadgePercent,
+    ArrowRight,
+    Truck,
+    CreditCard,
+    Wallet,
+    Banknote,
+    QrCode,
+    Smartphone,
+    ChevronDown
+  } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   import cartEmptyImage from '$lib/assets/cart-empty.webp';
@@ -70,10 +84,19 @@
     }
   };
   // Скидка применяется только к товарам, чей бренд не в списке исключений (защищённый ассортимент)
-  const itemDiscountedPrice = (i: { price: number; qty: number; brand?: string | null; protected?: boolean }) =>
-    isDiscountExcludedBrand(i.brand, i.protected, excludedBrands) ? i.price : applyCartDiscount(i.price, cartDiscountPercent);
+  const itemDiscountedPrice = (i: {
+    price: number;
+    qty: number;
+    brand?: string | null;
+    protected?: boolean;
+  }) =>
+    isDiscountExcludedBrand(i.brand, i.protected, excludedBrands)
+      ? i.price
+      : applyCartDiscount(i.price, cartDiscountPercent);
   const total = $derived($cart.reduce((sum, i) => sum + i.price * i.qty, 0));
-  const totalWithDiscount = $derived($cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0));
+  const totalWithDiscount = $derived(
+    $cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0)
+  );
   const savings = $derived(total - totalWithDiscount);
   const hasDiscount = $derived(savings > 0);
   const closeModal = () => (showModal = false);
@@ -128,7 +151,7 @@
                 >
               </div>
               <div class="sum-wrap">
-                {#if !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
+                {#if cartDiscountPercent > 0 && !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
                   <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
                   <p class="discount-sum sum">
                     {formatPrice(itemDiscountedPrice(item) * item.qty)} ₽
@@ -175,11 +198,20 @@
           <div class="total">
             <span>Итого:</span>
             <div class="total-prices">
-              <span class="old-sum">{formatPrice(total)} ₽</span>
-              <b class="discount-sum">{formatPrice(totalWithDiscount)} ₽</b>
+              {#if cartDiscountPercent > 0 && hasDiscount}
+                <span class="old-sum">{formatPrice(total)} ₽</span>
+                <b class="discount-sum">{formatPrice(totalWithDiscount)} ₽</b>
+              {:else}
+                <b>{formatPrice(total)} ₽</b>
+              {/if}
             </div>
           </div>
-          <input class="input primary" placeholder="Ваше имя" bind:value={name} bind:this={nameInput} />
+          <input
+            class="input primary"
+            placeholder="Ваше имя"
+            bind:value={name}
+            bind:this={nameInput}
+          />
           <div class="with-prefix">
             <span class="prefix">+7</span>
             <input
@@ -203,16 +235,23 @@
               <span class="sidebar-card__icon"><Truck size={18} strokeWidth={2.2} /></span>
               <span class="sidebar-card__title">Доставка</span>
             </span>
-            <ChevronDown size={18} strokeWidth={2.2} class={'chevron' + (openAccordion === 'delivery' ? ' chevron--open' : '')} />
+            <ChevronDown
+              size={18}
+              strokeWidth={2.2}
+              class={'chevron' + (openAccordion === 'delivery' ? ' chevron--open' : '')}
+            />
           </button>
           {#if openAccordion === 'delivery'}
             <div class="accordion-body">
-              <p class="sidebar-card__text">Бесплатная доставка по Казани и РТ. После оформления заказа менеджер свяжется с вами и согласует удобное время.</p>
+              <p class="sidebar-card__text">
+                Бесплатная доставка по Казани и РТ. После оформления заказа менеджер свяжется с вами
+                и согласует удобное время.
+              </p>
             </div>
           {/if}
         </div>
 
-        <div class="sidebar-card accordion">
+        <!-- <div class="sidebar-card accordion">
           <button class="sidebar-card__head" onclick={() => toggleAccordion('payment')}>
             <span class="sidebar-card__head-left">
               <span class="sidebar-card__icon"><Wallet size={18} strokeWidth={2.2} /></span>
@@ -230,7 +269,7 @@
               </div>
             </div>
           {/if}
-        </div>
+        </div> -->
 
         <div class="sidebar-card accordion">
           <button class="sidebar-card__head" onclick={() => toggleAccordion('installment')}>
@@ -238,21 +277,30 @@
               <span class="sidebar-card__icon"><BadgePercent size={18} strokeWidth={2.2} /></span>
               <span class="sidebar-card__title">Рассрочка 0-0-12</span>
             </span>
-            <ChevronDown size={18} strokeWidth={2.2} class={'chevron' + (openAccordion === 'installment' ? ' chevron--open' : '')} />
+            <ChevronDown
+              size={18}
+              strokeWidth={2.2}
+              class={'chevron' + (openAccordion === 'installment' ? ' chevron--open' : '')}
+            />
           </button>
           {#if openAccordion === 'installment'}
             <div class="accordion-body">
-              <p class="sidebar-card__text">Без переплат и скрытых комиссий на 12 месяцев. Техника сразу, первый платёж через месяц.</p>
+              <p class="sidebar-card__text">
+                Без переплат и скрытых комиссий на 12 месяцев. Техника сразу, первый платёж через
+                месяц.
+              </p>
               <button
                 class="btn secondary mt-2"
-                onclick={(e) => { e.stopPropagation();
+                onclick={(e) => {
+                  e.stopPropagation();
                   openOtp({
                     cart: $cart.map((i) => ({
                       name: i.name,
                       price: i.price,
                       quantity: i.qty
                     }))
-                  }); }}>Оформить заявку</button
+                  });
+                }}>Оформить заявку</button
               >
             </div>
           {/if}
