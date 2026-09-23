@@ -14,14 +14,17 @@
   $: exports = data.exports;
 </script>
 
-<h1>Корзины (PDF)</h1>
+<h1>Корзины PDF (КП)</h1>
 {#if !exports.length}
-  <p class="empty">Нет экспортированных корзин</p>
+  <p class="empty">Нет КП</p>
 {:else}
   <div class="table">
     {#each exports as e}
       <div class="row">
-        <div class="cell id">#{e.export_number}</div>
+        <div class="cell id">
+          #{e.export_number}
+          <div class="user">{e.user_email || e.user_name || '—'}</div>
+        </div>
         <div class="cell items">
           {#each e.items as item}
             <div class="item">
@@ -31,7 +34,10 @@
             </div>
           {/each}
         </div>
-        <div class="cell total">{fmtPrice(e.total_price)}</div>
+        <div class="cell total">
+          {fmtPrice(e.total_price)}
+          {#if e.discount_percent > 0}<div class="discount">скидка {e.discount_percent}%</div>{/if}
+        </div>
         <div class="cell date">{@html formatDate(e.created_at)}</div>
       </div>
     {/each}
@@ -67,6 +73,13 @@
         &.id {
           font-weight: 700;
           color: #555;
+          .user {
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 400;
+            color: #888;
+            word-break: break-all;
+          }
         }
         &.items {
           display: flex;
@@ -96,6 +109,10 @@
           font-weight: 700;
           text-align: right;
           color: $green;
+          .discount {
+            font-size: 12px;
+            font-weight: 600;
+          }
         }
         &.date {
           display: flex;

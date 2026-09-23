@@ -306,7 +306,7 @@
           {/if}
         </div>
 
-        <CartPdfExport {total} />
+        <CartPdfExport {total} user={data.user} />
 
         <button class="clear-cart" onclick={() => cart.clear()}>
           <Trash size={15} strokeWidth={2.4} />

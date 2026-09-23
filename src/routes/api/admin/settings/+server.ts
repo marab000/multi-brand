@@ -1,19 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import { sql } from '$lib/db';
+import { checkAdmin } from '$lib/server/adminAuth';
 import type { RequestHandler } from './$types';
 
-const COOKIE = 'admin_session';
-
-async function checkAdmin(cookies: any) {
-  const session = cookies.get(COOKIE);
-  if (!session) throw error(401, 'Unauthorized');
-  const users = await sql`SELECT id FROM admin_users WHERE id=${Number(session)}`;
-  if (!users.length) throw error(401, 'Unauthorized');
-}
-
 // GET — все настройки
-export const GET: RequestHandler = async ({ cookies }) => {
-  await checkAdmin(cookies);
+export const GET: RequestHandler = async ({ cookies, locals }) => {
+  await checkAdmin(cookies, locals);
   const rows = await sql`SELECT key, value FROM settings`;
   const settings: Record<string, string> = {};
   for (const row of rows) {
@@ -23,8 +15,8 @@ export const GET: RequestHandler = async ({ cookies }) => {
 };
 
 // PATCH — обновление настройки
-export const PATCH: RequestHandler = async ({ request, cookies }) => {
-  await checkAdmin(cookies);
+export const PATCH: RequestHandler = async ({ request, cookies, locals }) => {
+  await checkAdmin(cookies, locals);
   const body = await request.json();
 
   for (const [key, value] of Object.entries(body)) {

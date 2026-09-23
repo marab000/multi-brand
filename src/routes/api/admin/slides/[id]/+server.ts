@@ -1,19 +1,11 @@
 import { json, error } from '@sveltejs/kit';
 import { sql } from '$lib/db';
 import { deleteImage } from '$lib/server/s3';
+import { checkAdmin } from '$lib/server/adminAuth';
 import type { RequestHandler } from './$types';
 
-const COOKIE = 'admin_session';
-
-async function checkAdmin(cookies: any) {
-  const session = cookies.get(COOKIE);
-  if (!session) throw error(401, 'Unauthorized');
-  const users = await sql`SELECT id FROM admin_users WHERE id=${Number(session)}`;
-  if (!users.length) throw error(401, 'Unauthorized');
-}
-
-export const DELETE: RequestHandler = async ({ params, cookies }) => {
-  await checkAdmin(cookies);
+export const DELETE: RequestHandler = async ({ params, cookies, locals }) => {
+  await checkAdmin(cookies, locals);
 
   const id = Number(params.id);
   if (!id) throw error(400, 'Invalid ID');

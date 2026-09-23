@@ -12,7 +12,13 @@ export type AuthUser = {
   phone: string | null;
   full_name: string;
   email_verified: boolean;
+  roles: string[];
 };
+
+// Есть ли у юзера роль (roles — массив: {'designer','sales', ...})
+export function hasRole(user: { roles?: string[] | null } | null, role: string) {
+  return !!user?.roles?.includes(role);
+}
 
 export type AuthSession = {
   id: string;
@@ -72,7 +78,7 @@ export async function createSession(userId: number) {
 export async function validateSessionToken(token: string) {
   const tokenHash = hashToken(token);
   const rows = await sql`
-    select s.id as session_id, s.expires_at, u.id, u.email, u.phone, u.full_name, u.email_verified
+    select s.id as session_id, s.expires_at, u.id, u.email, u.phone, u.full_name, u.email_verified, u.roles
     from user_sessions s
     join users u on u.id = s.user_id
     where s.token_hash = ${tokenHash}
@@ -90,7 +96,8 @@ export async function validateSessionToken(token: string) {
       email: row.email,
       phone: row.phone,
       full_name: row.full_name,
-      email_verified: row.email_verified
+      email_verified: row.email_verified,
+      roles: row.roles ?? []
     } as AuthUser,
     session: {
       id: row.session_id,

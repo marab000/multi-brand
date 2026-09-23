@@ -25,7 +25,9 @@ export const actions = {
     cookies.set(COOKIE, String(user.id), {
       path: '/',
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: 'lax',
+      // Не вечная сессия: протухает через 7 дней
+      maxAge: 60 * 60 * 24 * 7
     });
 
     throw redirect(302, '/admin/orders');

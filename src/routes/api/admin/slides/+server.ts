@@ -1,17 +1,9 @@
 import { json, error } from '@sveltejs/kit';
 import { sql } from '$lib/db';
 import { uploadWebpImage, deleteImage } from '$lib/server/s3';
+import { checkAdmin } from '$lib/server/adminAuth';
 import sharp from 'sharp';
 import type { RequestHandler } from './$types';
-
-const COOKIE = 'admin_session';
-
-async function checkAdmin(cookies: any) {
-  const session = cookies.get(COOKIE);
-  if (!session) throw error(401, 'Unauthorized');
-  const users = await sql`SELECT id FROM admin_users WHERE id=${Number(session)}`;
-  if (!users.length) throw error(401, 'Unauthorized');
-}
 
 // Проверка aspect ratio
 // desktop: широкий, ~3:1 (от 2.5:1 до 4:1)
@@ -50,8 +42,8 @@ function validateAspectRatio(
 }
 
 // GET — все слайды для админки (включая неактивные)
-export const GET: RequestHandler = async ({ cookies }) => {
-  await checkAdmin(cookies);
+export const GET: RequestHandler = async ({ cookies, locals }) => {
+  await checkAdmin(cookies, locals);
   const slides = await sql`
     SELECT id, desktop_url, mobile_url, position, is_active, created_at
     FROM slides ORDER BY position ASC, id ASC
@@ -60,8 +52,8 @@ export const GET: RequestHandler = async ({ cookies }) => {
 };
 
 // POST — загрузка нового слайда (multipart: desktop + mobile файлы)
-export const POST: RequestHandler = async ({ request, cookies }) => {
-  await checkAdmin(cookies);
+export const POST: RequestHandler = async ({ request, cookies, locals }) => {
+  await checkAdmin(cookies, locals);
 
   const formData = await request.formData();
   const desktop = formData.get('desktop') as File | null;
@@ -104,8 +96,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 };
 
 // PATCH — обновление position / is_active
-export const PATCH: RequestHandler = async ({ request, cookies }) => {
-  await checkAdmin(cookies);
+export const PATCH: RequestHandler = async ({ request, cookies, locals }) => {
+  await checkAdmin(cookies, locals);
 
   const body = await request.json();
   const { id, position, is_active } = body;

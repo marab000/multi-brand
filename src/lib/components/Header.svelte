@@ -1,6 +1,7 @@
 <script lang="ts">
   import ProductSearch from '$lib/components/ProductSearch.svelte';
   import AuthModal from '$lib/components/AuthModal.svelte';
+  import { openAuthModal } from '$lib/stores/authModal.svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import CityDetector from '$lib/components/CityDetector.svelte';
   import logo1 from '$lib/assets/logo1.png';
@@ -71,6 +72,15 @@
   let expandedGroupLeaves = $state<Record<string, boolean>>({});
   let authOpen = $state(false);
   let authMode = $state<'login' | 'register'>('login');
+  // Мост из других компонентов: openAuthModal() диспатчит window-событие
+  const handleExternalAuth = (e: Event) => {
+    authMode = (e as CustomEvent).detail?.mode === 'register' ? 'register' : 'login';
+    authOpen = true;
+  };
+  onMount(() => {
+    window.addEventListener('open-auth-modal', handleExternalAuth);
+    return () => window.removeEventListener('open-auth-modal', handleExternalAuth);
+  });
   let userMenuOpen = $state(false);
   let requestOpen = $state(false);
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
@@ -181,8 +191,7 @@
   }
   function handleUserClick() {
     if (!user) {
-      authMode = 'login';
-      authOpen = true;
+      openAuthModal('login');
       return;
     }
     userMenuOpen = !userMenuOpen;
@@ -387,6 +396,11 @@
         </button>
         {#if user && userMenuOpen}
           <div class="user-menu">
+            {#if user.roles?.includes('admin')}
+              <a href="/admin" class="user-menu__admin" onclick={() => (userMenuOpen = false)}
+                >Админ-панель</a
+              >
+            {/if}
             <a href="/user/orders" onclick={() => (userMenuOpen = false)}>Мои заказы</a>
             <a href="/user/info" onclick={() => (userMenuOpen = false)}>Аккаунт</a>
             <button type="button" onclick={logout}>Выйти</button>
@@ -839,6 +853,9 @@
         background: rgba($green, 0.06) !important;
         color: #202020 !important;
       }
+    }
+    .user-menu__admin {
+      border: 1px solid rgba($green, 0.45);
     }
   }
   .user-menu-backdrop {

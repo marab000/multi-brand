@@ -34,6 +34,14 @@ async function ensureSlidesTable() {
     values ('excluded_brands', '["asko","omoikiri","franke"]')
     on conflict (key) do nothing
   `;
+  // Роли пользователя (массив): designer = скидка в КП, sales = доступ к отчётам и т.д.
+  // Ставятся вручную в БД: update users set roles='{designer}' where email='...'
+  await sql`alter table users add column if not exists role text default null`;
+  await sql`alter table users add column if not exists roles text[] not null default '{}'`;
+  await sql`update users set roles = array[role] where role is not null and role <> '' and roles = '{}'`;
+  await sql`alter table users drop column if exists role`;
+  // Ручная скидка на конкретное КП
+  await sql`alter table cart_exports add column if not exists discount_percent int not null default 0`;
   slidesMigrated = true;
 }
 

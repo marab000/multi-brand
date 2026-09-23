@@ -3,6 +3,7 @@
 
   const links = [
     { href: '/user/orders', label: 'Мои заказы' },
+    { href: '/user/offers', label: 'Мои КП' },
     { href: '/user/info', label: 'Аккаунт' }
   ];
 </script>

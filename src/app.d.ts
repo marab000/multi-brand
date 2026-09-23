@@ -7,6 +7,7 @@ declare global {
         phone: string | null;
         full_name: string;
         email_verified: boolean;
+        roles: string[];
       } | null;
       session: {
         id: string;
