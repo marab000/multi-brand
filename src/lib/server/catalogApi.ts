@@ -15,7 +15,10 @@ export interface CatalogFilters {
   catalogLeafSlug?: string;
   catalogScopes?: CatalogScope[];
   types?: string[];
+  excludeKits?: boolean;
   brands?: string[];
+  /** Бренды, которые исключаются из выдачи (blacklist) */
+  excludedBrands?: string[];
   colors?: string[];
   priceMin?: number;
   priceMax?: number;
@@ -83,9 +86,11 @@ function getSearchWords(search: string) {
   return groups;
 }
 
-export function buildWhere(filters: CatalogFilters) {
+export function buildWhere(filters: CatalogFilters, initialValues: any[] = []) {
   const conditions: string[] = [];
-  const values: any[] = [];
+  // initialValues — уже добавленные параметры (например, поисковая строка),
+  // чтобы плейсхолдеры $n совпадали с реальными индексами
+  const values: any[] = [...initialValues];
   if (filters.search?.trim()) {
     const groups = getSearchWords(filters.search);
     if (groups.length) {
@@ -148,6 +153,10 @@ export function buildWhere(filters: CatalogFilters) {
     values.push(uniq);
     conditions.push(`LOWER(TRIM(p.product_type)) = ANY($${values.length}::text[])`);
   }
+  // excludeKits — спрятать комплекты из поисковой выдачи (категории и прямые ссылки работают как раньше)
+  if (filters.excludeKits) {
+    conditions.push(`LOWER(TRIM(COALESCE(p.product_type, ''))) NOT LIKE 'комплект%'`);
+  }
   if (filters.brands?.length) {
     const uniq = Array.from(
       new Set(filters.brands.map((b) => b.trim().toLowerCase()).filter(Boolean))
@@ -159,6 +168,15 @@ export function buildWhere(filters: CatalogFilters) {
       parts.push(`LOWER(TRIM(COALESCE(p.brand->>'name', ''))) = $${idx}`);
     }
     if (parts.length) conditions.push(`(${parts.join(' OR ')})`);
+  }
+  if (filters.excludedBrands?.length) {
+    const uniq = Array.from(
+      new Set(filters.excludedBrands.map((b) => b.trim().toLowerCase()).filter(Boolean))
+    );
+    values.push(uniq);
+    conditions.push(
+      `(COALESCE(p.brand->>'name', '') = '' OR LOWER(TRIM(p.brand->>'name')) <> ANY($${values.length}::text[]))`
+    );
   }
   if (filters.colors?.length) {
     const uniq = Array.from(
@@ -267,13 +285,15 @@ function buildOrderBy(sort?: CatalogFilters['sort'], search?: string, searchPara
 
 export async function fetchProducts(filters: CatalogFilters, limit = 50, offset = 0) {
   try {
-    const { whereClause, values } = buildWhere(filters);
-    // Добавляем поисковый запрос для сортировки по релевантности (точное совпадение имени — первым)
+    // Поисковая строка идёт первым параметром, чтобы buildWhere
+    // сразу строил плейсхолдеры с правильными индексами
+    const initialValues: any[] = [];
     let searchParamIdx: number | undefined;
     if (filters.search?.trim()) {
-      values.push(filters.search.trim());
-      searchParamIdx = values.length;
+      initialValues.push(filters.search.trim());
+      searchParamIdx = initialValues.length;
     }
+    const { whereClause, values } = buildWhere(filters, initialValues);
     const orderBy = buildOrderBy(filters.sort, filters.search, searchParamIdx);
     const query = `
       SELECT 

@@ -112,6 +112,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const hasAppliedFilters = hasSearch || hasRealFilters;
   const filters: CatalogFilters = {
     search,
+    // Комплекты спрятаны только из поиска — в категориях и по прямой ссылке остаются
+    excludeKits: isSearchPage ? true : undefined,
     catalogRootSlug: isSearchPage ? undefined : currentRoot?.slug,
     catalogGroupSlug: isSearchPage ? undefined : currentGroup?.slug || undefined,
     catalogLeafSlug: isSearchPage ? undefined : currentLeaf?.slug || undefined,

@@ -48,7 +48,7 @@ export async function GET({ url }) {
 
     const [availability, productResult] = await Promise.all([
       getCatalogAvailability(),
-      fetchProducts({ search: query }, 8, 0)
+      fetchProducts({ search: query, excludeKits: true }, 8, 0)
     ]);
 
     const categories = getCategorySuggestions(query, { limit: 4, availability });
