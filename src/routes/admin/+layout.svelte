@@ -13,6 +13,7 @@
       <nav>
         <a href="/admin/orders" class={$activePath === '/admin/orders' ? 'active' : ''}>Заказы</a>
         <a href="/admin/cart-exports" class={$activePath.startsWith('/admin/cart-exports') ? 'active' : ''}>Корзины PDF (КП)</a>
+        <a href="/admin/users" class={$activePath.startsWith('/admin/users') ? 'active' : ''}>Пользователи</a>
         <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''}>Слайдер</a>
         <a href="/admin/articles" class={$activePath.startsWith('/admin/articles') ? 'active' : ''}>Статьи</a>
         <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''}>Викторина</a>

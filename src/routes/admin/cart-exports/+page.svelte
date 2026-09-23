@@ -23,7 +23,11 @@
       <div class="row">
         <div class="cell id">
           #{e.export_number}
-          <div class="user">{e.user_email || e.user_name || '—'}</div>
+          {#if e.user_id}
+            <a class="user" href={`/admin/users/${e.user_id}`}>{e.user_email || e.user_name || '—'}</a>
+          {:else}
+            <div class="user">—</div>
+          {/if}
         </div>
         <div class="cell items">
           {#each e.items as item}
@@ -74,11 +78,16 @@
           font-weight: 700;
           color: #555;
           .user {
+            display: block;
             margin-top: 4px;
             font-size: 11px;
             font-weight: 400;
             color: #888;
             word-break: break-all;
+            &:hover {
+              color: $green;
+              text-decoration: underline;
+            }
           }
         }
         &.items {
