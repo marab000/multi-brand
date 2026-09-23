@@ -25,7 +25,8 @@
     Truck,
     MessageCircleMore,
     Building2,
-    Clock
+    Clock,
+    Newspaper
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
@@ -254,6 +255,11 @@
       >
       <a class="nav__about flex gap-x-1.5" href="/about"
         ><Building2 size={16} strokeWidth={2.1} />О компании</a
+      >
+      <a class="nav__about flex gap-x-1.5" href="/articles"
+        ><Newspaper class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
+          >Статьи</span
+        ><span class="hidden md:inline">Статьи</span></a
       >
       <div class="nav__contact !hidden md:!flex">
         <div class="nav__social">

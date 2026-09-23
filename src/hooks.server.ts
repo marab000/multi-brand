@@ -34,6 +34,28 @@ async function ensureSlidesTable() {
     values ('excluded_brands', '["asko","omoikiri","franke"]')
     on conflict (key) do nothing
   `;
+  await sql`
+    create table if not exists articles (
+      id serial primary key,
+      slug text unique not null,
+      title text not null,
+      description text not null default '',
+      cover_url text not null default '',
+      is_published boolean not null default false,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    )
+  `;
+  await sql`
+    create table if not exists article_blocks (
+      id serial primary key,
+      article_id int not null references articles(id) on delete cascade,
+      position int not null default 0,
+      type text not null,
+      content jsonb not null default '{}'
+    )
+  `;
+  await sql`create index if not exists article_blocks_article_id_idx on article_blocks(article_id)`;
   // Роли пользователя (массив): designer = скидка в КП, sales = доступ к отчётам и т.д.
   // Ставятся вручную в БД: update users set roles='{designer}' where email='...'
   await sql`alter table users add column if not exists role text default null`;
@@ -58,4 +80,5 @@ export const handle: Handle = async ({ event, resolve }) => {
   event.locals.user = user;
   event.locals.session = session;
   return resolve(event);
+	
 };

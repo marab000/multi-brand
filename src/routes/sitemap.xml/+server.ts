@@ -92,6 +92,29 @@ export const GET: RequestHandler = async () => {
     });
   }
 
+  // 4. Статьи: /articles и /articles/{slug}
+  entries.push({
+    loc: `${SITE_URL}/articles`,
+    lastmod: today,
+    changefreq: 'weekly',
+    priority: 0.5
+  });
+  try {
+    const articles = await sql`
+      select slug, updated_at from articles where is_published = true
+    `;
+    for (const a of articles) {
+      entries.push({
+        loc: `${SITE_URL}/articles/${a.slug}`,
+        lastmod: a.updated_at ? new Date(a.updated_at).toISOString().split('T')[0] : today,
+        changefreq: 'monthly',
+        priority: 0.5
+      });
+    }
+  } catch {
+    // таблицы ещё нет
+  }
+
   // Дедупликация по loc (могут быть товары с одинаковыми именами)
   const seen = new Set<string>();
   const unique = entries.filter((e) => {
