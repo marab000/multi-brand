@@ -242,19 +242,25 @@
       </div>
     </div>
     <div
-      class="nav__top-links flex w-full flex-wrap items-center justify-end gap-x-4 gap-y-1.5 py-0 md:ml-auto md:w-auto md:flex-nowrap md:gap-5 md:py-3"
+      class="nav__top-links flex w-full flex-nowrap items-center justify-between gap-2 py-0 md:ml-auto md:w-auto md:justify-end md:gap-5 md:py-3"
     >
       <a class="nav__about flex gap-x-1.5" href="/delivery"
-        ><Truck size={16} strokeWidth={2.1} />Доставка по Казани и РТ</a
+        ><Truck class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
+          >Доставка</span
+        ><span class="hidden md:inline">Доставка по Казани и РТ</span></a
       >
       <button
         class="nav__about nav__about-button flex gap-x-1.5"
         type="button"
         onclick={openRequestModal}
-        ><MessageCircleMore size={16} strokeWidth={2.1} />Оставить заявку</button
+        ><MessageCircleMore class="hidden md:block" size={16} strokeWidth={2.1} /><span
+          class="md:hidden">Связаться</span
+        ><span class="hidden md:inline">Связаться с нами</span></button
       >
       <a class="nav__about flex gap-x-1.5" href="/about"
-        ><Building2 size={16} strokeWidth={2.1} />О компании</a
+        ><Building2 class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
+          >О нас</span
+        ><span class="hidden md:inline">О компании</span></a
       >
       <a class="nav__about flex gap-x-1.5" href="/articles"
         ><Newspaper class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
@@ -509,6 +515,10 @@
       }
       &:hover {
         color: $green;
+      }
+      @media (max-width: 360px) {
+        font-size: 12px;
+        gap: 4px;
       }
       @media (min-width: 768px) {
         gap: 6px;
