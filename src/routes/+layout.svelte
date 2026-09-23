@@ -4,6 +4,8 @@
   import { navigating } from '$app/stores';
   import './layout.css';
   import Header from '$lib/components/Header.svelte';
+  import BottomNav from '$lib/components/BottomNav.svelte';
+  import Footer from '$lib/components/Footer.svelte';
   import FloatingMessengers from '$lib/components/FloatingMessengers.svelte';
   import CookieBanner from '$lib/components/CookieBanner.svelte';
   import PaymentMethods from '$lib/components/PaymentMethods.svelte';
@@ -40,26 +42,22 @@
   <HelpWithSelection />
 </main>
 
-<footer class="bg-slate-800 px-4 text-gray-300">
-  <div class="mx-auto max-w-7xl px-6 py-8 text-sm">
-    <!-- <PaymentMethods /> -->
-    <p>© 2026 MULTIBRAND</p>
-    <p class="mt-3 max-w-3xl text-xs leading-relaxed text-gray-400">
-      Мультибренд — официальный интернет-магазин бытовой техники. Все права защищены. Вся
-      представленная на сайте информация носит информационный характер и не является публичной
-      офертой. Точную информацию о товаре можете узнать у
-      наших специалистов.
-    </p>
-  </div>
-</footer>
+<Footer {data} />
 
 <FloatingMessengers />
+<BottomNav />
 <CookieBanner />
 
 <style lang="scss">
   :global(.container) {
     @media (min-width: 1280px) {
       max-width: 1280px !important;
+    }
+  }
+
+  :global(body) {
+    @media (max-width: 767px) {
+      padding-bottom: 66px;
     }
   }
 

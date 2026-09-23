@@ -408,6 +408,9 @@
               >
             {/if}
             <a href="/user/orders" onclick={() => (userMenuOpen = false)}>Мои заказы</a>
+            {#if user.roles?.includes('designer')}
+              <a href="/user/offers" onclick={() => (userMenuOpen = false)}>Мои КП</a>
+            {/if}
             <a href="/user/info" onclick={() => (userMenuOpen = false)}>Аккаунт</a>
             <button type="button" onclick={logout}>Выйти</button>
           </div>

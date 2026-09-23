@@ -1,9 +1,14 @@
 <script lang="ts">
   import { page } from '$app/stores';
 
+  export let data: any;
+
+  // Мои КП показываем только дизайнерам
   const links = [
     { href: '/user/orders', label: 'Мои заказы' },
-    { href: '/user/offers', label: 'Мои КП' },
+    ...(data.user?.roles?.includes('designer')
+      ? [{ href: '/user/offers', label: 'Мои КП' }]
+      : []),
     { href: '/user/info', label: 'Аккаунт' }
   ];
 </script>
