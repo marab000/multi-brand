@@ -183,6 +183,18 @@ async function removeExcludedCategories() {
 	if (!first) await sql`delete from products where source=${SOURCE} and (${query})`
 	await log('EXCLUDED_REMOVED')
 }
+// бренд убрали из brands.json → его товары больше не синкаются, вычищаем их из базы
+async function removeStaleBrands() {
+	const keep = brands.map(b => cleanBrand(b))
+	const removed = await sql`
+		delete from products
+		where source=${SOURCE}
+		and (brand->>'name' is null or brand->>'name' not in ${sql(keep)})
+		returning id, brand->>'name' as name
+	`
+	if (removed.length) await log('STALE_BRANDS_REMOVED', removed.map(r => r.name).join(', '))
+	else await log('STALE_BRANDS_NONE')
+}
 async function main() {
 	const fs = (await import('fs-extra')).default
 	await fs.writeFile(LOG, '')
@@ -193,6 +205,7 @@ async function main() {
 		catch (e) { await log('FAILED_BRAND', b?.NAME, e.stack || e.message) }
 	}
 	await removeExcludedCategories()
+	await removeStaleBrands()
 	await sql.end()
 	await log('FINISHED')
 }
