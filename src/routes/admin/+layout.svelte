@@ -16,7 +16,7 @@
         <a href="/admin/users" class={$activePath.startsWith('/admin/users') ? 'active' : ''}>Пользователи</a>
         <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''}>Слайдер</a>
         <a href="/admin/articles" class={$activePath.startsWith('/admin/articles') ? 'active' : ''}>Статьи</a>
-        <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''}>Викторина</a>
+        <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''}>Собери кухню</a>
         <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''}>Скидка</a>
         <a class="logout" href="/admin/logout">Выйти</a>
       </nav>

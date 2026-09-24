@@ -82,9 +82,10 @@
           Визуальная скидка при оформлении заказа. 0 — отключить.
         </span>
       </div>
-      <div class="setting-input">
+      <div class="setting-input setting-input--discount" class:setting-input--on={discount > 0}>
         <input type="number" min="0" max="90" bind:value={discount} />
         <span class="setting-suffix">%</span>
+        <span class="setting-state">{discount > 0 ? 'Скидка включена' : 'Без скидки'}</span>
       </div>
     </div>
   </div>
@@ -184,11 +185,68 @@
         border-color: $green;
       }
     }
+    &--discount input {
+      background: #f4f5f7;
+      color: #9aa3af;
+      transition: all 0.15s;
+    }
+    &--on {
+      input {
+        background: #fff;
+        color: $green;
+        border-color: $green;
+      }
+      .setting-state {
+        color: $green;
+      }
+    }
+  }
+  .setting-state {
+    margin-left: 6px;
+    font-size: 13px;
+    color: #9aa3af;
   }
   .setting-suffix {
     font-size: 16px;
     font-weight: 700;
     color: #64748b;
+  }
+  .toggle {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 26px;
+    flex-shrink: 0;
+    input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      &:checked + .toggle-slider {
+        background: $green;
+      }
+      &:checked + .toggle-slider::before {
+        transform: translateX(20px);
+      }
+    }
+  }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #cbd5e1;
+    transition: 0.2s;
+    cursor: pointer;
+    &::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      transition: 0.2s;
+    }
   }
   .search-box {
     display: flex;
