@@ -130,21 +130,18 @@
   }
 
   function addToCart() {
+    const d = result?.discountEnabled && result.discountPercent > 0 ? result.discountPercent : 0;
     for (const i of finalItems) {
+      const dbPrice = (i.item.price ?? 0) / 1000; // цены БД в тысячах
       cart.add({
         id: i.item.id,
         name: i.item.name,
-        price:
-          result?.discountEnabled && result.discountPercent > 0
-            ? Math.round((i.item.price ?? 0) * (1 - result.discountPercent / 100))
-            : (i.item.price ?? 0),
-        oldPrice:
-          result?.discountEnabled && result.discountPercent > 0
-            ? (i.item.price ?? undefined)
-            : undefined,
+        price: d > 0 ? Math.round(dbPrice * (1 - d / 100) * 1000) / 1000 : dbPrice,
+        oldPrice: d > 0 ? (i.item.price ?? 0) / 1000 : undefined,
         image: i.item.image ?? undefined,
         slug: i.item.url,
-        bundle: true
+        bundle: true,
+        bundleDiscount: d
       });
     }
     goto('/cart');

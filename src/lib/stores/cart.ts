@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import { toast } from 'svelte-sonner';
+import { goto } from '$app/navigation';
 import { apiFetch } from '$lib/api';
 import { slugify } from '$lib/utils/slugify';
 import {
@@ -21,6 +22,11 @@ export type CartItem = {
   description?: string | null;
   brand?: string | null;
   protected?: boolean;
+  /** Товар из конструктора «Собери кухню»: цена живая (следует за базой),
+   *  но поверх всегда держится скидка комплекта bundleDiscount, sync() её восстанавливает */
+  bundle?: boolean;
+  /** Скидка комплекта, % */
+  bundleDiscount?: number;
 };
 
 const STORAGE_KEY = 'cart';
@@ -60,6 +66,24 @@ function createCart() {
           .filter((item) => productMap.has(item.id))
           .map((item) => {
             const product = productMap.get(item.id)!;
+            // Комплект из конструктора: цена обновляется по базе, но поверх
+            // всегда применяется скидка комплекта, зафиксированная при добавлении
+            if (item.bundle) {
+              const base = getProductPrice(product);
+              const d = item.bundleDiscount ?? 0;
+              const price = d > 0 ? Math.round(base * (1 - d / 100) * 1000) / 1000 : base;
+              const fullPrice = getBaseProductPrice(product) ?? base;
+              return {
+                ...item,
+                name: product.name,
+                price,
+                oldPrice: d > 0 && fullPrice > price ? fullPrice : null,
+                image: product.images?.[0]?.url ?? item.image,
+                slug: slugify(product.name),
+                description: product.description,
+                brand: product.brand?.name ?? item.brand
+              } satisfies CartItem;
+            }
             const price = getProductPrice(product);
             const oldPrice = getBaseProductPrice(product);
             const hasDiscount = hasProductDiscount(product) && oldPrice !== null && oldPrice > price;
@@ -91,7 +115,12 @@ function createCart() {
           next = [...items, { ...item, qty: 1 }];
         }
         save(next);
-        toast.success('Товар добавлен в корзину');
+        toast.success('Товар добавлен в корзину', {
+          action: {
+            label: 'Перейти в корзину',
+            onClick: () => goto('/cart')
+          }
+        });
         return next;
       }),
     remove: (id: string) =>

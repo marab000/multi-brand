@@ -1,5 +1,15 @@
 <script lang="ts">
-  import { BadgePercent, Warehouse, ConciergeBell, Sparkles, ArrowRight, Wind } from 'lucide-svelte';
+  import {
+    BadgePercent,
+    Warehouse,
+    ConciergeBell,
+    Sparkles,
+    ArrowRight,
+    Wind,
+    Clock3,
+    Package,
+    ShieldCheck
+  } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import VideoSection from '$lib/components/VideoSection.svelte';
   import hob from '$lib/assets/links/hob.webp';
@@ -141,7 +151,7 @@
 </script>
 
 <svelte:head>
-  <title>Мультибренд Казань — интернет-магазин бытовой техники</title>
+  <title>Мультибренд Казань — интернет-магазин бытовой техники | Купить встроенную технику для кухни (MultiBrand)</title>
   <meta
     name="description"
     content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
@@ -158,6 +168,36 @@
 </section>
 
 <VideoSection />
+
+<section class="mx-auto">
+  <a class="podbor-cta" href="/podbor">
+    <div class="podbor-cta__main">
+      <h2>Собери кухню <em>за минуту</em></h2>
+      <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет и интерьер</p>
+      <span class="podbor-cta__btn">Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span>
+      <ul class="podbor-cta__features">
+        <li>
+          <Clock3 size={17} strokeWidth={2} />
+          <span><b>Узнаете стоимость</b><i>уже через 1 минуту</i></span>
+        </li>
+        <li>
+          <Package size={17} strokeWidth={2} />
+          <span><b>Получите готовый</b><i>комплект техники</i></span>
+        </li>
+        <li>
+          <ShieldCheck size={17} strokeWidth={2} />
+          <span><b>Без лишних звонков</b><i>и консультаций</i></span>
+        </li>
+      </ul>
+    </div>
+    <img
+      class="podbor-cta__photo"
+      src="/images/podbor-kitchen.png"
+      alt="Кухня с встраиваемой техникой"
+      loading="lazy"
+    />
+  </a>
+</section>
 
 <section class="mx-auto">
   <h2 class="section-title">Преимущества</h2>
@@ -292,6 +332,7 @@
   </div>
 </section>
 
+
 <section class="mx-auto">
   <h2 class="section-title">Бренды</h2>
   <BrandsGrid />
@@ -328,6 +369,160 @@
 
 
 <style lang="scss">
+  // референс: белая карточка, слева текст + жёлтая кнопка + 3 преимущества,
+  // справа фото кухни (статичный ассет со стикером)
+  .podbor-cta {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    padding: 16px 36% 16px 24px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    color: #2e3d2f;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      .podbor-cta__btn :global(svg) {
+        transform: translateX(3px);
+      }
+    }
+
+    &__main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__main h2 {
+      margin: 8px 0 0;
+      font-size: clamp(24px, 2.3vw, 32px);
+      font-weight: 800;
+      color: #2e3d2f;
+      line-height: 1.1;
+
+      em {
+        font-style: normal;
+        color: #2f6b3a;
+        // жёлтый маркер-подчёркивание как в референсе
+        background: linear-gradient(transparent 68%, rgba(240, 198, 75, 0.7) 68%);
+        padding: 0 2px;
+      }
+    }
+
+    &__main p {
+      margin: 8px 0 12px;
+      max-width: 480px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: #7d8a7e;
+    }
+
+    &__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 22px;
+      border-radius: 999px;
+      background: #f0c64b;
+      color: #2e3d2f;
+      font-size: 14.5px;
+      font-weight: 800;
+      box-shadow: 0 4px 10px rgba(240, 198, 75, 0.45);
+      :global(svg) {
+        transition: transform 0.15s ease;
+      }
+    }
+
+    &__features {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 20px;
+      margin: 12px 0 0;
+      padding: 0;
+
+      li {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+
+        :global(svg) {
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
+          background: #e4eee4;
+          color: #2f6b3a;
+          padding: 8px;
+          box-sizing: border-box;
+        }
+        span {
+          display: flex;
+          flex-direction: column;
+          line-height: 1.25;
+        }
+        b {
+          font-size: 13px;
+          font-weight: 700;
+          color: #2e3d2f;
+        }
+        i {
+          font-style: normal;
+          font-size: 12.5px;
+          color: #8a978b;
+        }
+      }
+    }
+
+    // фото кухни справа: вплотную к верхнему/правому/нижнему краю карточки,
+    // левый edge плавно растворяется в белом фоне
+    &__photo {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      height: 100%;
+      width: 40%;
+      max-width: 480px;
+      object-fit: cover;
+      border-radius: 0 16px 16px 0;
+      mask-image: linear-gradient(to right, transparent 0, #000 110px);
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 110px);
+
+      @media (max-width: 860px) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 860px) {
+      padding: 20px;
+      &__main {
+        align-items: center;
+        text-align: center;
+      }
+      &__main p {
+        max-width: none;
+      }
+      &__features {
+        justify-content: center;
+        li {
+          flex-direction: column;
+          gap: 6px;
+          text-align: center;
+        }
+      }
+    }
+  }
   .hero-section {
     margin-top: 0;
   }

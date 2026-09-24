@@ -209,36 +209,51 @@ async function pickForSlot(
     req
   );
 
-  // Если для слота заданы приоритетные товары — показываем ТОЛЬКО их,
-  // случайный каталог из выдачи не подмешиваем
+  const bf = brandFilters(cfg);
+  const fetchRegular = async (): Promise<Product[]> => {
+    for (const attempt of attempts) {
+      const { products } = await fetchProducts(
+        {
+          types: [...SLOT_TYPES[slot]],
+          sort: 'price_asc',
+          ...bf,
+          ...attempt
+        },
+        12
+      );
+      const regular = (products as unknown as Product[]).filter((p: any) => displayPrice(p) != null);
+      if (regular.length) return regular;
+    }
+    return [];
+  };
+
+  // Если для слота заданы приоритетные товары — выбранный берём из них,
+  // а в «заменить» добираем похожие из каталога, чтобы выбор был не из одного
   if (priority.length) {
+    const chosen = priority[0];
+    const alternatives = priority.slice(0, 4);
+    if (alternatives.length < 3) {
+      const seen = new Set(alternatives.map((p) => String(p.id)));
+      seen.add(String(chosen.id));
+      for (const p of await fetchRegular()) {
+        if (alternatives.length >= 3) break;
+        const id = String(p.id);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        alternatives.push(p);
+      }
+    }
     return {
       slot,
       label: SLOT_LABELS[slot],
-      chosen: priority[0],
-      alternatives: priority.slice(0, 4)
+      chosen,
+      alternatives
     };
   }
   // Приоритетных для слота нет — добираем из каталога с учётом блока «Бренды».
   // Приоритетные и автодобор дополняют друг друга, а не исключают: блок брендов
   // задаёт пул для категорий, которые администратор не заполнил вручную.
-  const bf = brandFilters(cfg);
-  let regular: Product[] = [];
-  for (const attempt of attempts) {
-    const { products } = await fetchProducts(
-      {
-        types: [...SLOT_TYPES[slot]],
-        sort: 'price_asc',
-        ...bf,
-        ...attempt
-      },
-      12
-    );
-    if (products.length) {
-      regular = (products as unknown as Product[]).filter((p: any) => displayPrice(p) != null);
-      if (regular.length) break;
-    }
-  }
+  const regular = await fetchRegular();
 
   // Собираем: приоритетные сначала, затем обычные без дублей, максимум 4 альтернативы
   const seen = new Set<string>();

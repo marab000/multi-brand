@@ -22,7 +22,8 @@
     Banknote,
     QrCode,
     Smartphone,
-    ChevronDown
+    ChevronDown,
+    ShoppingBag
   } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
@@ -135,6 +136,11 @@
                 <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>
                   {item.name}
                 </a>
+                {#if item.bundle}
+                  <span class="bundle-badge">
+                    <ShoppingBag size={12} strokeWidth={2.4} /> Из комплекта «Собери кухню»</span
+                  >
+                {/if}
                 {#if item.description}
                   <p class="description">{item.description}</p>
                 {/if}
@@ -151,7 +157,11 @@
                 >
               </div>
               <div class="sum-wrap">
-                {#if cartDiscountPercent > 0 && !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
+                {#if item.bundle && item.oldPrice && item.oldPrice > item.price}
+                  <!-- у товара из комплекта своя скидка — показываем её, глобальную не стакаем -->
+                  <p class="old-sum">{formatPrice(item.oldPrice * item.qty)} ₽</p>
+                  <p class="discount-sum sum">{formatPrice(item.price * item.qty)} ₽</p>
+                {:else if cartDiscountPercent > 0 && !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
                   <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
                   <p class="discount-sum sum">
                     {formatPrice(itemDiscountedPrice(item) * item.qty)} ₽
@@ -430,6 +440,23 @@
         color: #777;
         font-size: 13px;
         line-height: 1.35;
+      }
+      .bundle-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        width: fit-content;
+        margin-top: 5px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: rgba($green, 0.1);
+        color: #14532d;
+        font-size: 11.5px;
+        font-weight: 700;
+        white-space: nowrap;
+        :global(svg) {
+          color: $green;
+        }
       }
       .item-actions {
         display: grid;

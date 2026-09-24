@@ -17,6 +17,7 @@
         priorityProducts: string[];
       };
       allBrands: string[];
+      discount: { enabled: boolean; percent: number };
       priorityItems: {
         id: string;
         name: string;

@@ -34,6 +34,21 @@ async function ensureSlidesTable() {
     values ('excluded_brands', '["asko","omoikiri","franke"]')
     on conflict (key) do nothing
   `;
+  // Скидка за комплект (конструктор «Собери кухню»)
+  await sql`
+    insert into settings (key, value)
+    values ('bundle_discount_enabled', 'false'), ('bundle_discount_percent', '5')
+    on conflict (key) do nothing
+  `;
+  // Конфиг викторины «Собери кухню» (бренды, приоритетные товары, тексты — задел)
+  await sql`
+    insert into settings (key, value)
+    values (
+      'podbor_config',
+      '{"version":1,"brands":{"mode":"all","whitelist":[],"blacklist":[]},"priorityProducts":[],"texts":{}}'
+    )
+    on conflict (key) do nothing
+  `;
   await sql`
     create table if not exists articles (
       id serial primary key,
