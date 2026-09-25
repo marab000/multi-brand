@@ -80,7 +80,13 @@
   </div>
 
   <div class="footer__bottom flex flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:text-left">
-    <p>© {year} MULTIBRAND. Все права защищены.</p>
+    <p>© {year} MULTIBRAND — интернет-магазин бытовой техники в Казани</p>
+    <p class="footer__requisites">ИНН 165123360719 · ОГРНИП 325169000035393</p>
+    <p class="footer__legal-links flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
+      <a href="/privacy">Политика обработки персональных данных</a>
+      <a href="/offer">Договор оферты</a>
+      <a href="/garantiya">Гарантия</a>
+    </p>
     <p class="footer__disclaimer">
       Вся представленная на сайте информация носит информационный характер и не является публичной
       офертой. Точную информацию о товарах уточняйте у наших специалистов.
@@ -202,6 +208,16 @@
       font-size: 11.5px !important;
       line-height: 1.5;
       color: #64748b !important;
+    }
+
+    &__legal-links a {
+      font-size: 12px;
+      color: #94a3b8;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      &:hover {
+        color: $yellow;
+      }
     }
   }
 </style>
