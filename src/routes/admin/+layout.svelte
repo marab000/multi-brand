@@ -6,6 +6,11 @@
   const activePath = derived(page, ($page) => $page.url.pathname);
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+
 {#if data.user}
   <div class="admin">
     <aside class="sidebar">

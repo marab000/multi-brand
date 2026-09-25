@@ -110,6 +110,11 @@
   });
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+
 <div class="cart-page">
   {#if $cart.length === 0}
     <div class="empty-state mb-4">

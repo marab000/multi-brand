@@ -151,7 +151,7 @@
 </script>
 
 <svelte:head>
-  <title>Мультибренд Казань — интернет-магазин бытовой техники | Купить встроенную технику для кухни (MultiBrand)</title>
+  <title>Бытовая техника в Казани — интернет-магазин Мультибренд | Рассрочка, доставка</title>
   <meta
     name="description"
     content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
@@ -332,6 +332,33 @@
   </div>
 </section>
 
+{#if data.latestArticles?.length}
+  <section class="mx-auto">
+    <div class="articles-home__head">
+      <h2 class="section-title">Статьи</h2>
+      <a class="articles-home__all" href="/articles">Все статьи <ArrowRight size={16} strokeWidth={2.3} /></a>
+    </div>
+    <div class="articles-home__grid">
+      {#each data.latestArticles as article (article.id)}
+        <a class="articles-home__card" href="/articles/{article.slug}">
+          <div class="articles-home__cover">
+            {#if article.cover_url}
+              <img src={article.cover_url} alt={article.title} loading="lazy" />
+            {:else}
+              <div class="no-cover"></div>
+            {/if}
+          </div>
+          <div class="articles-home__body">
+            <h3>{article.title}</h3>
+            {#if article.description}
+              <p>{article.description}</p>
+            {/if}
+          </div>
+        </a>
+      {/each}
+    </div>
+  </section>
+{/if}
 
 <section class="mx-auto">
   <h2 class="section-title">Бренды</h2>
@@ -344,7 +371,7 @@
 
 <section class="about-seo mx-auto">
   <div class="about-seo__inner">
-    <h2>Магазин бытовой техники «Мультибренд» в Казани</h2>
+    <h1 class="seo-h1">Бытовая техника в Казани — интернет-магазин «Мультибренд»</h1>
     <p>
       Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации кухни и дома современной бытовой техникой в Казани. Мы собрали в одном каталоге продукцию ведущих мировых производителей, чтобы вы могли легко подобрать технику под любой интерьер, кухонный проект или готовый дизайн.
     </p>
@@ -532,6 +559,96 @@
     font-weight: 800;
     line-height: 1.15;
     color: #111827;
+  }
+  .articles-home__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    .section-title {
+      margin-bottom: 0;
+    }
+  }
+  .articles-home__all {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 700;
+    color: $green;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+  .articles-home__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 16px;
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .articles-home__card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    border-radius: 16px;
+    background: #fff;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      h3 {
+        color: $green;
+      }
+    }
+  }
+  .articles-home__cover {
+    height: 160px;
+    background: #f8f9fa;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .no-cover {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba($green, 0.08), rgba($yellow, 0.1));
+    }
+  }
+  .articles-home__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px 18px;
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.3;
+      color: #111827;
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      transition: color 0.15s;
+    }
+    p {
+      margin: 0;
+      font-size: 0.86rem;
+      line-height: 1.5;
+      color: #667085;
+      display: -webkit-box;
+      overflow: hidden;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
   }
   .features-grid {
     display: grid;
@@ -1018,6 +1135,14 @@
     h2 {
       margin: 0 0 16px;
       font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #111827;
+    }
+    /* H1 страницы: живёт в конце страницы как SEO-описание, стилистически крупнее h2 */
+    .seo-h1 {
+      margin: 0 0 16px;
+      font-size: 1.9rem;
       font-weight: 800;
       line-height: 1.2;
       color: #111827;

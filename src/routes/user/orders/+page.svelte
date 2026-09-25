@@ -17,6 +17,11 @@
   const getProductHref = (item: any) => (item.slug ? `/products/${item.slug}` : '');
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+
 <div class="account-orders">
   <h2>Мои заказы</h2>
   {#if !data.orders.length}

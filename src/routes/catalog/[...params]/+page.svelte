@@ -12,7 +12,25 @@
       ? `/catalog/search?search=${encodeURIComponent(searchValue)}`
       : $page.url.pathname;
   $: isOnlySearchEmpty = data.isSearchPage && data.hasSearch && !data.hasRealFilters;
+  // Фильтры, сортировка и страницы пагинации — не для индексации
+  $: shouldNoindex =
+    data.hasRealFilters || (data.page ?? 1) > 1 || (data.isSearchPage && !searchValue);
 </script>
+
+<svelte:head>
+  <title>
+    {data.isSearchPage && searchValue
+      ? `Поиск: ${searchValue} | MULTIBRAND`
+      : data.isSearchPage
+        ? 'Поиск | MULTIBRAND'
+        : data.page > 1
+          ? `${data.title} — страница ${data.page} | MULTIBRAND`
+          : `${data.title} | MULTIBRAND`}
+  </title>
+  {#if shouldNoindex}
+    <meta name="robots" content="noindex, follow" />
+  {/if}
+</svelte:head>
 
 <main class="catalog-content">
   <h1 class="title text-[24px]!">

@@ -27,6 +27,7 @@
 
 <svelte:head>
   <title>Избранное — multi-brand</title>
+  <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="favorites-page">

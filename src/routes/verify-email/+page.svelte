@@ -5,6 +5,11 @@
   export let data: PageData;
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+
 <div class="verify-email container mx-auto">
   <div class="verify-email__card">
     <div

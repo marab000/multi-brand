@@ -46,6 +46,11 @@
   }
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+
 <div class="account-info">
   <h2>Аккаунт</h2>
   <form

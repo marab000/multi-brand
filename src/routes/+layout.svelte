@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Toaster } from 'svelte-sonner';
-  import { navigating } from '$app/stores';
+  import { navigating, page } from '$app/stores';
   import './layout.css';
   import Header from '$lib/components/Header.svelte';
   import BottomNav from '$lib/components/BottomNav.svelte';
@@ -23,10 +23,64 @@
     children: any;
   }>();
 
+  const canonicalUrl = $derived(`https://multi-brand.online${$page.url.pathname}`);
+
+  // Schema.org: организация + локальный бизнес + сайт (глобально для всех страниц)
+  const orgSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': 'https://multi-brand.online/#organization',
+        name: 'Мультибренд',
+        url: 'https://multi-brand.online/',
+        logo: 'https://multi-brand.online/favicon/favicon.svg',
+        email: 'Multibrend2005@yandex.ru',
+        telephone: '+7 (937) 577-77-51',
+        sameAs: [
+          'https://t.me/+79375777751',
+          'https://max.ru/u/f9LHodD0cOJd3pqJtE3zs9SRYVMfnhHoWJKEYKq253D7DVbb1oMkXOZxb5g'
+        ]
+      },
+      {
+        '@type': 'LocalBusiness',
+        '@id': 'https://multi-brand.online/#localbusiness',
+        name: 'Мультибренд — интернет-магазин бытовой техники',
+        priceRange: '₽₽',
+        image: 'https://multi-brand.online/images/podbor-kitchen.png',
+        telephone: '+7 (937) 577-77-51',
+        email: 'Multibrend2005@yandex.ru',
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Казань',
+          addressCountry: 'RU'
+        },
+        openingHoursSpecification: {
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+          opens: '09:00',
+          closes: '21:00'
+        }
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://multi-brand.online/#website',
+        url: 'https://multi-brand.online/',
+        name: 'Мультибренд',
+        publisher: { '@id': 'https://multi-brand.online/#organization' }
+      }
+    ]
+  };
+
   onMount(() => {
     // cart/favorites инициализируются автоматически при создании store
   });
 </script>
+
+<svelte:head>
+  <link rel="canonical" href={canonicalUrl} />
+  {@html `<script type="application/ld+json">${JSON.stringify(orgSchema)}</script>`}
+</svelte:head>
 
 {#if $navigating}
   <div class="route-loader"></div>

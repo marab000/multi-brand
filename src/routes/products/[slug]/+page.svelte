@@ -129,6 +129,38 @@
   });
 </script>
 
+<svelte:head>
+  <title>{p ? p.name + (p.product_type ? ' — ' + p.product_type : '') + ' | MULTIBRAND' : 'Товар не найден | MULTIBRAND'}</title>
+  <meta
+    name="description"
+    content={p
+      ? `${p.product_type || p.name} ${p.brand?.name ?? ''} в Казани. ${p.name} — цена ${
+          price ? Math.round(price * 1000).toLocaleString('ru-RU') + ' ₽' : 'уточняйте'
+        }, доставка и гарантия. Купить в интернет-магазине MULTIBRAND.`.slice(0, 300)
+      : 'Товар не найден.'}
+  />
+  {#if p}
+    {@html `<script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: p.name,
+      description: (p.description ?? p.name).slice(0, 300),
+      image: images.filter(Boolean).slice(0, 3).map((im: any) => im.url),
+      sku: p.article ?? p.external_id ?? p.id,
+      brand: p.brand?.name ? { '@type': 'Brand', name: p.brand.name } : undefined,
+      category: p.product_type ?? undefined,
+      offers: {
+        '@type': 'Offer',
+        url: 'https://multi-brand.online/products/' + slug,
+        priceCurrency: 'RUB',
+        price: Math.round(getProductPrice(p) * 1000),
+        availability: 'https://schema.org/InStock',
+        itemCondition: 'https://schema.org/NewCondition'
+      }
+    })}</script>`}
+  {/if}
+</svelte:head>
+
 {#if p}
   <div class="mx-auto flex flex-col items-start">
     <Breadcrumbs items={breadcrumbs} product={p.name} />
@@ -303,9 +335,9 @@
             <div class="space-y-2 pb-5 text-sm">
               {#each specs as s}
                 <div class="flex items-baseline gap-2">
-                  <span class="whitespace-nowrap text-gray-500">{s.name}</span>
+                  <span class="min-w-0 max-w-45 break-words text-gray-500">{s.name}</span>
                   <span class="flex-1 border-b border-dashed border-gray-300"></span>
-                  <span class="max-w-50 shrink-0">{s.value}</span>
+                  <span class="min-w-0 max-w-50 break-words text-right">{s.value}</span>
                 </div>
               {/each}
             </div>

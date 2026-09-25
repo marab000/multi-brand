@@ -29,7 +29,12 @@ export const GET: RequestHandler = async () => {
     { path: '/about', priority: 0.5 },
     { path: '/contacts', priority: 0.5 },
     { path: '/delivery', priority: 0.5 },
-    { path: '/favorites', priority: 0.3 }
+    { path: '/favorites', priority: 0.3 },
+    { path: '/podbor', priority: 0.8 },
+    { path: '/articles', priority: 0.7 },
+    { path: '/privacy', priority: 0.2 },
+    { path: '/offer', priority: 0.2 },
+    { path: '/garantiya', priority: 0.4 }
   ];
   for (const p of staticPages) {
     entries.push({

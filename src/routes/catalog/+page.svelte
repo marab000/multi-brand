@@ -111,6 +111,14 @@
   );
 </script>
 
+<svelte:head>
+  <title>Каталог бытовой техники в Казани | MULTIBRAND</title>
+  <meta
+    name="description"
+    content="Каталог бытовой техники MULTIBRAND: встраиваемая техника, вытяжки, мойки, смесители и климатическая техника. Доставка по Казани и всей России."
+  />
+</svelte:head>
+
 <div class="catalog-hub">
   <div class="sections">
     {#each sections as section}

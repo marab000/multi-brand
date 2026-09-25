@@ -33,6 +33,11 @@
   }
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
+
 <div class="account-offers">
   <h2>Мои КП</h2>
   {#if !data.offers.length}

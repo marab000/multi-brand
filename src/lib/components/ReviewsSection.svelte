@@ -75,7 +75,26 @@
     next.has(index) ? next.delete(index) : next.add(index);
     expandedReviews = next;
   };
+
+  // Отзывы реальные (Яндекс/2ГИС) — размечаем честно, по одному на отзыв
+  const reviewsSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': 'https://multi-brand.online/#localbusiness',
+    name: 'Мультибренд',
+    review: reviews.map((r) => ({
+      '@type': 'Review',
+      author: { '@type': 'Person', name: r.author },
+      url: r.url,
+      reviewBody: r.text,
+      reviewRating: { '@type': 'Rating', bestRating: 5, worstRating: 1, ratingValue: 5 }
+    }))
+  };
 </script>
+
+<svelte:head>
+  {@html `<script type="application/ld+json">${JSON.stringify(reviewsSchema)}</script>`}
+</svelte:head>
 
 <section class="reviews-section mx-auto">
   <div class="reviews-section__head">
