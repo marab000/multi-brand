@@ -1,5 +1,6 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner';
+  import VideoUpload from '$lib/components/VideoUpload.svelte';
   import {
     ArrowLeft, Trash, GripVertical, Plus, Save, Upload,
     Heading2, Type, Image as ImageIcon, List, MessageSquareQuote, MousePointerClick, Video,
@@ -465,15 +466,13 @@
                 />
 
               {:else if block.type === 'video'}
-                <input
-                  type="text"
-                  placeholder="URL видео (например /videos/video-1.mp4)"
-                  value={block.content.src}
-                  oninput={(e) => updateBlockContent(block, { src: e.currentTarget.value })}
+                <VideoUpload
+                  bind:value={block.content.src}
+                  label="Видеофайл (MP4/WebM, до 500 МБ)"
                 />
                 <input
                   type="text"
-                  placeholder="URL постера (например /videos/video-1.jpg)"
+                  placeholder="URL постера, например /videos/video-1.jpg (картинка-заставка)"
                   value={block.content.poster}
                   oninput={(e) => updateBlockContent(block, { poster: e.currentTarget.value })}
                 />
