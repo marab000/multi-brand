@@ -94,7 +94,7 @@
 
     @media (max-width: 768px) {
       right: 14px;
-      bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
     }
   }
 

@@ -8,7 +8,8 @@
     Minus,
     Plus,
     Star,
-    Heart
+    Heart,
+    Truck
   } from 'lucide-svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
@@ -158,6 +159,10 @@
   {:else}
     <button class="btn primary" on:click|stopPropagation={addToCart}> В корзину </button>
   {/if}
+  <p class="order-note">
+    <Truck size={13} strokeWidth={2.2} />
+    Под заказ — доставим за 15 дней
+  </p>
 </div>
 
 <style lang="scss">
@@ -482,6 +487,20 @@
       span {
         min-height: 38px;
       }
+    }
+  }
+  .order-note {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: -4px 0 0;
+    color: #94a3b8;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.2;
+    :global(svg) {
+      color: $green;
+      flex-shrink: 0;
     }
   }
 </style>

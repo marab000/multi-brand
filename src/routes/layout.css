@@ -1,3 +1,20 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+
+html {
+  overflow-x: clip;
+}
+
+/* Кнопка-действие в тостах (svelte-sonner): зелёная, в стиле сайта вместо чёрной.
+   Специфичность и !important — потому что sonner красит своей инжектируемой таблицей. */
+li[data-sonner-toast] [data-button] {
+  background: #3fae5a !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600;
+}
+li[data-sonner-toast] [data-button]:hover {
+  background: #35994e !important;
+}

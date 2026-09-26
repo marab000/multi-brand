@@ -1,11 +1,9 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { Home, LayoutGrid, ShoppingCart, Heart, User } from 'lucide-svelte';
+  import { Home, LayoutGrid, ShoppingCart, User } from 'lucide-svelte';
   import { cart } from '$lib/stores/cart';
-  import { favorites } from '$lib/stores/favorites';
 
   let cartCount = $derived($cart.reduce((sum, i) => sum + i.qty, 0));
-  let favCount = $derived($favorites.length);
 
   let pathname = $derived(page.url.pathname);
 
@@ -13,8 +11,7 @@
     { href: '/', label: 'Главная', icon: Home, exact: true },
     { href: '/catalog', label: 'Каталог', icon: LayoutGrid, exact: true },
     { href: '/cart', label: 'Корзина', icon: ShoppingCart, badge: () => cartCount },
-    { href: '/favorites', label: 'Избранное', icon: Heart, badge: () => favCount },
-    { href: '/user', label: 'Профиль', icon: User }
+    { href: '/user/info', label: 'Профиль', icon: User }
   ];
 
   let isActive = (item: (typeof items)[number]) =>

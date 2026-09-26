@@ -458,9 +458,10 @@
         color: #14532d;
         font-size: 11.5px;
         font-weight: 700;
-        white-space: nowrap;
+        max-width: 100%;
         :global(svg) {
           color: $green;
+          flex-shrink: 0;
         }
       }
       .item-actions {
