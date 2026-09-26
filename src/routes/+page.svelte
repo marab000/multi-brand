@@ -167,8 +167,6 @@
   </div>
 </section>
 
-<VideoSection />
-
 <section class="mx-auto">
   <a class="podbor-cta" href="/podbor">
     <div class="podbor-cta__main">
@@ -198,6 +196,8 @@
     />
   </a>
 </section>
+
+<VideoSection />
 
 <section class="mx-auto">
   <h2 class="section-title">Преимущества</h2>
