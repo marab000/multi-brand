@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { imgUrl } from '$lib/s3Public';
   import { favorites } from '$lib/stores/favorites';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
@@ -49,7 +50,7 @@
               href={item.slug ? `/products/${item.slug}` : undefined}
               aria-label={item.name}
             >
-              <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
+              <img src={imgUrl(item.image, 320)} alt={item.name} />
             </a>
             <div class="info">
               <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>

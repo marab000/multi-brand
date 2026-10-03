@@ -25,12 +25,12 @@
   import { slugify } from '$lib/utils/slugify';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
+  import { imgUrl } from '$lib/s3Public';
   export let product;
   const image =
     product.images && product.images.length
-      ? product.images.reduce((prev: any, curr: any) =>
-          prev.position < curr.position ? prev : curr
-        ).url
+      ? imgUrl(product.images.reduce((prev: any, curr: any) => prev.position < curr.position ? prev : curr
+        ).url, 480)
       : '/images/no_image.png';
   const slug = slugify(product.name);
   const price = getProductPrice(product);

@@ -18,6 +18,7 @@
   import { onMount } from 'svelte';
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
+  import { imgUrl } from '$lib/s3Public';
   import { PiggyBank, Star, Minus, Plus } from 'lucide-svelte';
   register();
   type ProductPageProduct = Product & {
@@ -33,7 +34,8 @@
   let zoomIndex = $state(0);
   let includedVisibleCount = $state(8);
   const images = $derived(p.images?.length ? p.images : []);
-  const image = $derived(images[0]?.url || '/images/no_image.png');
+  // 320 хватит для миниатюр в корзине/избранном; галерея ниже строит свои варианты
+  const image = $derived(imgUrl(images[0]?.url, 320));
   const slug = $derived(slugify(p.name));
   const price = $derived(getProductPrice(p));
   const oldPrice = $derived(getBaseProductPrice(p));
@@ -93,11 +95,9 @@
     return item.child_product ? getProductPrice(item.child_product) : Number(item.price_rrc || 0);
   }
   function getKitItemImage(item: ProductKitItem) {
-    return (
-      item.child_product?.images?.[0]?.url ||
-      item.image ||
-      item.preview_image ||
-      '/images/no_image.png'
+    return imgUrl(
+      item.child_product?.images?.[0]?.url || item.image || item.preview_image,
+      160
     );
   }
   function getKitItemHref(item: ProductKitItem) {
@@ -176,8 +176,10 @@
               <swiper-slide>
                 <button class="gallery-image" type="button" onclick={() => openZoom(i)}>
                   <img
-                    src={img.url}
+                    src={imgUrl(img.url, 1200)}
                     alt={p.name}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    fetchpriority={i === 0 ? 'high' : 'auto'}
                     class="h-full w-full object-contain p-4 select-none"
                   />
                 </button>
@@ -210,8 +212,9 @@
                     onclick={() => mainSwiper?.swiper?.slideTo(i)}
                   >
                     <img
-                      src={img.url}
+                      src={imgUrl(img.url, 160)}
                       alt={p.name}
+                      loading="lazy"
                       class="pointer-events-none h-full w-full object-contain p-1"
                     />
                   </button>
@@ -305,7 +308,7 @@
             <div class="included-kits">
               {#each visibleIncludedInKits as kit}
                 <a class="included-kit" href={`/products/${kit.slug}`}>
-                  <img src={kit.image || '/images/no_image.png'} alt={kit.name} loading="lazy" />
+                  <img src={imgUrl(kit.image, 320)} alt={kit.name} loading="lazy" />
                   <span>{kit.name}</span>
                   {#if kit.price_rrc}
                     <b>{formatPrice(kit.price_rrc)} ₽</b>

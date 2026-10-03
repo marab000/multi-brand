@@ -1,5 +1,6 @@
 <script lang="ts">
   import ArticleBlocks from '$lib/components/ArticleBlocks.svelte';
+  import { imgUrl } from '$lib/s3Public';
 
   let { data } = $props<{ data: { article: any; blocks: any[] } }>();
 
@@ -17,7 +18,7 @@
   <div class="article-page__head">
     {#if data.article.cover_url}
       <div class="hero">
-        <img src={data.article.cover_url} alt={data.article.title} />
+        <img src={imgUrl(data.article.cover_url, 1200)} alt={data.article.title} />
       </div>
     {/if}
     <div class="meta">

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { imgUrl } from '$lib/s3Public';
+
   let { data } = $props<{ data: { articles: any[] } }>();
 
   function fmtDate(d: string) {
@@ -24,7 +26,7 @@
         <a class="card" href="/articles/{article.slug}">
           <div class="card__cover">
             {#if article.cover_url}
-              <img src={article.cover_url} alt={article.title} loading="lazy" />
+              <img src={imgUrl(article.cover_url, 640)} alt={article.title} loading="lazy" />
             {:else}
               <div class="no-cover"></div>
             {/if}

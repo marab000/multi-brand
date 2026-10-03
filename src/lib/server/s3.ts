@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+	S3Client,
+	PutObjectCommand,
+	DeleteObjectCommand,
+	GetObjectCommand
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import sharp from 'sharp';
 import { S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET } from '$env/static/private';
@@ -15,8 +20,19 @@ const client = new S3Client({
 
 const PUBLIC_PREFIX = `${S3_ENDPOINT.replace(/\/$/, '')}/${S3_BUCKET}/`;
 
-export async function uploadImage(buffer: Buffer, key: string, contentType = 'image/webp'): Promise<string> {
-  await client.send(
+/** Скачивает объект из бакета. Возвращает null, если ключа нет. */
+export async function getObjectBuffer(key: string): Promise<Buffer | null> {
+  try {
+    const res = await client.send(new GetObjectCommand({ Bucket: S3_BUCKET, Key: key }));
+    return Buffer.from(await res.Body!.transformToByteArray());
+  } catch (e: any) {
+    const code = e?.$metadata?.httpStatusCode;
+    if (e?.name === 'NoSuchKey' || e?.name === 'NotFound' || code === 404) return null;
+    throw e;
+  }
+}
+
+export async function uploadImage(buffer: Buffer, key: string, contentType = 'image/webp'): Promise<string> {  await client.send(
     new PutObjectCommand({
       Bucket: S3_BUCKET,
       Key: key,

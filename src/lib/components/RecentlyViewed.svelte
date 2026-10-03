@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import { recentlyViewed, type RecentlyViewedProduct } from '$lib/stores/recentlyViewed';
+  import { imgUrl } from '$lib/s3Public';
 
   let items = $state<RecentlyViewedProduct[]>([]);
   let listEl = $state<HTMLDivElement | null>(null);
@@ -80,7 +81,7 @@
         <a class="item" href={`/products/${item.slug}`} draggable="false" onclick={onItemClick}>
           <div class="image">
             <img
-              src={item.image || '/images/no_image.png'}
+              src={imgUrl(item.image, 320)}
               alt={item.name}
               loading="lazy"
               draggable="false"

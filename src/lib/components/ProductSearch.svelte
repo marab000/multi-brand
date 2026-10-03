@@ -3,6 +3,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { Search, X, Folder } from 'lucide-svelte';
+  import { imgUrl } from '$lib/s3Public';
 
   type SearchSuggestion = {
     type: 'category' | 'brand';
@@ -162,7 +163,7 @@
           class:selected={i + suggestions.length === selected}
           on:click={() => goToProduct(r)}
         >
-          <img src={r.images?.[0]?.url ?? '/images/no_image.png'} alt="" />
+          <img src={imgUrl(r.images?.[0]?.url, 160)} alt="" />
           <div class="info">
             <div class="top">
               <div class="name">{r.name}</div>
