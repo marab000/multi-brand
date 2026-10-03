@@ -144,6 +144,22 @@ button {
   }
   .box {
     @extend .check;
+    /* оптическое выравнивание с центром первой строки текста */
+    margin-top: 3px;
+    position: relative;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 8px;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: translate(-50%, -60%) rotate(45deg);
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
   }
   .text {
     line-height: 1.35;
@@ -151,10 +167,16 @@ button {
   &.primary input:checked + .box {
     background: $green-light;
     border-color: $green-light;
+    &::after {
+      opacity: 1;
+    }
   }
   &.secondary input:checked + .box {
     background: $yellow;
     border-color: $yellow;
+    &::after {
+      opacity: 1;
+    }
   }
   input:disabled + .box,
   input:disabled ~ .text {

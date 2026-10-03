@@ -54,6 +54,7 @@
     data?: {
       catalogRoots?: CatalogRoot[];
       catalogShowcase?: CatalogShowcaseSection[];
+      syncBrands?: string[];
     };
   }>();
 
@@ -118,6 +119,8 @@
     content="Каталог бытовой техники MULTIBRAND: встраиваемая техника, вытяжки, мойки, смесители и климатическая техника. Доставка по Казани и всей России."
   />
 </svelte:head>
+
+<h1 class="sr-only">Каталог бытовой техники в Казани</h1>
 
 <div class="catalog-hub">
   <div class="sections">
@@ -242,7 +245,7 @@
 
   <div class="brands-section">
     <h2>Бренды</h2>
-    <BrandsGrid />
+    <BrandsGrid brands={data.syncBrands ?? []} />
   </div>
 </div>
 

@@ -60,8 +60,8 @@
     <button class="close" type="button" aria-label="Закрыть" onclick={close}
       ><X size={22} strokeWidth={2.1} /></button
     >
-    <h3>Оставьте заявку</h3>
-    <p>Мы свяжемся с вами в ближайшее время</p>
+    <h3>Консультант Павел</h3>
+    <p class="modal-sub-big">Мы свяжемся с вами в ближайшее время</p>
     <form
       onsubmit={(e) => {
         e.preventDefault();
@@ -102,7 +102,7 @@
       </label>
       <button class="btn primary submit" type="submit" disabled={!agree || loading}
         ><Send size={19} strokeWidth={2.2} /><span
-          >{loading ? 'Отправляем...' : 'Отправить заявку'}</span
+          >{loading ? 'Отправляем...' : 'Продолжить'}</span
         ></button
       >
     </form>
@@ -165,6 +165,10 @@
       line-height: 1.08;
       font-weight: 800;
       letter-spacing: -0.04em;
+    }
+    .modal-sub-big {
+      font-size: 17px;
+      font-weight: 700;
     }
     p {
       margin: 8px 0 20px;

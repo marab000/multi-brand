@@ -60,7 +60,7 @@ export const PATCH: RequestHandler = async ({ request, cookies, locals }) => {
       `;
     }
     if (key === 'podbor_config') {
-      const cfg = value && typeof value === 'object' ? value : null;
+      const cfg: any = value && typeof value === 'object' ? value : null;
       if (!cfg) throw error(400, 'Некорректный конфиг викторины');
       const mode = cfg.brands?.mode;
       if (mode !== undefined && !['all', 'whitelist', 'blacklist'].includes(mode)) {
@@ -84,6 +84,17 @@ export const PATCH: RequestHandler = async ({ request, cookies, locals }) => {
       if (cfg.texts !== undefined && typeof cfg.texts !== 'object') {
         throw error(400, 'texts должен быть объектом');
       }
+      if (cfg.bonusExcludedBrands !== undefined && !isStrArr(cfg.bonusExcludedBrands)) {
+        throw error(400, 'Бренды без бонусов — массив строк');
+      }
+      const segs = cfg.brandSegments;
+      if (
+        segs !== undefined &&
+        (typeof segs !== 'object' ||
+          [segs.budget, segs.medium, segs.premium].some((v) => v !== undefined && !isStrArr(v)))
+      ) {
+        throw error(400, 'Сегменты брендов — объект с массивами строк');
+      }
       const normalized = {
         version: 1,
         brands: {
@@ -92,6 +103,12 @@ export const PATCH: RequestHandler = async ({ request, cookies, locals }) => {
           blacklist: cfg.brands?.blacklist ?? []
         },
         priorityProducts: cfg.priorityProducts ?? [],
+        bonusExcludedBrands: cfg.bonusExcludedBrands ?? [],
+        brandSegments: {
+          budget: segs?.budget ?? [],
+          medium: segs?.medium ?? [],
+          premium: segs?.premium ?? []
+        },
         texts: cfg.texts ?? {}
       };
       const json = JSON.stringify(normalized);

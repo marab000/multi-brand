@@ -1,5 +1,6 @@
 <script lang="ts">
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import ProductCard from '$lib/components/ProductCard.svelte';
   import { register } from 'swiper/element/bundle';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
@@ -24,7 +25,7 @@
     kitItems?: ProductKitItem[];
     includedInKits?: ProductKitLink[];
   };
-  let { data } = $props<{ data: { product: ProductPageProduct | null } }>();
+  let { data } = $props<{ data: { product: ProductPageProduct | null; alsoBought?: any[] } }>();
   const p = $derived(data.product);
   if (!p) throw new Error('Product is null');
   let mainSwiper = $state<any>(null);
@@ -130,7 +131,7 @@
 </script>
 
 <svelte:head>
-  <title>{p ? p.name + (p.product_type ? ' — ' + p.product_type : '') + ' | MULTIBRAND' : 'Товар не найден | MULTIBRAND'}</title>
+  <title>{p ? (p.name.length > 55 ? p.name.slice(0, 55).trim() + '…' : p.name) + ' | MULTIBRAND' : 'Товар не найден | MULTIBRAND'}</title>
   <meta
     name="description"
     content={p
@@ -376,6 +377,17 @@
       </div>
     </div>
   {/if}
+{/if}
+
+{#if p && data.alsoBought?.length}
+  <section class="also-bought mx-auto w-full">
+    <h2 class="also-bought__title">С этим товаром покупают</h2>
+    <div class="also-bought__grid">
+      {#each data.alsoBought as item (item.id)}
+        <ProductCard product={item} />
+      {/each}
+    </div>
+  </section>
 {/if}
 
 <style lang="scss">
@@ -691,6 +703,26 @@
       }
       b {
         grid-column: 2;
+      }
+    }
+  }
+  .also-bought {
+    margin-top: 28px;
+    &__title {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #111827;
+    }
+    &__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      @media (max-width: 1024px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      @media (max-width: 560px) {
+        grid-template-columns: 1fr;
       }
     }
   }

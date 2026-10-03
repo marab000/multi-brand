@@ -8,12 +8,14 @@
   import Footer from '$lib/components/Footer.svelte';
   import FloatingMessengers from '$lib/components/FloatingMessengers.svelte';
   import CookieBanner from '$lib/components/CookieBanner.svelte';
+  import StoragePopup from '$lib/components/StoragePopup.svelte';
   import PaymentMethods from '$lib/components/PaymentMethods.svelte';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
   import '$lib/styles/controls.scss';
   import '$lib/styles/typography.scss';
   import HelpWithSelection from '$lib/components/HelpWithSelection.svelte';
+import Ticker from '$lib/components/Ticker.svelte';
 
   let { data, children } = $props<{
     data: {
@@ -88,12 +90,19 @@
 
 <Header {data} />
 
+{#if $page.url.pathname === '/'}
+  <Ticker />
+{/if}
+
 <main
   class="container mx-auto mb-5 min-h-screen rounded-2xl border border-[#00000015] bg-gray-50 p-3 pb-0! lg:p-4"
 >
   {@render children()}
   <Toaster richColors position="top-center" />
-  <HelpWithSelection />
+  <!-- блок помощи с подбором — только в корзине -->
+  {#if $page.url.pathname === '/cart'}
+    <HelpWithSelection />
+  {/if}
 </main>
 
 <Footer {data} />
@@ -101,17 +110,12 @@
 <FloatingMessengers />
 <BottomNav />
 <CookieBanner />
+<StoragePopup />
 
 <style lang="scss">
   :global(.container) {
     @media (min-width: 1280px) {
       max-width: 1280px !important;
-    }
-  }
-
-  :global(body) {
-    @media (max-width: 767px) {
-      padding-bottom: 66px;
     }
   }
 

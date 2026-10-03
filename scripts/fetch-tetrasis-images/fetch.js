@@ -482,8 +482,10 @@ async function main() {
 	try {
 		await fs.ensureDir(ROOT)
 		await fs.writeFile(LOG, '')
-		const selectedBrands = allowedBrands()
-		if (!selectedBrands.length) throw new Error('brands.json is empty')
+		// FETCH_IMAGES_BRANDS='gorenje,bosch' — запустить точечно по брендам (иначе все из brands.json)
+		const brandsFilter = String(process.env.FETCH_IMAGES_BRANDS || '').split(',').map(b => b.trim().toLowerCase()).filter(Boolean)
+		const selectedBrands = allowedBrands().filter(b => !brandsFilter.length || brandsFilter.includes(b.trim().toLowerCase()))
+		if (!selectedBrands.length) throw new Error('brands.json is empty (or FETCH_IMAGES_BRANDS matched nothing)')
 		await logInfo('START', `source:${SOURCE}`, `mode:${MODE}`, `threads:${THREADS}`, `brands:${selectedBrands.length}`, `queue:${QUEUE_FILE}`)
 		browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
 		const products = SOURCE === SOURCES.QUEUE ? await loadQueueProducts() : await loadDbProducts(selectedBrands)

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import type { CatalogFilters } from '$lib/server/catalogApi';
 import { fetchProducts } from '$lib/server/catalogApi';
 import {
@@ -46,6 +46,10 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const rootSlug = segments[0] ?? null;
   const groupSlug = segments[1] ?? null;
   const leafSlug = segments[2] ?? null;
+  // Комплекты убрали с сайта — старые ссылки ведём на раздел встраиваемой техники
+  if (segments.includes('komplekty')) {
+    redirect(301, '/catalog/vstraivaemaya-tehnika');
+  }
   const isSearchPage = rootSlug === 'search';
   const search = url.searchParams.get('search')?.trim() || undefined;
   const sortParam = url.searchParams.get('sort');

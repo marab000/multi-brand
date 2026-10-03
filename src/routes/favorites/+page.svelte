@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-  <title>Избранное — multi-brand</title>
+  <title>Избранное | MULTIBRAND</title>
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 

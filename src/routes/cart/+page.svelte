@@ -3,6 +3,7 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { cart } from '$lib/stores/cart';
+  import { imgUrl } from '$lib/s3Public';
   import { formatPrice } from '$lib/utils/formatPrice';
   import { applyCartDiscount, isDiscountExcludedBrand } from '$lib/utils/pricing';
   import { apiFetch } from '$lib/api';
@@ -67,7 +68,16 @@
     try {
       await apiFetch(fetch, '/api/orders', {
         method: 'POST',
-        body: JSON.stringify({ name, phone: normalizeRuPhone(phone), items }),
+        body: JSON.stringify({
+          name,
+          phone: normalizeRuPhone(phone),
+          items,
+          message: [
+            `Доставка: ${delivery === 'kazan' ? 'по Казани (бесплатно)' : delivery === 'rt' ? 'по Татарстану' : 'самовывоз, Индустриальный парк M-7'}`,
+            `Оплата: ${installment === 'now' ? 'оплата сразу' : `рассрочка ${installment} мес. 0%`}`,
+            bonusMessage
+          ].join('\n')
+        }),
         headers: { 'Content-Type': 'application/json' }
       });
       reachGoal('cart_submit');
@@ -100,8 +110,19 @@
   );
   const savings = $derived(total - totalWithDiscount);
   const hasDiscount = $derived(savings > 0);
+  // Бонус за комплект (п.15): суммарная выгода по товарам из конструктора
+  const bundleBonus = $derived(
+    $cart.reduce((sum, i) => sum + (i.bundle && i.oldPrice && i.oldPrice > i.price ? (i.oldPrice - i.price) * i.qty : 0), 0)
+  );
+  const hasBundleBonus = $derived(bundleBonus > 0);
+  const bonusMessage = hasBundleBonus
+    ? `Оставьте заявку, чтобы получить ${formatPrice(bundleBonus)} ₽ баллами`
+    : '';
+  // Способ получения и рассрочка
+  let delivery = $state<'kazan' | 'rt' | 'pickup'>('kazan');
+  let installment = $state<'6' | '12' | 'now'>('now');
   const closeModal = () => (showModal = false);
-  let openAccordion = $state<string | null>('installment');
+  let openAccordion = $state<string | null>(null);
   const toggleAccordion = (id: string) => {
     openAccordion = openAccordion === id ? null : id;
   };
@@ -135,7 +156,7 @@
                 href={item.slug ? `/products/${item.slug}` : undefined}
                 aria-label={item.name}
               >
-                <img src={item.image ?? '/images/no_image.png'} alt={item.name} />
+                <img src={imgUrl(item.image, 320)} alt={item.name} />
               </a>
               <div class="info">
                 <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>
@@ -143,7 +164,7 @@
                 </a>
                 {#if item.bundle}
                   <span class="bundle-badge">
-                    <ShoppingBag size={12} strokeWidth={2.4} /> Из комплекта «Собери кухню»</span
+                    <ShoppingBag size={12} strokeWidth={2.4} /> Из комплекта «Собери комплект техники»</span
                   >
                 {/if}
                 {#if item.description}
@@ -198,11 +219,16 @@
               <span class="cart-promo__save-value">{formatPrice(savings)} ₽</span>
             </div>
             <button class="btn primary cart-promo__btn" onclick={submit}>
-              Оформить заказ
+              Оставить заявку
               <ArrowRight size={18} strokeWidth={2.5} />
             </button>
           </div>
         {/if}
+
+        <button class="clear-cart" onclick={() => cart.clear()}>
+          <Trash size={15} strokeWidth={2.4} />
+          Очистить корзину
+        </button>
       </div>
       <div class="sidebar">
         <div class="sidebar-card checkout">
@@ -210,6 +236,15 @@
             <span class="sidebar-card__icon"><BadgePercent size={18} strokeWidth={2.2} /></span>
             <span class="sidebar-card__title">Оформление</span>
           </div>
+          {#if hasBundleBonus}
+            <div class="bonus-banner">
+              <span class="bonus-banner__gift">🎁</span>
+              <span class="bonus-banner__text">
+                Оставьте заявку — получите <b class="nowrap">{formatPrice(bundleBonus)} ₽ баллами</b>
+                <i>баллами можно оплатить этот комплект прямо сейчас — или накопить и потратить на любой заказ</i>
+              </span>
+            </div>
+          {/if}
           <div class="total">
             <span>Итого:</span>
             <div class="total-prices">
@@ -239,8 +274,32 @@
               use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
             />
           </div>
+          <div class="steps-group">
+            <p class="steps-group__title">Способ получения:</p>
+            {#each [
+              { v: 'kazan', label: '🚚 Доставка по Казани — бесплатно' },
+              { v: 'rt', label: '🚚 Доставка по Татарстану — от 150 000 ₽ бесплатно' },
+              { v: 'pickup', label: '📦 Самовывоз: Индустриальный парк M-7' }
+            ] as opt (opt.v)}
+              <label class="steps-group__opt">
+                <input type="radio" bind:group={delivery} value={opt.v} />
+                <span>{opt.label}</span>
+              </label>
+            {/each}
+            <p class="steps-group__title">Рассрочка:</p>
+            {#each [
+              { v: '6', label: '6 месяцев — 0%' },
+              { v: '12', label: '12 месяцев — 0%' },
+              { v: 'now', label: 'Оплата сразу' }
+            ] as opt (opt.v)}
+              <label class="steps-group__opt">
+                <input type="radio" bind:group={installment} value={opt.v} />
+                <span>{opt.label}</span>
+              </label>
+            {/each}
+          </div>
           <div class="actions">
-            <button class="btn primary" onclick={submit}>Узнать больше</button>
+            <button class="btn primary" onclick={submit}>Оставить заявку</button>
           </div>
         </div>
 
@@ -322,11 +381,6 @@
         </div>
 
         <CartPdfExport {total} user={data.user} />
-
-        <button class="clear-cart" onclick={() => cart.clear()}>
-          <Trash size={15} strokeWidth={2.4} />
-          Очистить корзину
-        </button>
       </div>
     </div>
   {/if}
@@ -523,6 +577,10 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      width: fit-content;
+      margin-left: auto;
+      margin-top: 14px;
+      padding: 0 18px;
       height: 44px;
       border: 1.5px solid rgba(255, 0, 0, 0.25);
       border-radius: 12px;
@@ -811,6 +869,60 @@
       .cart-promo__btn {
         width: 100%;
         justify-content: center;
+      }
+    }
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  .bonus-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 10px 0 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #fef9e7;
+    border: 1px solid #f0dfa8;
+    &__gift {
+      font-size: 18px;
+    }
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 13.5px;
+      color: #374151;
+      b {
+        color: #a16207;
+      }
+      i {
+        font-style: normal;
+        font-size: 12px;
+        color: #92400e;
+      }
+    }
+  }
+  .steps-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 12px 0 4px;
+    &__title {
+      margin: 6px 0 2px;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #111827;
+    }
+    &__opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      color: #374151;
+      cursor: pointer;
+      input {
+        accent-color: $green;
       }
     }
   }

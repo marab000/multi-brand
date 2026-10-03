@@ -8,10 +8,11 @@
     Wind,
     Clock3,
     Package,
-    ShieldCheck
+    ShieldCheck,
+    MapPin,
+    ChevronDown
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
-  import VideoSection from '$lib/components/VideoSection.svelte';
   import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
   import dw from '$lib/assets/links/dw.webp';
@@ -21,26 +22,25 @@
   import mw from '$lib/assets/links/mw.webp';
   import wm from '$lib/assets/links/wm.webp';
   import hood from '$lib/assets/links/hood.webp';
-  import kit1 from '$lib/assets/kits/1.webp';
-  import kit2 from '$lib/assets/kits/2.webp';
-  import kit3 from '$lib/assets/kits/3.webp';
-  import kit4 from '$lib/assets/kits/4.webp';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
+  import ProductCard from '$lib/components/ProductCard.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
+  import { imgUrl } from '$lib/s3Public';
   import grandexLogo from '$lib/assets/brands/Grandex Aqua.webp';
   import grandexMoiki from '$lib/assets/promo/grandex-moiki.webp';
   import grandexSmesiteli from '$lib/assets/promo/grandex-smesiteli.webp';
+  import omoikiriLogo from '$lib/assets/brands/Omoikiri.webp';
+  import boneCrusherLogo from '$lib/assets/brands/Bone Crusher.webp';
   import acSplit from '$lib/assets/promo/ac-split.webp';
   import acInvertor from '$lib/assets/promo/ac-invertor.webp';
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
-  const kitColor = '#3e6f4f';
 
   let { data } = $props();
   const desktopImages = $derived(data.desktopSlides || []);
   const mobileImages = $derived(data.mobileSlides || []);
   const features = [
     {
-      title: 'Оформим честную рассрочку на 12 месяцев без процентов, переплат и скрытых комиссий всего за 5 минут',
+      title: 'Рассрочка 0% на 12 месяцев без переплат',
       pointsTitle: 'Как это работает?',
       points: [
         'Техника сразу: забираете оборудование сейчас, а первый платеж — только через месяц.',
@@ -62,7 +62,7 @@
       icon: ConciergeBell
     },
     {
-      title: 'Ваш личный склад бесплатно: храним технику, пока идёт ремонт!',
+      title: 'Бесплатное хранение на складе во время ремонта',
       text: 'Закажите оборудование сейчас по выгодной цене, а мы бесплатно сохраним его на нашем охраняемом складе площадью 1600 м². Привезем технику на объект ровно к тому моменту, когда она вам понадобится.',
       pointsTitle: 'Почему это выгодно и удобно',
       points: [
@@ -122,32 +122,14 @@
       img: hood
     }
   ];
-  const kits = [
-    {
-      title: 'Варка + духовка',
-      text: 'Базовый комплект для кухни',
-      link: '/catalog/vstraivaemaya-tehnika/komplekty/komplekt-varka-duhovka',
-      img: kit1
-    },
-    {
-      title: 'Варка + духовка + СВЧ',
-      text: 'Самый популярный набор',
-      link: '/catalog/vstraivaemaya-tehnika/komplekty/komplekt-varka-duhovka-svch',
-      img: kit2
-    },
-    {
-      title: 'Варка + духовка + СВЧ + кофемашина',
-      text: 'Для кухни с кофейной зоной',
-      link: '/catalog/vstraivaemaya-tehnika/komplekty/komplekt-varka-duhovka-svch-kofemashina',
-      img: kit3
-    },
-    {
-      title: 'Варка + духовка + СВЧ + ПММ + холодильник',
-      text: 'Готовое решение под ключ',
-      link: '/catalog/vstraivaemaya-tehnika/komplekty/komplekt-varka-duhovka-svch-pmm-holodil',
-      img: kit4
-    }
-  ];
+
+  // п.5: преимущества раскрываются по клику
+  let openFeatures = $state<Set<string>>(new Set());
+  function toggleFeature(title: string) {
+    const next = new Set(openFeatures);
+    next.has(title) ? next.delete(title) : next.add(title);
+    openFeatures = next;
+  }
 </script>
 
 <svelte:head>
@@ -156,6 +138,12 @@
     name="description"
     content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
   />
+  {#if desktopImages[0]}
+    <link rel="preload" as="image" href={desktopImages[0]} media="(min-width: 1024px)" fetchpriority="high" />
+  {/if}
+  {#if mobileImages[0]}
+    <link rel="preload" as="image" href={mobileImages[0]} media="(max-width: 1023px)" fetchpriority="high" />
+  {/if}
 </svelte:head>
 
 <section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
@@ -170,8 +158,8 @@
 <section class="mx-auto">
   <a class="podbor-cta" href="/podbor">
     <div class="podbor-cta__main">
-      <h2>Собери кухню <em>за минуту</em></h2>
-      <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет и интерьер</p>
+      <h2>Собери комплект техники <em>с помощью ИИ-помощника за 1 минуту</em></h2>
+      <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет</p>
       <span class="podbor-cta__btn">Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span>
       <ul class="podbor-cta__features">
         <li>
@@ -197,19 +185,35 @@
   </a>
 </section>
 
-<VideoSection />
+<section class="mx-auto">
+  <h2 class="section-title">Хиты продаж</h2>
+  <div class="hits-grid">
+    {#each data.hits as hit (hit.id)}
+      <ProductCard product={hit} />
+    {/each}
+  </div>
+</section>
 
 <section class="mx-auto">
   <h2 class="section-title">Преимущества</h2>
   <div class="features-grid">
     {#each features as f}
-      <div class="feature-card">
-        <div class="feature-card__icon">
-          <svelte:component this={f.icon} size={22} strokeWidth={2} />
-        </div>
-        <div class="feature-card__content">
+      <div class="feature-card" class:feature-card--open={openFeatures.has(f.title)}>
+        <button
+          type="button"
+          class="feature-card__toggle"
+          onclick={() => toggleFeature(f.title)}
+          aria-expanded={openFeatures.has(f.title)}
+        >
+          <div class="feature-card__icon">
+            <svelte:component this={f.icon} size={22} strokeWidth={2} />
+          </div>
           <h3>{f.title}</h3>
-          {#if f.text}<p>{f.text}</p>{/if}
+          <ChevronDown class="feature-card__chev" size={18} strokeWidth={2.2} />
+        </button>
+        {#if openFeatures.has(f.title)}
+          <div class="feature-card__content">
+            {#if f.text}<p>{f.text}</p>{/if}
           {#if f.points}
             {#if f.pointsTitle}<h4>{f.pointsTitle}</h4>{/if}
             <ul>
@@ -218,7 +222,8 @@
               {/each}
             </ul>
           {/if}
-        </div>
+          </div>
+        {/if}
       </div>
     {/each}
   </div>
@@ -233,50 +238,6 @@
         <img src={c.img} alt="" loading="lazy" decoding="async" width="480" height="240" />
       </a>
     {/each}
-  </div>
-</section>
-
-<section class="mx-auto">
-  <div class="kits-block" style:--kit-color={kitColor}>
-    <div class="kits-block__head">
-      <div>
-        <div class="kits-block__label">
-          <Sparkles size={16} strokeWidth={2.4} />
-          <span>Комплектом выгоднее</span>
-        </div>
-        <h2>Комплекты техники</h2>
-        <p>Собрали популярные наборы для кухни, чтобы не подбирать технику по одной позиции.</p>
-      </div>
-      <a href="/catalog/vstraivaemaya-tehnika/komplekty" class="kits-block__all">
-        Все комплекты
-        <ArrowRight size={17} strokeWidth={2.2} />
-      </a>
-    </div>
-    <div class="kits-grid">
-      {#each kits as kit}
-        <a href={kit.link} class="kit-card">
-          <div class="kit-card__badge">%</div>
-          <div class="kit-card__image">
-            <img
-              src={kit.img}
-              alt={kit.title}
-              loading="lazy"
-              decoding="async"
-              width="420"
-              height="260"
-            />
-          </div>
-          <div class="kit-card__content">
-            <strong>{kit.title}</strong>
-            <span>{kit.text}</span>
-            <em>
-              Смотреть комплект
-              <ArrowRight size={15} strokeWidth={2.4} />
-            </em>
-          </div>
-        </a>
-      {/each}
-    </div>
   </div>
 </section>
 
@@ -299,6 +260,63 @@
       <a href="/catalog/smesiteli?brand=Grandex+Aqua" class="promo-card">
         <img class="promo-card__img" src={grandexSmesiteli} alt="Смесители Grandex Aqua" loading="lazy" />
         <span class="promo-card__name">Смесители</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto">
+  <div class="promo-banner promo-banner--grandex">
+    <div class="promo-banner__head">
+      <div class="promo-banner__icon">
+        <img src={omoikiriLogo} alt="Omoikiri" loading="lazy" />
+      </div>
+      <div class="promo-banner__text">
+        <strong>Omoikiri</strong>
+      </div>
+    </div>
+    <div class="promo-cards">
+      <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="promo-card">
+        <img
+          class="promo-card__img promo-card__img--catalog"
+          src={data.promoImages?.omoikiriMoiki ? imgUrl(data.promoImages.omoikiriMoiki, 480) : grandexMoiki}
+          alt="Мойки Omoikiri"
+          loading="lazy"
+        />
+        <span class="promo-card__name">Мойки</span>
+      </a>
+      <a href="/catalog/smesiteli?brand=Omoikiri" class="promo-card">
+        <img
+          class="promo-card__img promo-card__img--catalog"
+          src={data.promoImages?.omoikiriSmesiteli ? imgUrl(data.promoImages.omoikiriSmesiteli, 480) : grandexSmesiteli}
+          alt="Смесители Omoikiri"
+          loading="lazy"
+        />
+        <span class="promo-card__name">Смесители</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="mx-auto">
+  <div class="promo-banner promo-banner--grandex">
+    <div class="promo-banner__head">
+      <div class="promo-banner__icon">
+        <img src={boneCrusherLogo} alt="Bone Crusher" loading="lazy" />
+      </div>
+      <div class="promo-banner__text">
+        <strong>Bone Crusher</strong>
+      </div>
+    </div>
+    <div class="promo-cards">
+      <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Bone+Crusher" class="promo-card">
+        <img
+          class="promo-card__img promo-card__img--catalog"
+          src={data.promoImages?.boneCrusherImg ? imgUrl(data.promoImages.boneCrusherImg, 480) : grandexMoiki}
+          alt="Измельчители Bone Crusher"
+          loading="lazy"
+        />
+        <span class="promo-card__name">Измельчители пищевых отходов</span>
       </a>
     </div>
   </div>
@@ -343,7 +361,7 @@
         <a class="articles-home__card" href="/articles/{article.slug}">
           <div class="articles-home__cover">
             {#if article.cover_url}
-              <img src={article.cover_url} alt={article.title} loading="lazy" />
+              <img src={imgUrl(article.cover_url, 640)} alt={article.title} loading="lazy" />
             {:else}
               <div class="no-cover"></div>
             {/if}
@@ -362,11 +380,57 @@
 
 <section class="mx-auto">
   <h2 class="section-title">Бренды</h2>
-  <BrandsGrid />
+  <BrandsGrid brands={data.syncBrands} />
 </section>
 
 <section class="mx-auto">
 	<ReviewsSection />
+</section>
+
+<section class="mx-auto">
+  <div class="promo-banner">
+    <div class="promo-banner__head">
+      <div class="promo-banner__icon">
+        <MapPin size={26} strokeWidth={2} color="#e6a73c" />
+      </div>
+      <div class="promo-banner__text">
+        <strong>Приглашаем в наш офлайн-магазин кухонной техники</strong>
+        <span>
+          Здесь вы сможете увидеть модели вживую, сравнить бренды, проконсультироваться со
+          специалистом и подобрать технику под ваши задачи.
+        </span>
+      </div>
+    </div>
+    <div class="store-info">
+      <p>
+        <b>Адрес:</b>
+        <a
+          href="https://yandex.ru/maps/?text=Казань, улица Чистопольская 66"
+          target="_blank"
+          rel="noopener"
+          class="store-info__map-link"
+        >
+          Республика Татарстан, г. Казань, Ново-Савиновский район, ул. Чистопольская, д. 66 ↗
+        </a>
+      </p>
+      <p><b>Часы работы:</b> ежедневно с 9:00 до 18:00</p>
+      <p>
+        <b>Личный менеджер:</b>
+        <a href="tel:+79276707817" class="store-info__map-link">+7 927 670-78-17</a> Павел
+      </p>
+      <p>
+        <b>Склад:</b>
+        <a
+          href="https://yandex.ru/maps/?text=Казань, Индустриальный парк M-7"
+          target="_blank"
+          rel="noopener"
+          class="store-info__map-link"
+        >
+          Промышленная площадка, Индустриальный парк M-7 ↗
+        </a>
+      </p>
+    </div>
+  </div>
 </section>
 
 <section class="about-seo mx-auto">
@@ -550,8 +614,77 @@
       }
     }
   }
+  .hits-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (max-width: 560px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  .feature-card__toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    h3 {
+      flex: 1;
+      margin: 0;
+      font-size: 1.02rem;
+      font-weight: 800;
+      color: #111827;
+    }
+  }
+  .feature-card__chev {
+    flex-shrink: 0;
+    color: #94a3b8;
+    transition: transform 0.2s;
+  }
+  .feature-card--open .feature-card__chev {
+    transform: rotate(180deg);
+  }
+  .store-info {
+    padding: 0 18px 18px;
+    display: grid;
+    gap: 6px;
+    p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #374151;
+      b {
+        color: #111827;
+      }
+    }
+    &__map-link {
+      color: $green;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
   .hero-section {
     margin-top: 0;
+
+    /* высота зафиксирована заранее — баннер не «прыгает» при загрузке (CLS), */
+    /* картинка обрезается object-fit: cover */
+    height: min(34vh, 360px);
+
+    /* баннер в 2 раза ниже — обрезаем по высоте, не растягивая вёрстку */
+    :global(img) {
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
+    }
   }
   .section-title {
     margin: 0 0 16px;
@@ -653,15 +786,12 @@
   .features-grid {
     display: grid;
     gap: 18px;
-  }
-  .features-grid {
-    display: grid;
-    gap: 18px;
+    /* карточки естественной высоты: раскрытая растёт, закрытые не тянутся за ней */
+    align-items: start;
     .feature-card {
       display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      min-height: 100%;
+      /* раскрытие всегда вниз: шапка-кнопка, под ней контент */
+      flex-direction: column;
       padding: 20px;
       border: 1px solid rgba($green, 0.1);
       border-radius: 16px;
@@ -679,13 +809,9 @@
         color: $green;
       }
       .feature-card__content {
-        h3 {
-          margin: 0;
-          font-size: 1.05rem;
-          font-weight: 800;
-          line-height: 1.25;
-          color: #111827;
-        }
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid #f1f5f9;
         p {
           margin: 8px 0 0;
           font-size: 0.92rem;
@@ -763,76 +889,6 @@
       border-color: rgba($green, 0.22);
       box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
     }
-  }
-  .kits-block {
-    padding: 24px;
-    border: 1px solid rgba(62, 111, 79, 0.12);
-    border-radius: 20px;
-    background: #fff;
-    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-  }
-  .kits-block__head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 24px;
-    h2 {
-      margin: 8px 0 0;
-      font-size: 1.75rem;
-      font-weight: 800;
-      line-height: 1.15;
-      color: #111827;
-    }
-    p {
-      max-width: 620px;
-      margin: 8px 0 0;
-      font-size: 0.95rem;
-      line-height: 1.45;
-      color: #475569;
-    }
-  }
-  .kits-block__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 7px 11px;
-    border: 1px solid rgba(62, 111, 79, 0.16);
-    border-radius: 999px;
-    background: rgba(62, 111, 79, 0.06);
-    color: var(--kit-color);
-    font-size: 0.82rem;
-    font-weight: 800;
-  }
-  .kits-block__all {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    flex: 0 0 auto;
-    padding: 10px 14px;
-    border: 1px solid rgba(62, 111, 79, 0.28);
-    border-radius: 999px;
-    background: #fff;
-    color: var(--kit-color);
-    font-size: 0.9rem;
-    font-weight: 800;
-    transition:
-      transform 0.2s ease,
-      background 0.2s ease,
-      color 0.2s ease,
-      box-shadow 0.2s ease;
-    &:hover {
-      transform: translateY(-2px);
-      background: var(--kit-color);
-      color: #fff;
-      box-shadow: 0 10px 22px rgba(62, 111, 79, 0.18);
-    }
-  }
-  .kits-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
   }
   .kit-card {
     position: relative;
@@ -1028,10 +1084,25 @@
     border-color: rgba(59, 130, 246, 0.3);
   }
   .promo-card__img {
-    width: 100%;
-    height: 120px;
+    /* единый квадратный слот, вписываем без обрезки */
+    width: 150px;
+    height: 150px;
     object-fit: contain;
+    border-radius: 12px;
+    background: #fff;
     transition: transform 0.22s ease;
+    @media (max-width: 639px) {
+      width: 118px;
+      height: 118px;
+    }
+    /* у товарных фото из каталога нет белых полей, в отличие от промо-графики —
+       добавляем внутренний отступ, чтобы товары не выглядели крупнее */
+    &--catalog {
+      padding: 22px;
+      @media (max-width: 639px) {
+        padding: 16px;
+      }
+    }
   }
   .promo-card__name {
     font-size: 0.95rem;
@@ -1045,9 +1116,6 @@
   }
   @media (min-width: 640px) {
     .categories-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .kits-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .promo-cards {
@@ -1079,7 +1147,8 @@
       }
     }
     .promo-card__img {
-      height: 100px;
+      width: 118px;
+      height: 118px;
     }
     .features-grid {
       gap: 12px;
@@ -1087,22 +1156,7 @@
     .feature-card {
       padding: 16px;
     }
-    .kits-block {
-      padding: 16px;
-      border-radius: 16px;
-    }
-    .kits-block__head {
-      display: block;
-      margin-bottom: 16px;
-      h2 {
-        font-size: 1.45rem;
-      }
-    }
-    .kits-block__all {
-      width: 100%;
-      margin-top: 14px;
-    }
-    .kit-card {
+        .kit-card {
       min-height: 330px;
     }
     .kit-card__image {
@@ -1116,9 +1170,6 @@
     }
     .categories-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-    .kits-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     .promo-banner--ac .promo-cards {
       grid-template-columns: repeat(3, minmax(0, 1fr));

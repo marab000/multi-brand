@@ -334,18 +334,6 @@ export const catalogTree: CatalogRoot[] = [
     makeGroup(MELKAYA_BBT, [MELKAYA_BBT], { isDefault: true })
   ]),
   makeRoot(VSTRAIVAEMAYA_TEHNIKA, [
-    makeGroup('Комплекты', [VSTRAIVAEMAYA_TEHNIKA], {
-      leaves: [
-        makeLeaf('Комплект варка + духовка', ['Комплект варка + духовка']),
-        makeLeaf('Комплект варка + духовка + свч', ['Комплект варка + духовка + свч']),
-        makeLeaf('Комплект варка + духовка + свч + кофемашина', [
-          'Комплект варка + духовка + свч + кофемашина'
-        ]),
-        makeLeaf('Комплект варка + духовка + свч + пмм + холодил.', [
-          'Комплект варка + духовка + свч + пмм + холодил.'
-        ])
-      ]
-    }),
     makeGroup('Варочные поверхности', [VSTRAIVAEMAYA_TEHNIKA], {
       leaves: [
         makeLeaf('Газовые', ['Газовая поверхность']),

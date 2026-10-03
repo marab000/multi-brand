@@ -66,7 +66,7 @@
   };
 </script>
 
-<div class="export-row">
+<div class="export-row" class:export-row--inline={isDesigner}>
   {#if isDesigner}
     <label class="discount-field">
       Скидка, %
@@ -95,6 +95,26 @@
     justify-content: flex-end;
     gap: 16px;
     flex-wrap: wrap;
+  }
+  /* дизайнер: поле скидки и кнопка всегда в одну строку */
+  .export-row--inline {
+    flex-wrap: nowrap;
+    align-items: center;
+    .discount-field {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      input {
+        width: 100%;
+        flex: 1;
+        min-width: 0;
+      }
+    }
+    .export-btn {
+      flex-shrink: 0;
+      white-space: nowrap;
+      margin: 12px 0;
+    }
   }
   .discount-field {
     display: flex;

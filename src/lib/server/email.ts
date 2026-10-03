@@ -107,6 +107,7 @@ export async function sendVerificationEmail(email: string, url: string) {
 }
 
 export async function sendNewOrderEmail(order: {
+  message?: string,
   id?: number | string;
   name: string;
   phone: string;
@@ -169,6 +170,7 @@ export async function sendNewOrderEmail(order: {
                             <div><b>Имя:</b> ${escapeHtml(order.name)}</div>
                             <div><b>Телефон:</b> <a href="tel:${order.phone}" style="color:#202020;text-decoration:none;">${escapeHtml(order.phone)}</a></div>
                             <div><b>Сумма:</b> ${money(order.total)}</div>
+                            ${order.message ? `<div style="margin-top:10px;"><b>Комментарий:</b><br />${escapeHtml(order.message).replaceAll('\n', '<br />')}</div>` : ''}
                           </td>
                         </tr>
                       </table>

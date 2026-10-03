@@ -10,7 +10,7 @@
 <section class="help mb-3 lg:mb-4">
   <div class="content">
     <div class="badge">
-      <MessageCircleMore size={18} strokeWidth={2.3} /><span>Помощь с подбором</span>
+      <MessageCircleMore size={13} strokeWidth={2.3} /><span>Помощь с подбором</span>
     </div>
     <h2>Поможем подобрать технику под ваш интерьер и задачи</h2>
     <p>
@@ -25,7 +25,7 @@
         ><img src={maxIcon} alt="MAX" /><span>MAX</span></a
       >
       <button type="button" class="btn primary request" onclick={() => (requestOpen = true)}
-        ><MessageCircleMore size={20} strokeWidth={2.2} /><span>Оставить заявку</span></button
+        ><MessageCircleMore size={15} strokeWidth={2.2} /><span>Получить готовый комплект техники</span></button
       >
     </div>
   </div>
@@ -38,17 +38,17 @@
   .help {
     position: relative;
     overflow: hidden;
-    padding: 34px;
+    padding: 16px;
     border: 1px solid rgba($green, 0.12);
-    border-radius: 20px;
+    border-radius: 14px;
     background:
       radial-gradient(circle at 85% 50%, rgba($green, 0.09), transparent 30%),
       linear-gradient(135deg, #fff 0%, #f7faf8 100%);
     color: #171717;
     box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
     @media (max-width: 768px) {
-      padding: 24px;
-      border-radius: 22px;
+      padding: 12px;
+      border-radius: 14px;
     }
     .content {
       position: relative;
@@ -59,53 +59,53 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      min-height: 38px;
-      margin-bottom: 18px;
-      padding: 0 14px;
+      min-height: 26px;
+      margin-bottom: 9px;
+      padding: 0 10px;
       border: 1px solid rgba($green, 0.14);
       border-radius: 999px;
       background: rgba($green, 0.06);
       color: $green;
-      font-size: 14px;
+      font-size: 11.5px;
       font-weight: 700;
     }
     h2 {
       max-width: 660px;
       margin: 0;
       color: #171717;
-      font-size: 32px;
-      line-height: 1;
+      font-size: 20px;
+      line-height: 1.1;
       font-weight: 800;
       letter-spacing: -0.05em;
       @media (max-width: 768px) {
-        font-size: 24px;
-        line-height: 1.05;
+        font-size: 16px;
+        line-height: 1.1;
       }
     }
     p {
       max-width: 620px;
-      margin: 18px 0 0;
+      margin: 8px 0 0;
       color: #4b5563;
-      font-size: 17px;
-      line-height: 1.6;
+      font-size: 13px;
+      line-height: 1.5;
       @media (max-width: 768px) {
-        font-size: 15px;
+        font-size: 12px;
       }
     }
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 28px;
+      gap: 8px;
+      margin-top: 12px;
       a,
       .request {
-        gap: 10px;
-        min-width: 150px;
-        min-height: 54px;
-        height: 54px;
-        padding: 0 22px;
-        border-radius: 16px;
-        font-size: 15px;
+        gap: 7px;
+        min-width: 0;
+        min-height: 38px;
+        height: 38px;
+        padding: 0 14px;
+        border-radius: 11px;
+        font-size: 12.5px;
         font-weight: 800;
         transition:
           transform 0.18s ease,
@@ -133,8 +133,8 @@
         box-shadow: 0 8px 20px rgba($green, 0.1);
       }
       img {
-        width: 33px;
-        height: 33px;
+        width: 22px;
+        height: 22px;
         object-fit: contain;
         border-radius: 999px;
         flex: 0 0 auto;

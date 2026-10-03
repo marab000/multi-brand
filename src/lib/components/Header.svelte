@@ -26,7 +26,7 @@
     MessageCircleMore,
     Building2,
     Clock,
-    Newspaper
+    Sparkles
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
@@ -211,7 +211,7 @@
 <nav class="nav container mx-auto px-3 sm:px-4">
   <div class="nav__info-bar">
     <span class="nav__info-bar-item"
-      ><Clock size={14} strokeWidth={2.2} />Ежедневно с 09:00 до 21:00</span
+      ><Clock size={14} strokeWidth={2.2} />Ежедневно с 09:00 до 21:00 · офлайн-магазин г. Казань, ул. Чистопольская, 66</span
     >
     <div class="nav__info-bar-right">
       <CityDetector />
@@ -262,10 +262,9 @@
           >О нас</span
         ><span class="hidden md:inline">О компании</span></a
       >
-      <a class="nav__about flex gap-x-1.5" href="/articles"
-        ><Newspaper class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
-          >Статьи</span
-        ><span class="hidden md:inline">Статьи</span></a
+      <a class="nav__about flex gap-x-1.5" href="/podbor"
+        ><Sparkles class="hidden md:block" size={16} strokeWidth={2.1} /><span
+          >ИИ подбор</span></a
       >
       <div class="nav__contact !hidden md:!flex">
         <div class="nav__social">

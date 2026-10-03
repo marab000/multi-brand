@@ -1,5 +1,7 @@
 <script lang="ts">
   import { Phone, Mail, MapPin } from 'lucide-svelte';
+  import tgIcon from '$lib/assets/social/tg.svg';
+  import maxIcon from '$lib/assets/social/max.svg';
   import {
     SITE_PHONE,
     SITE_PHONE_HREF,
@@ -33,10 +35,33 @@
           <Mail size={16} strokeWidth={2.1} />
           <span>{SITE_EMAIL}</span>
         </a>
-        <span class="footer__contact">
+        <a
+          class="footer__contact"
+          href="https://yandex.ru/maps/?text=Казань, улица Чистопольская 66"
+          target="_blank"
+          rel="noopener"
+        >
           <MapPin size={16} strokeWidth={2.1} />
-          <span>г. Казань</span>
-        </span>
+          <span>г. Казань, ул. Чистопольская, 66 (офлайн-магазин)</span>
+        </a>
+        <a
+          class="footer__contact"
+          href="https://yandex.ru/maps/?text=Казань, Индустриальный парк M-7"
+          target="_blank"
+          rel="noopener"
+        >
+          <MapPin size={16} strokeWidth={2.1} />
+          <span>Склад: Промышленная площадка, Индустриальный парк M-7</span>
+        </a>
+      </div>
+
+      <div class="footer__messengers">
+        <a href={LINK_TG} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+          <img src={tgIcon} alt="Telegram" />
+        </a>
+        <a href={LINK_MAX} target="_blank" rel="noopener noreferrer" aria-label="MAX">
+          <img src={maxIcon} alt="MAX" />
+        </a>
       </div>
     </div>
 
@@ -58,7 +83,7 @@
       <h4 class="footer__title">Покупателям</h4>
       <ul class="footer__links">
         <li><a href="/delivery">Доставка</a></li>
-        <li><a href="/podbor">Собери кухню 🔥</a></li>
+        <li><a href="/podbor">Собери комплект техники 🔥</a></li>
         <li><a href="/cart">Корзина</a></li>
         <li><a href="/favorites">Избранное</a></li>
         <li><a href="/user/info">Личный кабинет</a></li>
@@ -72,14 +97,10 @@
         <li><a href="/articles">Статьи</a></li>
         <li><a href="/contacts">Контакты</a></li>
       </ul>
-      <div class="footer__social">
-        <a href={LINK_TG} target="_blank" rel="noopener noreferrer">Telegram</a>
-        <a href={LINK_MAX} target="_blank" rel="noopener noreferrer">MAX</a>
-      </div>
     </div>
   </div>
 
-  <div class="footer__bottom flex flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:text-left">
+  <div class="footer__bottom flex flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(66px+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:text-left">
     <p>© {year} MULTIBRAND — интернет-магазин бытовой техники в Казани</p>
     <p class="footer__requisites">ИНН 165123360719 · ОГРНИП 325169000035393</p>
     <p class="footer__legal-links flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
@@ -173,27 +194,6 @@
       }
     }
 
-    &__social {
-      margin-top: 16px;
-      display: flex;
-      gap: 10px;
-
-      a {
-        padding: 6px 12px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        font-size: 12.5px;
-        font-weight: 600;
-        color: #e2e8f0;
-        text-decoration: none;
-        transition: border-color 0.15s ease, color 0.15s ease;
-
-        &:hover {
-          border-color: $green;
-          color: #fff;
-        }
-      }
-    }
 
     &__bottom {
       p {
@@ -208,6 +208,31 @@
       font-size: 11.5px !important;
       line-height: 1.5;
       color: #64748b !important;
+    }
+
+    &__messengers {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+
+      a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        transition: background 0.15s;
+
+        img {
+          width: 20px;
+          height: 20px;
+        }
+        &:hover {
+          background: rgba(255, 255, 255, 0.16);
+        }
+      }
     }
 
     &__legal-links a {

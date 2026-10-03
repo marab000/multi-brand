@@ -21,7 +21,7 @@
     hasProductDiscount,
     isDiscountExcludedBrand
   } from '$lib/utils/pricing';
-  import { getProductRating } from '$lib/utils/productRating';
+  import { getProductRating, getBoughtToday } from '$lib/utils/productRating';
   import { slugify } from '$lib/utils/slugify';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
@@ -39,6 +39,7 @@
   const monthlyPayment = getMonthlyPayment(price);
   const saving = hasDiscount ? oldPrice - price : 0;
   const ratingData = getProductRating(product.external_id || product.id || product.name);
+  const boughtToday = getBoughtToday(product.external_id || product.id || product.name);
   const isProtected = isDiscountExcludedBrand(product.brand);
   $: cartItem = $cart.find((item) => item.id === product.id);
   $: qty = cartItem?.qty ?? 0;
@@ -107,7 +108,7 @@
         <Star size={14} fill="currentColor" strokeWidth={0} />
         <span>{ratingData.rating}</span>
       </div>
-      <span class="reviews-count">{ratingData.reviews.toLocaleString('ru-RU')} отзывов</span>
+      <span class="reviews-count">{ratingData.reviews.toLocaleString('ru-RU')} отзывов · сегодня купили {boughtToday}</span>
     </div>
     <div class="price-row">
       <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
@@ -161,7 +162,7 @@
   {/if}
   <p class="order-note">
     <Truck size={13} strokeWidth={2.2} />
-    Под заказ — доставим за 15 дней
+    Под заказ — доставим за 7 дней
   </p>
 </div>
 

@@ -6,6 +6,7 @@ import {
   getCatalogRoots,
   getCatalogShowcase
 } from '$lib/server/categories';
+import { getBrandConfig } from '$lib/server/tetrasis';
 
 export const load: PageServerLoad = async ({ url }) => {
   const params = url.searchParams;
@@ -42,8 +43,17 @@ export const load: PageServerLoad = async ({ url }) => {
     availabilityRows as any[]
   );
 
+  // Бренды для блока внизу каталога — из включённых в синке (админка → «Тетрис»)
+  let syncBrands: string[] = [];
+  try {
+    syncBrands = (await getBrandConfig()).enabled.slice().sort((a, b) => a.localeCompare(b, 'ru'));
+  } catch {
+    // настроек ещё нет — блок просто не покажется
+  }
+
   return {
     catalogRoots: filteredRoots,
-    catalogShowcase: getCatalogShowcase(filteredRoots)
+    catalogShowcase: getCatalogShowcase(filteredRoots),
+    syncBrands
   };
 };

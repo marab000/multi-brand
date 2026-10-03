@@ -2,7 +2,7 @@
 // Используется из корзины (CartPdfExport) и из списка КП (/user/offers).
 import { formatPrice } from '$lib/utils/formatPrice';
 import { DISCOUNT_PERCENT } from '$lib/utils/pricing';
-import { SITE_PHONE, SITE_URL, SITE_URL_NAME, SITE_PHONE_MOBILE2 } from '$lib/config/site';
+import { SITE_PHONE, SITE_URL, SITE_URL_NAME } from '$lib/config/site';
 import { toast } from 'svelte-sonner';
 import logoUrl from '$lib/assets/logo1.png';
 import notoRegularUrl from '$lib/assets/fonts/NotoSans-Regular.ttf';
@@ -131,17 +131,15 @@ const drawHeader = (doc: any, logoDataUrl: string | null, pageWidth: number) => 
   doc.setTextColor(20, 20, 20);
   doc.setFont('NotoSans', 'bold');
   doc.text('Тел.', contactX, 38);
-  doc.text('Моб.', contactX, 58);
-  doc.text('E-mail', contactX, 78);
-  doc.text('Сайт', contactX, 98);
+  doc.text('E-mail', contactX, 58);
+  doc.text('Сайт', contactX, 78);
   doc.setFont('NotoSans', 'normal');
   doc.text(SITE_PHONE, contactX + 48, 38);
-  doc.text(SITE_PHONE_MOBILE2, contactX + 48, 58);
-  doc.text('Multibrend2005@yandex.ru', contactX + 48, 78);
+  doc.text('Multibrend2005@yandex.ru', contactX + 48, 58);
   doc.setTextColor(29, 78, 216);
-  doc.textWithLink(SITE_URL_NAME, contactX + 48, 98, { url: SITE_URL });
+  doc.textWithLink(SITE_URL_NAME, contactX + 48, 78, { url: SITE_URL });
   const siteWidth = doc.getTextWidth(SITE_URL_NAME);
-  doc.line(contactX + 48, 101, contactX + 48 + siteWidth, 101);
+  doc.line(contactX + 48, 81, contactX + 48 + siteWidth, 81);
   doc.setTextColor(30, 30, 30);
 };
 
@@ -345,7 +343,7 @@ export async function generateOfferPdf(opts: {
   doc.setTextColor(30, 30, 30);
   doc.text(
     doc.splitTextToSize(
-      `*Ценовое предложение действует ограниченный срок.${
+      `*Цены действительны в течение 1 дня.${
         DISCOUNT_PERCENT > 0
           ? ` Акция -${DISCOUNT_PERCENT}% не распространяется на отдельные бренды и товары.`
           : ''
