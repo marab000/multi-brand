@@ -61,8 +61,9 @@
   let mobileError = $state<string | null>(null);
 
   // Допустимые диапазоны aspect ratio (width/height)
-  // desktop: 1.8–4.5 (от 2:1 до ~4:1 — широкий баннер)
-  // mobile: 0.65–1.6 (примерно 4:3 или 9:16)
+  // Форматы слайдера: десктоп 4:1 (1600x400), мобилка 4:3 (800x600) —
+  // контейнер на главной жёстко прибит к этим пропорциям, всё что сильно
+  // отличается — обрежется на баннере
   async function checkRatio(url: string, type: 'desktop' | 'mobile'): Promise<string | null> {
     return new Promise((resolve) => {
       const img = new Image();
@@ -70,14 +71,14 @@
         const ratio = img.naturalWidth / img.naturalHeight;
         const dim = `${img.naturalWidth}×${img.naturalHeight}`;
         if (type === 'desktop') {
-          if (ratio < 1.8 || ratio > 4.5) {
-            resolve(`Нужно широкий баннер (от 2:1 до 4:1). У вас ${dim} (${ratio.toFixed(1)}:1)`);
+          if (ratio < 3.4 || ratio > 4.6) {
+            resolve(`Нужен формат 4:1 — например 1600×400. У вас ${dim} (${ratio.toFixed(1)}:1), на баннере срежется сверху и снизу`);
           } else {
             resolve(null);
           }
         } else {
-          if (ratio < 0.65 || ratio > 1.6) {
-            resolve(`Нужно ~4:3 или 9:16. У вас ${dim} (${ratio.toFixed(1)}:1)`);
+          if (ratio < 1.15 || ratio > 1.5) {
+            resolve(`Нужен формат 4:3 — например 800×600. У вас ${dim} (${ratio.toFixed(1)}:1), на баннере срежутся края`);
           } else {
             resolve(null);
           }
@@ -266,7 +267,7 @@
 
       <div class="upload-grid">
         <label class="upload-area">
-          <span class="upload-label">Десктоп (21:7)</span>
+          <span class="upload-label">Десктоп (4:1 — 1600×400)</span>
           {#if desktopPreview}
             <img src={desktopPreview} alt="Desktop preview" class="upload-preview" class:upload-preview--error={!!desktopError} />
           {:else}
@@ -280,7 +281,7 @@
         </label>
 
         <label class="upload-area">
-          <span class="upload-label">Мобильная (4:3)</span>
+          <span class="upload-label">Мобильная (4:3 — 800×600)</span>
           {#if mobilePreview}
             <img src={mobilePreview} alt="Mobile preview" class="upload-preview" class:upload-preview--error={!!mobileError} />
           {:else}
