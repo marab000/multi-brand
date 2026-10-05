@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { sql } from '$lib/db';
-import { catalogTree } from '$lib/server/categories';
+import { catalogTree, filterCatalogRootsByAvailability } from '$lib/server/categories';
 import { slugify } from '$lib/utils/slugify';
 import { SITE_URL } from '$lib/config/site';
 
@@ -29,7 +29,6 @@ export const GET: RequestHandler = async () => {
     { path: '/about', priority: 0.5 },
     { path: '/contacts', priority: 0.5 },
     { path: '/delivery', priority: 0.5 },
-    { path: '/favorites', priority: 0.3 },
     { path: '/podbor', priority: 0.8 },
     { path: '/articles', priority: 0.7 },
     { path: '/privacy', priority: 0.2 },
@@ -46,7 +45,23 @@ export const GET: RequestHandler = async () => {
   }
 
   // 2. Категории каталога: root → group → leaf
-  for (const root of catalogTree) {
+  // В sitemap только разделы, у которых есть товары с ценой (как в навигации сайта)
+  let liveCatalog = catalogTree;
+  try {
+    const availabilityRows = await sql`
+      SELECT DISTINCT
+        catalog_root_slug AS root_slug,
+        catalog_group_slug AS group_slug,
+        catalog_leaf_slug AS leaf_slug
+      FROM products
+      WHERE catalog_root_slug IS NOT NULL
+        AND price_rrc IS NOT NULL
+    `;
+    liveCatalog = filterCatalogRootsByAvailability(catalogTree, availabilityRows as any[]);
+  } catch {
+    // если запрос упал — отдаём как есть
+  }
+  for (const root of liveCatalog) {
     // root: /catalog/{root}
     entries.push({
       loc: `${SITE_URL}/catalog/${root.slug}`,
@@ -83,6 +98,7 @@ export const GET: RequestHandler = async () => {
   const products = await sql`
     select p.id, p.name, p.updated_at
     from products p
+    where p.price_rrc is not null
     order by p.updated_at desc
   `;
   for (const p of products) {
