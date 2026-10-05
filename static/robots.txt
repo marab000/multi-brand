@@ -1,6 +1,9 @@
-# allow crawling everything by default
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /user
+Disallow: /cart
+Disallow: /favorites
+Disallow: /api
 
 Host: https://multi-brand.online
 Sitemap: https://multi-brand.online/sitemap.xml
