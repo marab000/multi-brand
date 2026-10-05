@@ -81,6 +81,8 @@ import Ticker from '$lib/components/Ticker.svelte';
 
 <svelte:head>
   <link rel="canonical" href={canonicalUrl} />
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:site_name" content="MULTIBRAND" />
   {@html `<script type="application/ld+json">${JSON.stringify(orgSchema)}</script>`}
 </svelte:head>
 

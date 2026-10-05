@@ -143,6 +143,27 @@
   {#if p}
     {@html `<script type="application/ld+json">${JSON.stringify({
       '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbs.map((b, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: b.name,
+        ...(b.href ? { item: 'https://multi-brand.online' + b.href } : { item: 'https://multi-brand.online/products/' + slug })
+      }))
+    })}</script>`}
+    <meta property="og:type" content="product" />
+    <meta property="og:site_name" content="MULTIBRAND" />
+    <meta property="og:title" content={p.name} />
+    <meta
+      property="og:description"
+      content={`${p.product_type || p.name} ${p.brand?.name ?? ''} — ${price ? Math.round(price * 1000).toLocaleString('ru-RU') + ' ₽' : 'цена по запросу'}, доставка по Казани и РФ, гарантия производителя.`}
+    />
+    <meta property="og:url" content={`https://multi-brand.online/products/${slug}`} />
+    {#if images[0]?.url}
+      <meta property="og:image" content={images[0].url} />
+    {/if}
+    {@html `<script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
       '@type': 'Product',
       name: p.name,
       description: (p.description ?? p.name).slice(0, 300),

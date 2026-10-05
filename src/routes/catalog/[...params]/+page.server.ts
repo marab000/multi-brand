@@ -11,6 +11,7 @@ import {
 } from '$lib/server/categories';
 import { sql } from '$lib/db';
 import { toDbPrice } from '$lib/utils/formatPrice';
+import { buildCategorySeo } from '$lib/server/seoText';
 
 function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | undefined {
   const specs: Record<string, { min?: number; max?: number }> = {};
@@ -167,6 +168,44 @@ export const load: PageServerLoad = async ({ params, url }) => {
       breadcrumbs.push({ name: currentLeaf.name });
     }
   }
+  // SEO-текст категории: только для чистых URL категории (без фильтров/поиска)
+  let seo: { heading: string; paragraphs: string[] } | null = null;
+  if (!isSearchPage && !hasAppliedFilters && total > 0 && currentRoot) {
+    try {
+      const slugCond =
+        currentLeaf?.slug != null
+          ? sql`catalog_leaf_slug = ${currentLeaf.slug}`
+          : currentGroup?.slug != null
+            ? sql`catalog_group_slug = ${currentGroup.slug}`
+            : sql`catalog_root_slug = ${currentRoot.slug}`;
+      const statsRows = await sql`
+        select
+          min(price_rrc) as min_p,
+          max(price_rrc) as max_p
+        from products
+        where price_rrc is not null and ${slugCond}
+      `;
+      const brandRows = await sql`
+        select brand->>'name' as name, count(*)::int as c
+        from products
+        where price_rrc is not null and brand->>'name' is not null and ${slugCond}
+        group by 1
+        order by 2 desc
+        limit 8
+      `;
+      const toRub = (v: any) => (v == null ? null : Math.round(Number(v) * 1000));
+      seo = buildCategorySeo({
+        name: title,
+        count: total,
+        brands: brandRows.map((b) => b.name),
+        minPrice: toRub(statsRows[0]?.min_p),
+        maxPrice: toRub(statsRows[0]?.max_p)
+      });
+    } catch {
+      seo = null;
+    }
+  }
+
   return {
     products,
     total,
@@ -174,6 +213,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
     page,
     pages,
     title,
+    seo,
     breadcrumbs,
     category: isSearchPage ? null : title,
     type: isSearchPage

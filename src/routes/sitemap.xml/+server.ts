@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import { sql } from '$lib/db';
 import { catalogTree, filterCatalogRootsByAvailability } from '$lib/server/categories';
+import { brandSlug } from '$lib/utils/slugify';
 import { slugify } from '$lib/utils/slugify';
 import { SITE_URL } from '$lib/config/site';
 
@@ -111,6 +112,35 @@ export const GET: RequestHandler = async () => {
       changefreq: 'daily',
       priority: 0.6
     });
+  }
+
+  // 3.5 Бренды: /brands и /brands/{slug} — только бренды с товарами
+  entries.push({
+    loc: `${SITE_URL}/brands`,
+    lastmod: today,
+    changefreq: 'weekly',
+    priority: 0.7
+  });
+  try {
+    const brandRows = await sql`
+      select brand->>'name' as name
+      from products
+      where price_rrc is not null and brand->>'name' is not null
+      group by 1
+      having count(*) >= 3
+    `;
+    for (const b of brandRows) {
+      const slug = brandSlug(b.name);
+      if (!slug) continue;
+      entries.push({
+        loc: `${SITE_URL}/brands/${slug}`,
+        lastmod: today,
+        changefreq: 'daily',
+        priority: 0.6
+      });
+    }
+  } catch {
+    // таблицы ещё нет
   }
 
   // 4. Статьи: /articles и /articles/{slug}

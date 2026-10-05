@@ -30,6 +30,19 @@
   {#if shouldNoindex}
     <meta name="robots" content="noindex, follow" />
   {/if}
+
+  {#if data.breadcrumbs?.length}
+    {@html `<script type="application/ld+json">${JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: data.breadcrumbs.map((b: { name: string; href?: string }, i: number) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        name: b.name,
+        ...(b.href ? { item: 'https://multi-brand.online' + b.href } : {})
+      }))
+    })}</script>`}
+  {/if}
 </svelte:head>
 
 <main class="catalog-content">
@@ -70,9 +83,69 @@
       {/if}
     </div>
   {/if}
+
+  {#if data.seo}
+    <details class="cat-seo">
+      <summary>О разделе: цены, бренды, доставка</summary>
+      <div class="cat-seo__body">
+        <h2>{data.seo.heading}</h2>
+        {#each data.seo.paragraphs as paragraph}
+          <p>{paragraph}</p>
+        {/each}
+      </div>
+    </details>
+  {/if}
 </main>
 
 <style lang="scss">
+  .cat-seo {
+    margin-top: 26px;
+    margin-bottom: 26px;
+    padding-top: 14px;
+    border-top: 1px solid #eceff1;
+    summary {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #64748b;
+      user-select: none;
+      &::marker {
+        content: '';
+      }
+      &::before {
+        content: '▸';
+        transition: transform 0.15s;
+      }
+      &:hover {
+        color: #334155;
+      }
+    }
+    &[open] summary {
+      &::before {
+        transform: rotate(90deg);
+      }
+      margin-bottom: 10px;
+    }
+    h2 {
+      margin: 0 0 10px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #111827;
+    }
+    p {
+      margin: 0 0 10px;
+      max-width: 860px;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: #475569;
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
   .catalog-content {
     display: grid;
     gap: 16px;

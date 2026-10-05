@@ -12,3 +12,11 @@ export function slugify(str: string) {
     .replace(/[^a-z0-9]+/g,'-')
     .replace(/^-|-$/g,'')
 }
+/** Слаг бренда для /brands/...: латиница в нижнем регистре, дефисы вместо пробелов */
+export function brandSlug(name: string): string {
+  return name
+    .replace(/['"]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
