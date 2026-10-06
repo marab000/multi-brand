@@ -75,6 +75,9 @@
       icon: Warehouse
     }
   ];
+  // Кондиционеры: сезонный блок, вернём через полгода (true = показать)
+  const AC_ENABLED = false;
+
   const categories = [
     {
       title: 'Варочные поверхности',
@@ -98,7 +101,7 @@
     },
     {
       title: 'Стиральные машины',
-      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny',
+      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/frontalnye-stiralnye-mashiny',
       img: wm
     },
     {
@@ -336,6 +339,7 @@
   </div>
 </section>
 
+{#if AC_ENABLED}
 <section class="mx-auto">
   <div class="promo-banner promo-banner--ac">
     <div class="promo-banner__head">
@@ -363,6 +367,7 @@
     </div>
   </div>
 </section>
+{/if}
 
 {#if data.latestArticles?.length}
   <section class="mx-auto">

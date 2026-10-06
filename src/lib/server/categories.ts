@@ -218,7 +218,6 @@ const KUHONNYE_VYTYAZHKI = 'Кухонные вытяжки';
 const KUHONNYE_MOYKI = 'Кухонные мойки';
 const IZMELCHITELI = 'Измельчители пищевых отходов';
 const ZAPCHASTI_TEHNIKA = 'Запчасти и аксессуары для техники';
-const ZAPCHASTI_MOYKI = 'Запчасти для моек, смесителей, измельчителей и мусорных систем';
 const KLIMAT = 'Климатическая техника';
 const PROF = 'Профессиональная техника';
 const SMESITELI = 'Смесители';
@@ -466,22 +465,6 @@ export const catalogTree: CatalogRoot[] = [
     }),
     makeGroup(ZAPCHASTI_TEHNIKA, [ZAPCHASTI_TEHNIKA], { isDefault: true })
   ]),
-  makeRoot(ZAPCHASTI_MOYKI, [
-    makeGroup('Аксессуары для кухни и выдвижные системы', [ZAPCHASTI_MOYKI]),
-    makeGroup('Аксессуары для моек и смесителей', [ZAPCHASTI_MOYKI], {
-      leaves: [
-        makeLeaf('Аксессуары для моек', ['Аксессуары для кухонных моек']),
-        makeLeaf('Аксессуары для смесителей', ['Аксессуары для смесителей'])
-      ]
-    }),
-    makeGroup('Кухонные принадлежности', [ZAPCHASTI_MOYKI], {
-      leaves: [makeLeaf('Кухонные принадлежности', ['Кухонные принадлежности'])]
-    }),
-    makeGroup('Фильтры для воды и комплектующие', [ZAPCHASTI_MOYKI], {
-      leaves: [makeLeaf('Фильтры для воды', ['Фильтр для воды'])]
-    }),
-    makeGroup(ZAPCHASTI_MOYKI, [ZAPCHASTI_MOYKI], { isDefault: true })
-  ]),
   makeRoot(KLIMAT, [
     makeGroup('Водонагреватели', [KLIMAT], {
       leaves: [
@@ -562,7 +545,6 @@ const showcaseConfig = [
   {
     name: 'Мойки, смесители, мусорные системы и аксессуары',
     roots: [
-      'Запчасти для моек, смесителей, измельчителей и мусорных систем',
       'Кухонные мойки',
       'Смесители',
       'Измельчители пищевых отходов'
