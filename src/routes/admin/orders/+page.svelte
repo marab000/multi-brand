@@ -239,3 +239,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Заказы — MULTIBRAND</title>
+</svelte:head>

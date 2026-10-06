@@ -327,3 +327,7 @@
     color: #94a3b8;
   }
 </style>
+
+<svelte:head>
+  <title>SEO-страницы — MULTIBRAND</title>
+</svelte:head>

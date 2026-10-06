@@ -139,3 +139,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Пользователи — MULTIBRAND</title>
+</svelte:head>

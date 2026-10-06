@@ -291,3 +291,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Статьи — MULTIBRAND</title>
+</svelte:head>

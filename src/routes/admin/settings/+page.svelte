@@ -334,3 +334,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Скидка — MULTIBRAND</title>
+</svelte:head>

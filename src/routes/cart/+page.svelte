@@ -132,6 +132,7 @@
 </script>
 
 <svelte:head>
+  <title>Корзина | MULTIBRAND</title>
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 

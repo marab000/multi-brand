@@ -504,3 +504,7 @@
     color: #64748b;
   }
 </style>
+
+<svelte:head>
+  <title>Тетрис — синк товаров — MULTIBRAND</title>
+</svelte:head>

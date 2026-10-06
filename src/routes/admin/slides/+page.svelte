@@ -587,3 +587,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Слайдер — MULTIBRAND</title>
+</svelte:head>

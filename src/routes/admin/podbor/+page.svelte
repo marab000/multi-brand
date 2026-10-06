@@ -773,3 +773,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Собери комплект техники — MULTIBRAND</title>
+</svelte:head>

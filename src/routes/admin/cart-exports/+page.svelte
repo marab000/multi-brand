@@ -145,3 +145,7 @@
     }
   }
 </style>
+
+<svelte:head>
+  <title>Корзины PDF (КП) — MULTIBRAND</title>
+</svelte:head>
