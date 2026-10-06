@@ -13,7 +13,15 @@ export const POST: RequestHandler = async ({ locals, request }) => {
   const baseUrl = new URL(request.url).origin;
   const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
 
-  await sendVerificationEmail(user.email, verifyUrl);
+  try {
+    await sendVerificationEmail(user.email, verifyUrl);
+  } catch (err) {
+    console.error('[resend-verification] письмо не отправлено:', err);
+    return json(
+      { message: 'Не удалось отправить письмо. Попробуйте позже или позвоните нам.' },
+      { status: 502 }
+    );
+  }
 
   return json({ ok: true });
 };
