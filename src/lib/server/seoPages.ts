@@ -36,8 +36,9 @@ export async function buildSeoPageList(): Promise<SeoPageEntry[]> {
 			WHERE catalog_root_slug IS NOT NULL AND price_rrc IS NOT NULL
 		`;
 		const present = new Set(rows.map((r) => `${r.root_slug}|${r.group_slug ?? ''}|${r.leaf_slug ?? ''}`));
+		const rootsWithProducts = new Set(rows.map((r) => r.root_slug));
 		for (const root of getCatalogRoots()) {
-			if (present.has(`${root.slug}|`)) {
+			if (rootsWithProducts.has(root.slug)) {
 				pages.push({
 					key: `category:${root.slug}`,
 					name: `Категория: ${root.name}`,

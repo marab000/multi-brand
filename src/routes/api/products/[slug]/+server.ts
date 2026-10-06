@@ -5,21 +5,24 @@ import { slugify } from '$lib/utils/slugify';
 export async function GET({ params }) {
   const slug = params.slug;
   const brandGuess = slug.split('-')[0];
+  // матчим и текущее имя, и исходное (до обогащения типом) — старые ссылки живы
   let candidates = await sql`
-    select p.id, p.name
+    select p.id, p.name, p.raw->>'РабочееНаименование' AS orig_name
     from products p
     where lower(p.name) like ${`${brandGuess.toLowerCase()}%`}
     limit 300
   `;
-  let matched = candidates.find((p: any) => slugify(p.name) === slug);
+  const bySlug = (p: any) => slugify(p.name) === slug || (p.orig_name && slugify(p.orig_name) === slug);
+  let matched = candidates.find(bySlug);
   if (!matched) {
     candidates = await sql`
-      select p.id, p.name
+      select p.id, p.name, p.raw->>'РабочееНаименование' AS orig_name
       from products p
     `;
-    matched = candidates.find((p: any) => slugify(p.name) === slug);
+    matched = candidates.find(bySlug);
   }
   if (!matched) return json(null, { status: 404 });
+  const currentSlug = slugify(matched.name);
   const rows = await sql`
     select p.*,
       coalesce(
@@ -35,6 +38,7 @@ export async function GET({ params }) {
   `;
   if (!rows.length) return json(null, { status: 404 });
   const product = rows[0];
+  product.slug = currentSlug;
   const kitItems = await sql`
     select pki.*,
       case when cp.id is null then null else json_build_object(

@@ -156,19 +156,51 @@ async function syncBrand(apiBrand) {
 		return false
 	}
 	const priceMap = extractPrices(pricesRaw)
-	const rows = []
+	// Короткий тип для названия: «стиральная машина», «духовой шкаф» и т.п.
+const SHORT_TYPE_RULES = [
+	[/стиральн/i, 'стиральная машина'],
+	[/посудомо/i, 'посудомоечная машина'],
+	[/духов/i, 'духовой шкаф'],
+	[/(варочн|поверхност|панел)/i, 'варочная панель'],
+	[/(вытяж|зонт|куп|наклон|Т-образ)/i, 'вытяжка'],
+	[/(холодил|винн|минибар|сигар)/i, 'холодильник'],
+	[/(морозил|ларь)/i, 'морозильник'],
+	[/(микроволн|свч)/i, 'СВЧ'],
+	[/(смесител|излив)/i, 'смеситель'],
+	[/мойк/i, 'мойка'],
+	[/измельчит/i, 'измельчитель'],
+	[/(сушил|сушк)/i, 'сушильная машина'],
+	[/(кофе|кофемаш)/i, 'кофемашина'],
+	[/(плит)/i, 'плита']
+]
+function shortType(productType) {
+	const t = String(productType ?? '')
+	for (const [re, label] of SHORT_TYPE_RULES) if (re.test(t)) return label
+	// фолбэк: первые два слова типа, нижний регистр первой буквы
+	const words = t.split(/\s+/).slice(0, 2).join(' ')
+	return words ? words.charAt(0).toLowerCase() + words.slice(1) : ''
+}
+function enrichName(name, productType) {
+	const short = shortType(productType)
+	if (!short) return name
+	// уже содержит тип — не дублируем
+	if (new RegExp(short.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(name)) return name
+	return `${name} ${short}`
+}
+
+const rows = []
 	for (const item of products) {
 		const id = String(item.ID)
 		const prices = priceMap.get(id)
 		if (!prices || !(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
 		const rawCategory = item['ГруппаАналитическогоУчета'] ?? null
 		const rawType = item['ЦеноваяГруппа'] ?? null
-		const catalog = resolveCatalog(rawCategory, rawType)
+		const displayName = enrichName(item['РабочееНаименование'] ?? '', rawType)
 		rows.push({
 			external_id: id,
 			source: SOURCE,
 			brand: sql.json({ name: cleanName, api: apiBrand.NAME }),
-			name: item['РабочееНаименование'] ?? null,
+			name: displayName,
 			description: item['ТекстовоеОписание'] ?? null,
 			category: rawCategory,
 			product_type: rawType,

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { apiFetch } from '$lib/api';
 import { sql } from '$lib/db';
 
@@ -14,6 +14,11 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 
   if (!product || !product.name) {
     throw error(404, 'Product not found');
+  }
+
+  // Слаг имени мог измениться (обогащение названием) — старые ссылки 301 на актуальную
+  if (product.slug && product.slug !== params.slug) {
+    redirect(301, `/products/${product.slug}`);
   }
 
   // «С этим товаром покупают»: 4 товара той же категории с ценой и картинкой
