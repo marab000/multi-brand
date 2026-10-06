@@ -211,7 +211,12 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const categoryPath = isSearchPage
     ? '/catalog/search'
     : `/catalog/${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`;
-  const metaO = isSearchPage ? null : await getSeoOverride(`category:${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`);
+  const metaO = isSearchPage
+    ? null
+    : await getSeoOverride(
+        `category:${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`
+      );
+  if (metaO?.title) title = metaO.title;
   const canonical = metaO?.canonical
     ? safeCanonical(metaO.canonical)
     : safeCanonical(hasAppliedFilters || page > 1 ? categoryPath : url.pathname);

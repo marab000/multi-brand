@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-  <title>{data.seoH1 || `${brand} — купить в Казани | цены в интернет-магазине MULTIBRAND`}</title>
+  <title>{data.metaTitle || `${brand} — купить в Казани | цены в интернет-магазине MULTIBRAND`}</title>
   <meta
     name="description"
     content="{brand} в интернет-магазине «Мультибренд»: {data.total} товаров с ценами. Официальные поставки, гарантия производителя, рассрочка 0%, бесплатная доставка по Казани."

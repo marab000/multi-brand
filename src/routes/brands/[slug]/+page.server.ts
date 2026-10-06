@@ -71,6 +71,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
   return {
     brand: brand.name,
+    metaTitle: metaO?.title ?? null,
     seoH1: metaO?.h1 ?? null,
     canonical: metaO?.canonical ? safeCanonical(metaO.canonical) : safeCanonical(`/brands/${brandSlugKey}`),
     metaDescription: metaO?.description ?? null,
