@@ -411,7 +411,7 @@
               <b>Приветствуем, {user.full_name || user.email}!</b>
               {#if user.email && user.email !== user.full_name}<span>{user.email}</span>{/if}
             </div>
-            {#if user.roles?.includes('admin')}
+            {#if user.roles?.includes('admin') || user.roles?.includes('seo')}
               <a href="/admin" class="user-menu__admin" onclick={() => (userMenuOpen = false)}
                 >Админ-панель</a
               >
