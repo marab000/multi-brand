@@ -8,4 +8,6 @@
   {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «Контакты» интернет-магазина MULTIBRAND." />{/if}
 </svelte:head>
 
+<h1 class="sr-only">Контакты магазина «Мультибренд» в Казани</h1>
+
 <section class="mx-auto px-6 py-10">Как нас найти</section>
