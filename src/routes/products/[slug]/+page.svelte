@@ -49,18 +49,9 @@
   const includedInKits = $derived(p.includedInKits || []);
   const visibleIncludedInKits = $derived(includedInKits.slice(0, includedVisibleCount));
   const includedRemaining = $derived(includedInKits.length - visibleIncludedInKits.length);
-  const specs = $derived.by(() => {
-    try {
-      const raw = typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw;
-      const values = raw?.ДопРеквизиты || {};
-      const names = raw?.ДопРеквизитыНаименование || {};
-      return Object.keys(values)
-        .map((k) => ({ name: names[k] || k, value: values[k] }))
-        .filter((s) => s.value && s.name !== 'Ссылка на сайт производителя');
-    } catch {
-      return [];
-    }
-  });
+  const specs = $derived(
+    Object.entries(p.specs ?? {}).map(([name, value]) => ({ name, value }))
+  );
   const breadcrumbs = $derived([
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
@@ -200,7 +191,7 @@
                 <button class="gallery-image" type="button" onclick={() => openZoom(i)}>
                   <img
                     src={imgUrl(img.url, 1200)}
-                    alt={p.name}
+                    alt={i === 0 ? p.name : ''}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     fetchpriority={i === 0 ? 'high' : 'auto'}
                     class="h-full w-full object-contain p-4 select-none"
@@ -236,7 +227,7 @@
                   >
                     <img
                       src={imgUrl(img.url, 160)}
-                      alt={p.name}
+                      alt=""
                       loading="lazy"
                       class="pointer-events-none h-full w-full object-contain p-1"
                     />
@@ -393,7 +384,7 @@
               <div class="flex aspect-square w-full items-center justify-center">
                 <img
                   src={img.url}
-                  alt={p.name}
+                  alt=""
                   class="max-h-full max-w-full object-contain select-none"
                 />
               </div>
