@@ -17,3 +17,15 @@ export async function checkAdmin(cookies: any, locals?: any) {
   if (hasRole(locals?.user, 'admin')) return;
   throw error(401, 'Unauthorized');
 }
+
+/** Доступ к SEO-разделу: полноценный админ ИЛИ пользователь с ролью 'seo'.
+ *  Роль 'seo' не даёт доступа к остальным разделам админки. */
+export async function checkSeoAccess(cookies: any, locals?: any) {
+  const session = cookies.get('admin_session');
+  if (session) {
+    const users = await sql`SELECT id FROM admin_users WHERE id=${Number(session)}`;
+    if (users.length) return;
+  }
+  if (hasRole(locals?.user, 'admin') || hasRole(locals?.user, 'seo')) return;
+  throw error(401, 'Unauthorized');
+}

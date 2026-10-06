@@ -33,6 +33,30 @@
 <style lang="scss">
   .user {
     padding-bottom: 40px;
+    &__who {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #94a3b8;
+      font-size: 13.5px;
+      b {
+        color: #202020;
+        font-weight: 700;
+      }
+      button {
+        border: none;
+        background: none;
+        padding: 0;
+        color: $error;
+        font-size: 13.5px;
+        font-weight: 600;
+        cursor: pointer;
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
     &__nav-wrap {
       border-bottom: 1px solid #eee;
     }

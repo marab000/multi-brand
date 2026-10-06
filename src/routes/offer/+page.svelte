@@ -1,4 +1,5 @@
 <script lang="ts">
+  let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   const sections: { title: string; items?: string[]; text?: string }[] = [
     {
       title: '1. Термины и определения',
@@ -44,11 +45,9 @@
 </script>
 
 <svelte:head>
-  <title>Договор оферты — MULTIBRAND</title>
-  <meta
-    name="description"
-    content="Публичный договор оферты интернет-магазина бытовой техники MULTIBRAND: заказ, оплата, доставка, гарантия и возврат."
-  />
+  {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
+  <title>{data?.meta?.title ?? 'Договор оферты — MULTIBRAND'}</title>
+  {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «Договор оферты» интернет-магазина MULTIBRAND." />{/if}
 </svelte:head>
 
 <div class="legal">

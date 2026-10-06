@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { getBrandConfig } from '$lib/server/tetrasis';
+import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 
 export const load: PageServerLoad = async ({ fetch }) => {
   try {
@@ -76,13 +77,19 @@ export const load: PageServerLoad = async ({ fetch }) => {
       hits = [];
     }
 
+  const seoO = await getSeoOverride('home');
     return {
       desktopSlides: data.desktop || [],
       mobileSlides: data.mobile || [],
       latestArticles,
       hits,
       syncBrands,
-      promoImages: { omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg }
+      promoImages: { omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg },
+      meta: {
+        title: seoO?.title || undefined,
+        description: seoO?.description || undefined,
+        canonical: seoO?.canonical ? safeCanonical(seoO.canonical) : safeCanonical('/')
+      }
     };
   } catch {
     return {

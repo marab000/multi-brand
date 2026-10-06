@@ -1,4 +1,5 @@
 <script lang="ts">
+  let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   const sections: { title: string; items?: string[]; text?: string[] }[] = [
     {
       title: 'Гарантия и поддержка',
@@ -42,11 +43,9 @@
 </script>
 
 <svelte:head>
-  <title>Гарантия и поддержка | MULTIBRAND</title>
-  <meta
-    name="description"
-    content="Гарантия на бытовую технику в магазине MULTIBRAND: гарантийный талон, помощь при гарантийном случае, возврат и обмен. Оригинальная техника с гарантией производителя от 1 до 3 лет."
-  />
+  {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
+  <title>{data?.meta?.title ?? 'Гарантия и поддержка | MULTIBRAND'}</title>
+  {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «Гарантия и поддержка» интернет-магазина MULTIBRAND." />{/if}
 </svelte:head>
 
 <div class="legal">

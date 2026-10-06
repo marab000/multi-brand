@@ -1,4 +1,5 @@
 <script lang="ts">
+  let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   import { BadgeCheck, Building2, Users, Handshake } from 'lucide-svelte';
   import logo1 from '$lib/assets/logo2.webp';
   const advantages = [
@@ -26,11 +27,9 @@
 </script>
 
 <svelte:head>
-  <title>О компании — MULTIBRAND</title>
-  <meta
-    name="description"
-    content="MULTIBRAND — комплексное оснащение объектов бытовой техникой с 2005 года."
-  />
+  {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
+  <title>{data?.meta?.title ?? 'О компании — MULTIBRAND'}</title>
+  {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «О компании» интернет-магазина MULTIBRAND." />{/if}
 </svelte:head>
 
 <div class="mx-auto grid gap-4 lg:gap-6">

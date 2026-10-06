@@ -113,7 +113,7 @@
     },
     {
       title: 'Сушильные машины',
-      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
+      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/stiralno-sushilnye-mashiny',
       img: dm
     },
     {
@@ -133,7 +133,8 @@
 </script>
 
 <svelte:head>
-  <title>Бытовая техника в Казани — интернет-магазин Мультибренд | Рассрочка, доставка</title>
+  <title>{data?.meta?.title || 'Бытовая техника в Казани — интернет-магазин Мультибренд | Рассрочка, доставка'}</title>
+  {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
   <meta
     name="description"
     content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
@@ -143,6 +144,19 @@
   {/if}
   {#if mobileImages[0]}
     <link rel="preload" as="image" href={mobileImages[0]} media="(max-width: 1023px)" fetchpriority="high" />
+  {/if}
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="MULTIBRAND" />
+  <meta property="og:title" content="Бытовая техника в Казани — интернет-магазин Мультибренд" />
+  <meta
+    property="og:description"
+    content="Встраиваемая и кухонная техника от официальных поставщиков. Рассрочка 0%, бесплатная доставка по Казани, склад до 12 месяцев."
+  />
+  <meta property="og:url" content="https://multi-brand.online/" />
+  {#if desktopImages[0]}
+    <meta property="og:image" content={desktopImages[0]} />
+    <meta property="og:image:width" content="1600" />
+    <meta property="og:image:height" content="800" />
   {/if}
 </svelte:head>
 

@@ -9,6 +9,20 @@ export const load = async ({ cookies, url, locals }) => {
   const isLogin = url.pathname === '/admin';
   // SSO: сайт-юзер с ролью 'admin' входит в панель без отдельного логина
   const siteAdmin = hasRole(locals.user, 'admin');
+  // Роль 'seo': только раздел /admin/seo (+ выход), остальная админка закрыта
+  const isSeo = hasRole(locals.user, 'seo');
+  const seoAllowed = url.pathname === '/admin/seo' || url.pathname.startsWith('/admin/seo/') || url.pathname === '/admin/logout';
+  if (isSeo && !siteAdmin && locals.user) {
+    if (!seoAllowed) throw redirect(302, '/admin/seo');
+    return {
+      user: {
+        id: locals.user.id,
+        role: 'seo',
+        roles: locals.user.roles,
+        name: locals.user.full_name || locals.user.email
+      }
+    };
+  }
 
   if (!session && !siteAdmin && !isLogin) {
     throw redirect(302, '/admin');
@@ -16,7 +30,7 @@ export const load = async ({ cookies, url, locals }) => {
 
   if (session) {
     const users = await sql`
-      SELECT id, role FROM admin_users WHERE id=${Number(session)}
+      SELECT id, role, login FROM admin_users WHERE id=${Number(session)}
     `;
 
     if (!users.length) {
@@ -29,7 +43,7 @@ export const load = async ({ cookies, url, locals }) => {
       }
 
       return {
-        user: users[0]
+        user: { ...users[0], name: users[0].login }
       };
     }
   }

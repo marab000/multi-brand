@@ -1,6 +1,8 @@
 <script lang="ts">
   // Бренды приходят пропсом из load родительской страницы —
   // источник тот же, что у синка Тетриса (админка → «Тетрис»)
+  import { brandSlug } from '$lib/utils/slugify';
+
   let { brands = [] }: { brands?: string[] } = $props();
 
   const images = import.meta.glob('/src/lib/assets/brands/*.{png,jpg,jpeg,webp}', {
@@ -16,7 +18,6 @@
     imageMap[imageKey(name)] = images[path];
   }
   const getImage = (name: string) => imageMap[imageKey(name)];
-  const urlBrand = (name: string) => name.replace(/['"]/g, '');
 </script>
 
 {#if brands.length}
@@ -26,7 +27,7 @@
         <div class="marquee__row" aria-hidden={copy === 1}>
           {#each brands as brand (brand)}
             <a
-              href={`/catalog?brand=${encodeURIComponent(urlBrand(brand))}`}
+              href={`/brands/${brandSlug(brand)}`}
               class="brand"
               tabindex={copy === 1 ? -1 : undefined}
             >

@@ -12,6 +12,7 @@ import {
 import { sql } from '$lib/db';
 import { toDbPrice } from '$lib/utils/formatPrice';
 import { buildCategorySeo } from '$lib/server/seoText';
+import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 
 function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | undefined {
   const specs: Record<string, { min?: number; max?: number }> = {};
@@ -206,7 +207,19 @@ export const load: PageServerLoad = async ({ params, url }) => {
     }
   }
 
+  // Ручные SEO-переопределения (title/description/canonical/h1)
+  const categoryPath = isSearchPage
+    ? '/catalog/search'
+    : `/catalog/${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`;
+  const metaO = isSearchPage ? null : await getSeoOverride(`category:${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`);
+  const canonical = metaO?.canonical
+    ? safeCanonical(metaO.canonical)
+    : safeCanonical(hasAppliedFilters || page > 1 ? categoryPath : url.pathname);
+
   return {
+    seoH1: metaO?.h1 ?? null,
+    canonical,
+    metaDescription: metaO?.description ?? null,
     products,
     total,
     perPage,

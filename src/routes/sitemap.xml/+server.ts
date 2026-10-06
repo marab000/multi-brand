@@ -100,6 +100,7 @@ export const GET: RequestHandler = async () => {
     select p.id, p.name, p.updated_at
     from products p
     where p.price_rrc is not null
+      and (p.product_type is null or p.product_type not ilike 'комплект%')
     order by p.updated_at desc
   `;
   for (const p of products) {

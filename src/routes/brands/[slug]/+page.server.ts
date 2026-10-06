@@ -3,7 +3,9 @@ import { error } from '@sveltejs/kit';
 import { sql } from '$lib/db';
 import { fetchProducts } from '$lib/server/catalogApi';
 import { getCatalogRoots } from '$lib/server/categories';
-import { brandSlug, buildBrandSeo } from '$lib/server/seoText';
+import { buildBrandSeo } from '$lib/server/seoText';
+import { brandSlug } from '$lib/utils/slugify';
+import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 
 const perPage = 24;
 
@@ -57,6 +59,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
     .filter(Boolean) as { name: string; slug: string }[];
 
   const toRub = (v: any) => (v == null ? null : Math.round(Number(v) * 1000));
+  const brandSlugKey = params.slug?.toLowerCase() ?? '';
+  const metaO = await getSeoOverride(`brand:${brandSlugKey}`);
   const seo = buildBrandSeo({
     name: brand.name,
     count: total,
@@ -68,6 +72,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
 
   return {
     brand: brand.name,
+    seoH1: metaO?.h1 ?? null,
+    canonical: metaO?.canonical ? safeCanonical(metaO.canonical) : safeCanonical(`/brands/${brandSlugKey}`),
+    metaDescription: metaO?.description ?? null,
     total,
     products,
     page,

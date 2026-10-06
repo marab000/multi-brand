@@ -1,4 +1,5 @@
 <script lang="ts">
+  let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   const sections: { title: string; items?: string[]; text?: string }[] = [
     {
       title: '1. Общие положения',
@@ -47,11 +48,9 @@
 </script>
 
 <svelte:head>
-  <title>Политика обработки персональных данных — MULTIBRAND</title>
-  <meta
-    name="description"
-    content="Политика обработки персональных данных интернет-магазина бытовой техники MULTIBRAND в соответствии с 152-ФЗ."
-  />
+  {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
+  <title>{data?.meta?.title ?? 'Политика обработки персональных данных — MULTIBRAND'}</title>
+  {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «Политика обработки персональных данных» интернет-магазина MULTIBRAND." />{/if}
 </svelte:head>
 
 <div class="legal">

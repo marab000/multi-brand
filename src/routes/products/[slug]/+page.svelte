@@ -26,6 +26,8 @@
     kitItems?: ProductKitItem[];
     includedInKits?: ProductKitLink[];
   };
+  // Комплекты временно убраны с сайта (функционал сохранён — вернуть true)
+  const KITS_ENABLED = false;
   let { data } = $props<{ data: { product: ProductPageProduct | null; alsoBought?: any[] } }>();
   const p = $derived(data.product);
   if (!p) throw new Error('Product is null');
@@ -323,7 +325,7 @@
               {/each}
             </div>
           </section>
-        {:else if !p.isKit && includedInKits.length}
+        {:else if KITS_ENABLED && !p.isKit && includedInKits.length}
           <section class="kit-block">
             <h2>Входит в комплекты</h2>
             <div class="included-kits">

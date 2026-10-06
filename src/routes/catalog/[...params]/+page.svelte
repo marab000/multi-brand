@@ -18,15 +18,16 @@
 </script>
 
 <svelte:head>
-  <title>
-    {data.isSearchPage && searchValue
+  {#if data.canonical}<link rel="canonical" href={data.canonical} />{/if}
+  {#if data.metaDescription}<meta name="description" content={data.metaDescription} />{/if}
+  <title>{data.seoH1 ||
+    (data.isSearchPage && searchValue
       ? `Поиск: ${searchValue} | MULTIBRAND`
       : data.isSearchPage
         ? 'Поиск | MULTIBRAND'
         : data.page > 1
           ? `${data.title} — страница ${data.page} | MULTIBRAND`
-          : `${data.title} | MULTIBRAND`}
-  </title>
+          : `${data.title} | MULTIBRAND`)}</title>
   {#if shouldNoindex}
     <meta name="robots" content="noindex, follow" />
   {/if}
@@ -47,7 +48,9 @@
 
 <main class="catalog-content">
   <h1 class="title text-[24px]!">
-    {#if data.category}
+    {#if data.seoH1}
+      {data.seoH1}
+    {:else if data.category}
       {data.category}
     {:else if data.isSearchPage}
       {#if searchValue}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   import { Truck, MapPin, PackageCheck, MessageCircleMore } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import deliveryBanner from '$lib/assets/delivery.webp';
@@ -6,8 +7,9 @@
 </script>
 
 <svelte:head>
-  <title>Доставка — MULTIBRAND</title>
-  <meta name="description" content="Информация о доставке заказов по городу и России." />
+  {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
+  <title>{data?.meta?.title ?? 'Доставка — MULTIBRAND'}</title>
+  {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «Доставка» интернет-магазина MULTIBRAND." />{/if}
 </svelte:head>
 
 <div class="mx-auto grid gap-4 pb-4 lg:gap-6 lg:pb-6">

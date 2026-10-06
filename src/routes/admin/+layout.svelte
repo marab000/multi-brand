@@ -15,15 +15,22 @@
   <div class="admin">
     <aside class="sidebar">
       <div class="logo">ADMIN</div>
+      {#if data.user?.name}
+        <div class="who">Вы вошли как:<br /><b>{data.user.name}</b></div>
+      {/if}
       <nav>
-        <a href="/admin/orders" class={$activePath === '/admin/orders' ? 'active' : ''}>Заказы</a>
-        <a href="/admin/cart-exports" class={$activePath.startsWith('/admin/cart-exports') ? 'active' : ''}>Корзины PDF (КП)</a>
-        <a href="/admin/users" class={$activePath.startsWith('/admin/users') ? 'active' : ''}>Пользователи</a>
-        <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''}>Слайдер</a>
-        <a href="/admin/articles" class={$activePath.startsWith('/admin/articles') ? 'active' : ''}>Статьи</a>
-        <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''}>Собери комплект техники</a>
-        <a href="/admin/tetris" class={$activePath.startsWith('/admin/tetris') ? 'active' : ''}>Тетрис</a>
-        <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''}>Скидка</a>
+        {#if data.user.role === 'seo'}
+          <a href="/admin/seo" class={$activePath.startsWith('/admin/seo') ? 'active' : ''}>SEO-страницы</a>
+        {:else}
+          <a href="/admin/orders" class={$activePath === '/admin/orders' ? 'active' : ''}>Заказы</a>
+          <a href="/admin/cart-exports" class={$activePath.startsWith('/admin/cart-exports') ? 'active' : ''}>Корзины PDF (КП)</a>
+          <a href="/admin/users" class={$activePath.startsWith('/admin/users') ? 'active' : ''}>Пользователи</a>
+          <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''}>Слайдер</a>
+          <a href="/admin/articles" class={$activePath.startsWith('/admin/articles') ? 'active' : ''}>Статьи</a>
+          <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''}>Собери комплект техники</a>
+          <a href="/admin/tetris" class={$activePath.startsWith('/admin/tetris') ? 'active' : ''}>Тетрис</a>
+          <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''}>Скидка</a>
+        {/if}
         <a class="logout" href="/admin/logout">Выйти</a>
       </nav>
     </aside>
@@ -52,6 +59,16 @@
     font-size: 20px;
     font-weight: 700;
     color: $green;
+  }
+  .who {
+    font-size: 12.5px;
+    color: #94a3b8;
+    line-height: 1.5;
+    padding: 0 4px;
+    b {
+      color: #202020;
+      font-size: 13.5px;
+    }
   }
   nav {
     display: flex;
@@ -88,6 +105,9 @@
   }
   .content {
     flex: 1;
+    /* flex-элемент должен уметь сжиматься — иначе внутренние блоки
+       фиксированной ширины выталкивают его за край экрана */
+    min-width: 0;
     padding: 25px;
     overflow-y: visible;
   }

@@ -407,6 +407,10 @@
         </button>
         {#if user && userMenuOpen}
           <div class="user-menu">
+            <div class="user-menu__hello">
+              <b>Приветствуем, {user.full_name || user.email}!</b>
+              {#if user.email && user.email !== user.full_name}<span>{user.email}</span>{/if}
+            </div>
             {#if user.roles?.includes('admin')}
               <a href="/admin" class="user-menu__admin" onclick={() => (userMenuOpen = false)}
                 >Админ-панель</a
@@ -851,6 +855,25 @@
     z-index: 1002;
     min-width: 190px;
     padding: 8px;
+    &__hello {
+      display: grid;
+      gap: 2px;
+      padding: 8px 10px 10px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba($green, 0.14);
+      b {
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #111827;
+        line-height: 1.3;
+      }
+      span {
+        font-size: 12px;
+        color: #94a3b8;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
     border: 1px solid rgba($green, 0.14);
     border-radius: 14px;
     background: #fff;
