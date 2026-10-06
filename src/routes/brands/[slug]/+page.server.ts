@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { sql } from '$lib/db';
-import { fetchProducts } from '$lib/server/catalogApi';
+import { fetchProducts, countProducts } from '$lib/server/catalogApi';
 import { getCatalogRoots } from '$lib/server/categories';
 import { buildBrandSeo } from '$lib/server/seoText';
 import { brandSlug } from '$lib/utils/slugify';
@@ -25,8 +25,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
   if (!Number.isFinite(page) || page < 1) page = 1;
 
   const filters = { brands: [brand.name] };
-  const firstLoad = await fetchProducts({ ...filters, sort: 'default' }, 1, 0);
-  const total = firstLoad.total;
+  const total = await countProducts({ ...filters, sort: 'default' });
   const pages = Math.max(1, Math.ceil(total / perPage));
   if (page > pages) page = pages;
   const offset = (page - 1) * perPage;

@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import type { CatalogFilters } from '$lib/server/catalogApi';
-import { fetchProducts } from '$lib/server/catalogApi';
+import { fetchProducts, countProducts } from '$lib/server/catalogApi';
 import {
   filterCatalogRootsByAvailability,
   findCatalogGroupBySlug,
@@ -134,8 +134,8 @@ export const load: PageServerLoad = async ({ params, url }) => {
   const perPage = 24;
   let page = url.searchParams.has('page') ? Number(url.searchParams.get('page')) : 1;
   if (!Number.isFinite(page) || page < 1) page = 1;
-  const firstLoad = await fetchProducts(filters, 1, 0);
-  const total = firstLoad.total;
+  // лёгкий COUNT вместо полной выборки в один ряд ради total
+  const total = await countProducts(filters);
   if (!isSearchPage && groupSlug && total === 0 && !hasAppliedFilters) {
     throw error(404, 'Категория пуста');
   }

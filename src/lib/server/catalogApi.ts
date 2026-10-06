@@ -283,6 +283,26 @@ function buildOrderBy(sort?: CatalogFilters['sort'], search?: string, searchPara
   `;
 }
 
+/** Лёгкий подсчёт total: без JOIN к картинкам и без выборки полей.
+ *  WHERE каталога не использует product_images, поэтому результат идентичен. */
+export async function countProducts(filters: CatalogFilters): Promise<number> {
+  try {
+    const initialValues: any[] = [];
+    if (filters.search?.trim()) initialValues.push(filters.search.trim());
+    const { whereClause, values } = buildWhere(filters, initialValues);
+    const query = `
+      SELECT COUNT(*) AS total
+      FROM products p
+      ${whereClause}
+    `;
+    const rows = await sql.unsafe(query, values);
+    return rows.length ? Number(rows[0].total) : 0;
+  } catch (err) {
+    console.error('❌ COUNT SQL ERROR:', err);
+    throw err;
+  }
+}
+
 export async function fetchProducts(filters: CatalogFilters, limit = 50, offset = 0) {
   try {
     // Поисковая строка идёт первым параметром, чтобы buildWhere
@@ -295,9 +315,16 @@ export async function fetchProducts(filters: CatalogFilters, limit = 50, offset 
     }
     const { whereClause, values } = buildWhere(filters, initialValues);
     const orderBy = buildOrderBy(filters.sort, filters.search, searchParamIdx);
+    // без p.raw — полный 1С-дамп не нужен списку карточек и утяжеляет SSR
     const query = `
-      SELECT 
-        p.*,
+      SELECT
+        p.id, p.external_id, p.name, p.description, p.source,
+        p.price_rrc, p.price_opt, p.price_ric,
+        p.specs, p.category, p.product_type, p.brand,
+        p.catalog_root_slug, p.catalog_root_name,
+        p.catalog_group_slug, p.catalog_group_name,
+        p.catalog_leaf_slug, p.catalog_leaf_name,
+        p.created_at, p.updated_at,
         COUNT(*) OVER() AS total_count,
         COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL),'[]') AS images
       FROM products p
