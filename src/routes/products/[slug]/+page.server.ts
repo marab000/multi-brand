@@ -4,9 +4,15 @@ import { apiFetch } from '$lib/api';
 import { sql } from '$lib/db';
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
-  const product: any = await apiFetch(fetch, `/api/products/${params.slug}`);
+  // apiFetch бросает исключение при ошибке ответа — ловим и отдаём честный 404
+  let product: any = null;
+  try {
+    product = await apiFetch(fetch, `/api/products/${params.slug}`);
+  } catch {
+    product = null;
+  }
 
-  if (!product) {
+  if (!product || !product.name) {
     throw error(404, 'Product not found');
   }
 
