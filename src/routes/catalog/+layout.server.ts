@@ -3,13 +3,13 @@ import { sql } from '$lib/db';
 import type { CatalogFilters, CatalogScope } from '$lib/server/catalogApi';
 import { buildWhere } from '$lib/server/catalogApi';
 import {
-  filterCatalogRootsByAvailability,
   findCatalogGroupBySlug,
   findCatalogRootBySlug,
   getCatalogNav,
   getCatalogRoots,
   slugifyCatalogValue
 } from '$lib/server/categories';
+import { getLiveCatalog } from '$lib/server/liveCatalog';
 import { toDbPrice, toDisplayPrice } from '$lib/utils/formatPrice';
 
 type MinMax = {
@@ -187,13 +187,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
     .getAll('type')
     .map((item) => item.trim())
     .filter(Boolean);
-  const allRoots = getCatalogRoots();
-  const availabilityRows = await sql`
-    SELECT DISTINCT catalog_root_slug AS root_slug, catalog_group_slug AS group_slug, catalog_leaf_slug AS leaf_slug
-    FROM products
-    WHERE catalog_root_slug IS NOT NULL AND price_rrc IS NOT NULL
-  `;
-  const filteredRoots = filterCatalogRootsByAvailability(allRoots, availabilityRows as any[]);
+  const { filteredRoots } = await getLiveCatalog();
   const currentRoot =
     isSearchPage || landingScopes ? null : findCatalogRootBySlug(rootSlug, filteredRoots);
   const currentGroup =
@@ -273,7 +267,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
               level: 'leaf' as const
             }
           ];
-  } else {
+  } else if (rootSlug) {
     const { where, values } = buildScopeWhere(
       rootSlug,
       groupSlug,
@@ -313,6 +307,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
         }));
     }
   }
+
   const brands = [...new Set(products.map((p) => p.brand_name?.trim()).filter(Boolean))];
   const colors = [...new Set(products.map((p) => p.specs?.['Цвет']?.trim()).filter(Boolean))];
   const prices = products

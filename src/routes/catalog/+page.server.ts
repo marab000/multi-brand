@@ -1,11 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { sql } from '$lib/db';
-import {
-  filterCatalogRootsByAvailability,
-  getCatalogRoots,
-  getCatalogShowcase
-} from '$lib/server/categories';
+import { getLiveCatalog } from '$lib/server/liveCatalog';
 import { getBrandConfig } from '$lib/server/tetrasis';
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -28,20 +24,7 @@ export const load: PageServerLoad = async ({ url }) => {
     throw redirect(302, `/catalog/search?${params.toString()}`);
   }
 
-  const availabilityRows = await sql`
-    SELECT DISTINCT
-      catalog_root_slug AS root_slug,
-      catalog_group_slug AS group_slug,
-      catalog_leaf_slug AS leaf_slug
-    FROM products
-    WHERE catalog_root_slug IS NOT NULL
-      AND price_rrc IS NOT NULL
-  `;
 
-  const filteredRoots = filterCatalogRootsByAvailability(
-    getCatalogRoots(),
-    availabilityRows as any[]
-  );
 
   // Бренды для блока внизу каталога — из включённых в синке (админка → «Тетрис»)
   let syncBrands: string[] = [];
@@ -51,9 +34,11 @@ export const load: PageServerLoad = async ({ url }) => {
     // настроек ещё нет — блок просто не покажется
   }
 
+  const { roots, showcase } = await getLiveCatalog();
+
   return {
-    catalogRoots: filteredRoots,
-    catalogShowcase: getCatalogShowcase(filteredRoots),
+    catalogRoots: roots,
+    catalogShowcase: showcase,
     syncBrands
   };
 };
