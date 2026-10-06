@@ -79,6 +79,15 @@ async function ensureSlidesTable() {
   await sql`alter table users drop column if exists role`;
   // Ручная скидка на конкретное КП
   await sql`alter table cart_exports add column if not exists discount_percent int not null default 0`;
+  // История слагов товаров: карточка переименована — старые ссылки 301-ят на актуальную
+  await sql`
+    create table if not exists product_slug_history (
+      product_id uuid not null references products(id) on delete cascade,
+      slug text not null,
+      created_at timestamptz not null default now(),
+      primary key (product_id, slug)
+    )
+  `;
   slidesMigrated = true;
 }
 

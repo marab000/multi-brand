@@ -21,6 +21,18 @@ export async function GET({ params }) {
     `;
     matched = candidates.find(bySlug);
   }
+  if (!matched) {
+    // слаг из истории переименований (синка) — отдаём товар, страница сделает 301 на актуальный слаг
+    const hist = await sql`
+      select p.id, p.name
+      from product_slug_history h
+      join products p on p.id = h.product_id
+      where h.slug = ${slug}
+      order by h.created_at desc
+      limit 1
+    `;
+    matched = hist[0] ?? null;
+  }
   if (!matched) return json(null, { status: 404 });
   const currentSlug = slugify(matched.name);
   const rows = await sql`

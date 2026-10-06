@@ -18,18 +18,29 @@ import postgres from 'postgres'
 import brands from './brands.json' with { type: 'json' }
 import excludedCategories from './excluded-categories.json' with { type: 'json' }
 import { resolveCatalog } from '../../src/lib/server/categories.ts'
+import { normalizeSpecs } from './spec-normalizer.js'
 const SOURCE = 'tetrasis-api'
 const LOG = 'scripts/sync-tetrasis-products/sync.log'
 const BRANDS_KEY = 'tetrasis_brands'
 const STATE_KEY = 'tetrasis_sync_state'
 // SYNC_DRY_RUN=1 — только проверить связь и обновить список брендов поставщика, товары не трогаем
 const DRY_RUN = process.env.SYNC_DRY_RUN === '1'
+// защита от дурака: поставщик моргнул — товары источника не должны вымирать пачками
+const SHRINK_LIMIT = 0.5 // бренд: пришло меньше половины того, что в базе — удаление «лишних» пропускаем
+const MASS_DELETE_SHARE = 0.3 // общее: одна чистка не может снести больше 30% товаров источника
+const PRODUCT_FLOOR = 3000 // в базе должно остаться минимум столько товаров источника, иначе синк падает с ошибкой
 const API_KEY = process.env.TETRAIS_API_KEY
 if (!API_KEY) throw new Error('TETRAIS_API_KEY missing')
 const sql = postgres({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, username: process.env.DB_USER, password: process.env.DB_PASSWORD })
 const now = () => new Date().toISOString()
 const normalizeCompare = s => String(s || '').toLowerCase().replace(/['"]/g, '').trim()
 const cleanBrand = s => String(s || '').replace(/['"]/g, '').trim()
+// слаг — та же логика, что src/lib/utils/slugify.ts (история слагов и карточка должны совпадать)
+const SLUG_MAP = { а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',ы:'y',э:'e',ю:'yu',я:'ya' }
+function slugify(str) {
+	return String(str).toLowerCase().split('').map(c => SLUG_MAP[c] ?? c).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+const escapeRegExp = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // включённые бренды подгружаются из настроек админки в main(), до этого — brands.json
 let enabledBrands = brands.map(b => cleanBrand(b))
 async function log(...a) {
@@ -156,36 +167,29 @@ async function syncBrand(apiBrand) {
 		return false
 	}
 	const priceMap = extractPrices(pricesRaw)
-	// Короткий тип для названия: «стиральная машина», «духовой шкаф» и т.п.
-const SHORT_TYPE_RULES = [
-	[/стиральн/i, 'стиральная машина'],
-	[/посудомо/i, 'посудомоечная машина'],
-	[/духов/i, 'духовой шкаф'],
-	[/(варочн|поверхност|панел)/i, 'варочная панель'],
-	[/(вытяж|зонт|куп|наклон|Т-образ)/i, 'вытяжка'],
-	[/(холодил|винн|минибар|сигар)/i, 'холодильник'],
-	[/(морозил|ларь)/i, 'морозильник'],
-	[/(микроволн|свч)/i, 'СВЧ'],
-	[/(смесител|излив)/i, 'смеситель'],
-	[/мойк/i, 'мойка'],
-	[/измельчит/i, 'измельчитель'],
-	[/(сушил|сушк)/i, 'сушильная машина'],
-	[/(кофе|кофемаш)/i, 'кофемашина'],
-	[/(плит)/i, 'плита']
-]
-function shortType(productType) {
-	const t = String(productType ?? '')
-	for (const [re, label] of SHORT_TYPE_RULES) if (re.test(t)) return label
-	// фолбэк: первые два слова типа, нижний регистр первой буквы
-	const words = t.split(/\s+/).slice(0, 2).join(' ')
-	return words ? words.charAt(0).toLowerCase() + words.slice(1) : ''
+	// Тип для названия: product_type как есть («Комбинированная плита» → «... комбинированная плита»).
+	// Правила по подстрокам дали ложь: «с-ПЛИТ-система» → «плита», «Кофеварка» → «кофемашина».
+const TYPE_OVERRIDES = {
+	'Сплит-система': 'кондиционер',
+	'Мобильный кондиционер': 'кондиционер',
+	'Минимойка бытовая электрическая для авто': 'минимойка',
+	'Аксессуары для мбт': null,
+	'Багеты и планки для вытяжек': null
 }
-function enrichName(name, productType) {
+function shortType(productType) {
+	const t = String(productType ?? '').trim()
+	if (!t) return ''
+	if (t in TYPE_OVERRIDES) return TYPE_OVERRIDES[t]
+	return t.charAt(0).toLowerCase() + t.slice(1)
+}
+function enrichName(name, productType, color) {
+	let result = name
 	const short = shortType(productType)
-	if (!short) return name
 	// уже содержит тип — не дублируем
-	if (new RegExp(short.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(name)) return name
-	return `${name} ${short}`
+	if (short && !new RegExp(escapeRegExp(short), 'i').test(result)) result = `${result} ${short}`
+	// цвет из характеристик в конец: «Gorenje GS520E15S отдельностоящая посудомоечная машина, серебристый»
+	if (color && !new RegExp(escapeRegExp(color), 'i').test(result)) result = `${result}, ${color}`
+	return result
 }
 
 const rows = []
@@ -195,7 +199,10 @@ const rows = []
 		if (!prices || !(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
 		const rawCategory = item['ГруппаАналитическогоУчета'] ?? null
 		const rawType = item['ЦеноваяГруппа'] ?? null
-		const displayName = enrichName(item['РабочееНаименование'] ?? '', rawType)
+		const catalog = resolveCatalog(rawCategory, rawType)
+		// спеки сразу нормализуем — мусор поставщика не доезжает до базы
+		const specs = normalizeSpecs(extractSpecs(item)).specs
+		const displayName = enrichName(item['РабочееНаименование'] ?? '', rawType, specs['Цвет'] ?? null)
 		rows.push({
 			external_id: id,
 			source: SOURCE,
@@ -213,13 +220,24 @@ const rows = []
 			price_rrc: prices.price_rrc,
 			price_opt: prices.price_opt,
 			price_ric: prices.price_ric,
-			specs: sql.json(extractSpecs(item)),
+			specs: sql.json(specs),
 			raw: sql.json({ ...item, imported_from: SOURCE, imported_at: now() })
 		})
 	}
 	if (!rows.length) {
 		await log('NO_ROWS_WITH_PRICE', cleanName)
 		return false
+	}
+	// история слагов: у товаров, чьё имя поменялось, запоминаем старый слаг — старые ссылки 301-ят
+	const oldRows = await sql`
+		select id, external_id, name from products
+		where source=${SOURCE} and external_id in ${sql(rows.map(r => r.external_id))}`
+	const oldByName = new Map(oldRows.map(r => [r.external_id, r]))
+	const slugRenames = []
+	for (const r of rows) {
+		const old = oldByName.get(r.external_id)
+		const oldSlug = old?.name && old.name !== r.name ? slugify(old.name) : null
+		if (oldSlug) slugRenames.push({ product_id: old.id, slug: oldSlug })
 	}
 	await sql`
 		insert into products ${sql(rows)}
@@ -243,20 +261,49 @@ const rows = []
 		raw=excluded.raw,
 		updated_at=now()
 	`
+	if (slugRenames.length) {
+		await sql`
+			insert into product_slug_history ${sql(slugRenames)}
+			on conflict (product_id, slug) do nothing`
+		await log('SLUG_HISTORY', 'записано старых слагов:', slugRenames.length)
+	}
 	const ids = rows.map(r => r.external_id)
-	await sql`
-		delete from products
-		where source=${SOURCE}
-		and brand->>'api'=${String(apiBrand.NAME)}
-		and external_id not in ${sql(ids)}
-	`
+	// защита: если в базе бренда в разы больше, чем пришло (обрезанная выдача API),
+	// снос «лишних» пропускаем — доедет следующим нормальным прогоном
+	const [{ n: brandCount }] = await sql`
+		select count(*)::int as n from products
+		where source=${SOURCE} and brand->>'api'=${String(apiBrand.NAME)}`
+	if (brandCount && rows.length < brandCount * SHRINK_LIMIT) {
+		await log('SUSPICIOUS_SHRINK', cleanName, `в базе ${brandCount}, пришло ${rows.length} — удаление пропущено`)
+	} else {
+		await sql`
+			delete from products
+			where source=${SOURCE}
+			and brand->>'api'=${String(apiBrand.NAME)}
+			and external_id not in ${sql(ids)}
+		`
+	}
 	await log('DONE_BRAND', cleanName, 'rows:', rows.length)
 	return true
 }
+// защита от дурака: массовую чистку считаем и удаляем в транзакции — если под раздачу
+// попало больше MASS_DELETE_SHARE товаров источника, откатываем и валим синк с ошибкой в админку
+async function guardedDelete(label, buildCond) {
+	return sql.begin(async tx => {
+		const cond = buildCond(tx)
+		const [total] = await tx`select count(*)::int as n from products where source=${SOURCE}`
+		const [doomed] = await tx`select count(*)::int as n from products where source=${SOURCE} and ${cond}`
+		if (total.n && doomed.n > total.n * MASS_DELETE_SHARE) {
+			throw new Error(`ЗАЩИТА ${label}: под удаление ${doomed.n} из ${total.n} товаров (> ${Math.round(MASS_DELETE_SHARE * 100)}%) — откат, синк прерван`)
+		}
+		return await tx`delete from products where source=${SOURCE} and ${cond} returning id`
+	})
+}
 async function removeExcludedCategories() {
 	const { categories = [], category_product_types = {} } = excludedCategories
+	let removed = 0
 	if (categories.length) {
-		await sql`delete from products where source=${SOURCE} and category = ANY(${sql.array(categories)})`
+		removed += (await guardedDelete('excluded-categories', tx => tx`(category = ANY(${sql.array(categories)}))`)).length
 	}
 	let query = sql``
 	let first = true
@@ -266,8 +313,8 @@ async function removeExcludedCategories() {
 		query = first ? sql`${condition}` : sql`${query} OR ${condition}`
 		first = false
 	}
-	if (!first) await sql`delete from products where source=${SOURCE} and (${query})`
-	await log('EXCLUDED_REMOVED')
+	if (!first) removed += (await guardedDelete('excluded-categories-types', tx => tx`(${query})`)).length
+	await log('EXCLUDED_REMOVED', 'товаров:', removed)
 }
 // бренд выключили в админке (или убрали из brands.json) → его товары вычищаем из базы
 async function removeStaleBrands() {
@@ -276,19 +323,26 @@ async function removeStaleBrands() {
 		await log('STALE_BRANDS_SKIPPED', 'пустой список включённых брендов — ничего не удаляю')
 		return
 	}
-	const removed = await sql`
-		delete from products
-		where source=${SOURCE}
-		and (brand->>'name' is null or brand->>'name' not in ${sql(keep)})
-		returning id, brand->>'name' as name
-	`
-	if (removed.length) await log('STALE_BRANDS_REMOVED', removed.map(r => r.name).join(', '))
+	const removed = await guardedDelete('stale-brands', tx =>
+		tx`(brand->>'name' is null or brand->>'name' not in ${sql(keep)})`)
+	if (removed.length) await log('STALE_BRANDS_REMOVED', removed.map(r => r.id).length + ' товаров')
 	else await log('STALE_BRANDS_NONE')
 }
 async function main() {
 	const fs = (await import('fs-extra')).default
 	await fs.writeFile(LOG, '')
 	await setSyncState({ status: 'running', startedAt: now(), finishedAt: null, source: process.env.SYNC_SOURCE || 'cli', error: null })
+	// история слагов (та же таблица, что создаёт hooks.server.ts на сайте)
+	await sql`create table if not exists product_slug_history (
+		product_id uuid not null references products(id) on delete cascade,
+		slug text not null,
+		created_at timestamptz not null default now(),
+		primary key (product_id, slug))`
+	// защита: синхронизируем только живую базу — минимум PRODUCT_FLOOR товаров источника
+	const [{ n: startCount }] = await sql`select count(*)::int as n from products where source=${SOURCE}`
+	if (startCount < PRODUCT_FLOOR) {
+		throw new Error(`Защита: для синхронизации должно быть минимум ${PRODUCT_FLOOR} товаров, в базе ${startCount}. Условие не выполнено`)
+	}
 	const cfg = await loadBrandConfig()
 	enabledBrands = cfg.enabled
 	await log('CONFIG', 'enabled:', enabledBrands.length, 'known:', cfg.all.length, DRY_RUN ? 'DRY_RUN' : '')
@@ -315,6 +369,11 @@ async function main() {
 	}
 	await removeExcludedCategories()
 	await removeStaleBrands()
+	// защита: чистки не должны опустить базу ниже пола
+	const [{ n: finalCount }] = await sql`select count(*)::int as n from products where source=${SOURCE}`
+	if (finalCount < PRODUCT_FLOOR) {
+		throw new Error(`Защита: после синхронизации в базе ${finalCount} товаров, минимум ${PRODUCT_FLOOR}. Условие не выполнено`)
+	}
 	await setSyncState({ status: 'done', finishedAt: now(), brandsDone: done, brandsTotal: apiBrands.length, unmatched })
 	await sql.end()
 	await log('FINISHED', `синк выполнен: ${done} из ${apiBrands.length} брендов`)
