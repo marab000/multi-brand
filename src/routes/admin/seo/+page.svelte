@@ -11,13 +11,14 @@
       description?: string | null;
       h1?: string | null;
       canonical?: string | null;
+      section_text?: string | null;
     } | null;
   };
 
   let pages: PageEntry[] = $state(data.pages ?? []);
   let filter = $state('');
   let openKey = $state<string | null>(null);
-  let drafts: Record<string, { title: string; description: string; h1: string; canonical: string }> =
+  let drafts: Record<string, { title: string; description: string; h1: string; canonical: string; sectionText: string }> =
     $state({});
   let savedKeys: Record<string, string> = $state({});
 
@@ -36,16 +37,19 @@
     return [...map.entries()];
   });
 
-  type Draft = { title: string; description: string; h1: string; canonical: string };
+  type Draft = { title: string; description: string; h1: string; canonical: string; sectionText: string };
 
   function draftValue(p: PageEntry, field: keyof Draft): string {
+    if (field === 'sectionText') {
+      return drafts[p.key]?.sectionText ?? p.override?.section_text ?? '';
+    }
     return drafts[p.key]?.[field] ?? p.override?.[field] ?? '';
   }
 
   // мутация только из обработчиков событий — в шаблоне безопасное чтение
   function setDraft(p: PageEntry, field: keyof Draft, value: string) {
     const base: Draft =
-      drafts[p.key] ?? { title: '', description: '', h1: '', canonical: '' };
+      drafts[p.key] ?? { title: '', description: '', h1: '', canonical: '', sectionText: '' };
     drafts[p.key] = { ...base, [field]: value };
   }
 
@@ -55,7 +59,8 @@
         title: p.override?.title ?? '',
         description: p.override?.description ?? '',
         h1: p.override?.h1 ?? '',
-        canonical: p.override?.canonical ?? ''
+        canonical: p.override?.canonical ?? '',
+        sectionText: p.override?.section_text ?? ''
       };
     }
     const d = drafts[p.key];
@@ -67,7 +72,13 @@
     const json = await res.json().catch(() => null);
     if (res.ok) {
       savedKeys[p.key] = 'Сохранено ✓';
-      p.override = { title: d.title, description: d.description, h1: d.h1, canonical: json?.canonical ?? d.canonical };
+      p.override = {
+        title: d.title,
+        description: d.description,
+        h1: d.h1,
+        canonical: json?.canonical ?? d.canonical,
+        section_text: d.sectionText
+      };
     } else {
       savedKeys[p.key] = json?.message ?? 'Ошибка сохранения';
     }
@@ -77,7 +88,7 @@
   }
 
   function clearRow(p: PageEntry) {
-    drafts[p.key] = { title: '', description: '', h1: '', canonical: '' };
+    drafts[p.key] = { title: '', description: '', h1: '', canonical: '', sectionText: '' };
     void save(p);
   }
 </script>
@@ -99,7 +110,7 @@
     <div class="group">
       <div class="group__title">{group}</div>
       {#each entries as p (p.key)}
-        {@const isCustom = !!(p.override || draftValue(p, 'title') || draftValue(p, 'description') || draftValue(p, 'h1') || draftValue(p, 'canonical'))}
+        {@const isCustom = !!(p.override || draftValue(p, 'title') || draftValue(p, 'description') || draftValue(p, 'h1') || draftValue(p, 'canonical') || draftValue(p, 'sectionText'))}
         <div class="row" class:row--custom={isCustom} class:row--open={openKey === p.key}>
           <button
             type="button"
@@ -147,6 +158,16 @@
                   placeholder={`https://multi-brand.online${p.path}`}
                 />
               </label>
+              {#if p.group === 'Категории'}
+                <label>
+                  <span>Текст раздела <i>(спойлер «О разделе»; абзацы — через пустую строку; пусто = автогенерация)</i></span>
+                  <textarea
+                    value={draftValue(p, 'sectionText')}
+                    oninput={(e) => setDraft(p, 'sectionText', e.currentTarget.value)}
+                    rows="6"
+                    placeholder="автогенерация из данных категории"></textarea>
+                </label>
+              {/if}
               <div class="row__actions">
                 <button type="button" class="save" onclick={() => save(p)}>Сохранить</button>
                 {#if p.override}

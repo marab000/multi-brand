@@ -1,6 +1,7 @@
 import { sql } from '$lib/db';
 
-// Ручные SEO-переопределения страниц: title / description / h1 / canonical.
+// Ручные SEO-переопределения страниц: title / description / h1 / canonical
+// и section_text — персональный текст спойлера «О разделе» для категорий.
 // page_key — стабильный идентификатор страницы:
 //   home, about, contacts, delivery, privacy, offer, garantiya, podbor,
 //   category:{rootSlug}[/{groupSlug}[/{leafSlug}]], brand:{brandSlug}, article:{slug}
@@ -10,6 +11,7 @@ export type SeoOverride = {
 	description?: string | null;
 	h1?: string | null;
 	canonical?: string | null;
+	section_text?: string | null;
 };
 
 let tableReady = false;
@@ -27,6 +29,8 @@ export async function ensureSeoTable(): Promise<void> {
 			updated_by TEXT
 		)
 	`;
+	// персональный текст спойлера «О разделе» (абзацы через пустую строку)
+	await sql`ALTER TABLE seo_overrides ADD COLUMN IF NOT EXISTS section_text TEXT`;
 	tableReady = true;
 }
 
@@ -34,7 +38,7 @@ export async function getSeoOverride(pageKey: string): Promise<SeoOverride | nul
 	try {
 		await ensureSeoTable();
 		const rows = await sql`
-			SELECT title, description, h1, canonical
+			SELECT title, description, h1, canonical, section_text
 			FROM seo_overrides
 			WHERE page_key = ${pageKey}
 			LIMIT 1
@@ -45,9 +49,12 @@ export async function getSeoOverride(pageKey: string): Promise<SeoOverride | nul
 			title: r.title ?? null,
 			description: r.description ?? null,
 			h1: r.h1 ?? null,
-			canonical: r.canonical ?? null
+			canonical: r.canonical ?? null,
+			section_text: r.section_text ?? null
 		};
-		return out.title || out.description || out.h1 || out.canonical ? out : null;
+		return out.title || out.description || out.h1 || out.canonical || out.section_text
+			? out
+			: null;
 	} catch {
 		return null;
 	}
@@ -72,14 +79,17 @@ export async function upsertSeoOverride(
 	const description = data.description?.trim() || null;
 	const h1 = data.h1?.trim() || null;
 	const canonical = safeCanonical(data.canonical);
+	const sectionText = data.section_text?.trim() || null;
+	await ensureSeoTable();
 	await sql`
-		INSERT INTO seo_overrides (page_key, title, description, h1, canonical, updated_by)
-		VALUES (${pageKey}, ${title}, ${description}, ${h1}, ${canonical}, ${updatedBy})
+		INSERT INTO seo_overrides (page_key, title, description, h1, canonical, section_text, updated_by)
+		VALUES (${pageKey}, ${title}, ${description}, ${h1}, ${canonical}, ${sectionText}, ${updatedBy})
 		ON CONFLICT (page_key) DO UPDATE SET
 			title = ${title},
 			description = ${description},
 			h1 = ${h1},
 			canonical = ${canonical},
+			section_text = ${sectionText},
 			updated_at = now(),
 			updated_by = ${updatedBy}
 	`;
@@ -90,7 +100,7 @@ export async function listSeoOverrides(pageKeys: string[]): Promise<Record<strin
 	try {
 		await ensureSeoTable();
 		const rows = await sql`
-			SELECT page_key, title, description, h1, canonical
+			SELECT page_key, title, description, h1, canonical, section_text
 			FROM seo_overrides
 			WHERE page_key IN ${sql(pageKeys)}
 		`;
@@ -100,7 +110,8 @@ export async function listSeoOverrides(pageKeys: string[]): Promise<Record<strin
 				title: r.title ?? null,
 				description: r.description ?? null,
 				h1: r.h1 ?? null,
-				canonical: r.canonical ?? null
+				canonical: r.canonical ?? null,
+				section_text: r.section_text ?? null
 			};
 		}
 		return out;

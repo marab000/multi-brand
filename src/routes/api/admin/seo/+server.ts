@@ -29,7 +29,8 @@ export async function PUT({ request, cookies, locals }) {
 		title: typeof body.title === 'string' ? body.title : null,
 		description: typeof body.description === 'string' ? body.description : null,
 		h1: typeof body.h1 === 'string' ? body.h1 : null,
-		canonical: typeof body.canonical === 'string' ? body.canonical : null
+		canonical: typeof body.canonical === 'string' ? body.canonical : null,
+		section_text: typeof body.sectionText === 'string' ? body.sectionText : null
 	}, who);
 	return json({ ok: true, canonical: safeCanonical(body.canonical) });
 }

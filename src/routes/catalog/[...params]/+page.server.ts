@@ -217,6 +217,26 @@ export const load: PageServerLoad = async ({ params, url }) => {
         `category:${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`
       );
   if (metaO?.title) title = metaO.title;
+
+  // Персональный текст спойлера «О разделе»: точная страница → корень → автогенерация
+  if (!isSearchPage && seo) {
+    let sectionText = metaO?.section_text ?? null;
+    if (!sectionText && currentRoot?.slug) {
+      const exactKey = `category:${[currentRoot?.slug, currentGroup?.slug, currentLeaf?.slug].filter(Boolean).join('/')}`;
+      if (exactKey !== `category:${currentRoot.slug}`) {
+        const rootO = await getSeoOverride(`category:${currentRoot.slug}`);
+        sectionText = rootO?.section_text ?? null;
+      }
+    }
+    if (sectionText) {
+      const paragraphs = sectionText
+        .split(/\n\s*\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (paragraphs.length) seo = { ...seo, paragraphs };
+    }
+  }
+
   const canonical = metaO?.canonical
     ? safeCanonical(metaO.canonical)
     : safeCanonical(hasAppliedFilters || page > 1 ? categoryPath : url.pathname);
