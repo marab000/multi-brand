@@ -23,5 +23,6 @@ export function getProductRating(seed: string | number | null | undefined): Prod
 export function getBoughtToday(seed: string | number | null | undefined): number {
   const hash = hashSeed(seed);
   const day = Math.floor(Date.now() / 86_400_000);
-  return 1 + ((hash ^ day) % 9);
+  // XOR даёт знаковый int32 — без >>> 0 остаток бывал отрицательным («купили -6»)
+  return 1 + (((hash ^ day) >>> 0) % 9);
 }
