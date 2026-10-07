@@ -100,7 +100,7 @@
     </div>
   </div>
 
-  <div class="footer__bottom flex flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(66px+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:text-left">
+  <div class="footer__bottom mx-auto flex max-w-[1280px] flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(66px+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:text-left">
     <p>© {year} MULTIBRAND — интернет-магазин бытовой техники в Казани</p>
     <p class="footer__requisites">ИНН 165123360719 · ОГРНИП 325169000035393</p>
     <p class="footer__legal-links flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
