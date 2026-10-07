@@ -61,7 +61,7 @@
 </script>
 
 {#if items.length}
-  <section class="recently-viewed mb-3 lg:mb-4">
+  <section class="recently-viewed mt-6 mb-3 lg:mt-8 lg:mb-4">
     <div class="head">
       <h2>Недавно просмотренные</h2>
     </div>
