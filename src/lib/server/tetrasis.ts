@@ -12,6 +12,7 @@ const STALE_RUNNING_MS = 3 * 60 * 60 * 1000;
 
 export const BRANDS_KEY = 'tetrasis_brands';
 export const STATE_KEY = 'tetrasis_sync_state';
+export const EXCLUDED_CATEGORIES_KEY = 'tetrasis_excluded_categories';
 
 export type BrandConfig = { all: string[]; enabled: string[] };
 export type SyncState = {
@@ -131,6 +132,36 @@ export async function saveEnabledBrands(enabled: string[]): Promise<BrandConfig>
 export async function getSyncState(): Promise<SyncState> {
 	const stored = await getSetting(STATE_KEY);
 	return { ...DEFAULT_STATE, ...(stored && typeof stored === 'object' ? stored : {}) };
+}
+
+// excluded-categories.json — бутстрап-список на самый первый запуск, дальше
+// источник правды — settings.tetrasis_excluded_categories (управляется в админке)
+async function bootstrapExcludedCategories(): Promise<string[]> {
+	const fs = await import('node:fs/promises');
+	const path = await import('node:path');
+	try {
+		const file = path.resolve('scripts/sync-tetrasis-products/excluded-categories.json');
+		const raw = JSON.parse(await fs.readFile(file, 'utf8'));
+		if (Array.isArray(raw?.categories)) return raw.categories.map((c: any) => String(c).trim()).filter(Boolean);
+	} catch {
+		// файла нет — считаем, что исключений нет
+	}
+	return [];
+}
+
+/** Список исключённых категорий синка; при первом обращении сеется из json-бутстрапа. */
+export async function getExcludedCategories(): Promise<string[]> {
+	const stored = await getSetting(EXCLUDED_CATEGORIES_KEY);
+	if (Array.isArray(stored)) return stored.map((s) => String(s).trim()).filter(Boolean);
+	const bootstrap = await bootstrapExcludedCategories();
+	await putSetting(EXCLUDED_CATEGORIES_KEY, bootstrap);
+	return bootstrap;
+}
+
+export async function saveExcludedCategories(list: string[]): Promise<string[]> {
+	const clean = [...new Set(list.map((s) => String(s).trim()).filter(Boolean))];
+	await putSetting(EXCLUDED_CATEGORIES_KEY, clean);
+	return clean;
 }
 
 export async function setSyncState(patch: Partial<SyncState>): Promise<SyncState> {

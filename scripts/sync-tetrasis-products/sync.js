@@ -23,6 +23,7 @@ const SOURCE = 'tetrasis-api'
 const LOG = 'scripts/sync-tetrasis-products/sync.log'
 const BRANDS_KEY = 'tetrasis_brands'
 const STATE_KEY = 'tetrasis_sync_state'
+const EXCLUDED_KEY = 'tetrasis_excluded_categories'
 // SYNC_DRY_RUN=1 — только проверить связь и обновить список брендов поставщика, товары не трогаем
 const DRY_RUN = process.env.SYNC_DRY_RUN === '1'
 // защита от дурака: поставщик моргнул — товары источника не должны вымирать пачками
@@ -43,6 +44,8 @@ function slugify(str) {
 const escapeRegExp = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // включённые бренды подгружаются из настроек админки в main(), до этого — brands.json
 let enabledBrands = brands.map(b => cleanBrand(b))
+// исключённые категории — из настроек админки («Тетрис»), до этого — excluded-categories.json
+let excludedCatSet = new Set()
 async function log(...a) {
 	const line = `${now()} ${a.join(' ')}`
 	console.log(line)
@@ -76,6 +79,14 @@ async function setSyncState(patch) {
 	await putSetting(STATE_KEY, { ...cur, ...patch })
 }
 // включённые бренды берём из настроек админки («Тетрис» в /admin), brands.json — запасной вариант
+// исключённые категории: настройки админки — источник правды, json — запасной вариант
+async function loadExcludedCategories() {
+	try {
+		const v = await getSetting(EXCLUDED_KEY)
+		if (Array.isArray(v)) return { list: v.map(s => String(s).trim()).filter(Boolean), source: 'settings' }
+	} catch {}
+	return { list: (excludedCategories.categories ?? []).map(s => String(s).trim()).filter(Boolean), source: 'json' }
+}
 async function loadBrandConfig() {
 	const fallback = mergeBrandLists(brands, [])
 	try {
@@ -193,11 +204,17 @@ function enrichName(name, productType, color) {
 }
 
 const rows = []
+	let skippedByCategory = 0
 	for (const item of products) {
 		const id = String(item.ID)
 		const prices = priceMap.get(id)
 		if (!prices || !(prices.price_rrc || prices.price_opt || prices.price_ric)) continue
 		const rawCategory = item['ГруппаАналитическогоУчета'] ?? null
+		// исключённые категории не доезжают до базы (управляются в админке «Тетрис»)
+		if (rawCategory && excludedCatSet.has(String(rawCategory).trim().toLowerCase())) {
+			skippedByCategory++
+			continue
+		}
 		const rawType = item['ЦеноваяГруппа'] ?? null
 		const catalog = resolveCatalog(rawCategory, rawType)
 		// спеки сразу нормализуем — мусор поставщика не доезжает до базы
@@ -269,11 +286,22 @@ const rows = []
 	}
 	const ids = rows.map(r => r.external_id)
 	// защита: если в базе бренда в разы больше, чем пришло (обрезанная выдача API),
-	// снос «лишних» пропускаем — доедет следующим нормальным прогоном
-	const [{ n: brandCount }] = await sql`
-		select count(*)::int as n from products
-		where source=${SOURCE} and brand->>'api'=${String(apiBrand.NAME)}`
-	if (brandCount && rows.length < brandCount * SHRINK_LIMIT) {
+	// снос «лишних» пропускаем — доедет следующим нормальным прогоном.
+	// Базу считаем без исключённых категорий — их отсутствие в фиде не «сжатие».
+	const excludedArr = [...excludedCatSet]
+	const [{ n: brandCount }] = excludedArr.length
+		? await sql`
+			select count(*)::int as n from products
+			where source=${SOURCE}
+			and brand->>'api'=${String(apiBrand.NAME)}
+			and (category is null or LOWER(TRIM(COALESCE(category, ''))) not in ${sql(excludedArr)})`
+		: await sql`
+			select count(*)::int as n from products
+			where source=${SOURCE} and brand->>'api'=${String(apiBrand.NAME)}`
+	if (excludedArr.length && brandCount === 0) {
+		// у бренда остались только исключённо-категорийные товары — их вычистит
+		// чистящая проводка исключений, per-brand delete не нужен
+	} else if (brandCount && rows.length < brandCount * SHRINK_LIMIT) {
 		await log('SUSPICIOUS_SHRINK', cleanName, `в базе ${brandCount}, пришло ${rows.length} — удаление пропущено`)
 	} else {
 		await sql`
@@ -283,7 +311,7 @@ const rows = []
 			and external_id not in ${sql(ids)}
 		`
 	}
-	await log('DONE_BRAND', cleanName, 'rows:', rows.length)
+	await log('DONE_BRAND', cleanName, 'rows:', rows.length, skippedByCategory ? `(категории пропущено: ${skippedByCategory})` : '')
 	return true
 }
 // защита от дурака: массовую чистку считаем и удаляем в транзакции — если под раздачу
@@ -300,10 +328,17 @@ async function guardedDelete(label, buildCond) {
 	})
 }
 async function removeExcludedCategories() {
-	const { categories = [], category_product_types = {} } = excludedCategories
+	// чистящая проводка: товары, попавшие в базу до включения исключения (или при
+	// выключенном фильтре на входе). На входе они уже не доезжают — после первого
+	// прогона здесь всегда 0.
+	const { category_product_types = {} } = excludedCategories
 	let removed = 0
-	if (categories.length) {
-		removed += (await guardedDelete('excluded-categories', tx => tx`(category = ANY(${sql.array(categories)}))`)).length
+	if (excludedCatSet.size) {
+		const list = [...excludedCatSet]
+		removed += (
+			await guardedDelete('excluded-categories', tx =>
+				tx`(LOWER(TRIM(COALESCE(category, ''))) IN ${sql(list)})`)
+		).length
 	}
 	let query = sql``
 	let first = true
@@ -345,7 +380,11 @@ async function main() {
 	}
 	const cfg = await loadBrandConfig()
 	enabledBrands = cfg.enabled
-	await log('CONFIG', 'enabled:', enabledBrands.length, 'known:', cfg.all.length, DRY_RUN ? 'DRY_RUN' : '')
+	const excluded = await loadExcludedCategories()
+	excludedCatSet = new Set(excluded.list.map(c => c.toLowerCase()))
+	await log('CONFIG', 'enabled:', enabledBrands.length, 'known:', cfg.all.length,
+		'| исключённых категорий:', excludedCatSet.size, `(${excluded.source})`,
+		DRY_RUN ? 'DRY_RUN' : '')
 	const apiBrands = await safeJsonFetch(`https://tetrasis-bt.ru/exch_api.php?CODE=${API_KEY}`)
 	if (!apiBrands) throw new Error('Brands list fetch failed')
 	// unmatched считаем ДО слияния: бренды поставщика, которые не сопоставились

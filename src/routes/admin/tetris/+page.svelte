@@ -15,20 +15,32 @@
     canRun: boolean;
   };
 
+  type CategoryRow = {
+    name: string;
+    products: number;
+    excluded: boolean;
+  };
+
   let {
     data
   }: {
-    data: { brands: string[]; enabled: string[]; sync: SyncView; counts?: Record<string, number>; extCounts?: Record<string, number> };
+    data: { brands: string[]; enabled: string[]; categories?: CategoryRow[]; sync: SyncView; counts?: Record<string, number>; extCounts?: Record<string, number> };
   } = $props();
 
   let brands: string[] = $state(data.brands ?? []);
   let enabledList: string[] = $state(data.enabled ?? []);
+  let categories: CategoryRow[] = $state(data.categories ?? []);
+  // список исключённых категорий (галочка на строке = синхронизируется)
+  let excludedList: string[] = $state(
+    (data.categories ?? []).filter((c) => c.excluded).map((c) => c.name)
+  );
   let counts: Record<string, number> = $state(data.counts ?? {});
   let extCounts: Record<string, number> = $state(data.extCounts ?? {});
   let sync: SyncView = $state(
     data.sync ?? { state: {}, running: false, cooldownMs: 0, canRun: true }
   );
   let brandFilter: string = $state('');
+  let catFilter: string = $state('');
   let runError: string = $state('');
 
   function productsOf(name: string): number {
@@ -54,6 +66,24 @@
       : brands
   );
 
+  const filteredCategories = $derived(
+    catFilter.trim()
+      ? categories.filter((c) => c.name.toLowerCase().includes(catFilter.trim().toLowerCase()))
+      : categories
+  );
+  const syncedCategoriesCount = $derived(categories.length - excludedList.length);
+
+  function isCategoryExcluded(name: string) {
+    return excludedList.some((e) => e.toLowerCase() === name.toLowerCase());
+  }
+
+  function toggleCategory(name: string) {
+    excludedList = isCategoryExcluded(name)
+      ? excludedList.filter((e) => e.toLowerCase() !== name.toLowerCase())
+      : [...excludedList, name];
+    scheduleSave();
+  }
+
   function isEnabled(name: string) {
     // внешние бренды могли числиться включёнными со старых времён —
     // показываем выключенными: этот раздел ими не управляет
@@ -75,7 +105,10 @@
       const res = await fetch('/api/admin/tetris', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: enabledList.filter((b: string) => !isExternal(b)) })
+        body: JSON.stringify({
+          enabled: enabledList.filter((b: string) => !isExternal(b)),
+          excludedCategories: excludedList
+        })
       });
       if (!res.ok) throw new Error(await res.text());
       saveState = 'saved';
@@ -107,9 +140,11 @@
       }
       counts = nextCounts;
       extCounts = nextExt;
+      categories = json.categories ?? [];
       // не затираем несохранённые тумблеры: включённые с сервера берём только как базу
       if (saveState !== 'saving') {
         enabledList = json.brands.filter((b: any) => b.enabled).map((b: any) => b.name);
+        excludedList = (json.categories ?? []).filter((c: any) => c.excluded).map((c: any) => c.name);
       }
       sync = json.sync;
     } catch {
@@ -239,6 +274,40 @@
         <code>scripts/sync-tetrasis-products/brands.json</code>
       </p>
     {/if}
+  </div>
+
+  <!-- Категории -->
+  <div class="card">
+    <div class="card__title-row">
+      <div class="card__title">Категории поставщика</div>
+      <span class="count">Синхронизируется: {syncedCategoriesCount} из {categories.length}</span>
+    </div>
+    <input class="filter" type="text" placeholder="Поиск категории…" bind:value={catFilter} />
+    <div class="brands-list">
+      {#each filteredCategories as cat (cat.name)}
+        <button
+          type="button"
+          class="brand-row"
+          class:brand-row--on={!isCategoryExcluded(cat.name)}
+          onclick={() => toggleCategory(cat.name)}
+        >
+          <span class="brand-row__check">{!isCategoryExcluded(cat.name) ? '✓' : ''}</span>
+          <span class="brand-row__name">{cat.name}</span>
+          {#if cat.products}
+            <span class="brand-row__count">{cat.products} тов.</span>
+          {:else}
+            <span class="brand-row__ext">нет в базе</span>
+          {/if}
+        </button>
+      {:else}
+        <div class="empty">Ничего не найдено</div>
+      {/each}
+    </div>
+    <p class="mode-hint">
+      Галочка — категория синхронизируется. Снятая галочка — товары категории не заносятся в базу,
+      а уже имеющиеся удаляются при следующей синхронизации (на сайте категория исчезает сразу
+      после прогона). Список собирается из живых данных поставщика
+    </p>
   </div>
 
   <!-- Бренды -->
