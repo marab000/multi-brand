@@ -29,7 +29,7 @@
   const allBrands = data.allBrands;
   const filteredBrands = $derived(
     searchQuery.trim()
-      ? allBrands.filter((b) => b.toLowerCase().includes(searchQuery.toLowerCase()))
+      ? allBrands.filter((b: string) => b.toLowerCase().includes(searchQuery.toLowerCase()))
       : allBrands
   );
 
