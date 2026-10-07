@@ -40,5 +40,23 @@ export const recentlyViewed = {
     if (!browser) return;
     localStorage.removeItem(KEY);
     window.dispatchEvent(new CustomEvent('recently-viewed:updated'));
+  },
+  // Удалённые из базы товары выкидываем навсегда (мёртвые карточки в блоке — 404 по клику)
+  sync: async () => {
+    const current = read();
+    if (!current.length) return;
+    try {
+      const res = await fetch(`/api/products/batch?ids=${current.map((i) => i.id).join(',')}`);
+      if (!res.ok) return;
+      const products = await res.json();
+      if (!Array.isArray(products) || !products.length) return;
+      const alive = new Set(products.map((p) => p.id));
+      const next = current.filter((item) => alive.has(item.id));
+      if (next.length === current.length) return;
+      write(next);
+      window.dispatchEvent(new CustomEvent('recently-viewed:updated'));
+    } catch {
+      // сеть моргнула — вычистится при следующем заходе в каталог
+    }
   }
 };

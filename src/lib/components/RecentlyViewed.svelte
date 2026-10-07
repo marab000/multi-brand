@@ -51,6 +51,8 @@
   onMount(() => {
     updateItems();
     updateDevice();
+    // мёртвые (удалённые из базы) товары вычищаются из блока и из localStorage
+    void recentlyViewed.sync();
     window.addEventListener('resize', updateDevice);
     window.addEventListener('recently-viewed:updated', updateItems);
     return () => {
