@@ -31,6 +31,7 @@
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
   import { SITE_PHONE, SITE_PHONE_HREF, LINK_TG, LINK_MAX } from '$lib/config/site';
+  import type { Contacts } from '$lib/server/contacts';
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
     slug: string;
@@ -61,9 +62,12 @@
   type CatalogParent = { slug: string; name: string; items: CatalogMenuRoot[] };
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
-  const phoneNumber = SITE_PHONE;
-  const phoneHref = SITE_PHONE_HREF;
-  let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null } }>();
+  let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null; contacts?: Contacts | null } }>();
+  const contacts = $derived(data?.contacts ?? null);
+  const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
+  const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
+  const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
+  const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
   let open = $state(false);
   let timeout: ReturnType<typeof setTimeout> | undefined;
   let isMobile = $state(false);
@@ -226,10 +230,10 @@
       >
       <div class="nav__contact">
         <div class="nav__social">
-          <a href={LINK_TG} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
+          <a href={tgLink} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
             ><img src={tgIcon} alt="Telegram" width="22" height="22" /></a
           >
-          <a href={LINK_MAX} target="_blank" rel="noopener noreferrer" aria-label="Макс"
+          <a href={maxLink} target="_blank" rel="noopener noreferrer" aria-label="Макс"
             ><img src={maxIcon} alt="Макс" width="22" height="22" /></a
           >
         </div>
@@ -268,10 +272,10 @@
       >
       <div class="nav__contact !hidden md:!flex">
         <div class="nav__social">
-          <a href={LINK_TG} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
+          <a href={tgLink} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
             ><img src={tgIcon} alt="Telegram" width="20" height="20" /></a
           >
-          <a href={LINK_MAX} target="_blank" rel="noopener noreferrer" aria-label="Макс"
+          <a href={maxLink} target="_blank" rel="noopener noreferrer" aria-label="Макс"
             ><img src={maxIcon} alt="Макс" width="20" height="20" /></a
           >
         </div>

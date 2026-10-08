@@ -1,25 +1,28 @@
 <script lang="ts">
   import { fly } from 'svelte/transition';
   import { LINK_MAX, LINK_TG } from '$lib/config/site';
+  import type { Contacts } from '$lib/server/contacts';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
 
+  let { contacts = null }: { contacts?: Contacts | null } = $props();
+
   let open = $state(false);
 
-  const items = [
+  const items = $derived([
     {
       name: 'Telegram',
-      href: LINK_TG,
+      href: contacts?.tgLink ?? LINK_TG,
       className: 'telegram',
       icon: tgIcon
     },
     {
       name: 'MAX',
-      href: LINK_MAX,
+      href: contacts?.maxLink ?? LINK_MAX,
       className: 'max',
       icon: maxIcon
     }
-  ];
+  ]);
 
   function toggle() {
     open = !open;

@@ -1,9 +1,13 @@
 <script lang="ts">
   import { MessageCircleMore } from 'lucide-svelte';
   import { LINK_MAX, LINK_TG } from '$lib/config/site';
+  import type { Contacts } from '$lib/server/contacts';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
+  let { contacts = null }: { contacts?: Contacts | null } = $props();
+  const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
+  const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
   let requestOpen = $state(false);
 </script>
 
@@ -18,10 +22,10 @@
       технику под кухню, проект или готовый дизайн.
     </p>
     <div class="actions">
-      <a href={LINK_TG} target="_blank" rel="noopener noreferrer"
+      <a href={tgLink} target="_blank" rel="noopener noreferrer"
         ><img src={tgIcon} alt="Telegram" /><span>Telegram</span></a
       >
-      <a href={LINK_MAX} target="_blank" rel="noopener noreferrer"
+      <a href={maxLink} target="_blank" rel="noopener noreferrer"
         ><img src={maxIcon} alt="MAX" /><span>MAX</span></a
       >
       <button type="button" class="btn primary request" onclick={() => (requestOpen = true)}

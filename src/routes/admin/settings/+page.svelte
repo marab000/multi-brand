@@ -14,6 +14,15 @@
       }
     })()
   );
+  let contacts = $state((() => {
+    try {
+      return JSON.parse(data.settings?.site_contacts ?? '{}');
+    } catch {
+      return {};
+    }
+  })() as { phoneDigits?: string; tgLink?: string; maxLink?: string; pavelName?: string; pavelPhone?: string; email?: string });
+
+  const originalContacts = JSON.stringify(contacts);
   let isSaving = $state(false);
   let searchQuery = $state('');
 
@@ -23,7 +32,8 @@
 
   const hasChanges = $derived(
     discount !== originalDiscount ||
-    JSON.stringify([...excludedBrands].sort()) !== JSON.stringify([...originalExcluded].sort())
+    JSON.stringify([...excludedBrands].sort()) !== JSON.stringify([...originalExcluded].sort()) ||
+    JSON.stringify(contacts) !== originalContacts
   );
 
   const allBrands = data.allBrands;
@@ -59,7 +69,15 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cart_discount_percent: discount,
-          excluded_brands: excludedBrands
+          excluded_brands: excludedBrands,
+          site_contacts: {
+            phoneDigits: contacts.phoneDigits ?? '',
+            tgLink: contacts.tgLink ?? '',
+            maxLink: contacts.maxLink ?? '',
+            pavelName: contacts.pavelName ?? '',
+            pavelPhone: contacts.pavelPhone ?? '',
+            email: contacts.email ?? ''
+          }
         })
       });
       if (!res.ok) throw new Error('Save failed');
@@ -116,6 +134,43 @@
     </div>
 
     <p class="brands-count">Выбрано: {excludedBrands.length}</p>
+  </div>
+
+  <div class="settings-card mt-4">
+    <div class="setting-info mb-3">
+      <span class="setting-label">Контакты сайта</span>
+      <span class="setting-hint">
+        Телефон, мессенджеры и менеджер на сайте, в КП и письмах. Телефон — с восьмёрки,
+        11 цифр. Пустое поле = значение по умолчанию.
+      </span>
+    </div>
+
+    <div class="contacts-grid">
+      <label class="contact-field">
+        <span>Телефон</span>
+        <input type="text" placeholder="88001019771" bind:value={contacts.phoneDigits} />
+      </label>
+      <label class="contact-field">
+        <span>Email</span>
+        <input type="text" placeholder="shop@mail.ru" bind:value={contacts.email} />
+      </label>
+      <label class="contact-field">
+        <span>Ссылка Telegram</span>
+        <input type="text" placeholder="https://t.me/..." bind:value={contacts.tgLink} />
+      </label>
+      <label class="contact-field">
+        <span>Ссылка MAX</span>
+        <input type="text" placeholder="https://max.ru/u/..." bind:value={contacts.maxLink} />
+      </label>
+      <label class="contact-field">
+        <span>Менеджер — имя</span>
+        <input type="text" placeholder="Павел" bind:value={contacts.pavelName} />
+      </label>
+      <label class="contact-field">
+        <span>Менеджер — телефон</span>
+        <input type="text" placeholder="+79276707817" bind:value={contacts.pavelPhone} />
+      </label>
+    </div>
   </div>
 
   <div class="settings-actions">
@@ -264,6 +319,34 @@
       outline: none;
       font-size: 14px;
       background: transparent;
+    }
+  }
+  .contacts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    @media (max-width: 40rem) {
+      grid-template-columns: 1fr;
+    }
+  }
+  .contact-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    span {
+      font-size: 0.78125rem;
+      color: #64748b;
+    }
+    input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1.5px solid #e4e7ec;
+      border-radius: 0.625rem;
+      font-size: 0.875rem;
+      outline: none;
+      &:focus {
+        border-color: $green;
+      }
     }
   }
   .brands-grid {

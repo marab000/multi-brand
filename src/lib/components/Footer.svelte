@@ -10,8 +10,15 @@
     LINK_TG,
     LINK_MAX
   } from '$lib/config/site';
+  import type { Contacts } from '$lib/server/contacts';
 
-  let { data }: { data: { catalogRoots?: { slug: string; name: string }[] } } = $props();
+  let { data }: { data: { catalogRoots?: { slug: string; name: string }[]; contacts?: Contacts | null } } = $props();
+  const contacts = $derived(data?.contacts ?? null);
+  const phone = $derived(contacts?.phone ?? SITE_PHONE);
+  const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
+  const email = $derived(contacts?.email ?? SITE_EMAIL);
+  const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
+  const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
 
   const year = new Date().getFullYear();
 </script>
@@ -27,13 +34,13 @@
         аксессуары от официальных поставщиков.
       </p>
       <div class="footer__contacts">
-        <a class="footer__contact" href="tel:{SITE_PHONE_HREF}">
+        <a class="footer__contact" href="tel:{phoneHref}">
           <Phone size={16} strokeWidth={2.1} />
-          <span>{SITE_PHONE}</span>
+          <span>{phone}</span>
         </a>
-        <a class="footer__contact" href="mailto:{SITE_EMAIL}">
+        <a class="footer__contact" href="mailto:{email}">
           <Mail size={16} strokeWidth={2.1} />
-          <span>{SITE_EMAIL}</span>
+          <span>{email}</span>
         </a>
         <a
           class="footer__contact"

@@ -12,6 +12,8 @@
   import PaymentMethods from '$lib/components/PaymentMethods.svelte';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
+  import { SITE_PHONE_HREF, SITE_EMAIL, LINK_TG, LINK_MAX } from '$lib/config/site';
+  import type { Contacts } from '$lib/server/contacts';
   import '$lib/styles/controls.scss';
   import '$lib/styles/typography.scss';
   import HelpWithSelection from '$lib/components/HelpWithSelection.svelte';
@@ -21,11 +23,13 @@ import Ticker from '$lib/components/Ticker.svelte';
     data: {
       typeGroups: { group: string; items: string[] }[];
       catalogRoots?: any[];
+      contacts?: Contacts | null;
     };
     children: any;
   }>();
 
   const canonicalUrl = $derived(`https://multi-brand.online${$page.url.pathname}`);
+  const contacts = $derived(data.contacts);
 
   // Schema.org: организация + локальный бизнес + сайт (глобально для всех страниц)
   const orgSchema = {
@@ -37,12 +41,9 @@ import Ticker from '$lib/components/Ticker.svelte';
         name: 'Мультибренд',
         url: 'https://multi-brand.online/',
         logo: 'https://multi-brand.online/favicon/favicon.svg',
-        email: 'Multibrend2005@yandex.ru',
-        telephone: '+7 (937) 577-77-51',
-        sameAs: [
-          'https://t.me/+79375777751',
-          'https://max.ru/u/f9LHodD0cOJd3pqJtE3zs9SRYVMfnhHoWJKEYKq253D7DVbb1oMkXOZxb5g'
-        ]
+        email: contacts?.email ?? SITE_EMAIL,
+        telephone: contacts?.phoneHref ?? SITE_PHONE_HREF,
+        sameAs: [contacts?.tgLink ?? LINK_TG, contacts?.maxLink ?? LINK_MAX]
       },
       {
         '@type': 'LocalBusiness',
@@ -50,8 +51,8 @@ import Ticker from '$lib/components/Ticker.svelte';
         name: 'Мультибренд — интернет-магазин бытовой техники',
         priceRange: '₽₽',
         image: 'https://multi-brand.online/images/podbor-kitchen.png',
-        telephone: '+7 (937) 577-77-51',
-        email: 'Multibrend2005@yandex.ru',
+        telephone: contacts?.phoneHref ?? SITE_PHONE_HREF,
+        email: contacts?.email ?? 'Multibrend2005@yandex.ru',
         address: {
           '@type': 'PostalAddress',
           addressLocality: 'Казань',
@@ -103,13 +104,13 @@ import Ticker from '$lib/components/Ticker.svelte';
   <Toaster richColors position="top-center" />
   <!-- блок помощи с подбором — только в корзине -->
   {#if $page.url.pathname === '/cart'}
-    <HelpWithSelection />
+    <HelpWithSelection contacts={data.contacts} />
   {/if}
 </main>
 
 <Footer {data} />
 
-<FloatingMessengers />
+<FloatingMessengers contacts={data.contacts} />
 <BottomNav />
 <CookieBanner />
 <StoragePopup />

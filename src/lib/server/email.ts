@@ -1,4 +1,5 @@
 import { RESEND_API_KEY, RESEND_FROM_EMAIL } from '$env/static/private';
+import { getContacts } from '$lib/server/contacts';
 import {
   ORDER_NOTIFY_EMAIL,
   SITE_EMAIL,
@@ -25,6 +26,7 @@ function escapeHtml(value: string) {
 }
 
 export async function sendVerificationEmail(email: string, url: string) {
+  const contacts = await getContacts();
   const res = await resend.emails.send({
     from: RESEND_FROM_EMAIL,
     to: email,
@@ -51,7 +53,7 @@ export async function sendVerificationEmail(email: string, url: string) {
                               <img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" />
                             </a>
                           </td>
-                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${SITE_PHONE}</td>
+                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
                         </tr>
                       </table>
                     </td>
@@ -91,7 +93,7 @@ export async function sendVerificationEmail(email: string, url: string) {
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;">
                   <tr>
                     <td align="center" style="padding:18px 20px 0;font-size:12px;line-height:1.45;color:#999999;">
-                      ${SITE_NAME} · ${SITE_PHONE} · <a href="mailto:${ORDER_NOTIFY_EMAIL}" style="color:#999999;text-decoration:underline;">${ORDER_NOTIFY_EMAIL}</a>
+                      ${SITE_NAME} · ${contacts.phone} · <a href="mailto:${ORDER_NOTIFY_EMAIL}" style="color:#999999;text-decoration:underline;">${ORDER_NOTIFY_EMAIL}</a>
                     </td>
                   </tr>
                 </table>
@@ -114,6 +116,7 @@ export async function sendNewOrderEmail(order: {
   total: number;
   items: { id: string; name: string; price: number; qty: number }[];
 }) {
+  const contacts = await getContacts();
   const rows = order.items
     .map(
       (item) => `
@@ -152,7 +155,7 @@ export async function sendNewOrderEmail(order: {
                               <img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" />
                             </a>
                           </td>
-                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${SITE_PHONE}</td>
+                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
                         </tr>
                       </table>
                     </td>
@@ -195,7 +198,7 @@ export async function sendNewOrderEmail(order: {
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:720px;">
                   <tr>
                     <td align="center" style="padding:18px 20px 0;font-size:12px;line-height:1.45;color:#999999;">
-                      ${SITE_NAME} · ${SITE_PHONE} · <a href="mailto:${SITE_EMAIL}" style="color:#999999;text-decoration:underline;">${SITE_EMAIL}</a>
+                      ${SITE_NAME} · ${contacts.phone} · <a href="mailto:${contacts.email}" style="color:#999999;text-decoration:underline;">${contacts.email}</a>
                     </td>
                   </tr>
                 </table>
@@ -211,6 +214,7 @@ export async function sendNewOrderEmail(order: {
 }
 
 export async function sendLeadEmail(lead: { name: string; phone: string; message?: string }) {
+  const contacts = await getContacts();
   const res = await resend.emails.send({
     from: RESEND_FROM_EMAIL,
     to: ORDER_NOTIFY_EMAIL,
@@ -233,7 +237,7 @@ export async function sendLeadEmail(lead: { name: string; phone: string; message
                       <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                         <tr>
                           <td align="left"><a href="${SITE_URL}" target="_blank" style="text-decoration:none;"><img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" /></a></td>
-                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${SITE_PHONE}</td>
+                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
                         </tr>
                       </table>
                     </td>

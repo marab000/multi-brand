@@ -435,7 +435,10 @@
       <p><b>Часы работы:</b> ежедневно с 9:00 до 18:00</p>
       <p>
         <b>Личный менеджер:</b>
-        <a href="tel:+79276707817" class="store-info__map-link">+7 927 670-78-17</a> Павел
+        <a href="tel:{data.contacts?.pavelPhoneHref ?? ''}" class="store-info__map-link"
+          >{data.contacts?.pavelPhone ?? '+7 927 670-78-17'}</a
+        >
+        {data.contacts?.pavelName ?? 'Павел'}
       </p>
       <p>
         <b>Склад:</b>

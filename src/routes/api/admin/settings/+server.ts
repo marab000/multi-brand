@@ -40,6 +40,24 @@ export const PATCH: RequestHandler = async ({ request, cookies, locals }) => {
         on conflict (key) do update set value = ${JSON.stringify(brands)}, updated_at = now()
       `;
     }
+    if (key === 'site_contacts') {
+      const raw = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+      const phoneDigits = String(raw.phoneDigits ?? '').replace(/\D/g, '');
+      if (phoneDigits && (phoneDigits.length !== 11 || !phoneDigits.startsWith('8'))) {
+        throw error(400, 'Телефон должен быть 11 цифр и начинаться с 8');
+      }
+      const contactValue: Record<string, string> = {};
+      for (const field of ['phoneDigits', 'tgLink', 'maxLink', 'pavelName', 'pavelPhone', 'email']) {
+        contactValue[field] = String(raw[field] ?? '');
+      }
+      if (phoneDigits) contactValue.phoneDigits = phoneDigits;
+      const json = JSON.stringify(contactValue);
+      await sql`
+        insert into settings (key, value, updated_at)
+        values ('site_contacts', ${json}, now())
+        on conflict (key) do update set value = ${json}, updated_at = now()
+      `;
+    }
     if (key === 'bundle_discount_enabled') {
       const enabled = value === true || value === 'true' ? 'true' : 'false';
       await sql`

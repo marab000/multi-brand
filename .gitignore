@@ -13,6 +13,7 @@ scripts/fetch-images*
 scripts/fetch-tetrasis-images/*.log
 scripts/fetch-tetrasis-images/image-queue.json
 scripts/fetch-tetrasis-images/*.json
+scripts/fetch-tetrasis-images/sitemap-product-slugs.txt
 scripts/fetch-tetrasis-kits/*.log
 scripts/fetch-tetrasis-kits/*.jsonl
 scripts/sync-tetrasis-products/*.log
