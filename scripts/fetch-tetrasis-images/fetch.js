@@ -361,6 +361,11 @@ async function processProduct(page, p) {
 	try {
 		direct = await resolveDirect(page, p.name)
 		if (direct.url) url = direct.url
+		if (!url && direct.status === 'no-image') {
+			await logInfo('NO_IMAGE', label, 'stage:direct', 'direct:no-image', 'search:skipped')
+			await sleep(PRODUCT_DELAY)
+			return
+		}
 		if (!url) {
 			stage = 'search'
 			search = await resolveSearch(page, p.name)
