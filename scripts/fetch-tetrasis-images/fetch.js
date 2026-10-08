@@ -20,6 +20,7 @@ const ROOT = 'scripts/fetch-tetrasis-images'
 const MODE = process.env.FETCH_IMAGES_MODE || MODES.FULL
 const SOURCE = process.env.FETCH_IMAGES_SOURCE || SOURCES.DB
 const THREADS = Number(process.env.FETCH_IMAGES_THREADS || 2)
+const PAGE_RECYCLE = Number(process.env.FETCH_IMAGES_PAGE_RECYCLE || 100)
 const HEADLESS = process.env.FETCH_IMAGES_HEADLESS !== 'false'
 const BASE = 'https://tetrasis-bt.ru'
 const LOG = path.resolve(`${ROOT}/fetch-images.log`)
@@ -46,6 +47,28 @@ const colors = { green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', blue: '
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 const delay = (ms = ACTION_DELAY) => sleep(ms)
 const now = () => new Date().toISOString()
+// Статус прогона пишется в settings.tetrasis_images_state — админка (Тетрис →
+// «Синхронизация картинок») читает тот же ключ через src/lib/server/tetrasisImages.ts.
+// Порог свежести heartbeat (15 мин) должен совпадать с STALE_RUNNING_MS там же.
+const IMAGES_STATE_KEY = 'tetrasis_images_state'
+const STATE_STALE_MS = 15 * 60 * 1000
+const STATE_FLUSH_MS = 120 * 1000
+const RUN_SOURCE = process.env.FETCH_IMAGES_RUN_SOURCE === 'admin' ? 'admin' : 'cli'
+const runState = { status: 'running', mode: MODE, source: RUN_SOURCE, startedAt: now(), updatedAt: now(), finishedAt: null, error: null, total: 0, done: 0, ok: 0, notFound: 0, noImage: 0, errors: 0, current: null }
+async function flushState() {
+	runState.done = progress.done
+	runState.updatedAt = now()
+	try {
+		const json = JSON.stringify(runState)
+		await sql`insert into settings (key, value, updated_at) values (${IMAGES_STATE_KEY}, ${json}, now()) on conflict (key) do update set value = ${json}, updated_at = now()`
+	} catch {}
+}
+let lastStateFlush = 0
+async function flushStateThrottled() {
+	if (Date.now() - lastStateFlush < STATE_FLUSH_MS) return
+	lastStateFlush = Date.now()
+	await flushState()
+}
 const ruMap = { а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'e', ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'h', ц: 'c', ч: 'ch', ш: 'sh', щ: 'sch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' }
 function stripAnsi(value) { return String(value).replace(/\x1b\[[0-9;]*m/g, '') }
 async function writeLog(line) { console.log(line); await fs.appendFile(LOG, stripAnsi(line) + '\n') }
@@ -126,7 +149,7 @@ function searchQueries(name) {
 	if (model) queries.push(model)
 	return [...new Set(queries.map(q => String(q || '').trim()).filter(Boolean))]
 }
-function isNoImageUrl(url) { return /no[-_]?image|no_photo|nophoto|placeholder|zaglush/i.test(String(url || '')) }
+function isNoImageUrl(url) { return /no[-_]?image|no_photo|nophoto|placeholder|zaglush|bez[-_]?imeni/i.test(String(url || '')) }
 function s3KeyFromUrl(url) {
 	if (!url?.startsWith(S3_PUBLIC_PREFIX)) return null
 	return decodeURIComponent(url.slice(S3_PUBLIC_PREFIX.length))
@@ -188,7 +211,7 @@ async function hasNoImage(page) {
 				const xoriginal = node.getAttribute('xoriginal') || ''
 				const alt = node.getAttribute('alt') || ''
 				const cls = node.getAttribute('class') || ''
-				return /no[-_]?image|no_photo|nophoto|placeholder|zaglush/i.test(src + ' ' + dataSrc + ' ' + dataXpreview + ' ' + xoriginal + ' ' + alt + ' ' + cls)
+				return /no[-_]?image|no_photo|nophoto|placeholder|zaglush|bez[-_]?imeni/i.test(src + ' ' + dataSrc + ' ' + dataXpreview + ' ' + xoriginal + ' ' + alt + ' ' + cls)
 			})
 		})
 	})
@@ -230,22 +253,90 @@ async function getImages(page, url) {
 		return { images: filtered, rawCount: images.length, status: filtered.length ? 'ok' : 'empty' }
 	})
 }
-async function resolveDirect(page, name) {
+async function httpProbe(url) {
+	try {
+		const r = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20000) })
+		return { status: r.status, finalUrl: r.url || url }
+	} catch { return { status: 0, finalUrl: url } }
+}
+
+// H1/тайтл открытой страницы должен содержать артикул модели — защита от похожего товара
+async function pageMatchesModel(page, modelToken) {
+	if (!modelToken) return true
+	const text = await page.evaluate(() => (document.querySelector('h1')?.textContent || '') + ' ' + (document.title || ''))
+	return compactName(text).includes(modelToken)
+}
+
+async function resolveDirect(page, name, hasRawName, modelToken) {
 	return await withRetry(`direct:${name}`, async () => {
 		const variants = productSlugVariants(name)
-		for (const s of variants) {
+		const tried = []
+		for (const s of variants.slice(0, 6)) {
 			const url = `${BASE}/product/${s}/`
-			const { status } = await goto(page, url)
-			if (status === 404) continue
+			// существование проверяем дешёвым HTTP, без Chrome:
+			// 404 — товара нет; 301 в категорию — снят с публикации; 200 на /product/ — жив
+			const { status, finalUrl } = await httpProbe(url)
+			tried.push(`${s}:${status}`)
+			if (status !== 200) continue
+			if (!/\/product\//.test(finalUrl)) continue
+			const { status: navStatus } = await goto(page, url)
+			if (navStatus === 404) continue
 			if (!(await isProductPage(page))) continue
+			if (!(await pageMatchesModel(page, modelToken))) { await logWarn('MODEL_MISMATCH', `slug:${s}`); continue }
 			const hasProductImage = await page.evaluate(() => {
 				return Boolean(document.querySelector('.item_slider a.popup_link[href],.product-detail-gallery a.popup_link[href],.detail_picture a.popup_link[href],.slides a.popup_link[href],img.detail_picture[src],img.product-detail-image[src],.item_slider .thumbs li[data-big_img],.item_slider .thumbs li[data-small_img],img.xzoom-gallery[src],.item_slider img[xoriginal],.item_slider img[data-xpreview]'))
 			})
 			if (hasProductImage) return { url, status: 'ok', tried: url }
 			if (await hasNoImage(page)) return { url: null, status: 'no-image', tried: url }
 		}
-		return { url: null, status: 'not-found', tried: variants.slice(0, 6).join(', ') }
+		return { url: null, status: 'not-found', tried: tried.join(', '), authoritative: hasRawName }
 	})
+}
+
+// запасной матчинг по индексу sitemap (27k слагов): ловит товары с нестандартным слагом
+let sitemapSlugs = []
+async function resolveViaSitemap(page, name, modelToken) {
+	if (!sitemapSlugs.length || !modelToken) return null
+	const cands = sitemapSlugs.filter(s => compactName(s.replace(/[_-]/g, ' ')).includes(modelToken)).slice(0, 3)
+	for (const s of cands) {
+		const url = `${BASE}/product/${s}/`
+		const { status, finalUrl } = await httpProbe(url)
+		if (status !== 200 || !/\/product\//.test(finalUrl)) continue
+		const { status: navStatus } = await goto(page, url)
+		if (navStatus === 404) continue
+		if (!(await isProductPage(page))) continue
+		if (!(await pageMatchesModel(page, modelToken))) { await logWarn('MODEL_MISMATCH', `sitemap:${s}`); continue }
+		const hasProductImage = await page.evaluate(() => {
+			return Boolean(document.querySelector('.item_slider a.popup_link[href],.product-detail-gallery a.popup_link[href],.detail_picture a.popup_link[href],.slides a.popup_link[href],img.detail_picture[src],img.product-detail-image[src],.item_slider .thumbs li[data-big_img],.item_slider .thumbs li[data-small_img],img.xzoom-gallery[src],.item_slider img[xoriginal],.item_slider img[data-xpreview]'))
+		})
+		if (hasProductImage) return { url, status: 'ok', tried: url }
+		if (await hasNoImage(page)) return { url: null, status: 'no-image', tried: url }
+	}
+	return null
+}
+
+const SITEMAP_INDEX_FILE = path.resolve(`${ROOT}/sitemap-product-slugs.txt`)
+const SITEMAP_MAX_AGE_MS = 20 * 60 * 60 * 1000
+async function loadSitemapIndex() {
+	try {
+		if (await fs.pathExists(SITEMAP_INDEX_FILE) && Date.now() - (await fs.stat(SITEMAP_INDEX_FILE)).mtimeMs < SITEMAP_MAX_AGE_MS) {
+			sitemapSlugs = (await fs.readFile(SITEMAP_INDEX_FILE, 'utf8')).split('\n').map(s => s.trim()).filter(Boolean)
+			if (sitemapSlugs.length) { await logInfo('SITEMAP_CACHED', `slugs:${sitemapSlugs.length}`); return }
+		}
+		const indexXml = await (await fetch(`${BASE}/sitemap.xml`, { signal: AbortSignal.timeout(30000) })).text()
+		const files = [...indexXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]).filter(u => /sitemap-iblock/.test(u))
+		const slugs = new Set()
+		for (const f of files) {
+			const xml = await (await fetch(f, { signal: AbortSignal.timeout(60000) })).text()
+			for (const m of xml.matchAll(/<loc>([^<]*\/product\/[^<]*)<\/loc>/g)) {
+				const slug = m[1].replace(`${BASE}/product/`, '').replace(/\/$/, '')
+				if (slug) slugs.add(slug)
+			}
+		}
+		sitemapSlugs = [...slugs]
+		await fs.writeFile(SITEMAP_INDEX_FILE, sitemapSlugs.join('\n'))
+		await logInfo('SITEMAP_LOADED', `files:${files.length}`, `slugs:${sitemapSlugs.length}`)
+	} catch (e) { await logWarn('SITEMAP_SKIP', e.message) }
 }
 async function resolveSearch(page, name) {
 	return await withRetry(`search:${name}`, async () => {
@@ -356,26 +447,53 @@ function failQueueItem(p, reason) {
 }
 async function processProduct(page, p) {
 	const label = progressText(p)
+	runState.current = p.name
+	// матчинг идёт по родному имени поставщика («бренд + модель»): их слаги и
+	// тайтлы собраны из него, а наше витринное имя («... тип, цвет») даёт мимо
+	const matchName = p.raw_name || p.name.replace(/,.*$/, '') || p.name
+	const modelToken = compactName(String(p.raw_name || '').trim().split(/\s+/).slice(1).join(' ') || matchName.replace(/,.*$/, ''))
 	let stage = 'direct'
 	let direct, search, url, images = []
 	try {
-		direct = await resolveDirect(page, p.name)
+		direct = await resolveDirect(page, matchName, Boolean(p.raw_name), modelToken)
 		if (direct.url) url = direct.url
 		if (!url && direct.status === 'no-image') {
+			runState.noImage++
 			await logInfo('NO_IMAGE', label, 'stage:direct', 'direct:no-image', 'search:skipped')
+			await sleep(PRODUCT_DELAY)
+			return
+		}
+		// родное имя надёжно даёт точный слаг (A/B: 180/181) — если все его варианты
+		// 404/редирект, товар не опубликован: поиск в Chrome не нужен, едем дальше
+		if (!url && direct.authoritative) {
+			stage = 'sitemap'
+			const viaSitemap = await resolveViaSitemap(page, matchName, modelToken)
+			if (viaSitemap?.url) url = viaSitemap.url
+			else if (viaSitemap?.status === 'no-image') {
+				runState.noImage++
+				await logInfo('NO_IMAGE', label, 'stage:sitemap', 'sitemap:no-image', 'search:skipped')
+				await sleep(PRODUCT_DELAY)
+				return
+			}
+		}
+		if (!url && direct.authoritative) {
+			runState.notFound++
+			await logError('NOT_FOUND', label, 'stage:direct', `direct:${direct.status}`, 'search:skipped', `tried:${direct.tried}`)
+			failQueueItem(p, 'not-found')
 			await sleep(PRODUCT_DELAY)
 			return
 		}
 		if (!url) {
 			stage = 'search'
-			search = await resolveSearch(page, p.name)
+			search = await resolveSearch(page, matchName)
 			if (search.url) url = search.url
 		}
 		if (!url) {
 			const debug = search?.debug
-			if (direct?.status === 'no-image') await logInfo('NO_IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
-			else {
-				await logError('NOT_FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`, debug ? `best:${debug.score}:${String(debug.title).trim().replace(/\s+/g, ' ')}` : 'best:-', debug ? `query:${debug.query}` : 'query:-')
+				if (direct?.status === 'no-image') await logInfo('NO_IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
+				else {
+					runState.notFound++
+					await logError('NOT_FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`, debug ? `best:${debug.score}:${String(debug.title).trim().replace(/\s+/g, ' ')}` : 'best:-', debug ? `query:${debug.query}` : 'query:-')
 				failQueueItem(p, 'not-found')
 			}
 			await sleep(PRODUCT_DELAY)
@@ -385,8 +503,9 @@ async function processProduct(page, p) {
 		const imageResult = await getImages(page, url)
 		images = imageResult.images
 		if (!images.length) {
-			if (imageResult.status === 'no-image') await logInfo('NO_IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
+			if (imageResult.status === 'no-image') { runState.noImage++; await logInfo('NO_IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`) }
 			else {
+				runState.notFound++
 				await logError('NO_IMAGES_FOUND', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
 				failQueueItem(p, 'no-images')
 			}
@@ -418,24 +537,51 @@ async function processProduct(page, p) {
 		const foundSource = direct?.url ? 'direct' : 'search'
 		const matched = foundSource === 'direct' ? direct.tried : `${search?.score || '-'}:${String(search?.title || '-').trim().replace(/\s+/g, ' ')}`
 		const query = foundSource === 'search' ? `query:${search?.query || '-'}` : 'query:-'
+		runState.ok++
 		await logSuccess('OK', label, `source:${foundSource}`, query, `matched:${matched}`, `imgs:${rows.length}/${images.length}`, `size:${originalKb}KB->${finalKb}KB`, `optimized:${optimizedCount}`, `original:${originalCount}`, `replaced:${deleted}`, `skip:${skipCount}`)
 		await sleep(PRODUCT_DELAY)
 	} catch (e) {
+		runState.errors++
 		await logError('ERROR', label, `stage:${stage}`, e.message)
 		failQueueItem(p, `error:${stage}`)
 		await sleep(PRODUCT_DELAY)
 	}
 }
 async function worker(browser, queue) {
-	const page = await browser.newPage()
+	let page = await browser.newPage()
+	await attachJunkBlocker(page)
 	await page.setViewport({ width: 1440, height: 1000 })
+	let done = 0
 	while (true) {
 		const p = queue.shift()
 		if (!p) break
 		await processProduct(page, p)
 		progress.done++
+		done++
+		await flushStateThrottled()
+		// Chromium за много часов копит кэши в рендерере; периодическое
+		// перерождение страницы сбрасывает его память. 0 = выключить.
+		if (PAGE_RECYCLE > 0 && done % PAGE_RECYCLE === 0) {
+			await page.close().catch(() => null)
+			page = await browser.newPage()
+			await attachJunkBlocker(page)
+			await page.setViewport({ width: 1440, height: 1000 })
+			await logInfo('PAGE_RECYCLED', `done:${done}`)
+		}
 	}
 	await page.close()
+}
+
+// нам нужна только разметка галереи: картинки/стили/шрифты не качаем (сами качаем
+// изображения прямым fetch) — минус нагрузка на CPU и сеть, важна на 1-ядерном VPS
+function attachJunkBlocker(page) {
+	return page.setRequestInterception(true).then(() => {
+		page.on('request', req => {
+			const t = req.resourceType()
+			if (t === 'image' || t === 'stylesheet' || t === 'font' || t === 'media') req.abort().catch(() => {})
+			else req.continue().catch(() => {})
+		})
+	}).catch(() => null)
 }
 async function loadQueueProducts() {
 	if (!(await fs.pathExists(QUEUE_FILE))) {
@@ -447,7 +593,7 @@ async function loadQueueProducts() {
 	const items = Array.isArray(raw) ? raw : []
 	const names = items.map(item => typeof item === 'string' ? item : item?.name).filter(Boolean)
 	if (!names.length) return []
-	const rows = await sql`select id,name,source from products where name in ${sql(names)} order by name`
+	const rows = await sql`select id,name,source,raw->>'РабочееНаименование' as raw_name from products where name in ${sql(names)} order by name`
 	const found = new Set(rows.map(row => row.name))
 	for (const name of names) {
 		if (!found.has(name)) failedQueue.push({ name, source: null, reason: 'not-in-db' })
@@ -457,14 +603,14 @@ async function loadQueueProducts() {
 async function loadDbProducts(selectedBrands) {
 	if (MODE === MODES.MISSING) {
 		return await sql`
-			select p.id,p.name,p.source from products p
+			select p.id,p.name,p.source,p.raw->>'РабочееНаименование' as raw_name from products p
 			where not exists(select 1 from product_images pi where pi.product_id=p.id and pi.source='fetch')
 				and lower(trim(p.brand->>'name')) in ${sql(selectedBrands)}
 			order by p.name
 		`
 	}
 	return await sql`
-		select id,name,source from products
+		select id,name,source,raw->>'РабочееНаименование' as raw_name from products
 		where lower(trim(brand->>'name')) in ${sql(selectedBrands)}
 		order by name
 	`
@@ -491,11 +637,25 @@ async function main() {
 		const brandsFilter = String(process.env.FETCH_IMAGES_BRANDS || '').split(',').map(b => b.trim().toLowerCase()).filter(Boolean)
 		const selectedBrands = allowedBrands().filter(b => !brandsFilter.length || brandsFilter.includes(b.trim().toLowerCase()))
 		if (!selectedBrands.length) throw new Error('brands.json is empty (or FETCH_IMAGES_BRANDS matched nothing)')
+		// защита от второго запуска (админка/cron/вручную одновременно):
+		// предыдущий статус running жив, пока его heartbeat моложе 15 минут
+		try {
+			const prevRows = await sql`select value from settings where key = ${IMAGES_STATE_KEY} limit 1`
+			const prev = prevRows.length ? JSON.parse(prevRows[0].value) : null
+			if (prev?.status === 'running' && Date.now() - Date.parse(prev.updatedAt || 0) < STATE_STALE_MS) {
+				await logError('ALREADY_RUNNING', 'второй запуск запрещён: предыдущий прогон ещё жив (heartbeat < 15 мин)')
+				await sql.end()
+				return
+			}
+		} catch {}
 		await logInfo('START', `source:${SOURCE}`, `mode:${MODE}`, `threads:${THREADS}`, `brands:${selectedBrands.length}`, `queue:${QUEUE_FILE}`)
+		await loadSitemapIndex()
 		browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
 		const products = SOURCE === SOURCES.QUEUE ? await loadQueueProducts() : await loadDbProducts(selectedBrands)
 		progress.total = products.length
 		progress.done = 0
+		runState.total = products.length
+		await flushState()
 		await logInfo('TOTAL', products.length)
 		const queue = [...products]
 		const workers = []
@@ -504,10 +664,17 @@ async function main() {
 		await saveQueueAfterRun()
 		await browser.close()
 		browser = null
-		await sql.end()
+		runState.status = 'done'
+		runState.finishedAt = now()
+		await flushState()
 		await logInfo('FINISHED')
+		await sql.end()
 	} catch (e) {
 		await logError('FATAL', e.stack || e.message)
+		runState.status = 'failed'
+		runState.error = String(e?.message || e).slice(0, 500)
+		runState.finishedAt = now()
+		await flushState().catch(() => null)
 		if (SOURCE === SOURCES.QUEUE) await saveQueueAfterRun().catch(() => null)
 		if (browser) await browser.close().catch(() => null)
 		await sql.end().catch(() => null)

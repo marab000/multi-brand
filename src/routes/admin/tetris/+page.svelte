@@ -15,6 +15,27 @@
     canRun: boolean;
   };
 
+  type ImagesView = {
+    state: {
+      status?: string;
+      mode?: string | null;
+      source?: string | null;
+      startedAt?: string | null;
+      updatedAt?: string | null;
+      finishedAt?: string | null;
+      error?: string | null;
+      total?: number | null;
+      done?: number | null;
+      ok?: number | null;
+      notFound?: number | null;
+      noImage?: number | null;
+      errors?: number | null;
+      current?: string | null;
+    };
+    running: boolean;
+    stale: boolean;
+  };
+
   type CategoryRow = {
     name: string;
     products: number;
@@ -24,7 +45,7 @@
   let {
     data
   }: {
-    data: { brands: string[]; enabled: string[]; categories?: CategoryRow[]; sync: SyncView; counts?: Record<string, number>; extCounts?: Record<string, number> };
+    data: { brands: string[]; enabled: string[]; categories?: CategoryRow[]; sync: SyncView; images?: ImagesView; counts?: Record<string, number>; extCounts?: Record<string, number> };
   } = $props();
 
   let brands: string[] = $state(data.brands ?? []);
@@ -39,6 +60,10 @@
   let sync: SyncView = $state(
     data.sync ?? { state: {}, running: false, cooldownMs: 0, canRun: true }
   );
+  let images: ImagesView = $state(
+    data.images ?? { state: {}, running: false, stale: false }
+  );
+  let imagesRunError: string = $state('');
   let brandFilter: string = $state('');
   let catFilter: string = $state('');
   let runError: string = $state('');
@@ -175,6 +200,49 @@
     return () => clearInterval(poll);
   });
 
+  const imagesState = $derived(images.state ?? {});
+  const imagesPct = $derived(
+    imagesState.total ? Math.round(((imagesState.done ?? 0) / imagesState.total) * 100) : 0
+  );
+  const imagesLabel = $derived.by(() => {
+    if (images.running) return 'Идёт синхронизация…';
+    if (images.stale) return 'Процесс встал (нет обновлений > 15 мин)';
+    return imagesStatusLabel[imagesState.status ?? 'idle'] ?? imagesState.status ?? '—';
+  });
+
+  async function refreshImages() {
+    try {
+      const res = await fetch('/api/admin/tetris/images');
+      if (!res.ok) return;
+      images = await res.json();
+    } catch {
+      // сеть моргнула — попробуем на следующем тике
+    }
+  }
+
+  async function runImages() {
+    imagesRunError = '';
+    try {
+      const res = await fetch('/api/admin/tetris/images/run', { method: 'POST' });
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null);
+        imagesRunError = msg?.message ?? `Ошибка ${res.status}`;
+        return;
+      }
+      images = { ...images, running: true, stale: false, state: { ...imagesState, status: 'running', startedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), error: null } };
+      void refreshImages();
+    } catch (e: any) {
+      imagesRunError = e?.message ?? 'Не удалось отправить запрос';
+    }
+  }
+
+  // пока прогон картинок идёт — опрашиваем статус
+  $effect(() => {
+    if (!images.running) return;
+    const poll = setInterval(() => void refreshImages(), 10000);
+    return () => clearInterval(poll);
+  });
+
   // локальный тик кулдауна, чтобы не ждать серверного ответа
   $effect(() => {
     if (sync.cooldownMs <= 0) return;
@@ -201,6 +269,13 @@
   }
 
   const statusLabel: Record<string, string> = {
+    idle: 'Ещё не запускалась',
+    running: 'Идёт синхронизация…',
+    done: 'Завершена',
+    failed: 'Ошибка'
+  };
+
+  const imagesStatusLabel: Record<string, string> = {
     idle: 'Ещё не запускалась',
     running: 'Идёт синхронизация…',
     done: 'Завершена',
@@ -274,6 +349,62 @@
         <code>scripts/sync-tetrasis-products/brands.json</code>
       </p>
     {/if}
+  </div>
+
+  <!-- Синхронизация картинок -->
+  <div class="card">
+    <div class="card__title">Синхронизация картинок</div>
+    <div class="sync-row">
+      <button class="sync-btn" onclick={runImages} disabled={images.running}>
+        {#if images.running}
+          Прогон картинок идёт…
+        {:else}
+          Синхронизировать картинки
+        {/if}
+      </button>
+      <div class="sync-info">
+        <div>
+          Статус: <b
+            class:ok={imagesState.status === 'done'}
+            class:err={imagesState.status === 'failed' || images.stale}>{imagesLabel}</b
+          >
+          {#if imagesState.status === 'done' && imagesState.total}
+            <span class="muted"> — {imagesState.done ?? '?'} из {imagesState.total} товаров</span>
+          {/if}
+        </div>
+        {#if imagesState.total}
+          <div>
+            Прогресс: <b>{imagesState.done ?? 0} из {imagesState.total}</b> ({imagesPct}%)
+          </div>
+          <div class="progress"><div class="progress__bar" style="width:{imagesPct}%"></div></div>
+        {/if}
+        <div class="muted">
+          с картинками: {imagesState.ok ?? 0} · нет на Тетрисе: {imagesState.notFound ?? 0} ·
+          заглушка: {imagesState.noImage ?? 0} · ошибки: {imagesState.errors ?? 0}
+        </div>
+        <div>
+          Старт: <b>{fmtDate(imagesState.startedAt)}</b>
+          {#if imagesState.finishedAt}<span class="muted">
+              (завершён {fmtDate(imagesState.finishedAt)})</span
+            >{:else if imagesState.updatedAt}
+            <span class="muted"> · обновлено {fmtDate(imagesState.updatedAt)}</span>
+          {/if}
+        </div>
+        {#if imagesState.current}
+          <div class="muted current-product">Сейчас: {imagesState.current}</div>
+        {/if}
+        {#if imagesState.error}
+          <div class="err">Ошибка: {imagesState.error}</div>
+        {/if}
+        {#if imagesRunError}
+          <div class="err">{imagesRunError}</div>
+        {/if}
+      </div>
+    </div>
+    <p class="mode-hint">
+      Прогон обрабатывает только товары без картинок (режим missing): ищет их на Тетрисе, оптимизирует
+      и загружает в S3. Полный прогон с заменой старых картинок — только вручную с сервера
+    </p>
   </div>
 
   <!-- Категории -->
@@ -449,6 +580,27 @@
       color: $error;
     }
   }
+  .progress {
+    width: 100%;
+    max-width: 420px;
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin: 4px 0;
+  }
+  .progress__bar {
+    height: 100%;
+    border-radius: 999px;
+    background: $green;
+    transition: width 0.4s;
+  }
+  .current-product {
+    max-width: 480px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .filter {
     width: 100%;
     max-width: 340px;
@@ -575,5 +727,5 @@
 </style>
 
 <svelte:head>
-  <title>Тетрис — синк товаров — MULTIBRAND</title>
+    <title>Тетрис — синк товаров и картинок — MULTIBRAND</title>
 </svelte:head>

@@ -1,12 +1,14 @@
 import type { PageServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { getBrandConfig, getSyncStateView, cleanBrandName, getExcludedCategories } from '$lib/server/tetrasis';
+import { getImagesSyncStateView } from '$lib/server/tetrasisImages';
 
 export const load: PageServerLoad = async () => {
-	const [cfg, view, excludedCategories] = await Promise.all([
+	const [cfg, view, excludedCategories, imagesView] = await Promise.all([
 		getBrandConfig(),
 		getSyncStateView(),
-		getExcludedCategories()
+		getExcludedCategories(),
+		getImagesSyncStateView()
 	]);
 
 	// сколько товаров каждого бренда в тетрис-синке и во внешних источниках
@@ -61,6 +63,7 @@ export const load: PageServerLoad = async () => {
 		enabled: cfg.enabled,
 		categories,
 		sync: view,
+		images: imagesView,
 		counts,
 		extCounts
 	};
