@@ -54,5 +54,16 @@ export async function getImagesSyncStateView() {
 	const state = await getState();
 	const beat = state.updatedAt ? Date.parse(state.updatedAt) : 0;
 	const stale = state.status === 'running' && Date.now() - beat > STALE_RUNNING_MS;
-	return { state, running: state.status === 'running' && !stale, stale };
+	// два числа для людей: сколько картинок скачано всего и сколько товаров ещё без фото
+	let stats = { downloaded: 0, without: 0 };
+	try {
+		const [d, w] = await Promise.all([
+			sql`select count(*)::int as n from product_images where source = 'fetch'`,
+			sql`select count(*)::int as n from products p
+				where p.source = 'tetrasis-api'
+					and not exists(select 1 from product_images pi where pi.product_id = p.id and pi.source = 'fetch')`
+		]);
+		stats = { downloaded: d[0].n, without: w[0].n };
+	} catch {}
+	return { state, running: state.status === 'running' && !stale, stale, stats };
 }

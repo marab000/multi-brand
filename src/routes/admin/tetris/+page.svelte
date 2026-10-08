@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Tooltip from '$lib/components/Tooltip.svelte';
+
   type SyncView = {
     state: {
       status?: string;
@@ -34,6 +36,7 @@
     };
     running: boolean;
     stale: boolean;
+    stats?: { downloaded: number; without: number };
   };
 
   type CategoryRow = {
@@ -201,9 +204,13 @@
   });
 
   const imagesState = $derived(images.state ?? {});
+  const imagesStats = $derived(images.stats);
   const imagesPct = $derived(
     imagesState.total ? Math.round(((imagesState.done ?? 0) / imagesState.total) * 100) : 0
   );
+  function fmtNum(n: number | null | undefined) {
+    return (n ?? 0).toLocaleString('ru-RU');
+  }
   const imagesLabel = $derived.by(() => {
     if (images.running) return 'Идёт синхронизация…';
     if (images.stale) return 'Процесс встал (нет обновлений > 15 мин)';
@@ -286,11 +293,7 @@
 <div class="tetris-admin">
   <div class="head">
     <div>
-      <h1>Тетрис — синк товаров</h1>
-      <p class="hint">
-        Выберите бренды поставщика, которые синхронизируются с сайтом. Товары выключенных брендов
-        удаляются при следующей синхронизации. Список брендов сохраняется автоматически
-      </p>
+      <h1>Tetrasis API</h1>
     </div>
     {#if saveState === 'saving'}
       <span class="save-state">Сохранение…</span>
@@ -302,8 +305,8 @@
   </div>
 
   <!-- Синхронизация -->
-  <div class="card">
-    <div class="card__title">Синхронизация</div>
+  <div class="card p-6">
+    <div class="card__title">Синхронизация товаров и цен</div>
     <div class="sync-row">
       <button
         class="sync-btn"
@@ -321,18 +324,17 @@
       <div class="sync-info">
         <div>
           Последний запуск: <b>{fmtDate(lastRun.startedAt)}</b>
-          {#if lastRun.finishedAt}<span class="muted"> (завершена {fmtDate(lastRun.finishedAt)})</span>{/if}
+          {#if lastRun.finishedAt}<span class="text-secondary"> (завершена {fmtDate(lastRun.finishedAt)})</span>{/if}
         </div>
         <div>
           Статус: <b class:ok={lastRun.status === 'done'} class:err={lastRun.status === 'failed'}>
             {(lastRun.status && statusLabel[lastRun.status]) ?? lastRun.status ?? '—'}
           </b>
           {#if lastRun.status === 'done' && lastRun.brandsTotal}
-            <span class="muted"> — {lastRun.brandsDone ?? '?'} из {lastRun.brandsTotal} брендов поставщика</span>
+            <span class="text-secondary"> — {lastRun.brandsDone ?? '?'} из {lastRun.brandsTotal} брендов поставщика</span>
           {/if}
         </div>
         {#if lastRun.source}
-          <div class="muted">Запуск: {lastRun.source === 'admin' ? 'из админки' : 'вручную (консоль)'}</div>
         {/if}
         {#if lastRun.error}
           <div class="err">Ошибка: {lastRun.error}</div>
@@ -343,7 +345,7 @@
       </div>
     </div>
     {#if unmatched.length}
-      <p class="mode-hint warn">
+      <p class="text-amber-700 mt-3">
         Бренды поставщика без сопоставления (не синхронизируются): {unmatched.join(', ')}. Чтобы
         включить, добавьте название в
         <code>scripts/sync-tetrasis-products/brands.json</code>
@@ -352,7 +354,7 @@
   </div>
 
   <!-- Синхронизация картинок -->
-  <div class="card">
+  <div class="card mt-4 p-6">
     <div class="card__title">Синхронизация картинок</div>
     <div class="sync-row">
       <button class="sync-btn" onclick={runImages} disabled={images.running}>
@@ -368,50 +370,65 @@
             class:ok={imagesState.status === 'done'}
             class:err={imagesState.status === 'failed' || images.stale}>{imagesLabel}</b
           >
-          {#if imagesState.status === 'done' && imagesState.total}
-            <span class="muted"> — {imagesState.done ?? '?'} из {imagesState.total} товаров</span>
-          {/if}
         </div>
-        {#if imagesState.total}
+        <div>
+          Последний запуск: <b>{fmtDate(imagesState.startedAt)}</b>
+          {#if imagesState.finishedAt}<span class="text-secondary">
+              (завершена {fmtDate(imagesState.finishedAt)})</span
+            >{/if}
+        </div>
+        {#if imagesState.total && imagesState.status !== 'done'}
           <div>
             Прогресс: <b>{imagesState.done ?? 0} из {imagesState.total}</b> ({imagesPct}%)
           </div>
           <div class="progress"><div class="progress__bar" style="width:{imagesPct}%"></div></div>
-        {/if}
-        <div class="muted">
-          с картинками: {imagesState.ok ?? 0} · нет на Тетрисе: {imagesState.notFound ?? 0} ·
-          заглушка: {imagesState.noImage ?? 0} · ошибки: {imagesState.errors ?? 0}
-        </div>
-        <div>
-          Старт: <b>{fmtDate(imagesState.startedAt)}</b>
-          {#if imagesState.finishedAt}<span class="muted">
-              (завершён {fmtDate(imagesState.finishedAt)})</span
-            >{:else if imagesState.updatedAt}
-            <span class="muted"> · обновлено {fmtDate(imagesState.updatedAt)}</span>
-          {/if}
-        </div>
-        {#if imagesState.current}
-          <div class="muted current-product">Сейчас: {imagesState.current}</div>
-        {/if}
-        {#if imagesState.error}
-          <div class="err">Ошибка: {imagesState.error}</div>
         {/if}
         {#if imagesRunError}
           <div class="err">{imagesRunError}</div>
         {/if}
       </div>
     </div>
-    <p class="mode-hint">
-      Прогон обрабатывает только товары без картинок (режим missing): ищет их на Тетрисе, оптимизирует
-      и загружает в S3. Полный прогон с заменой старых картинок — только вручную с сервера
+    {#snippet runCounters()}
+      <div class="counters-row">
+        <Tooltip text="Всего картинок в базе за всё время, включая прошлые прогоны">
+          <div class="mini-counter">
+            <b>{fmtNum(imagesStats?.downloaded)}</b>
+            <span>Скачано картинок</span>
+          </div>
+        </Tooltip>
+        <Tooltip text="Товары, у которых пока нет картинок: у поставщика заглушка или прогон ещё не дошёл">
+          <div class="mini-counter">
+            <b>{fmtNum(imagesStats?.without)}</b>
+            <span>Товаров без фото</span>
+          </div>
+        </Tooltip>
+        <Tooltip text="Товары, обработка которых упала с ошибкой в последнем прогоне — подробности в логах на сервере">
+          <div class="mini-counter">
+            <b>{fmtNum(imagesState.errors)}</b>
+            <span>Товаров с ошибкой</span>
+          </div>
+        </Tooltip>
+      </div>
+    {/snippet}
+    {#if imagesState.status === 'done'}
+      <details class="run-details">
+        <summary>Детали прогона</summary>
+        {@render runCounters()}
+      </details>
+    {:else if imagesPct < 100 || !imagesState.total}
+      {@render runCounters()}
+    {/if}
+    <p class="text-secondary mt-2">
+      Прогон обрабатывает только товары без картинок: ищет их на сайте поставщика, оптимизирует
+      и загружает на наш CDN. Полный прогон с заменой старых картинок — только вручную с сервера
     </p>
   </div>
 
   <!-- Категории -->
-  <div class="card">
+  <div class="card mt-4 p-6">
     <div class="card__title-row">
       <div class="card__title">Категории поставщика</div>
-      <span class="count">Синхронизируется: {syncedCategoriesCount} из {categories.length}</span>
+      <span class="text-secondary">Синхронизируется: {syncedCategoriesCount} из {categories.length}</span>
     </div>
     <input class="filter" type="text" placeholder="Поиск категории…" bind:value={catFilter} />
     <div class="brands-list">
@@ -434,7 +451,7 @@
         <div class="empty">Ничего не найдено</div>
       {/each}
     </div>
-    <p class="mode-hint">
+    <p class="text-secondary mt-3">
       Галочка — категория синхронизируется. Снятая галочка — товары категории не заносятся в базу,
       а уже имеющиеся удаляются при следующей синхронизации (на сайте категория исчезает сразу
       после прогона). Список собирается из живых данных поставщика
@@ -442,10 +459,10 @@
   </div>
 
   <!-- Бренды -->
-  <div class="card">
+  <div class="card mt-4 p-6">
     <div class="card__title-row">
       <div class="card__title">Бренды поставщика</div>
-      <span class="count">Синхронизируется: {enabledCount} из {brands.length}</span>
+      <span class="text-secondary">Синхронизируется: {enabledCount} из {brands.length}</span>
     </div>
     <input class="filter" type="text" placeholder="Поиск бренда…" bind:value={brandFilter} />
     <div class="brands-list">
@@ -470,7 +487,7 @@
         <div class="empty">Ничего не найдено</div>
       {/each}
     </div>
-    <p class="mode-hint">
+    <p class="text-secondary mt-3">
       Зелёная галочка — бренд синхронизируется. «внешний синк» — товары
       приходят другими скриптами (Ballu/Grandex и т.п.), тумблер на них не влияет. После добавления нового бренда, картинки нужно запускать вручную
     </p>
@@ -479,32 +496,26 @@
 
 <style lang="scss">
   .tetris-admin {
-    max-width: 900px;
+    max-width: 56.25rem;
   }
   .head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
     h1 {
-      margin: 0 0 6px;
-      font-size: 22px;
+      margin: 0 0 0.375rem;
+      font-size: 1.375rem;
       color: #111827;
     }
-  }
-  .hint {
-    margin: 0;
-    max-width: 620px;
-    font-size: 13px;
-    color: #94a3b8;
     code {
       color: $green;
     }
   }
   .save-state {
     flex-shrink: 0;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: #94a3b8;
     &--ok {
@@ -515,43 +526,30 @@
     }
   }
   .card {
-    padding: 24px;
-    border: 1px solid #eee;
-    border-radius: 14px;
+    border: 0.0625rem solid #eee;
+    border-radius: 0.875rem;
     background: #fff;
-    & + .card {
-      margin-top: 16px;
-    }
     &__title {
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 700;
       color: #111827;
-      margin-bottom: 14px;
-    }
-  }
-  .mode-hint {
-    margin: 0 0 14px;
-    font-size: 13px;
-    color: #64748b;
-    &.warn {
-      color: #b45309;
-      margin-top: 14px;
+      margin-bottom: 0.875rem;
     }
   }
   .sync-row {
     display: flex;
-    gap: 20px;
+    gap: 1.25rem;
     align-items: flex-start;
     flex-wrap: wrap;
   }
   .sync-btn {
     flex-shrink: 0;
-    padding: 12px 22px;
+    padding: 0.75rem 1.375rem;
     border: none;
-    border-radius: 12px;
+    border-radius: 0.75rem;
     background: $green;
     color: #fff;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 700;
     cursor: pointer;
     transition: 0.15s;
@@ -567,12 +565,9 @@
   .sync-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    font-size: 13.5px;
+    gap: 0.25rem;
+    font-size: 0.8438rem;
     color: #334155;
-    .muted {
-      color: #94a3b8;
-    }
     .ok {
       color: $green;
     }
@@ -582,12 +577,12 @@
   }
   .progress {
     width: 100%;
-    max-width: 420px;
-    height: 8px;
+    max-width: 26.25rem;
+    height: 0.5rem;
     border-radius: 999px;
     background: #e2e8f0;
     overflow: hidden;
-    margin: 4px 0;
+    margin: 0.25rem 0;
   }
   .progress__bar {
     height: 100%;
@@ -595,20 +590,50 @@
     background: $green;
     transition: width 0.4s;
   }
-  .current-product {
-    max-width: 480px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .counters-row {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0.75rem 0 0;
+  }
+  .run-details {
+    margin-top: 0.625rem;
+    summary {
+      cursor: pointer;
+      width: max-content;
+      font-size: 0.8125rem;
+      user-select: none;
+    }
+    .counters-row {
+      margin-top: 0.625rem;
+    }
+  }
+  .mini-counter {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 0.0625rem solid #f1f5f9;
+    border-radius: 0.625rem;
+    background: #fafafa;
+    cursor: help;
     white-space: nowrap;
+    b {
+      font-size: 0.9375rem;
+      color: #111827;
+    }
+    span {
+      font-size: 0.6875rem;
+      color: #94a3b8;
+    }
   }
   .filter {
     width: 100%;
-    max-width: 340px;
-    padding: 10px 14px;
-    margin-bottom: 14px;
-    border: 1.5px solid #e4e7ec;
-    border-radius: 10px;
-    font-size: 14px;
+    max-width: 21.25rem;
+    padding: 0.625rem 0.875rem;
+    margin-bottom: 0.875rem;
+    border: 0.0938rem solid #e4e7ec;
+    border-radius: 0.625rem;
+    font-size: 0.875rem;
     outline: none;
     &:focus {
       border-color: $green;
@@ -618,33 +643,33 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 12px;
+    gap: 0.75rem;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 0.875rem;
     .card__title {
       margin-bottom: 0;
     }
   }
   .brands-list {
-    max-height: 420px;
+    max-height: 26.25rem;
     overflow-y: auto;
-    border: 1px solid #e4e7ec;
-    border-radius: 12px;
+    border: 0.0625rem solid #e4e7ec;
+    border-radius: 0.75rem;
     background: #fff;
-    @media (max-width: 640px) {
+    @media (max-width: 40rem) {
       max-height: 55vh;
     }
   }
   .brand-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 0.625rem;
     width: 100%;
-    padding: 8px 12px;
+    padding: 0.5rem 0.75rem;
     border: none;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 0.0625rem solid #f1f5f9;
     background: none;
-    font-size: 13.5px;
+    font-size: 0.8438rem;
     font-weight: 600;
     color: #475569;
     text-align: left;
@@ -681,11 +706,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 12px;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0.0938rem solid #cbd5e1;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
     line-height: 1;
     color: transparent;
     transition: 0.12s;
@@ -699,33 +724,27 @@
   }
   .brand-row__count {
     flex-shrink: 0;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
     color: #94a3b8;
   }
   .brand-row__ext {
     flex-shrink: 0;
-    padding: 2px 8px;
+    padding: 0.125rem 0.5rem;
     border-radius: 999px;
     background: rgba(230, 167, 60, 0.14);
     color: #b45309;
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 700;
     white-space: nowrap;
   }
   .empty {
-    padding: 16px 12px;
+    padding: 1rem 0.75rem;
     color: #94a3b8;
-    font-size: 14px;
-  }
-  .count {
-    margin: 14px 0 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
+    font-size: 0.875rem;
   }
 </style>
 
 <svelte:head>
-    <title>Тетрис — синк товаров и картинок — MULTIBRAND</title>
+    <title>Tetrasis API — MULTIBRAND</title>
 </svelte:head>
