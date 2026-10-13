@@ -393,7 +393,7 @@
         <Tooltip text="Всего картинок в базе за всё время, включая прошлые прогоны">
           <div class="mini-counter">
             <b>{fmtNum(imagesStats?.downloaded)}</b>
-            <span>Скачано картинок</span>
+            <span>Всего картинок</span>
           </div>
         </Tooltip>
         <Tooltip text="Товары, у которых пока нет картинок: у поставщика заглушка или прогон ещё не дошёл">

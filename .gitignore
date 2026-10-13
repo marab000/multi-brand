@@ -38,6 +38,9 @@ vite.config.ts.timestamp-*
 # Misc
 WORKSPACE-NOTE.txt
 structure.txt
+AGENTS.md
+TASK-VPS.md
+tmp/
 scripts/fetch-rusklimat/*.log
 scripts/fetch-rusklimat/categories.json
 scripts/fetch-rusklimat/image-queue.json

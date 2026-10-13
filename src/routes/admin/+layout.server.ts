@@ -3,6 +3,9 @@ import { sql } from '$lib/db';
 import { hasRole } from '$lib/server/auth';
 
 const COOKIE = 'admin_session';
+// Имя для «Вы вошли как»: имя сайт-аккаунта (как в профиле), иначе логин админки
+const displayName = (login: string, siteUser: { full_name: string; email: string } | null) =>
+  siteUser?.full_name || siteUser?.email || login;
 
 export const load = async ({ cookies, url, locals }) => {
   const session = cookies.get(COOKIE);
@@ -43,7 +46,7 @@ export const load = async ({ cookies, url, locals }) => {
       }
 
       return {
-        user: { ...users[0], name: users[0].login }
+        user: { ...users[0], name: displayName(users[0].login, locals.user) }
       };
     }
   }
@@ -53,7 +56,7 @@ export const load = async ({ cookies, url, locals }) => {
       throw redirect(302, '/admin/orders');
     }
     return {
-      user: { id: 0, role: 'admin' }
+      user: { id: 0, role: 'admin', name: displayName('admin', locals.user) }
     };
   }
 
