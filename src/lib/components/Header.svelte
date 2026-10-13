@@ -86,6 +86,16 @@
     window.addEventListener('open-auth-modal', handleExternalAuth);
     return () => window.removeEventListener('open-auth-modal', handleExternalAuth);
   });
+  // «Профиль» для гостя: /user/* кидает на главную с ?auth=login — открываем вход
+  $effect(() => {
+    if (user) return;
+    if ($page.url.searchParams.get('auth') === 'login') {
+      handleExternalAuth(new CustomEvent('open-auth-modal', { detail: { mode: 'login' } }));
+      const url = new URL(window.location.href);
+      url.searchParams.delete('auth');
+      window.history.replaceState({}, '', url.pathname + url.search);
+    }
+  });
   let userMenuOpen = $state(false);
   let requestOpen = $state(false);
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
