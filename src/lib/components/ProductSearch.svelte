@@ -5,6 +5,10 @@
   import { Search, X, Folder } from 'lucide-svelte';
   import { imgUrl } from '$lib/s3Public';
 
+  // Печатающийся плейсхолдер: медленно набираем название товара, держим, стираем,
+  // переходим к следующему. Останавливается, когда пользователь вводит свой запрос.
+  let { placeholder = 'Поиск...', hints = [] }: { placeholder?: string; hints?: string[] } = $props();
+
   type SearchSuggestion = {
     type: 'category' | 'brand';
     name: string;
@@ -14,6 +18,12 @@
   };
 
   let query = '';
+  let searchFocused = false;
+  let inputEl: HTMLInputElement | null | undefined;
+
+  function setInputPlaceholder(text: string) {
+    inputEl?.setAttribute('placeholder', text);
+  }
   let results: any[] = [];
   let open = false;
   let selected = -1;
@@ -114,8 +124,42 @@
   }
 
   if (browser) {
-    onMount(() => document.addEventListener('click', handleClickOutside));
-    onDestroy(() => document.removeEventListener('click', handleClickOutside));
+    onMount(() => {
+      document.addEventListener('click', handleClickOutside);
+      onDestroy(() => document.removeEventListener('click', handleClickOutside));
+
+      // анимация печати плейсхолдера (прямой setAttribute — без реактвности)
+      if (!hints.length) return;
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+      (async () => {
+        let index = 0;
+        while (true) {
+          if (query.trim() || searchFocused) {
+            await sleep(400);
+            continue;
+          }
+          const hint = hints[index % hints.length];
+          let text = '';
+          for (let n = 1; n <= hint.length; n++) {
+            if (query.trim() || searchFocused) break;
+            text = hint.slice(0, n);
+            setInputPlaceholder(text);
+            await sleep(50 + Math.random() * 60);
+          }
+          if (query.trim() || searchFocused) {
+            await sleep(400);
+            continue;
+          }
+          await sleep(2200);
+          while (text.length && !query.trim() && !searchFocused) {
+            text = text.slice(0, -1);
+            setInputPlaceholder(text);
+            await sleep(20);
+          }
+          index++;
+        }
+      })();
+    });
   }
 </script>
 
@@ -124,10 +168,13 @@
     <input
       class="input primary"
       type="text"
-      placeholder="Поиск..."
+      placeholder={placeholder}
+      bind:this={inputEl}
       bind:value={query}
       on:input={handleInput}
       on:keydown={handleKey}
+      on:focus={() => (searchFocused = true)}
+      on:blur={() => (searchFocused = false)}
     />
     {#if query}
       <button class="clear" on:click={clearInput}><X size={18} /></button>
@@ -226,7 +273,7 @@
         right: 50px;
         top: 50%;
         transform: translateY(-50%);
-        margin-right: 10px;
+        margin-right: 12px;
         border: none;
         background: transparent;
         cursor: pointer;
@@ -255,7 +302,7 @@
   .item {
     display: flex;
     gap: 12px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     cursor: pointer;
     align-items: center;
     transition: 0.15s;
@@ -273,7 +320,7 @@
       flex: 1;
       .top {
         display: flex;
-        gap: 6px;
+        gap: 8px;
         align-items: center;
       }
       .name {
@@ -306,7 +353,7 @@
     // }
   }
   .all {
-    padding: 12px 14px;
+    padding: 12px 16px;
     font-size: 14px;
     border-top: 1px solid #eee;
     border-top-right-radius: 0;

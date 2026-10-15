@@ -70,7 +70,7 @@
 </div>
 
 {#if showFilters && !hideSidebar}
-  <button class="overlay" onclick={() => (showFilters = false)}></button>
+  <button class="overlay" aria-label="Закрыть фильтры" onclick={() => (showFilters = false)}></button>
   <div class="drawer">
     <div class="drawer-header">
       <span>Фильтры</span>

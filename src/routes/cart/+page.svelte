@@ -9,6 +9,7 @@
   import { apiFetch } from '$lib/api';
   import { toast } from 'svelte-sonner';
   import Modal from '$lib/components/Modal.svelte';
+  import BonusIcon from '$lib/components/BonusIcon.svelte';
   import CartPdfExport from '$lib/components/CartPdfExport.svelte';
   import {
     Menu,
@@ -185,9 +186,9 @@
               </div>
               <div class="sum-wrap">
                 {#if item.bundle && item.oldPrice && item.oldPrice > item.price}
-                  <!-- у товара из комплекта своя скидка — показываем её, глобальную не стакаем -->
-                  <p class="old-sum">{formatPrice(item.oldPrice * item.qty)} ₽</p>
+                  <!-- у товара из комплекта выгода показывается баллами, а не зачёркнутой ценой -->
                   <p class="discount-sum sum">{formatPrice(item.price * item.qty)} ₽</p>
+                  <p class="bonus-points"><BonusIcon /> + {formatPrice((item.oldPrice - item.price) * item.qty)} баллов</p>
                 {:else if cartDiscountPercent > 0 && !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
                   <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
                   <p class="discount-sum sum">
@@ -203,28 +204,6 @@
             </div>
           </div>
         {/each}
-        {#if hasDiscount}
-          <div class="cart-promo">
-            <div class="cart-promo__badge">
-              <BadgePercent size={16} strokeWidth={2.4} />
-              <span>Скидка {cartDiscountPercent}%</span>
-            </div>
-            <div class="cart-promo__title">Оформи заказ сейчас</div>
-            <div class="cart-promo__prices">
-              <span class="old-sum">{formatPrice(total)} ₽</span>
-              <ArrowRight size={18} strokeWidth={2.5} />
-              <span class="cart-promo__new">{formatPrice(totalWithDiscount)} ₽</span>
-            </div>
-            <div class="cart-promo__save-row">
-              <span class="cart-promo__save">Ваша выгода</span>
-              <span class="cart-promo__save-value">{formatPrice(savings)} ₽</span>
-            </div>
-            <button class="btn primary cart-promo__btn" onclick={submit}>
-              Оставить заявку
-              <ArrowRight size={18} strokeWidth={2.5} />
-            </button>
-          </div>
-        {/if}
 
         <button class="clear-cart" onclick={() => cart.clear()}>
           <Trash size={15} strokeWidth={2.4} />
@@ -241,7 +220,7 @@
             <div class="bonus-banner">
               <span class="bonus-banner__gift">🎁</span>
               <span class="bonus-banner__text">
-                Оставьте заявку — получите <b class="nowrap">{formatPrice(bundleBonus)} ₽ баллами</b>
+                Оставьте заявку — получите <b class="nowrap"><BonusIcon /> {formatPrice(bundleBonus)} ₽ баллами</b>
                 <i>баллами можно оплатить этот комплект прямо сейчас — или накопить и потратить на любой заказ</i>
               </span>
             </div>
@@ -399,7 +378,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 36px 20px 30px;
+      padding: 36px 20px 32px;
       border: 1px solid #e9ece8;
       border-radius: 16px;
       background: linear-gradient(180deg, #fff 0%, #f8faf8 100%);
@@ -410,7 +389,7 @@
         object-fit: contain;
       }
       h2 {
-        margin: 0 0 10px;
+        margin: 0 0 12px;
         font-size: 42px;
         line-height: 1;
         font-weight: 800;
@@ -445,6 +424,20 @@
     .discount-sum {
       color: #e31b23;
     }
+    .bonus-points {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: #111827;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      line-height: 1;
+      white-space: nowrap;
+      // иконка баллов — фирменная жёлтая
+      :global(svg.bonus-icon) {
+        color: #e6a73c;
+      }
+    }
     .cart {
       grid-template-columns: 1fr 320px;
       .items {
@@ -457,7 +450,7 @@
         grid-template-columns: 1fr auto;
         align-items: center;
         gap: 16px;
-        padding: 12px 14px;
+        padding: 12px 16px;
         border: 1px solid #eee;
         border-radius: 12px;
         background: #fff;
@@ -496,7 +489,7 @@
         }
       }
       .description {
-        margin-top: 5px;
+        margin-top: 4px;
         color: #777;
         font-size: 13px;
         line-height: 1.35;
@@ -504,10 +497,10 @@
       .bundle-badge {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
         width: fit-content;
-        margin-top: 5px;
-        padding: 2px 9px;
+        margin-top: 4px;
+        padding: 4px 8px;
         border-radius: 999px;
         background: rgba($green, 0.1);
         color: #14532d;
@@ -523,7 +516,7 @@
         display: grid;
         grid-template-columns: 110px 110px 42px;
         align-items: center;
-        gap: 14px;
+        gap: 16px;
       }
       .qty {
         display: flex;
@@ -549,7 +542,7 @@
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        gap: 2px;
+        gap: 4px;
         min-width: 0;
       }
       .sum {
@@ -580,8 +573,8 @@
       gap: 8px;
       width: fit-content;
       margin-left: auto;
-      margin-top: 14px;
-      padding: 0 18px;
+      margin-top: 16px;
+      padding: 0 20px;
       height: 44px;
       border: 1.5px solid rgba(255, 0, 0, 0.25);
       border-radius: 12px;
@@ -605,7 +598,7 @@
     .sidebar-card {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       padding: 16px;
       border: 1px solid #eee;
       border-radius: 12px;
@@ -693,7 +686,7 @@
           display: flex;
           flex-direction: column;
           align-items: flex-end;
-          gap: 2px;
+          gap: 4px;
           b {
             font-size: 20px;
           }
@@ -702,83 +695,8 @@
       .actions {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
       }
-    }
-    .cart-promo {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 20px;
-      border-radius: 14px;
-      border: 2px solid rgba($green, 0.4);
-      background: linear-gradient(135deg, rgba($green, 0.1), rgba($green, 0.03));
-      box-shadow: 0 4px 16px rgba($green, 0.08);
-    }
-    .cart-promo__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      align-self: flex-start;
-      padding: 4px 10px;
-      border-radius: 8px;
-      background: $green;
-      color: #fff;
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .cart-promo__title {
-      font-size: 18px;
-      font-weight: 800;
-      color: #111827;
-      line-height: 1.2;
-    }
-    .cart-promo__prices {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: #999;
-      .old-sum,
-      .cart-promo__new {
-        white-space: nowrap;
-      }
-      .cart-promo__new {
-        font-size: 28px;
-        font-weight: 800;
-        color: #e31b23;
-        line-height: 1;
-        letter-spacing: -0.02em;
-      }
-    }
-    .cart-promo__save-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: rgba($green, 0.08);
-    }
-    .cart-promo__save {
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-    }
-    .cart-promo__save-value {
-      font-size: 15px;
-      font-weight: 800;
-      color: $green;
-    }
-    .cart-promo__btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      height: 48px;
-      font-size: 15px;
-      font-weight: 700;
-      border-radius: 12px;
     }
   }
   @media (max-width: 1023px) {
@@ -832,8 +750,8 @@
           display: grid;
           grid-template-columns: auto 1fr auto;
           align-items: center;
-          gap: 10px;
-          padding-top: 10px;
+          gap: 12px;
+          padding-top: 12px;
           border-top: 1px solid #f1f1f1;
         }
         .qty {
@@ -851,26 +769,6 @@
           height: 34px;
         }
       }
-      .cart-promo {
-        grid-template-columns: 1fr;
-      }
-      .cart-promo__img {
-        min-height: 180px;
-        max-height: 220px;
-      }
-      .cart-promo__body {
-        padding: 18px;
-      }
-      .cart-promo__head {
-        font-size: 15px;
-      }
-      .cart-promo__prices .cart-promo__new {
-        font-size: 26px;
-      }
-      .cart-promo__btn {
-        width: 100%;
-        justify-content: center;
-      }
     }
   }
   .nowrap {
@@ -880,8 +778,8 @@
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    margin: 10px 0 12px;
-    padding: 10px 12px;
+    margin: 12px 0 12px;
+    padding: 12px 12px;
     border-radius: 12px;
     background: #fef9e7;
     border: 1px solid #f0dfa8;
@@ -891,7 +789,7 @@
     &__text {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
       font-size: 13.5px;
       color: #374151;
       b {
@@ -907,10 +805,10 @@
   .steps-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     margin: 12px 0 4px;
     &__title {
-      margin: 6px 0 2px;
+      margin: 8px 0 4px;
       font-size: 13.5px;
       font-weight: 800;
       color: #111827;

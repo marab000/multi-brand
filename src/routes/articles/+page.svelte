@@ -111,7 +111,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 16px 18px 20px;
+    padding: 16px 20px 20px;
   }
   .card__date {
     font-size: 12px;
@@ -135,6 +135,7 @@
     display: -webkit-box;
     overflow: hidden;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
   }
 </style>

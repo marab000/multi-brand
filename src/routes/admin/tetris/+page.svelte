@@ -334,8 +334,6 @@
             <span class="text-secondary"> — {lastRun.brandsDone ?? '?'} из {lastRun.brandsTotal} брендов поставщика</span>
           {/if}
         </div>
-        {#if lastRun.source}
-        {/if}
         {#if lastRun.error}
           <div class="err">Ошибка: {lastRun.error}</div>
         {/if}

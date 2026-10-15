@@ -39,6 +39,13 @@
   const monthlyPayment = getMonthlyPayment(price);
   const saving = hasDiscount ? oldPrice - price : 0;
   const ratingData = getProductRating(product.external_id || product.id || product.name);
+  $: stockLabel = (() => {
+    const s = product.stock;
+    if (s === 1) return { text: 'В наличии — от 7 дней', tone: 'in' };
+    if (s === 2) return { text: 'На удалённом складе — от 14 дней', tone: 'mid' };
+    if (s === 3) return { text: 'Под заказ', tone: 'order' };
+    return null;
+  })();
   const isProtected = isDiscountExcludedBrand(product.brand);
   $: cartItem = $cart.find((item) => item.id === product.id);
   $: qty = cartItem?.qty ?? 0;
@@ -84,6 +91,10 @@
         <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
       </button>
       <img src={image} alt={product.name} loading="lazy" />
+      <div class="rating-badge">
+        <Star size={13} fill="currentColor" strokeWidth={0} />
+        <span>{ratingData.rating}</span>
+      </div>
       {#if hasDiscount}
         <div class="discount">
           <span>АКЦИЯ</span>
@@ -101,14 +112,10 @@
         </div>
       {/if}
     </div>
-    <p class="description mt-auto">{product.description}</p>
-    <div class="rating-row">
-      <div class="rating">
-        <Star size={14} fill="currentColor" strokeWidth={0} />
-        <span>{ratingData.rating}</span>
-      </div>
-      <span class="reviews-count">{ratingData.reviews.toLocaleString("ru-RU")} отзывов</span>
-    </div>
+    {#if product.description}<p class="description mt-auto">{product.description}</p>{/if}
+    {#if stockLabel}
+      <p class="stock-note stock-note--{stockLabel.tone}">{stockLabel.text}</p>
+    {/if}
     <div class="price-row">
       <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
       {#if hasDiscount}
@@ -174,12 +181,12 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     transition: all 0.25s ease;
     a {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       text-decoration: none;
       color: inherit;
       height: 100%;
@@ -234,8 +241,8 @@
       right: -6px;
       display: flex;
       align-items: center;
-      gap: 7px;
-      padding: 8px 14px;
+      gap: 8px;
+      padding: 8px 16px;
       background: $yellow;
       color: #111;
       font-size: 11px;
@@ -252,7 +259,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
     h3 {
       font-size: 15px;
@@ -265,7 +272,7 @@
       align-items: center;
       column-gap: 6px;
       row-gap: 1px;
-      padding: 7px 10px;
+      padding: 8px 12px;
       border: 1px solid #dbe7f6;
       border-radius: 8px;
       background: #eef4fb;
@@ -292,27 +299,42 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .rating-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: -2px;
-      font-size: 13px;
-      line-height: 1;
+    .stock-note {
+      margin: 4px 0 4px;
+      font-size: 0.78125rem;
+      font-weight: 600;
+      line-height: 1.3;
+      &--in {
+        color: $green;
+      }
+      &--mid {
+        color: #b45309;
+      }
+      &--order {
+        color: #94a3b8;
+      }
     }
-    .rating {
+    .rating-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 3;
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      color: #ffb81c;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+      color: #111827;
+      font-size: 0.8125rem;
       font-weight: 800;
-      span {
-        color: #111;
+      line-height: 1.2;
+      white-space: nowrap;
+
+      :global(svg) {
+        color: #f59e0b;
       }
-    }
-    .reviews-count {
-      color: #777;
-      font-weight: 600;
     }
     .price-row {
       display: flex;
@@ -344,10 +366,10 @@
       position: relative;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       width: 100%;
       min-height: 30px;
-      padding: 6px 10px;
+      padding: 8px 12px;
       border: 1px solid rgba(227, 27, 35, 0.35);
       border-radius: 8px;
       color: #e31b23;
@@ -379,7 +401,7 @@
       right: 0;
       bottom: calc(100% + 8px);
       width: 190px;
-      padding: 8px 10px;
+      padding: 8px 12px;
       border-radius: 8px;
       background: #111;
       color: #fff;
@@ -397,12 +419,12 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: -2px;
+      margin-top: -4px;
     }
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       height: 30px;
       padding: 0 12px;
       border-radius: 999px;
@@ -471,7 +493,7 @@
       align-items: start;
     }
     .card .saving {
-      padding: 6px 8px;
+      padding: 8px 8px;
       span {
         font-size: 9px;
       }
@@ -492,7 +514,7 @@
   .order-note {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     margin: -4px 0 0;
     color: #94a3b8;
     font-size: 11.5px;

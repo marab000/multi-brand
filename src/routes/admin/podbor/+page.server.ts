@@ -22,6 +22,20 @@ export const load: PageServerLoad = async () => {
         priorityProducts: Array.isArray(parsed?.priorityProducts)
           ? parsed.priorityProducts.map(String)
           : [],
+        bonusExcludedBrands: Array.isArray(parsed?.bonusExcludedBrands)
+          ? parsed.bonusExcludedBrands.map(String)
+          : [],
+        brandSegments: {
+          budget: Array.isArray(parsed?.brandSegments?.budget)
+            ? parsed.brandSegments.budget.map(String)
+            : [],
+          medium: Array.isArray(parsed?.brandSegments?.medium)
+            ? parsed.brandSegments.medium.map(String)
+            : [],
+          premium: Array.isArray(parsed?.brandSegments?.premium)
+            ? parsed.brandSegments.premium.map(String)
+            : []
+        },
         texts:
           parsed?.texts && typeof parsed.texts === 'object' && !Array.isArray(parsed.texts)
             ? parsed.texts

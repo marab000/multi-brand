@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
   let alsoBought: any[] = [];
   try {
     alsoBought = await sql`
-      SELECT p.id, p.name, p.product_type, p.price_rrc, p.price_ric, p.specs,
+      SELECT p.id, p.name, p.product_type, p.price_rrc, p.price_ric, p.specs, p.stock,
              p.brand,
              COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
       FROM products p

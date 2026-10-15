@@ -16,7 +16,9 @@ function hashSeed(seed: string | number | null | undefined): number {
 
 export function getProductRating(seed: string | number | null | undefined): ProductRating {
   const hash = hashSeed(seed);
-  return { rating: '4.9', reviews: 500 + (hash % 1501) };
+  // стабильный рейтинг 4.7–5.0: у товара число не скачет день ото дня
+  const rating = (4.7 + (hash % 31) / 100).toFixed(1);
+  return { rating, reviews: 500 + (hash % 1501) };
 }
 
 /** «Сегодня купили: N» — стабильное в течение суток число для конкретного товара */

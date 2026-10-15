@@ -164,34 +164,27 @@
 </svelte:head>
 
 <section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
-  <div class="block lg:hidden">
-    <Slider imgPaths={mobileImages} />
-  </div>
-  <div class="hidden lg:block">
-    <Slider imgPaths={desktopImages} />
-  </div>
+  {#if mobileImages.length}
+    <div class="block lg:hidden">
+      <Slider imgPaths={mobileImages} />
+    </div>
+  {/if}
+  {#if desktopImages.length}
+    <div class="hidden lg:block">
+      <Slider imgPaths={desktopImages} />
+    </div>
+  {/if}
 </section>
 
 <section class="mx-auto">
   <a class="podbor-cta" href="/podbor">
     <div class="podbor-cta__main">
-      <h2>Собери комплект техники <em>с помощью ИИ-помощника за 1 минуту</em></h2>
+      <h2>
+        Собери комплект техники
+        <em>с помощью ИИ-помощника<span class="hidden md:inline"> за 1 минуту</span></em>
+      </h2>
       <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет</p>
       <span class="podbor-cta__btn">Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span>
-      <ul class="podbor-cta__features">
-        <li>
-          <Clock3 size={17} strokeWidth={2} />
-          <span><b>Узнаете стоимость</b><i>уже через 1 минуту</i></span>
-        </li>
-        <li>
-          <Package size={17} strokeWidth={2} />
-          <span><b>Получите готовый</b><i>комплект техники</i></span>
-        </li>
-        <li>
-          <ShieldCheck size={17} strokeWidth={2} />
-          <span><b>Без лишних звонков</b><i>и консультаций</i></span>
-        </li>
-      </ul>
     </div>
     <img
       class="podbor-cta__photo"
@@ -223,7 +216,7 @@
           aria-expanded={openFeatures.has(f.title)}
         >
           <div class="feature-card__icon">
-            <svelte:component this={f.icon} size={22} strokeWidth={2} />
+            <f.icon size={22} strokeWidth={2} />
           </div>
           <h3>{f.title}</h3>
           <ChevronDown class="feature-card__chev" size={18} strokeWidth={2.2} />
@@ -525,7 +518,7 @@
         color: #2f6b3a;
         // жёлтый маркер-подчёркивание как в референсе
         background: linear-gradient(transparent 68%, rgba(240, 198, 75, 0.7) 68%);
-        padding: 0 2px;
+        padding: 0 4px;
       }
     }
 
@@ -540,8 +533,8 @@
     &__btn {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 11px 22px;
+      gap: 8px;
+      padding: 12px 24px;
       border-radius: 999px;
       background: #f0c64b;
       color: #2e3d2f;
@@ -557,14 +550,14 @@
       list-style: none;
       display: flex;
       flex-wrap: wrap;
-      gap: 6px 20px;
+      gap: 8px 20px;
       margin: 12px 0 0;
       padding: 0;
 
       li {
         display: flex;
         align-items: center;
-        gap: 9px;
+        gap: 8px;
 
         :global(svg) {
           flex-shrink: 0;
@@ -630,7 +623,7 @@
         justify-content: center;
         li {
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
           text-align: center;
         }
       }
@@ -639,7 +632,10 @@
   .hits-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
+    gap: 16px;
+    @media (min-width: 1280px) {
+      grid-template-columns: repeat(5, 1fr);
+    }
     @media (max-width: 1024px) {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -675,9 +671,9 @@
     transform: rotate(180deg);
   }
   .store-info {
-    padding: 0 18px 18px;
+    padding: 0 20px 20px;
     display: grid;
-    gap: 6px;
+    gap: 8px;
     p {
       margin: 0;
       font-size: 14px;
@@ -744,7 +740,7 @@
   .articles-home__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 16px;
     margin-top: 16px;
     @media (min-width: 640px) {
       grid-template-columns: repeat(3, 1fr);
@@ -785,8 +781,8 @@
   .articles-home__body {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px 18px;
+    gap: 8px;
+    padding: 16px 16px 20px;
     h3 {
       margin: 0;
       font-size: 1rem;
@@ -796,6 +792,7 @@
       display: -webkit-box;
       overflow: hidden;
       -webkit-line-clamp: 2;
+    line-clamp: 2;
       -webkit-box-orient: vertical;
       transition: color 0.15s;
     }
@@ -807,12 +804,13 @@
       display: -webkit-box;
       overflow: hidden;
       -webkit-line-clamp: 2;
+    line-clamp: 2;
       -webkit-box-orient: vertical;
     }
   }
   .features-grid {
     display: grid;
-    gap: 18px;
+    gap: 20px;
     /* карточки естественной высоты: раскрытая растёт, закрытые не тянутся за ней */
     align-items: start;
     .feature-card {
@@ -836,8 +834,8 @@
         color: $green;
       }
       .feature-card__content {
-        margin-top: 14px;
-        padding-top: 14px;
+        margin-top: 16px;
+        padding-top: 16px;
         border-top: 1px solid #f1f5f9;
         p {
           margin: 8px 0 0;
@@ -846,19 +844,19 @@
           color: #475569;
         }
         h4 {
-          margin: 12px 0 6px;
+          margin: 12px 0 8px;
           font-size: 0.9rem;
           font-weight: 700;
           color: $green;
         }
         ul {
-          margin: 10px 0 0;
+          margin: 12px 0 0;
           padding: 0;
           list-style: none;
           li {
             position: relative;
-            padding-left: 18px;
-            margin-bottom: 7px;
+            padding-left: 20px;
+            margin-bottom: 8px;
             font-size: 0.88rem;
             line-height: 1.4;
             color: #475569;
@@ -879,15 +877,15 @@
   }
   .categories-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
   .category-card {
     display: flex;
-    align-items: center;
-    gap: 18px;
-    min-height: 108px;
-    padding: 14px 18px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
     overflow: hidden;
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 16px;
@@ -900,16 +898,17 @@
       box-shadow 0.2s ease;
     span {
       order: 2;
-      font-size: 1.02rem;
+      font-size: 0.9375rem;
       font-weight: 800;
       line-height: 1.25;
     }
     img {
       order: 1;
-      flex: 0 0 104px;
-      width: 104px;
-      height: 78px;
-      object-fit: contain;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 480 / 240;
+      object-fit: cover;
+      border-radius: 10px;
     }
     &:hover {
       transform: translateY(-2px);
@@ -966,7 +965,7 @@
     align-items: center;
     justify-content: center;
     height: 188px;
-    padding: 28px 18px 10px;
+    padding: 28px 20px 12px;
     background: radial-gradient(circle at 50% 66%, rgba(62, 111, 79, 0.1), transparent 38%), #fff;
     img {
       width: 100%;
@@ -981,7 +980,7 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 0 18px 18px;
+    padding: 0 20px 20px;
     text-align: center;
     strong {
       max-width: 96%;
@@ -993,7 +992,7 @@
     }
     span {
       max-width: 92%;
-      margin: 10px auto 0;
+      margin: 12px auto 0;
       font-size: 0.88rem;
       line-height: 1.38;
       color: #64748b;
@@ -1004,7 +1003,7 @@
       justify-content: center;
       gap: 8px;
       height: 52px;
-      margin: auto -18px -18px;
+      margin: auto -20px -20px;
       background: var(--kit-color);
       color: #fff;
       font-size: 0.88rem;
@@ -1085,7 +1084,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 16px;
     border: 1px solid #e8e8ec;
     border-radius: 16px;
@@ -1125,7 +1124,7 @@
     /* у товарных фото из каталога нет белых полей, в отличие от промо-графики —
        добавляем внутренний отступ, чтобы товары не выглядели крупнее */
     &--catalog {
-      padding: 22px;
+      padding: 24px;
       @media (max-width: 639px) {
         padding: 16px;
       }
@@ -1138,12 +1137,30 @@
     color: #111827;
   }
   section {
-    margin-top: 18px;
-    margin-bottom: 18px;
+    margin-top: 20px;
+    margin-bottom: 20px;
   }
   @media (min-width: 640px) {
     .categories-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .category-card {
+      flex-direction: row;
+      align-items: center;
+      gap: 20px;
+      min-height: 108px;
+      padding: 16px 20px;
+      span {
+        order: 2;
+        font-size: 1.02rem;
+      }
+      img {
+        flex: 0 0 104px;
+        width: 104px;
+        height: 78px;
+        object-fit: contain;
+        border-radius: 0;
+      }
     }
     .promo-cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1151,11 +1168,11 @@
   }
   @media (max-width: 639px) {
     .section-title {
-      margin-bottom: 14px;
+      margin-bottom: 16px;
       font-size: 1.45rem;
     }
     .promo-banner {
-      padding: 18px;
+      padding: 20px;
       border-radius: 16px;
     }
     .promo-banner__head {
@@ -1243,8 +1260,8 @@
       list-style: none;
       li {
         position: relative;
-        padding-left: 22px;
-        margin-bottom: 10px;
+        padding-left: 24px;
+        margin-bottom: 12px;
         font-size: 0.95rem;
         line-height: 1.6;
         color: #475569;

@@ -1,68 +1,39 @@
 import { json } from '@sveltejs/kit';
-import { sql } from '$lib/db';
+import { pickBundle, loadPodborConfig } from '$lib/server/bundlePicker';
+import { SLOT_TYPES, SLOT_ORDER } from '$lib/podborSlots';
 import { slugify } from '$lib/utils/slugify';
-import { pickBundle, displayPrice, type BundleSlotOptions } from '$lib/server/bundlePicker';
 
 export async function POST({ request }) {
   try {
     const body = await request.json();
-    const types: BundleSlotOptions = {
-      hob: !!body.hob,
-      oven: !!body.oven,
-      hood: !!body.hood,
-      dishwasher: !!body.dishwasher
-    };
+    const types: Record<string, boolean> = {};
+    for (const slot of SLOT_ORDER) types[slot] = !!body[slot];
     if (!Object.values(types).some(Boolean)) {
       return json({ error: 'Выберите хотя бы один тип техники' }, { status: 400 });
     }
-    const budget = Number(body.budget);
-    if (!Number.isFinite(budget) || budget < 10000 || budget > 5000000) {
-      return json({ error: 'Некорректный бюджет' }, { status: 400 });
-    }
-    const widthRaw = Number(body.width);
-    const width = [45, 60, 90].includes(widthRaw) ? widthRaw : null;
+    // Уровень бюджета (тир): 1 = базовый … 4 = премиум. Бюджет суммой больше не вводится.
+    const tier = Math.min(4, Math.max(1, Math.round(Number(body.tier)) || 2)) as 1 | 2 | 3 | 4;
+    const brands: string[] = Array.isArray(body.brands)
+      ? body.brands.filter((b: unknown) => typeof b === 'string' && b.trim()).slice(0, 20)
+      : [];
     let color: string | null = typeof body.color === 'string' && body.color ? body.color : null;
 
-    const picks = await pickBundle({ types, budget, width, color });
-
-    // Скидка комплекта из настроек
-    let discountEnabled = false;
-    let discountPercent = 0;
-    try {
-      const rows = await sql`
-        SELECT key, value FROM settings
-        WHERE key IN ('bundle_discount_enabled', 'bundle_discount_percent')
-      `;
-      const map = Object.fromEntries(rows.map((r: any) => [r.key, r.value]));
-      discountEnabled = map.bundle_discount_enabled === 'true';
-      discountPercent = Math.min(30, Math.max(0, Number(map.bundle_discount_percent) || 0));
-    } catch {
-      // настройки недоступны — без скидки
-    }
+    const picks = await pickBundle({ types, tier, brands, color });
+    const cfg = await loadPodborConfig();
+    const bonusExcludedBrands: string[] = cfg.bonusExcludedBrands ?? [];
 
     const result = picks.map((p) => ({
       slot: p.slot,
       label: p.label,
+      // цену клиенту не отдаём: персональная цена называется менеджером после заявки
       chosen: p.chosen ? serialize(p.chosen) : null,
-      alternatives: p.alternatives.map(serialize)
+      alternatives: p.alternatives.map(serialize),
+      fallback: !!p.fallback
     }));
-
-    const totalPrice = result.reduce(
-      (s, r) => s + (r.chosen ? (r.chosen.price ?? 0) : 0),
-      0
-    );
-    const discountTotal =
-      discountEnabled && discountPercent > 0
-        ? Math.round((totalPrice * discountPercent) / 100)
-        : 0;
 
     return json({
       picks: result,
-      totalPrice,
-      discountEnabled,
-      discountPercent,
-      discountTotal,
-      finalPrice: totalPrice - discountTotal
+      bonusExcludedBrands
     });
   } catch (err) {
     console.error('❌ /api/podbor error:', err);
@@ -71,14 +42,14 @@ export async function POST({ request }) {
 }
 
 function serialize(p: any) {
-  const price = displayPrice(p);
   return {
     id: p.id,
     name: p.name,
     brand: p.brand?.name ?? null,
     productType: p.product_type,
-    price,
     image: p.images?.[0]?.url ?? null,
-    url: `/products/${slugify(p.name)}`
+    url: `/products/${slugify(p.name)}`,
+    // цену в UI не показываем, но она нужна клиенту, чтобы положить комплект в корзину
+    price: p.price
   };
 }

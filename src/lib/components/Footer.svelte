@@ -89,6 +89,7 @@
     <div class="footer__col">
       <h4 class="footer__title">Покупателям</h4>
       <ul class="footer__links">
+        <li><a href="/sale">Акции</a></li>
         <li><a href="/delivery">Доставка</a></li>
         <li><a href="/podbor">Собери комплект техники 🔥</a></li>
         <li><a href="/cart">Корзина</a></li>
@@ -140,7 +141,7 @@
     }
 
     &__about {
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 13px;
       line-height: 1.55;
       color: #94a3b8;
@@ -219,7 +220,7 @@
 
     &__messengers {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       margin-top: 12px;
 
       a {

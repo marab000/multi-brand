@@ -33,23 +33,24 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 4px;
     font-size: 14px;
-    padding: 10px 14px;
+    line-height: 1.2;
+    padding: 8px 12px;
     background: #f8f9fa;
     border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.06);
     @media (max-width: 1024px) {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
     @media (max-width: 768px) {
-      padding: 10px;
-      font-size: 0.8rem;
+      padding: 6px 8px;
+      font-size: 0.75rem;
     }
     a {
       color: #2b2b2b;
       text-decoration: none;
-      padding: 4px 8px;
+      padding: 0;
       border-radius: 6px;
       transition: 0.2s;
       &:hover {
@@ -61,7 +62,7 @@
     }
     .current {
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 0;
       border-radius: 6px;
     }
   }

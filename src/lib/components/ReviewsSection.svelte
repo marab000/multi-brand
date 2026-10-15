@@ -165,7 +165,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 18px;
+    gap: 20px;
     margin-bottom: 20px;
 
     h2 {
@@ -189,7 +189,7 @@
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(280px, 86%);
-    gap: 14px;
+    gap: 16px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     padding-bottom: 4px;
@@ -200,7 +200,7 @@
     display: flex;
     flex-direction: column;
     min-height: 220px;
-    padding: 18px;
+    padding: 20px;
     border: 1px solid rgba(15, 23, 42, 0.07);
     border-radius: 16px;
     background: #fff;
@@ -213,7 +213,7 @@
     }
 
     p {
-      margin: 10px 0 0;
+      margin: 12px 0 0;
       font-size: 0.9rem;
       line-height: 1.45;
       color: #334155;
@@ -243,7 +243,7 @@
   .review-card__meta {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     margin-top: 4px;
     flex-wrap: wrap;
 
@@ -255,7 +255,7 @@
   }
 
   .review-source {
-    padding: 2px 7px;
+    padding: 4px 8px;
     border-radius: 999px;
     background: #f3f4f6;
     color: #6b7280 !important;
@@ -276,8 +276,8 @@
 
   .review-card__stars {
     display: flex;
-    gap: 2px;
-    margin-top: 14px;
+    gap: 4px;
+    margin-top: 16px;
     color: #ffb81c;
   }
 
@@ -285,12 +285,13 @@
     display: -webkit-box;
     overflow: hidden;
     -webkit-line-clamp: 4;
+    line-clamp: 4;
     -webkit-box-orient: vertical;
   }
 
   .review-card__more {
     margin-top: auto;
-    padding-top: 10px;
+    padding-top: 12px;
     align-self: flex-start;
     border: 0;
     background: transparent;

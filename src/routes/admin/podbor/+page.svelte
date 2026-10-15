@@ -15,6 +15,8 @@
       config: {
         brands: { mode: 'all' | 'whitelist' | 'blacklist'; whitelist: string[]; blacklist: string[] };
         priorityProducts: string[];
+        bonusExcludedBrands: string[];
+        brandSegments: { budget: string[]; medium: string[]; premium: string[] };
       };
       allBrands: string[];
       discount: { enabled: boolean; percent: number };
@@ -41,6 +43,29 @@
   let priorityItems = $state([...data.priorityItems]);
   // Скидка за комплект (переехала из /admin/settings): включена = процент > 0
   let bundleDiscount = $state(data.discount.percent);
+  // Бренды, на которые бонус не начисляется
+  let bonusExcludedBrands = $state<string[]>([...data.config.bonusExcludedBrands]);
+  // Сегменты брендов для конструктора
+  const SEGMENT_META = [
+    { key: 'budget', label: '🟢 Оптимальный' },
+    { key: 'premium', label: '🟠 Премиум' }
+  ] as const;
+  type SegmentKey = (typeof SEGMENT_META)[number]['key'];
+  let brandSegments = $state<Record<SegmentKey, string[]>>({
+    budget: [...(data.config.brandSegments?.budget ?? [])],
+    premium: [...(data.config.brandSegments?.premium ?? [])]
+  });
+  function toggleSegment(key: SegmentKey, brand: string) {
+    const list = brandSegments[key];
+    brandSegments = {
+      ...brandSegments,
+      [key]: list.includes(brand) ? list.filter((b) => b !== brand) : [...list, brand]
+    };
+    scheduleSave();
+  }
+  function inSegment(key: SegmentKey, brand: string) {
+    return brandSegments[key].includes(brand);
+  }
 
   let searchQuery = $state('');
   let searchResults = $state<any[]>([]);
@@ -94,7 +119,12 @@
   const hasChanges = $derived(
     JSON.stringify({ mode, list: [...activeBrands].sort() }) !== originalBrands ||
       JSON.stringify(priorityIds) !== originalPriority ||
-      bundleDiscount !== originalDiscount
+      bundleDiscount !== originalDiscount ||
+      JSON.stringify([...bonusExcludedBrands].sort()) !== JSON.stringify([...(data.config.bonusExcludedBrands ?? [])].sort()) ||
+      JSON.stringify(brandSegments) !== JSON.stringify({
+        budget: [...(data.config.brandSegments?.budget ?? [])],
+            premium: [...(data.config.brandSegments?.premium ?? [])]
+      })
   );
 
   // Автосохранение: любое изменение → через 600мс уходит в БД
@@ -131,6 +161,20 @@
     }
     return groups;
   });
+
+  function toggleBonusExcluded(brand: string) {
+    const idx = bonusExcludedBrands.findIndex((b) => b.toLowerCase() === brand.toLowerCase());
+    if (idx >= 0) {
+      bonusExcludedBrands = [...bonusExcludedBrands.slice(0, idx), ...bonusExcludedBrands.slice(idx + 1)];
+    } else {
+      bonusExcludedBrands = [...bonusExcludedBrands, brand];
+    }
+    scheduleSave();
+  }
+
+  function isBonusExcluded(brand: string) {
+    return bonusExcludedBrands.some((b) => b.toLowerCase() === brand.toLowerCase());
+  }
 
   function toggleBrand(brand: string) {
     const idx = selectedBrands.findIndex((b) => b.toLowerCase() === brand.toLowerCase());
@@ -202,7 +246,9 @@
               whitelist: mode === 'whitelist' ? selectedBrands : [],
               blacklist: mode === 'blacklist' ? selectedBrands : []
             },
-            priorityProducts: priorityIds
+            priorityProducts: priorityIds,
+            bonusExcludedBrands,
+            brandSegments
           },
           bundle_discount_enabled: bundleDiscount > 0,
           bundle_discount_percent: bundleDiscount
@@ -232,7 +278,7 @@
 <div class="podbor-admin">
   <div class="head">
     <div>
-      <h1>Викторина «Собери кухню»</h1>
+      <h1>«Собери комплект техники»</h1>
       <p class="hint">Настройка подбора на странице <a href="/podbor" target="_blank">/podbor</a>. Изменения сохраняются автоматически</p>
     </div>
     {#if saveState === 'saving'}
@@ -240,6 +286,53 @@
     {:else if saveState === 'saved'}
       <span class="save-state save-state--ok">Сохранено ✓</span>
     {/if}
+  </div>
+
+  <!-- Сегменты брендов для конструктора -->
+  <div class="card">
+    <div class="card__title">Сегменты брендов (шаг «Выберите бренд» в конструкторе)</div>
+    <p class="mode-hint">
+      Отметьте бренды по ценовым сегментам — они предложат клиенту на соответствующем шаге
+      конструктора.
+    </p>
+    {#each SEGMENT_META as seg (seg.key)}
+      <p class="segment-label">{seg.label}:</p>
+      <div class="brands-grid">
+        {#each data.allBrands as brand (brand)}
+          <label class="brand-chip" class:brand-chip--active={inSegment(seg.key, brand)}>
+            <input
+              type="checkbox"
+              checked={inSegment(seg.key, brand)}
+              onchange={() => toggleSegment(seg.key, brand)}
+            />
+            <span>{brand}</span>
+          </label>
+        {/each}
+      </div>
+    {/each}
+  </div>
+
+  <!-- Бренды без бонусов -->
+  <div class="card">
+    <div class="card__title">Бренды без бонусов</div>
+    <p class="mode-hint">
+      На товары этих брендов бонус конструктора не начисляется — цена остаётся по РРЦ.
+    </p>
+    <div class="brands-grid">
+      {#each data.allBrands as brand (brand)}
+        <label class="brand-chip" class:brand-chip--active={isBonusExcluded(brand)}>
+          <input
+            type="checkbox"
+            checked={isBonusExcluded(brand)}
+            onchange={() => toggleBonusExcluded(brand)}
+          />
+          <span>{brand}</span>
+        </label>
+      {:else}
+        <p class="empty">Ничего не найдено</p>
+      {/each}
+    </div>
+    <p class="count">Выбрано: {bonusExcludedBrands.length}</p>
   </div>
 
   <!-- Приоритетные товары -->
@@ -422,9 +515,10 @@
 
   <!-- Скидка за комплект -->
   <div class="card">
-    <div class="card__title">Скидка за комплект</div>
+    <div class="card__title">Баллы за комплект</div>
     <p class="mode-hint">
-      Скидка на товары, добавленные в корзину из «Собери кухню». 0 — без скидки.
+      Процент от цены товаров из «Собери комплект техники», который показывается клиенту
+      как баллы поверх обычной цены. 0 — без баллов.
     </p>
     <div class="discount-row">
       <div class="discount-value" class:discount-value--on={bundleDiscount > 0}>
@@ -480,16 +574,16 @@
       font-size: 15px;
       font-weight: 700;
       color: #111827;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
   }
   .mode-switch {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     button {
-      padding: 9px 16px;
+      padding: 8px 16px;
       border-radius: 10px;
       border: 1.5px solid #e4e7ec;
       background: #fff;
@@ -508,6 +602,12 @@
       }
     }
   }
+  .segment-label {
+    margin: 16px 0 8px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #111827;
+  }
   .mode-hint {
     margin: 0 0 12px;
     font-size: 13px;
@@ -522,13 +622,13 @@
   .discount-value {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     font-size: 14px;
     font-weight: 600;
     color: #9aa3af;
     input {
       width: 72px;
-      padding: 7px 10px;
+      padding: 8px 12px;
       border: 1.5px solid #d4d8de;
       border-radius: 8px;
       background: #f4f5f7;
@@ -559,7 +659,7 @@
     align-items: center;
     gap: 8px;
     padding: 0 12px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     height: 40px;
     border: 1px solid #e4e7ec;
     border-radius: 10px;
@@ -585,8 +685,8 @@
   .brand-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
+    gap: 8px;
+    padding: 8px 16px;
     border: 1.5px solid #e4e7ec;
     border-radius: 999px;
     background: #fff;
@@ -618,7 +718,7 @@
     color: #64748b;
   }
   .slot-group {
-    margin-bottom: 18px;
+    margin-bottom: 20px;
     &:last-of-type {
       margin-bottom: 0;
     }
@@ -629,12 +729,12 @@
       font-size: 14px;
       font-weight: 700;
       color: #1e293b;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     &__count {
       font-size: 11px;
       font-weight: 700;
-      padding: 1px 7px;
+      padding: 0px 8px;
       border-radius: 999px;
       background: rgba(100, 116, 139, 0.12);
       color: #64748b;
@@ -643,7 +743,7 @@
   .priority-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     margin-bottom: 16px;
   }
   .priority-item,
@@ -651,7 +751,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px;
+    padding: 12px;
     border: 1px solid #e4e7ec;
     border-radius: 12px;
     background: #f8fafc;
@@ -673,7 +773,7 @@
     &__info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
       min-width: 0;
       flex: 1;
     }
@@ -688,12 +788,12 @@
     &__meta {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 12px;
       color: #94a3b8;
     }
     &__badge {
-      padding: 1px 7px;
+      padding: 0px 8px;
       border-radius: 999px;
       background: #f1f3f5;
       border: 1.5px solid #d4d8de;
@@ -733,7 +833,7 @@
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     padding: 8px 12px;
     border-radius: 8px;
     border: 1px solid #cbd5e1;
@@ -760,7 +860,7 @@
   }
   .save-state {
     flex-shrink: 0;
-    padding: 6px 12px;
+    padding: 8px 12px;
     border-radius: 999px;
     background: #f1f5f9;
     font-size: 13px;

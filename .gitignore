@@ -47,3 +47,5 @@ scripts/fetch-rusklimat/image-queue.json
 scripts/fetch-rusklimat/products-data.jsonl
 scripts/recompress-s3-images/*.log
 scripts/recompress-s3-images/failed.json
+AGENTS.md
+fetch.log

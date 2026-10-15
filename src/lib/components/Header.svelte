@@ -14,6 +14,7 @@
   import { onMount } from 'svelte';
   import {
     Menu,
+    Send,
     ShoppingCart,
     Heart,
     User,
@@ -26,7 +27,8 @@
     MessageCircleMore,
     Building2,
     Clock,
-    Sparkles
+    Sparkles,
+    BadgePercent
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
@@ -62,17 +64,21 @@
   type CatalogParent = { slug: string; name: string; items: CatalogMenuRoot[] };
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
   const LEAVES_PREVIEW_LIMIT = 5;
-  let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null; contacts?: Contacts | null } }>();
+  let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null; contacts?: Contacts | null; searchHints?: string[] } }>();
   const contacts = $derived(data?.contacts ?? null);
+  const searchHints = $derived(data?.searchHints ?? []);
   const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
   const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
   const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
   let open = $state(false);
+  let menuOpen = $state(false);
   let timeout: ReturnType<typeof setTimeout> | undefined;
   let isMobile = $state(false);
   let pathname = $state('');
   let showSearch = $state(false);
+  // на мобилке при фокусе на поиск каталог прячется — инпут на всю ширину
+  let searchExpanded = $state(false);
   let openRootSlug = $state<string | null>(null);
   let expandedGroupLeaves = $state<Record<string, boolean>>({});
   let authOpen = $state(false);
@@ -84,8 +90,24 @@
   };
   onMount(() => {
     window.addEventListener('open-auth-modal', handleExternalAuth);
-    return () => window.removeEventListener('open-auth-modal', handleExternalAuth);
+    window.addEventListener('open-catalog-menu', handleExternalCatalog);
+    window.addEventListener('open-menu-drawer', handleExternalMenu);
+    return () => {
+      window.removeEventListener('open-auth-modal', handleExternalAuth);
+      window.removeEventListener('open-catalog-menu', handleExternalCatalog);
+      window.removeEventListener('open-menu-drawer', handleExternalMenu);
+    };
   });
+  const handleExternalMenu = () => {
+    if (!menuOpen) menuOpen = true;
+  };
+  // Мост из BottomNav: тап «Каталог» открывает боковой каталог, а не страницу
+  const handleExternalCatalog = () => {
+    if (isMobile && !open) toggleClick();
+  };
+  function closeMenuDrawer() {
+    menuOpen = false;
+  }
   // «Профиль» для гостя: /user/* кидает на главную с ?auth=login — открываем вход
   $effect(() => {
     if (user) return;
@@ -256,7 +278,7 @@
       </div>
     </div>
     <div
-      class="nav__top-links flex w-full flex-nowrap items-center justify-between gap-2 py-0 md:ml-auto md:w-auto md:justify-end md:gap-5 md:py-3"
+      class="nav__top-links hidden w-full flex-nowrap items-center justify-between gap-2 py-0 md:ml-auto md:flex md:w-auto md:justify-end md:gap-5 md:py-3"
     >
       <a class="nav__about flex gap-x-1.5" href="/delivery"
         ><Truck class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
@@ -298,15 +320,48 @@
       </div>
     </div>
   </div>
+  {#if menuOpen}
+    <button class="menu-overlay" aria-label="Закрыть меню" onclick={closeMenuDrawer}></button>
+  {/if}
+  <div class="menu-drawer" class:menu-drawer--open={menuOpen}>
+    <div class="menu-drawer__head">
+      <span class="menu-drawer__title">Меню</span>
+      <button type="button" class="menu-drawer__close" onclick={closeMenuDrawer} aria-label="Закрыть меню"
+        ><X size={18} strokeWidth={2.25} /></button
+      >
+    </div>
+    <nav class="menu-drawer__links">
+      <a href="/user/info" onclick={closeMenuDrawer}
+        ><User size={16} strokeWidth={2.1} /><span>Личный кабинет</span></a
+      >
+      <a href="/sale" onclick={closeMenuDrawer}><BadgePercent size={16} strokeWidth={2.1} /><span>Акции</span></a>
+      <a href="/delivery" onclick={closeMenuDrawer}><Truck size={16} strokeWidth={2.1} /><span>Доставка</span></a>
+      <button type="button" onclick={() => { closeMenu(); openRequestModal(); }}
+        ><MessageCircleMore size={16} strokeWidth={2.1} /><span>Связаться</span></button
+      >
+      <a href="/about" onclick={closeMenuDrawer}><Building2 size={16} strokeWidth={2.1} /><span>О нас</span></a>
+      <a href="/podbor" onclick={closeMenuDrawer}><Sparkles size={16} strokeWidth={2.1} /><span>Подбор техники</span></a>
+      <a href={LINK_TG} target="_blank" rel="noopener noreferrer"
+        ><Send size={16} strokeWidth={2.1} /><span>Telegram</span></a
+      >
+      <a href={LINK_MAX} target="_blank" rel="noopener noreferrer"
+        ><Send size={16} strokeWidth={2.1} /><span>MAX</span></a
+      >
+      <a href={'tel:' + phoneHref} onclick={closeMenuDrawer}
+        ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
+      >
+    </nav>
+  </div>
+
   <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo hidden h-11.5 md:flex" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="nav__catalog" onmouseenter={openMenu} onmouseleave={closeMenu}>
+    <div class="nav__catalog" class:hidden-on-search={searchExpanded} onmouseenter={openMenu} onmouseleave={closeMenu}>
       {#if isMobile}
         <button class="catalog-trigger" type="button" onclick={toggleClick}
-          ><span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span></button
+          ><span class="catalog-trigger__left"><span>Каталог</span></span></button
         >
       {:else}
         <a class="catalog-trigger" href="/catalog"
@@ -405,7 +460,14 @@
         </div>
       </div>
     </div>
-    <div class="hidden flex-1 lg:block"><ProductSearch /></div>
+    <div class="hidden flex-1 lg:block"><ProductSearch hints={searchHints} /></div>
+    <div
+      class="block flex-1 lg:hidden"
+      onfocusin={() => (searchExpanded = true)}
+      onfocusout={() => (searchExpanded = false)}
+    >
+      <ProductSearch hints={searchHints} />
+    </div>
     <div class="nav__actions ml-auto lg:ml-0">
       <div class="user-menu-wrap">
         <button
@@ -451,9 +513,6 @@
       >
     </div>
   </div>
-  <div class="my-3 block flex-1 lg:hidden">
-    {#if showSearch}<ProductSearch />{/if}
-  </div>
 </nav>
 {#if user && userMenuOpen}<button
     class="user-menu-backdrop"
@@ -472,13 +531,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 0;
+      padding: 8px 0;
       border-bottom: 1px solid #f1f1f1;
     }
     &__info-bar-item {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 12.5px;
       font-weight: 600;
       color: #64748b;
@@ -495,7 +554,7 @@
       align-items: center;
       color: #202020;
       font-size: 13px;
-      padding: 10px 0;
+      padding: 12px 0;
       font-weight: 700;
       line-height: 1.1;
       text-decoration: none;
@@ -520,7 +579,7 @@
     &__phone {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       color: #202020;
       text-decoration: none;
       font-size: 14px;
@@ -538,7 +597,7 @@
         gap: 4px;
       }
       @media (min-width: 768px) {
-        gap: 6px;
+        gap: 8px;
         font-size: 1.05rem;
         font-weight: 700;
       }
@@ -546,19 +605,23 @@
     &__inner {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       @media (min-width: 1024px) {
         gap: 20px;
       }
     }
     &__catalog {
       position: relative;
+      // при фокусе на поиск (мобилка) каталог прячется, инпут занимает всю строку
+      &.hidden-on-search {
+        display: none;
+      }
       .catalog-trigger {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         height: 42px;
-        padding: 0 14px;
+        padding: 0 16px;
         border-radius: 12px;
         text-decoration: none;
         color: #fff;
@@ -655,7 +718,7 @@
           letter-spacing: -0.02em;
         }
         &__accordion {
-          margin: 18px 14px 14px 14px;
+          margin: 20px 16px 16px 16px;
           overflow: hidden;
           border: 1px solid rgba($green, 0.14);
           border-radius: 22px;
@@ -676,7 +739,7 @@
           grid-template-columns: minmax(0, 1fr) 35px;
           align-items: start;
           gap: 12px;
-          padding: 8px 10px;
+          padding: 8px 12px;
           transition: background 0.18s ease;
         }
         &__main {
@@ -694,7 +757,7 @@
           display: block;
           width: 100%;
           min-width: 0;
-          padding: 0 2px;
+          padding: 0 4px;
           color: #1f1f1f;
           font-size: 1rem;
           font-weight: 500;
@@ -741,7 +804,7 @@
           width: fit-content;
           max-width: 100%;
           min-height: 28px;
-          padding-left: 14px;
+          padding-left: 16px;
           color: #232323;
           font-size: 16px;
           line-height: 1.25;
@@ -764,13 +827,13 @@
         }
         &__leaves {
           display: grid;
-          gap: 10px;
-          padding-left: 18px;
+          gap: 12px;
+          padding-left: 20px;
           a {
             position: relative;
             display: block;
             min-height: 24px;
-            padding-left: 14px;
+            padding-left: 16px;
             color: #5b5b5b;
             font-size: 15px;
             line-height: 1.35;
@@ -797,11 +860,11 @@
         &__footer {
           display: flex;
           justify-content: flex-start;
-          padding-left: 18px;
+          padding-left: 20px;
         }
         &__more {
           min-height: 36px;
-          padding: 0 14px;
+          padding: 0 16px;
           border: 1px solid rgba($yellow, 0.45);
           border-radius: 16px;
           background: #fff;
@@ -830,13 +893,22 @@
           max-width: 86vw;
           height: 100%;
           max-height: 100%;
+          // низ дроера не должен уезжать под нижнее меню + safe-area
+          padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+          // доскроллил до края — страница позади не должна подхватывать скролл
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
           border-radius: 0 18px 18px 0;
         }
       }
     }
   }
   .nav__actions {
-    display: flex;
+    // на мобилке Войти/Избранное/Корзина не дублируем — они в нижнем меню
+    display: none;
+    @media (min-width: 1024px) {
+      display: flex;
+    }
     gap: 20px;
     button,
     a {
@@ -871,9 +943,9 @@
     padding: 8px;
     &__hello {
       display: grid;
-      gap: 2px;
-      padding: 8px 10px 10px;
-      margin-bottom: 6px;
+      gap: 4px;
+      padding: 8px 12px 12px;
+      margin-bottom: 8px;
       border-bottom: 1px solid rgba($green, 0.14);
       b {
         font-size: 13.5px;
@@ -923,11 +995,18 @@
     position: absolute;
     top: -4px;
     right: -6px;
-    padding: 2px 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 999px;
     background: red;
     color: #fff;
     font-size: 10px;
+    line-height: 1;
+    box-sizing: border-box;
   }
   @media (max-width: 395px) {
     .nav {
@@ -938,7 +1017,7 @@
   }
   @media (max-width: 378px) {
     .nav__top-links {
-      gap: 10px;
+      gap: 12px;
     }
     .nav {
       &__about {
@@ -949,12 +1028,12 @@
   .nav__contact {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
   .nav__social {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     a {
       display: flex;
       align-items: center;
@@ -972,6 +1051,93 @@
         height: 100%;
         object-fit: contain;
       }
+    }
+  }
+  .nav__burger {
+    cursor: pointer;
+  }
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 940;
+    border: 0;
+    background: rgba(15, 23, 42, 0.4);
+  }
+  .menu-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 945;
+    width: min(320px, 86vw);
+    background: #fff;
+    box-shadow: -18px 0 44px rgba(0, 0, 0, 0.14);
+    transform: translateX(105%);
+    transition: transform 0.24s ease;
+
+    &--open {
+      transform: translateX(0);
+    }
+    &__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 16px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    }
+    &__title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #111827;
+    }
+    &__close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 10px;
+      background: #f1f5f9;
+      cursor: pointer;
+    }
+    &__links {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 8px;
+
+      a,
+      button {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 12px 12px;
+        border: 0;
+        border-radius: 10px;
+        background: none;
+        color: #111827;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+          background: #f8fafc;
+        }
+        span {
+          flex: 1;
+          text-align: left;
+        }
+      }
+    }
+  }
+  @media (min-width: 768px) {
+    .nav__burger,
+    .menu-overlay,
+    .menu-drawer {
+      display: none;
     }
   }
 </style>

@@ -44,6 +44,15 @@
   const hasDiscount = $derived(hasProductDiscount(p) && oldPrice !== null && oldPrice > price);
   const monthlyPayment = $derived(getMonthlyPayment(price));
   const saving = $derived(hasDiscount && oldPrice !== null ? oldPrice - price : 0);
+  const stockLabel = $derived(
+    p.stock === 1
+      ? { text: 'В наличии — доставка от 7 дней', tone: 'in' }
+      : p.stock === 2
+        ? { text: 'На удалённом складе — от 14 дней', tone: 'mid' }
+        : p.stock === 3
+          ? { text: 'Под заказ', tone: 'order' }
+          : null
+  );
   const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
   const kitItems = $derived(p.kitItems || []);
   const includedInKits = $derived(p.includedInKits || []);
@@ -181,6 +190,7 @@
     <Breadcrumbs items={breadcrumbs} product={p.name} />
     <div class="mt-6 mb-3 grid w-full gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
+        <div class="relative w-full">
         <swiper-container
           bind:this={mainSwiper}
           class="aspect-square w-full rounded border bg-white"
@@ -211,6 +221,11 @@
             </swiper-slide>
           {/if}
         </swiper-container>
+        <div class="product-rating">
+          <Star size={15} fill="currentColor" strokeWidth={0} />
+          <span>{ratingData.rating}</span>
+        </div>
+        </div>
         {#if images.length > 1}
           <div class="relative mt-4">
             <swiper-container
@@ -223,6 +238,7 @@
                 <swiper-slide>
                   <button
                     class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
+                    aria-label={`Фото ${i + 1}`}
                     onclick={() => mainSwiper?.swiper?.slideTo(i)}
                   >
                     <img
@@ -240,15 +256,9 @@
       </div>
       <div>
         <h1 class="mb-3 text-2xl font-semibold">{p.name}</h1>
-        <div class="product-rating">
-          <div class="product-rating__value">
-            <Star size={16} fill="currentColor" strokeWidth={0} />
-            <span>{ratingData.rating}</span>
-          </div>
-          <span class="product-rating__reviews mt-0.5"
-            >{ratingData.reviews.toLocaleString('ru-RU')} отзывов</span
-          >
-        </div>
+        {#if stockLabel}
+          <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>{stockLabel.text}</p>
+        {/if}
         <div class="product-price-row">
           <div class:discount-price={hasDiscount} class="product-price">{formatPrice(price)} ₽</div>
           {#if hasDiscount}
@@ -420,26 +430,33 @@
     cursor: default;
   }
   .product-rating {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: -4px 0 18px;
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0.25rem 0.875rem rgba(0, 0, 0, 0.14);
+  color: #111827;
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  :global(svg) {
+    color: #f59e0b;
   }
-  .product-rating__value {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: #ffb81c;
-    font-size: 16px;
-    font-weight: 800;
-    span {
-      color: #111;
-    }
-  }
-  .product-rating__reviews {
-    color: #777;
-    font-size: 14px;
+}
+  .product-stock {
+    margin: 0 0 12px;
+    font-size: 0.875rem;
     font-weight: 600;
+    color: #94a3b8;
+    &--in {
+      color: $green;
+    }
   }
   .product-price-row {
     display: flex;
@@ -471,8 +488,8 @@
   .product-discount {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 8px 14px;
+    gap: 8px;
+    padding: 8px 16px;
     background: $yellow;
     color: #111;
     font-size: 11px;
@@ -488,7 +505,7 @@
   .product-benefits {
     display: flex;
     align-items: stretch;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     margin: 0 0 24px;
   }
@@ -503,7 +520,7 @@
     line-height: 1.25;
     span {
       display: block;
-      margin-top: 3px;
+      margin-top: 4px;
       color: #000;
       font-size: 11px;
       font-weight: 600;
@@ -537,7 +554,7 @@
   }
   .kit-block {
     margin: 0 0 32px;
-    padding: 18px;
+    padding: 20px;
     border: 1px solid #eee;
     border-radius: 14px;
     background: #fff;
@@ -556,7 +573,7 @@
   .kit-item {
     display: grid;
     grid-template-columns: 96px minmax(0, 1fr);
-    gap: 14px;
+    gap: 16px;
     padding: 12px;
     border: 1px solid #eee;
     border-radius: 12px;
@@ -578,7 +595,7 @@
     min-width: 0;
   }
   .kit-brand {
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     color: #777;
     font-size: 12px;
     font-weight: 700;
@@ -602,6 +619,7 @@
     display: -webkit-box;
     overflow: hidden;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
   }
   .kit-price {
@@ -613,14 +631,14 @@
   }
   .included-kits {
     display: grid;
-    gap: 10px;
+    gap: 12px;
   }
   .included-kit {
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    padding: 10px;
+    padding: 12px;
     border: 1px solid #eee;
     border-radius: 12px;
     color: inherit;
@@ -705,12 +723,12 @@
   }
   @media (max-width: 640px) {
     .kit-block {
-      padding: 14px;
+      padding: 16px;
     }
     .kit-item {
       grid-template-columns: 76px minmax(0, 1fr);
-      gap: 10px;
-      padding: 10px;
+      gap: 12px;
+      padding: 12px;
     }
     .included-kit {
       grid-template-columns: 54px minmax(0, 1fr);
@@ -726,7 +744,7 @@
   .also-bought {
     margin-top: 28px;
     &__title {
-      margin: 0 0 14px;
+      margin: 0 0 16px;
       font-size: 1.35rem;
       font-weight: 800;
       color: #111827;
@@ -734,7 +752,7 @@
     &__grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
+      gap: 16px;
       @media (max-width: 1024px) {
         grid-template-columns: repeat(2, 1fr);
       }

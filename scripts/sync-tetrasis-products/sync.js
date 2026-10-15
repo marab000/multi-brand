@@ -173,11 +173,16 @@ async function syncBrand(apiBrand) {
 	await log('SYNC_BRAND', cleanName, 'api:', apiBrand.NAME)
 	const products = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/0/`)
 	const pricesRaw = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/2/`)
+	const stockRaw = await safeJsonFetch(`https://tetrasis-bt.ru/download/${API_KEY}/${apiBrand.ID}/1/`)
 	if (!products || !pricesRaw) {
 		await log('SKIP_BRAND', apiBrand.NAME)
 		return false
 	}
 	const priceMap = extractPrices(pricesRaw)
+	// остатки: '1' — склад (7 дней), '2' — удалённый склад (14 дней), '3'/пусто — под заказ
+	const stockMap = new Map(
+		(Array.isArray(stockRaw) ? stockRaw : []).map((item) => [item['НоменклатураID'], Number(item['Остаток']) || null])
+	)
 	// Тип для названия: product_type как есть («Комбинированная плита» → «... комбинированная плита»).
 	// Правила по подстрокам дали ложь: «с-ПЛИТ-система» → «плита», «Кофеварка» → «кофемашина».
 const TYPE_OVERRIDES = {
@@ -234,6 +239,7 @@ const rows = []
 			catalog_group_name: catalog.group?.name ?? null,
 			catalog_leaf_slug: catalog.leaf?.slug ?? null,
 			catalog_leaf_name: catalog.leaf?.name ?? null,
+			stock: stockMap.get(id) ?? null,
 			price_rrc: prices.price_rrc,
 			price_opt: prices.price_opt,
 			price_ric: prices.price_ric,
@@ -271,6 +277,7 @@ const rows = []
 		catalog_group_name=excluded.catalog_group_name,
 		catalog_leaf_slug=excluded.catalog_leaf_slug,
 		catalog_leaf_name=excluded.catalog_leaf_name,
+		stock=excluded.stock,
 		price_rrc=excluded.price_rrc,
 		price_opt=excluded.price_opt,
 		price_ric=excluded.price_ric,

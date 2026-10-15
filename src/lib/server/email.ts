@@ -1,4 +1,6 @@
 import { RESEND_API_KEY, RESEND_FROM_EMAIL } from '$env/static/private';
+// Куда падают заявки из квиза «Собери комплект техники» (пока тестим — nmf234, потом вернуть на ORDER_NOTIFY_EMAIL)
+const QUIZ_LEAD_EMAIL = 'nmf234@gmail.com';
 import { getContacts } from '$lib/server/contacts';
 import {
   ORDER_NOTIFY_EMAIL,
@@ -23,6 +25,19 @@ function escapeHtml(value: string) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+// Строки комментария — это список товаров: «Korting HGG 6420 CN газовая поверхность, черный».
+// Название (до первой запятой) жирным, описание обычным, каждый товар с новой строки.
+function messageLinesHtml(message: string) {
+  return message
+    .split('\n')
+    .map((line) => {
+      const cut = line.indexOf(',');
+      if (cut < 0) return escapeHtml(line);
+      return `<b>${escapeHtml(line.slice(0, cut))},</b>${escapeHtml(line.slice(cut + 1))}`;
+    })
+    .join('<br />');
 }
 
 export async function sendVerificationEmail(email: string, url: string) {
@@ -217,7 +232,7 @@ export async function sendLeadEmail(lead: { name: string; phone: string; message
   const contacts = await getContacts();
   const res = await resend.emails.send({
     from: RESEND_FROM_EMAIL,
-    to: ORDER_NOTIFY_EMAIL,
+    to: QUIZ_LEAD_EMAIL,
     subject: 'Новая заявка на подбор техники',
     html: `
       <!doctype html>
@@ -254,7 +269,7 @@ export async function sendLeadEmail(lead: { name: string; phone: string; message
                           <td style="padding:16px 18px;font-size:15px;line-height:1.6;color:#333333;">
                             <div><b>Имя:</b> ${escapeHtml(lead.name)}</div>
                             <div><b>Телефон:</b> <a href="tel:${escapeHtml(lead.phone)}" style="color:#202020;text-decoration:none;">${escapeHtml(lead.phone)}</a></div>
-                            ${lead.message ? `<div style="margin-top:10px;"><b>Комментарий:</b><br />${escapeHtml(lead.message).replaceAll('\n', '<br />')}</div>` : ''}
+                            ${lead.message ? `<div style="margin-top:10px;"><b>Комментарий:</b><br />${messageLinesHtml(lead.message)}</div>` : ''}
                           </td>
                         </tr>
                       </table>

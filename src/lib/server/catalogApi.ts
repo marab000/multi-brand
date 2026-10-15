@@ -319,7 +319,7 @@ export async function fetchProducts(filters: CatalogFilters, limit = 50, offset 
     const query = `
       SELECT
         p.id, p.external_id, p.name, p.description, p.source,
-        p.price_rrc, p.price_opt, p.price_ric,
+        p.price_rrc, p.price_opt, p.price_ric, p.stock,
         p.specs, p.category, p.product_type, p.brand,
         p.catalog_root_slug, p.catalog_root_name,
         p.catalog_group_slug, p.catalog_group_name,
