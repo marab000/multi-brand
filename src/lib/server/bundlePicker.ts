@@ -408,9 +408,38 @@ export async function pickBundle(req: BundleRequest): Promise<BundlePick[]> {
   const priorityIds = new Set(cfg.priorityProducts.map(String));
   const slots = (Object.keys(req.types) as SlotKey[]).filter((k) => req.types[k]);
   const percentileList = await Promise.all(slots.map((slot) => fetchSlotPercentiles(slot)));
-  const picks = await Promise.all(
-    slots.map((slot, i) => pickForSlot(slot, req, cfg, priorityIds, percentileList[i]))
+
+  // Явный цвет из запроса — приоритет. Без цвета комплект собираем в одном из
+  // двух базовых цветов: сначала весь в чёрном, слотам без чёрного пробуем
+  // белый, совсем упершимся — подбор без цвета (fallback остаётся честным).
+  if (req.color) {
+    const picks = await Promise.all(
+      slots.map((slot, i) => pickForSlot(slot, req, cfg, priorityIds, percentileList[i]))
+    );
+    return preferSameBrand(picks.filter((p) => p.chosen != null));
+  }
+
+  const strong = (p: BundlePick) => p.chosen != null && !p.fallback;
+  let picks = await Promise.all(
+    slots.map((slot, i) => pickForSlot(slot, { ...req, color: 'Чёрный' }, cfg, priorityIds, percentileList[i]))
   );
+  const white = await Promise.all(
+    slots.map((slot, i) =>
+      strong(picks[i])
+        ? null
+        : pickForSlot(slot, { ...req, color: 'Белый' }, cfg, priorityIds, percentileList[i])
+    )
+  );
+  picks = picks.map((p, i) => (strong(p) ? p : strong(white[i]!) ? white[i]! : p));
+  const bare = await Promise.all(
+    slots.map((slot, i) =>
+      strong(picks[i])
+        ? null
+        : pickForSlot(slot, { ...req, color: null }, cfg, priorityIds, percentileList[i])
+    )
+  );
+  picks = picks.map((p, i) => (strong(p) ? p : bare[i]?.chosen ? bare[i]! : p));
+
   return preferSameBrand(picks.filter((p) => p.chosen != null));
 }
 

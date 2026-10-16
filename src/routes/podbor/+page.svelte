@@ -83,7 +83,7 @@
         name: 'Как собрать комплект кухонной техники?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Ответьте на четыре вопроса конструктора: отметьте нужную технику — варочную панель, духовой шкаф, вытяжку, посудомоечную машину и другие категории, выберите уровень бюджета, бренды и цвет. Подборщик соберёт комплект за минуту, а каждый товар можно заменить альтернативой из каталога.'
+          text: 'Ответьте на три вопроса конструктора: отметьте нужную технику — варочную панель, духовой шкаф, вытяжку, посудомоечную машину и другие категории, выберите уровень бюджета и бренды. Подборщик соберёт комплект за минуту, а каждый товар можно заменить альтернативой из каталога.'
         }
       },
       {
@@ -112,19 +112,11 @@
       }
     ]
   };
-  const colors = [
-    { value: 'Чёрный', swatch: '#1f2427' },
-    { value: 'Белый', swatch: '#f5f5f2' },
-    { value: 'Серебристый', swatch: '#c8cdd2' },
-    { value: 'Бежевый', swatch: '#d9c9a8' }
-  ];
-
   let selected = $state<Record<string, boolean>>(
     Object.fromEntries(SLOT_ORDER.map((k) => [k, ['hob_gas', 'oven', 'hood', 'dishwasher'].includes(k)]))
   );
   let tier = $state(2);
-  let color = $state<string | null>('Чёрный');
-  let step = $state(1); // 1..4 — вопросы, 5 — результат, 6 — контакты
+  let step = $state(1); // 1..3 — вопросы, 4 — результат
   let loading = $state(false);
   let error = $state('');
   let result = $state<Result | null>(null);
@@ -132,13 +124,13 @@
   let chosenBySlot = $state<Record<string, PickItem>>({});
   let swapOpen = $state<string | null>(null);
 
-  const steps = ['Техника', 'Уровень бюджета', 'Бренд', 'Цвет'];
+  const steps = ['Техника', 'Уровень бюджета', 'Бренд'];
   // шаг 1 = заполнена первая четверть, метка «Техника» ровно под ней
   const progress = $derived(Math.min(step, steps.length) / steps.length);
 
   // конфетти — один залп при появлении результата
   $effect(() => {
-    if (step === 5 && result) {
+    if (step === 4 && result) {
       fireConfetti();
       // второй залп с другой стороны — праздничнее
       setTimeout(() => void fireConfetti(), 600);
@@ -152,7 +144,7 @@
       const res = await fetch('/api/podbor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...selected, tier, brands, color })
+        body: JSON.stringify({ ...selected, tier, brands })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Ошибка подбора');
@@ -161,7 +153,7 @@
       for (const p of data.picks) {
         if (p.chosen) chosenBySlot[p.slot] = p.chosen;
       }
-      step = 5;
+      step = 4;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e: any) {
       error = e.message || 'Ошибка подбора';
@@ -344,19 +336,18 @@
 </svelte:head>
 
 <div class="wizard">
-  {#if step <= 4}
+  {#if step <= steps.length}
     <header class="wizard__head">
       <p class="wizard__eyebrow">Конструктор кухни</p>
       <h1>Собери комплект техники за минуту</h1>
       <p class="wizard__sub">
-        Шаг {step} из 4 — {steps[step - 1]}. Ответьте на вопросы — подберём комплект под ваш бюджет.
+        Шаг {step} из {steps.length} — {steps[step - 1]}. Ответьте на вопросы — подберём комплект под ваш бюджет.
       </p>
       <div class="wizard__progress">
         <div class="wizard__progress-track">
           <div class="wizard__progress-fill" style={`width: ${progress * 100}%`}></div>
-          <span class="wizard__progress-tick" style="left: 25%"></span>
-          <span class="wizard__progress-tick" style="left: 50%"></span>
-          <span class="wizard__progress-tick" style="left: 75%"></span>
+          <span class="wizard__progress-tick" style="left: 33.3%"></span>
+          <span class="wizard__progress-tick" style="left: 66.6%"></span>
         </div>
         <ol class="wizard__progress-labels">
           {#each steps as s, i}
@@ -484,30 +475,6 @@
         >
           Любой бренд
         </button>
-      {:else if step === 4}
-        <h2>Предпочтительный цвет</h2>
-        <div class="wizard__color-grid">
-          {#each colors as c (c.value)}
-            <button
-              type="button"
-              class="wizard__choice"
-              class:active={color === c.value}
-              onclick={() => (color = c.value)}
-            >
-              <span class="wizard__swatch" style={`background: ${c.swatch}`}></span>
-              <b>{c.value}</b>
-              <span class="wizard__radio" aria-hidden="true"></span>
-            </button>
-          {/each}
-        </div>
-        <button
-          type="button"
-          class="wizard__skip"
-          class:active={color === null}
-          onclick={() => (color = null)}
-        >
-          Не важно
-        </button>
       {/if}
 
       {#if error}
@@ -522,7 +489,7 @@
         {:else}
           <span></span>
         {/if}
-        {#if step < 4}
+        {#if step < 3}
           <button
             type="button"
             class="wizard__next"
@@ -544,7 +511,7 @@
         {/if}
       </div>
     </div>
-  {:else if result && step < 6}
+  {:else if result}
     <header class="wizard__head wizard__head--party">
       <p class="wizard__eyebrow">🎉 Поздравляем!</p>
       <h1>Ваш комплект собран</h1>
@@ -651,7 +618,7 @@
     Онлайн-конструктор <b>Мультибренд</b> помогает собрать комплект встраиваемой техники для кухни
     без изучения сотен карточек: варочная панель, духовой шкаф, вытяжка, посудомоечная машина,
     холодильник, микроволновая печь, стиральная и сушильная машина. Ответьте на четыре вопроса —
-    какая техника нужна, какой у вас бюджет, какие бренды предпочитаете и цвет — и подборщик
+    какая техника нужна, какой у вас бюджет и какие бренды предпочитаете — а подборщик
     соберёт согласованный комплект из 12 категорий. Уровень бюджета работает внутри каждой
     категории отдельно, поэтому «невыполнимых» сочетаний не бывает: и газовая панель с классическим
     духовым шкафом, и полностью индукционная кухня соберутся в один комплект.
@@ -1051,14 +1018,6 @@
         border-radius: 50%;
         background: #fff;
         transition: all 0.15s;
-      }
-      .wizard__swatch {
-        width: 26px;
-        height: 26px;
-        flex-shrink: 0;
-        border-radius: 50%;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        box-shadow: inset 0 0 0 2px #fff;
       }
     }
 
