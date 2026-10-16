@@ -1,6 +1,6 @@
 import { RESEND_API_KEY, RESEND_FROM_EMAIL } from '$env/static/private';
-// Куда падают заявки из квиза «Собери комплект техники» (пока тестим — nmf234, потом вернуть на ORDER_NOTIFY_EMAIL)
-const QUIZ_LEAD_EMAIL = 'nmf234@gmail.com';
+// Куда падают заявки из квиза «Собери комплект техники» — боевая почта заказов
+const QUIZ_LEAD_EMAIL = ORDER_NOTIFY_EMAIL;
 import { getContacts } from '$lib/server/contacts';
 import {
   ORDER_NOTIFY_EMAIL,
