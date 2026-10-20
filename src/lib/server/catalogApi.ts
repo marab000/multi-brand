@@ -287,9 +287,9 @@ function buildOrderBy(sort?: CatalogFilters['sort'], search?: string, searchPara
  *  WHERE каталога не использует product_images, поэтому результат идентичен. */
 export async function countProducts(filters: CatalogFilters): Promise<number> {
   try {
-    const initialValues: any[] = [];
-    if (filters.search?.trim()) initialValues.push(filters.search.trim());
-    const { whereClause, values } = buildWhere(filters, initialValues);
+    // в отличие от fetchProducts, COUNT не использует поисковую строку в ORDER BY,
+    // поэтому слот под неё резервировать нельзя: неиспользуемый $1 → Postgres 42P18
+    const { whereClause, values } = buildWhere(filters);
     const query = `
       SELECT COUNT(*) AS total
       FROM products p
