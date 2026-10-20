@@ -1,6 +1,7 @@
 import { sql } from '$lib/db';
 import { normalize, expandQuery, resolveBrands } from '$lib/search/normalize';
 import { brandAliases } from '$lib/search/brands';
+import { synonyms } from '$lib/search/synonyms';
 
 export interface CatalogScope {
   rootSlug: string;
@@ -68,14 +69,44 @@ function getSearchWords(search: string) {
     return false;
   }
 
+  // Слова одного синоним-набора — OR-формы друг друга, а не отдельные AND-группы:
+  // «холодильник» должен находить «морозильник», а не требовать оба слова в имени.
+  const wordToSynonymBags = new Map<string, Set<string>[]>();
+  for (const key in synonyms) {
+    const bag = new Set<string>();
+    for (const member of [key, ...synonyms[key]]) {
+      for (const word of normalize(member).split(' ')) {
+        if (word.length >= 2) bag.add(word);
+      }
+    }
+    for (const word of bag) {
+      if (!wordToSynonymBags.has(word)) wordToSynonymBags.set(word, []);
+      wordToSynonymBags.get(word)!.push(bag);
+    }
+  }
+  function shareSynonym(a: string, b: string): boolean {
+    const wordB = normalize(b);
+    return (wordToSynonymBags.get(a) ?? []).some((bag) => bag.has(wordB));
+  }
+
+  // Слова пользователя — сами по себе AND-группы, не OR-формы других слов запроса:
+  // иначе «машина» из «сушильная машина» превратила бы группу «сушильная» в «любая машина».
+  const rawWordNorms = new Set(rawWords.map((w) => normalize(w)));
+
   const groups: string[][] = [];
   for (const rawWord of rawWords) {
     const forms = new Set<string>([rawWord]);
     const norm = normalize(rawWord);
     forms.add(norm);
     for (const w of normalizedWords) {
-      // Объединяем, если нормформа совпадает ИЛИ это alias того же бренда
-      if (w === norm || normalize(w) === norm || shareBrand(rawWord, w)) forms.add(w);
+      // Объединяем, если нормформа совпадает, это alias того же бренда
+      // или слово из того же синоним-набора — но не отдельное слово запроса
+      if (
+        w === norm ||
+        normalize(w) === norm ||
+        ((shareBrand(rawWord, w) || shareSynonym(norm, w)) && !rawWordNorms.has(normalize(w)))
+      )
+        forms.add(w);
     }
     groups.push([...forms]);
   }

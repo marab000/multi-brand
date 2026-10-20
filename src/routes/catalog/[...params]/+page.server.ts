@@ -53,7 +53,9 @@ export const load: PageServerLoad = async ({ params, url }) => {
     redirect(301, '/catalog/vstraivaemaya-tehnika');
   }
   const isSearchPage = rootSlug === 'search';
-  const search = url.searchParams.get('search')?.trim() || undefined;
+  // граница как у выпадашки подсказок: короче 2 символов — не поиск
+  const searchParam = url.searchParams.get('search')?.trim() || '';
+  const search = searchParam.length >= 2 ? searchParam : undefined;
   const sortParam = url.searchParams.get('sort');
   const sort = sortParam === 'price_asc' || sortParam === 'price_desc' ? sortParam : 'default';
   const availabilityRows = await sql`
