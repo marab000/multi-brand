@@ -508,10 +508,10 @@
 
     &__main h2 {
       margin: 8px 0 0;
-      font-size: clamp(24px, 2.3vw, 32px);
+      font-size: clamp(20px, 1.9vw, 26px);
       font-weight: 800;
       color: #2e3d2f;
-      line-height: 1.1;
+      line-height: 1.15;
 
       em {
         font-style: normal;
@@ -711,7 +711,7 @@
   }
   .section-title {
     margin: 0 0 16px;
-    font-size: 1.75rem;
+    font-size: 1.375rem;
     font-weight: 800;
     line-height: 1.15;
     color: #111827;
@@ -1063,9 +1063,9 @@
     flex-direction: column;
     gap: 4px;
     strong {
-      font-size: 1.35rem;
-      font-weight: 850;
-      line-height: 1.15;
+      font-size: 1.125rem;
+      font-weight: 800;
+      line-height: 1.2;
       color: #111827;
     }
     span {
@@ -1237,14 +1237,14 @@
     /* H1 страницы: живёт в конце страницы как SEO-описание, стилистически крупнее h2 */
     .seo-h1 {
       margin: 0 0 16px;
-      font-size: 1.9rem;
+      font-size: 1.5rem;
       font-weight: 800;
       line-height: 1.2;
       color: #111827;
     }
     h3 {
       margin: 24px 0 12px;
-      font-size: 1.25rem;
+      font-size: 1.125rem;
       font-weight: 800;
       color: #111827;
     }

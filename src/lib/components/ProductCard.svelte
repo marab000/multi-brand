@@ -133,7 +133,7 @@
       </span>
     </div>
     {#if hasDiscount}
-      <div class="badges my-1">
+      <div class="badges">
         <span class="badge good">
           <ShieldCheck size={14} strokeWidth={2.2} />
           Хорошая цена
@@ -178,7 +178,7 @@
     border: 1px solid #eee;
     background: #fff;
     border-radius: 14px;
-    padding: 16px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -197,7 +197,7 @@
     }
     .image {
       position: relative;
-      height: 220px;
+      height: 200px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -231,7 +231,7 @@
         }
       }
       img {
-        max-height: 180px;
+        max-height: 165px;
         object-fit: contain;
       }
     }
@@ -262,9 +262,16 @@
       gap: 12px;
     }
     h3 {
+      margin: 0; /* глобальный margin из typography.scss в карточке лишний */
       font-size: 15px;
       font-weight: 700;
       line-height: 1.3;
+      /* длинные названия не должны растягивать всю строку грида — максимум 2 строки */
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      overflow: hidden;
     }
     .saving {
       display: inline-grid;
@@ -300,7 +307,7 @@
       text-overflow: ellipsis;
     }
     .stock-note {
-      margin: 4px 0 4px;
+      margin: 0;
       font-size: 0.78125rem;
       font-weight: 600;
       line-height: 1.3;
@@ -419,7 +426,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-top: -4px;
+      margin: 0;
     }
     .badge {
       display: inline-flex;
@@ -515,7 +522,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    margin: -4px 0 0;
+    margin: 0;
     color: #94a3b8;
     font-size: 11.5px;
     font-weight: 600;

@@ -110,10 +110,10 @@
       margin-bottom: 14px;
       h2 {
         margin: 0;
-        font-size: 24px;
-        line-height: 1.05;
+        font-size: 20px;
+        line-height: 1.1;
         font-weight: 700;
-        letter-spacing: -0.03em;
+        letter-spacing: -0.02em;
         color: #171717;
       }
     }

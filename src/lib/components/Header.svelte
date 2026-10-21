@@ -3,7 +3,7 @@
   import AuthModal from '$lib/components/AuthModal.svelte';
   import { openAuthModal } from '$lib/stores/authModal.svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
-  import CityDetector from '$lib/components/CityDetector.svelte';
+  import Drawer from '$lib/components/Drawer.svelte';
   import logo1 from '$lib/assets/logo1.png';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
@@ -26,7 +26,6 @@
     Truck,
     MessageCircleMore,
     Building2,
-    Clock,
     Sparkles,
     BadgePercent
   } from 'lucide-svelte';
@@ -99,11 +98,13 @@
     };
   });
   const handleExternalMenu = () => {
-    if (!menuOpen) menuOpen = true;
+    // тап «Меню» — переключатель: повторный тап закрывает; меню и каталог взаимоисключающие
+    menuOpen = !menuOpen;
+    if (menuOpen && open) closeCatalog();
   };
-  // Мост из BottomNav: тап «Каталог» открывает боковой каталог, а не страницу
+  // Мост из BottomNav: тап «Каталог» открывает боковой каталог, повторный — закрывает
   const handleExternalCatalog = () => {
-    if (isMobile && !open) toggleClick();
+    if (isMobile) toggleClick();
   };
   function closeMenuDrawer() {
     menuOpen = false;
@@ -211,7 +212,8 @@
   function toggleClick() {
     if (!isMobile) return;
     open = !open;
-    if (!open) resetMenuState();
+    if (open) menuOpen = false; // каталог и правое меню не сосуществуют
+    else resetMenuState();
   }
   function closeCatalog() {
     open = false;
@@ -244,15 +246,86 @@
   }
 </script>
 
-<nav class="nav container mx-auto px-3 sm:px-4">
-  <div class="nav__info-bar">
-    <span class="nav__info-bar-item"
-      ><Clock size={14} strokeWidth={2.2} />Ежедневно с 09:00 до 21:00 · офлайн-магазин г. Казань, ул. Чистопольская, 66</span
-    >
-    <div class="nav__info-bar-right">
-      <CityDetector />
+  {#snippet catalogTree()}
+    <div class="catalog-tree">
+      {#each catalogParents as parent}
+        <section class="tree-parent">
+          <div class="tree-parent__head"><p class="tree-parent__title">{parent.name}</p></div>
+          <div class="tree-parent__accordion">
+            {#each parent.items as root}
+              <article
+                class="accordion-item"
+                class:accordion-item--open={openRootSlug === root.slug}
+              >
+                <div class="accordion-item__head">
+                  <div class="accordion-item__main">
+                    <a
+                      class="accordion-item__title"
+                      href={root.href}
+                      onclick={isMobile ? closeCatalog : undefined}>{root.name}</a
+                    >
+                  </div>
+                  {#if root.groups.length > 0}
+                    <div class="accordion-item__aside">
+                      <button
+                        class="accordion-item__toggle"
+                        type="button"
+                        onclick={() => toggleRoot(root.slug)}
+                        aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
+                        aria-label="Показать группы"
+                        ><div class="toggle__circle">
+                          {#if openRootSlug === root.slug}<Minus
+                              size={14}
+                              strokeWidth={2.25}
+                            />{:else}<Plus size={14} strokeWidth={2.25} />{/if}
+                        </div></button
+                      >
+                    </div>
+                  {/if}
+                </div>
+                {#if openRootSlug === root.slug && root.groups.length > 0}
+                  <div class="accordion-item__body" transition:slide={slideTransition}>
+                    {#each root.groups as group}
+                      {@const groupKey = `${root.slug}:${group.slug}`}
+                      <div class="group-block">
+                        <a
+                          class="group-block__title"
+                          href={group.href}
+                          onclick={isMobile ? closeCatalog : undefined}>{group.name}</a
+                        >
+                        <div class="group-block__leaves">
+                          {#each expandedGroupLeaves[groupKey] ? group.leaves : group.leaves.slice(0, LEAVES_PREVIEW_LIMIT) as leaf}
+                            <a href={leaf.href} onclick={isMobile ? closeCatalog : undefined}
+                              >{leaf.title}</a
+                            >
+                          {/each}
+                        </div>
+                        {#if group.leaves.length > LEAVES_PREVIEW_LIMIT}
+                          <div class="group-block__footer">
+                            <button
+                              class="group-block__more"
+                              type="button"
+                              onclick={() => toggleGroupLeaves(groupKey)}
+                              aria-expanded={expandedGroupLeaves[groupKey] ? 'true' : 'false'}
+                              >{expandedGroupLeaves[groupKey]
+                                ? 'Скрыть'
+                                : `Ещё ${group.leaves.length - LEAVES_PREVIEW_LIMIT}`}</button
+                            >
+                          </div>
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </article>
+            {/each}
+          </div>
+        </section>
+      {/each}
     </div>
-  </div>
+  {/snippet}
+
+  <nav class="nav container mx-auto px-3 sm:px-4">
   <div
     class="nav__top flex min-h-15 flex-col gap-1.5 border-b border-black/5 py-2 md:min-h-11 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0"
   >
@@ -320,17 +393,8 @@
       </div>
     </div>
   </div>
-  {#if menuOpen}
-    <button class="menu-overlay" aria-label="Закрыть меню" onclick={closeMenuDrawer}></button>
-  {/if}
-  <div class="menu-drawer" class:menu-drawer--open={menuOpen}>
-    <div class="menu-drawer__head">
-      <span class="menu-drawer__title">Меню</span>
-      <button type="button" class="menu-drawer__close" onclick={closeMenuDrawer} aria-label="Закрыть меню"
-        ><X size={18} strokeWidth={2.25} /></button
-      >
-    </div>
-    <nav class="menu-drawer__links">
+  <Drawer side="right" open={menuOpen} title="Меню" onclose={closeMenuDrawer}>
+    <nav class="drawer-links">
       <a href="/user/info" onclick={closeMenuDrawer}
         ><User size={16} strokeWidth={2.1} /><span>Личный кабинет</span></a
       >
@@ -351,7 +415,7 @@
         ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
       >
     </nav>
-  </div>
+  </Drawer>
 
   <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo hidden h-11.5 md:flex" href="/"
@@ -368,10 +432,8 @@
           ><span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span></a
         >
       {/if}
-      {#if open && isMobile}<button title="Закрыть" class="catalog-overlay" onclick={closeCatalog}
-        ></button>{/if}
-      <div class="catalog-dropdown" class:visible={open}>
-        {#if open && isMobile}
+      {#if isMobile}
+        <Drawer side="left" open={open} width="min(440px, 86vw)" onclose={closeCatalog}>
           <div class="catalog-mobile-head">
             <a href="/catalog" class="catalog-mobile-link" onclick={closeCatalog}>Каталог</a>
             <button
@@ -381,84 +443,13 @@
               aria-label="Закрыть каталог"><X size={18} strokeWidth={2.25} /></button
             >
           </div>
-        {/if}
-        <div class="catalog-tree">
-          {#each catalogParents as parent}
-            <section class="tree-parent">
-              <div class="tree-parent__head"><p class="tree-parent__title">{parent.name}</p></div>
-              <div class="tree-parent__accordion">
-                {#each parent.items as root}
-                  <article
-                    class="accordion-item"
-                    class:accordion-item--open={openRootSlug === root.slug}
-                  >
-                    <div class="accordion-item__head">
-                      <div class="accordion-item__main">
-                        <a
-                          class="accordion-item__title"
-                          href={root.href}
-                          onclick={isMobile ? closeCatalog : undefined}>{root.name}</a
-                        >
-                      </div>
-                      {#if root.groups.length > 0}
-                        <div class="accordion-item__aside">
-                          <button
-                            class="accordion-item__toggle"
-                            type="button"
-                            onclick={() => toggleRoot(root.slug)}
-                            aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
-                            aria-label="Показать группы"
-                            ><div class="toggle__circle">
-                              {#if openRootSlug === root.slug}<Minus
-                                  size={14}
-                                  strokeWidth={2.25}
-                                />{:else}<Plus size={14} strokeWidth={2.25} />{/if}
-                            </div></button
-                          >
-                        </div>
-                      {/if}
-                    </div>
-                    {#if openRootSlug === root.slug && root.groups.length > 0}
-                      <div class="accordion-item__body" transition:slide={slideTransition}>
-                        {#each root.groups as group}
-                          {@const groupKey = `${root.slug}:${group.slug}`}
-                          <div class="group-block">
-                            <a
-                              class="group-block__title"
-                              href={group.href}
-                              onclick={isMobile ? closeCatalog : undefined}>{group.name}</a
-                            >
-                            <div class="group-block__leaves">
-                              {#each expandedGroupLeaves[groupKey] ? group.leaves : group.leaves.slice(0, LEAVES_PREVIEW_LIMIT) as leaf}
-                                <a href={leaf.href} onclick={isMobile ? closeCatalog : undefined}
-                                  >{leaf.title}</a
-                                >
-                              {/each}
-                            </div>
-                            {#if group.leaves.length > LEAVES_PREVIEW_LIMIT}
-                              <div class="group-block__footer">
-                                <button
-                                  class="group-block__more"
-                                  type="button"
-                                  onclick={() => toggleGroupLeaves(groupKey)}
-                                  aria-expanded={expandedGroupLeaves[groupKey] ? 'true' : 'false'}
-                                  >{expandedGroupLeaves[groupKey]
-                                    ? 'Скрыть'
-                                    : `Ещё ${group.leaves.length - LEAVES_PREVIEW_LIMIT}`}</button
-                                >
-                              </div>
-                            {/if}
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
-                  </article>
-                {/each}
-              </div>
-            </section>
-          {/each}
+          {@render catalogTree()}
+        </Drawer>
+      {:else}
+        <div class="catalog-dropdown" class:visible={open}>
+          {@render catalogTree()}
         </div>
-      </div>
+      {/if}
     </div>
     <div class="hidden flex-1 lg:block"><ProductSearch hints={searchHints} /></div>
     <div
@@ -634,12 +625,6 @@
           font-size: 14px;
           font-weight: 600;
         }
-      }
-      .catalog-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 15;
-        background: rgba(0, 0, 0, 0.3);
       }
       .catalog-dropdown {
         position: absolute;
@@ -884,21 +869,9 @@
         }
       }
       @media (max-width: 1023px) {
+        // на мобилке каталог живёт в Drawer (слева), dropdown не нужен
         .catalog-dropdown {
-          position: fixed;
-          top: 0;
-          left: 0;
-          z-index: 25;
-          width: min(440px, 86vw);
-          max-width: 86vw;
-          height: 100%;
-          max-height: 100%;
-          // низ дроера не должен уезжать под нижнее меню + safe-area
-          padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-          // доскроллил до края — страница позади не должна подхватывать скролл
-          overscroll-behavior: contain;
-          -webkit-overflow-scrolling: touch;
-          border-radius: 0 18px 18px 0;
+          display: none;
         }
       }
     }
@@ -1056,87 +1029,43 @@
   .nav__burger {
     cursor: pointer;
   }
-  .menu-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 940;
-    border: 0;
-    background: rgba(15, 23, 42, 0.4);
-  }
-  .menu-drawer {
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 945;
-    width: min(320px, 86vw);
-    background: #fff;
-    box-shadow: -18px 0 44px rgba(0, 0, 0, 0.14);
-    transform: translateX(105%);
-    transition: transform 0.24s ease;
+  // ссылки правого меню (контент Drawer — скоуп родителя действует на сниппет)
+  .drawer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 8px;
 
-    &--open {
-      transform: translateX(0);
-    }
-    &__head {
+    a,
+    button {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 16px 16px;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-    }
-    &__title {
-      font-size: 1rem;
-      font-weight: 800;
-      color: #111827;
-    }
-    &__close {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 12px;
       border: 0;
       border-radius: 10px;
-      background: #f1f5f9;
+      background: none;
+      color: #111827;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      text-align: left;
       cursor: pointer;
-    }
-    &__links {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 12px 8px;
+      text-decoration: none;
 
-      a,
-      button {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        padding: 12px 12px;
-        border: 0;
-        border-radius: 10px;
-        background: none;
-        color: #111827;
-        font-size: 0.9375rem;
-        font-weight: 600;
+      &:hover {
+        background: #f8fafc;
+      }
+      span {
+        flex: 1;
         text-align: left;
-        cursor: pointer;
-
-        &:hover {
-          background: #f8fafc;
-        }
-        span {
-          flex: 1;
-          text-align: left;
-        }
       }
     }
   }
+  // правое меню — только мобильное (BottomNav скрыт от 768px)
   @media (min-width: 768px) {
     .nav__burger,
-    .menu-overlay,
-    .menu-drawer {
+    :global(.drawer--right) {
       display: none;
     }
   }
