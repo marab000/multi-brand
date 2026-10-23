@@ -72,6 +72,8 @@ function getSearchWords(search: string) {
   // Слова одного синоним-набора — OR-формы друг друга, а не отдельные AND-группы:
   // «холодильник» должен находить «морозильник», а не требовать оба слова в имени.
   const wordToSynonymBags = new Map<string, Set<string>[]>();
+  // индекс по 5-символьному префиксу — для словоформ («духовку» → набор «духовой шкаф»)
+  const prefixToBags = new Map<string, Set<string>[]>();
   for (const key in synonyms) {
     const bag = new Set<string>();
     for (const member of [key, ...synonyms[key]]) {
@@ -82,11 +84,32 @@ function getSearchWords(search: string) {
     for (const word of bag) {
       if (!wordToSynonymBags.has(word)) wordToSynonymBags.set(word, []);
       wordToSynonymBags.get(word)!.push(bag);
+      if (word.length >= 6) {
+        const p = word.slice(0, 5);
+        if (!prefixToBags.has(p)) prefixToBags.set(p, []);
+        if (!prefixToBags.get(p)!.includes(bag)) prefixToBags.get(p)!.push(bag);
+      }
     }
+  }
+  // наборы синонимов для слова: точное вхождение либо совпадение по префиксу
+  function bagsForWord(word: string): Set<string>[] {
+    const exact = wordToSynonymBags.get(word);
+    if (exact) return exact;
+    if (word.length < 6) return [];
+    return prefixToBags.get(word.slice(0, 5)) ?? [];
   }
   function shareSynonym(a: string, b: string): boolean {
     const wordB = normalize(b);
-    return (wordToSynonymBags.get(a) ?? []).some((bag) => bag.has(wordB));
+    for (const bag of bagsForWord(a)) {
+      if (bag.has(wordB)) return true;
+      if (wordB.length >= 6) {
+        const p = wordB.slice(0, 5);
+        for (const member of bag) {
+          if (member.length >= 6 && member.slice(0, 5) === p) return true;
+        }
+      }
+    }
+    return false;
   }
 
   // Слова пользователя — сами по себе AND-группы, не OR-формы других слов запроса:
@@ -98,6 +121,16 @@ function getSearchWords(search: string) {
     const forms = new Set<string>([rawWord]);
     const norm = normalize(rawWord);
     forms.add(norm);
+    // весь синоним-набор слова целиком как OR-формы: «варка» тянет варочную/поверхность/
+    // панель/индукцию (фразы из набора не доходили до форм — только одиночные слова).
+    // Слова-прилагательные (-ая/-яя/-ый/-ий/-ой) в формы не берём: иначе «встраиваемая»
+    // из набора «стиральная машина» матчит любую встраиваемую технику.
+    for (const bag of bagsForWord(norm)) {
+      for (const word of bag) {
+        if (rawWordNorms.has(word) || /(?:ая|яя|ый|ий|ой)$/.test(word)) continue;
+        forms.add(word);
+      }
+    }
     for (const w of normalizedWords) {
       // Объединяем, если нормформа совпадает, это alias того же бренда
       // или слово из того же синоним-набора — но не отдельное слово запроса
@@ -110,10 +143,9 @@ function getSearchWords(search: string) {
     }
     groups.push([...forms]);
   }
-  const usedForms = new Set<string>(groups.flat());
-  for (const w of normalizedWords) {
-    if (!usedForms.has(w) && w.length >= 2) groups.push([w]);
-  }
+  // ВАЖНО: «нераспознанные» слова из expandQuery (алиасы брендов, синонимы-фразы)
+  // НЕ должны превращаться в отдельные AND-группы — иначе поиск «варка» требовал бы
+  // в имени «кофеварку» (алиас того же семантического поля) и всегда отдавал 0.
   return groups;
 }
 
