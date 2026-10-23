@@ -133,8 +133,8 @@
     }
 
     &__logo {
-      font-size: 20px;
-      font-weight: 800;
+      font-size: 1.25rem;
+      font-weight: 700;
       color: #fff;
       text-decoration: none;
       letter-spacing: -0.02em;
@@ -142,7 +142,7 @@
 
     &__about {
       margin-top: 12px;
-      font-size: 13px;
+      font-size: 0.8125rem;
       line-height: 1.55;
       color: #94a3b8;
     }
@@ -174,7 +174,7 @@
     }
 
     &__title {
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 700;
       color: #fff;
       margin: 0 0 12px;
@@ -244,7 +244,7 @@
     }
 
     &__legal-links a {
-      font-size: 12px;
+      font-size: 0.75rem;
       color: #94a3b8;
       text-decoration: underline;
       text-underline-offset: 2px;

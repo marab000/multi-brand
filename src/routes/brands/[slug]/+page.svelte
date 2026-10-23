@@ -33,7 +33,7 @@
 
 <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'Бренды', href: '/brands' }, { name: brand }]} />
 
-<h1 class="text-[24px]! font-extrabold! mt-2! mb-2!">{data.seoH1 || `${brand} — купить в Казани`}</h1>
+<h1 class="text-[24px]! font-bold! mt-2! mb-2!">{data.seoH1 || `${brand} — купить в Казани`}</h1>
 
 {#if data.rootLinks?.length}
   <div class="cat-links">
@@ -129,7 +129,7 @@
     h2 {
       margin: 0 0 10px;
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     p {

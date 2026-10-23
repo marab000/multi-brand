@@ -61,7 +61,7 @@
   let mobileError = $state<string | null>(null);
 
   // Допустимые диапазоны aspect ratio (width/height)
-  // Форматы слайдера: десктоп 4:1 (1600x400), мобилка 4:3 (800x600) —
+  // Форматы слайдера: десктоп 4:1 (1600x400), мобилка 2:1 (800x400) —
   // контейнер на главной жёстко прибит к этим пропорциям, всё что сильно
   // отличается — обрежется на баннере
   async function checkRatio(url: string, type: 'desktop' | 'mobile'): Promise<string | null> {
@@ -77,8 +77,8 @@
             resolve(null);
           }
         } else {
-          if (ratio < 1.15 || ratio > 1.5) {
-            resolve(`Нужен формат 4:3 — например 800×600. У вас ${dim} (${ratio.toFixed(1)}:1), на баннере срежутся края`);
+          if (ratio < 1.8 || ratio > 2.2) {
+            resolve(`Нужен формат 2:1 — например 800×400. У вас ${dim} (${ratio.toFixed(1)}:1), на баннере срежутся края`);
           } else {
             resolve(null);
           }
@@ -281,7 +281,7 @@
         </label>
 
         <label class="upload-area">
-          <span class="upload-label">Мобильная (4:3 — 800×600)</span>
+          <span class="upload-label">Мобильная (2:1 — 800×400)</span>
           {#if mobilePreview}
             <img src={mobilePreview} alt="Mobile preview" class="upload-preview" class:upload-preview--error={!!mobileError} />
           {:else}
@@ -316,7 +316,7 @@
     margin-bottom: 20px;
     h1 {
       font-size: 22px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0;
     }
   }
@@ -390,7 +390,7 @@
     background: #f1f5f9;
     color: #64748b;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 700;
   }
   .slide-card__preview {
     display: flex;
@@ -477,7 +477,7 @@
     h2 {
       margin: 0;
       font-size: 18px;
-      font-weight: 800;
+      font-weight: 700;
     }
   }
   .close-btn {

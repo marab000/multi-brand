@@ -4,7 +4,7 @@ import { filterCatalogRootsByAvailability, getCatalogRoots } from '$lib/server/c
 import { getContacts } from '$lib/server/contacts';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
-  const [availabilityRows, contacts, searchHintRows] = await Promise.all([
+  const [availabilityRows, contacts, searchHintRows, countRows] = await Promise.all([
     sql`
       SELECT DISTINCT
         catalog_root_slug AS root_slug,
@@ -16,7 +16,14 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     `,
     getContacts(),
     // подсказки в поиске: случайные товары для анимации печати
-    sql`select name from products where price_rrc > 0 order by random() limit 8`
+    sql`select name from products where price_rrc > 0 order by random() limit 8`,
+    // счётчики товаров для меню каталога
+    sql`
+      SELECT LOWER(TRIM(catalog_root_slug)) AS root_slug, COUNT(*)::int AS count
+      FROM products
+      WHERE catalog_root_slug IS NOT NULL AND price_rrc IS NOT NULL
+      GROUP BY 1
+    `
   ]);
 
   const filteredRoots = filterCatalogRootsByAvailability(
@@ -24,8 +31,14 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     availabilityRows as any[]
   );
 
+  const rootCounts: Record<string, number> = {};
+  for (const row of countRows as unknown as { root_slug: string; count: number }[]) {
+    rootCounts[row.root_slug] = row.count;
+  }
+
   return {
     catalogRoots: filteredRoots,
+    rootCounts,
     contacts,
     searchHints: searchHintRows.map((r) => r.name),
     user: locals.user

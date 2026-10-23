@@ -68,7 +68,7 @@
     h1 {
       margin: 0;
       font-size: clamp(1.6rem, 4vw, 2.2rem);
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.15;
       letter-spacing: -0.03em;
       color: #111827;

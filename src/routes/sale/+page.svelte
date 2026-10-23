@@ -76,7 +76,7 @@
 		 display: flex;
 		 margin: 0 0 4px;
 		 font-size: 1.5rem;
-		 font-weight: 800;
+		 font-weight: 700;
 		 color: #111827;
 		 align-items: center;
 		}

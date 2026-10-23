@@ -37,25 +37,12 @@ export const load: PageServerLoad = async ({ fetch }) => {
         return null;
       }
     };
-    const [omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg] = await Promise.all([
+    const [omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg, omoikiriIzmelchiteli] = await Promise.all([
       promoPick('Omoikiri', 'kuhonnye-moyki'),
       promoPick('Omoikiri', 'smesiteli'),
-      promoPick('Bone Crusher', 'izmelchiteli-pischevyh-othodov')
+      promoPick('Bone Crusher', 'izmelchiteli-pischevyh-othodov'),
+      promoPick('Omoikiri', 'izmelchiteli-pischevyh-othodov')
     ]);
-
-    // Последние 3 статьи для секции на главной
-    let latestArticles: any[] = [];
-    try {
-      latestArticles = await sql`
-        SELECT id, slug, title, description, cover_url, created_at
-        FROM articles
-        WHERE is_published = true
-        ORDER BY created_at DESC
-        LIMIT 3
-      `;
-    } catch {
-      // таблицы ещё нет
-    }
 
     // Хиты продаж: 8 товаров с ценой и картинкой, выбор каждый раз новый
     let hits: any[] = [];
@@ -81,10 +68,9 @@ export const load: PageServerLoad = async ({ fetch }) => {
     return {
       desktopSlides: data.desktop || [],
       mobileSlides: data.mobile || [],
-      latestArticles,
       hits,
       syncBrands,
-      promoImages: { omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg },
+      promoImages: { omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg, omoikiriIzmelchiteli },
       meta: {
         title: seoO?.title || undefined,
         description: seoO?.description || undefined,
@@ -95,10 +81,9 @@ export const load: PageServerLoad = async ({ fetch }) => {
     return {
       desktopSlides: [],
       mobileSlides: [],
-      latestArticles: [],
       hits: [],
       syncBrands: [],
-      promoImages: { omoikiriMoiki: null, omoikiriSmesiteli: null, boneCrusherImg: null }
+      promoImages: { omoikiriMoiki: null, omoikiriSmesiteli: null, boneCrusherImg: null, omoikiriIzmelchiteli: null }
     };
   }
 };

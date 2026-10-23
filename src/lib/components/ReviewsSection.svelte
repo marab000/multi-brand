@@ -171,7 +171,7 @@
     h2 {
       margin: 8px 0 0;
       font-size: 1.375rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.15;
       color: #111827;
     }
@@ -235,7 +235,7 @@
     strong {
       display: block;
       font-size: 0.96rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
   }
@@ -271,7 +271,7 @@
     border-radius: 999px;
     background: rgba($green, 0.08);
     color: $green;
-    font-weight: 900;
+    font-weight: 700;
   }
 
   .review-card__stars {
@@ -297,7 +297,7 @@
     background: transparent;
     color: $green;
     font-size: 0.82rem;
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
   }
 

@@ -81,7 +81,7 @@
     h2 {
       margin: 10px 0 8px;
       font-size: 20px;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.25;
       color: #111827;
     }

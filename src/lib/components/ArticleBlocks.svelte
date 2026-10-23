@@ -106,7 +106,7 @@
   .block-heading {
     margin: 14px 0 0;
     font-size: 1.45rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.2;
     color: #111827;
     &:first-child {

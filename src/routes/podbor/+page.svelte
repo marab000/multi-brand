@@ -719,7 +719,7 @@
     h1 {
       margin: 8px 0 0;
       font-size: clamp(22px, 4vw, 30px);
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.02em;
       color: #111827;
     }
@@ -946,7 +946,7 @@
     }
     &__subslot-check {
       color: $green;
-      font-weight: 800;
+      font-weight: 700;
     }
     &__color-grid {
       display: grid;
@@ -1097,7 +1097,7 @@
       background: $green;
       color: #fff;
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       box-shadow: 0 10px 24px rgba($green, 0.25);
       transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -1221,6 +1221,7 @@
     }
     &__item {
       height: 100%;
+      position: relative;
       border-radius: 18px;
       padding: 16px;
       display: flex;
@@ -1304,11 +1305,20 @@
     }
 
     &__swaps {
+      // дропдаун как у групп на шаге 1: абсолютный, сетку не двигает
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: calc(100% - 16px);
+      z-index: 20;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding-top: 12px;
-      border-top: 1px dashed #eceef1;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #eceef1;
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
     }
     &__swap {
       display: flex;
@@ -1387,7 +1397,7 @@
 
       b {
         font-size: 26px;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: -0.02em;
         line-height: 1;
       }
@@ -1421,7 +1431,7 @@
     }
     &__save-value {
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 700;
       color: #14532d;
     }
     &__total {
@@ -1431,7 +1441,7 @@
     }
     &__total-sum {
       font-size: 30px;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.02em;
       color: #111827;
     }
@@ -1499,7 +1509,7 @@
     color: #6b7280;
     b {
       font-size: 17px;
-      font-weight: 800;
+      font-weight: 700;
       color: #a16207;
     }
   }

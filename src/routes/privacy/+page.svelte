@@ -79,7 +79,7 @@
     h1 {
       margin: 0 0 20px;
       font-size: clamp(22px, 4vw, 30px);
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.02em;
       color: #111827;
     }

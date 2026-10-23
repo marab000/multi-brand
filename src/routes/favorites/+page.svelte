@@ -99,7 +99,7 @@
         margin: 0 0 10px;
         font-size: 42px;
         line-height: 1;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: -0.04em;
       }
       p {
@@ -185,7 +185,7 @@
       .discount-price {
         color: #e31b23;
         font-size: 24px;
-        font-weight: 900;
+        font-weight: 700;
         letter-spacing: -0.03em;
       }
       .old-price {

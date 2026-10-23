@@ -4,6 +4,7 @@
   import { openAuthModal } from '$lib/stores/authModal.svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import Drawer from '$lib/components/Drawer.svelte';
+  import { backHref } from '$lib/stores/backHref';
   import logo1 from '$lib/assets/logo1.png';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
@@ -19,18 +20,21 @@
     Heart,
     User,
     CircleUserRound,
-    Plus,
-    Minus,
     X,
     Phone,
     Truck,
     MessageCircleMore,
     Building2,
     Sparkles,
-    BadgePercent
+    BadgePercent,
+    ChevronDown,
+    ChevronUp,
+    ArrowLeft,
+    ArrowRight
   } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
+  import { scrollUi, initScrollDirection } from '$lib/utils/scrollDirection.svelte';
   import { SITE_PHONE, SITE_PHONE_HREF, LINK_TG, LINK_MAX } from '$lib/config/site';
   import type { Contacts } from '$lib/server/contacts';
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
@@ -53,6 +57,7 @@
     slug: string;
     name: string;
     href: string;
+    count: number;
     groups: {
       slug: string;
       name: string;
@@ -62,8 +67,15 @@
   };
   type CatalogParent = { slug: string; name: string; items: CatalogMenuRoot[] };
   const slideTransition = { duration: 220, easing: (t: number) => t * (2 - t) };
-  const LEAVES_PREVIEW_LIMIT = 5;
-  let { data } = $props<{ data?: { catalogRoots?: CatalogRoot[]; user?: AuthUser | null; contacts?: Contacts | null; searchHints?: string[] } }>();
+  let { data } = $props<{
+    data?: {
+      catalogRoots?: CatalogRoot[];
+      rootCounts?: Record<string, number>;
+      user?: AuthUser | null;
+      contacts?: Contacts | null;
+      searchHints?: string[];
+    };
+  }>();
   const contacts = $derived(data?.contacts ?? null);
   const searchHints = $derived(data?.searchHints ?? []);
   const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
@@ -79,7 +91,6 @@
   // на мобилке при фокусе на поиск каталог прячется — инпут на всю ширину
   let searchExpanded = $state(false);
   let openRootSlug = $state<string | null>(null);
-  let expandedGroupLeaves = $state<Record<string, boolean>>({});
   let authOpen = $state(false);
   let authMode = $state<'login' | 'register'>('login');
   // Мост из других компонентов: openAuthModal() диспатчит window-событие
@@ -88,6 +99,7 @@
     authOpen = true;
   };
   onMount(() => {
+    initScrollDirection();
     window.addEventListener('open-auth-modal', handleExternalAuth);
     window.addEventListener('open-catalog-menu', handleExternalCatalog);
     window.addEventListener('open-menu-drawer', handleExternalMenu);
@@ -123,7 +135,23 @@
   let requestOpen = $state(false);
   const count = derived(cart, ($c) => $c.reduce((sum, i) => sum + i.qty, 0));
   const favCount = derived(favorites, ($f) => $f.length);
+  // «Каталог» в шапке мобилки превращается в «назад», когда пользователь
+  // углубился в каталог (категория/подкатегория/поиск/товар). Цель — родительский
+  // уровень; на товаре — категория товара (её сообщает страница через store).
+  const headerBack = $derived.by(() => {
+    if (!isMobile) return null;
+    const path = $page.url.pathname;
+    if (path === '/' || path === '/catalog') return null;
+    if (path.startsWith('/products/')) {
+      return { href: $backHref ?? '/catalog' };
+    }
+    if (path.startsWith('/catalog/')) {
+      return { href: path.replace(/\/[^/]+$/, '') || '/catalog' };
+    }
+    return null;
+  });
   const catalogRoots = $derived((data?.catalogRoots ?? []) as CatalogRoot[]);
+  const rootCounts = $derived((data?.rootCounts ?? {}) as Record<string, number>);
   const user = $derived(data?.user ?? null);
   function buildRoot(root: CatalogRoot): CatalogMenuRoot | null {
     const groups = root.groups
@@ -141,7 +169,13 @@
       }))
       .filter((group) => group.leaves.length > 0);
     if (!groups.length) return null;
-    return { slug: root.slug, name: root.name, href: `/catalog/${root.slug}`, groups };
+    return {
+      slug: root.slug,
+      name: root.name,
+      href: `/catalog/${root.slug}`,
+      count: rootCounts[root.slug.trim().toLowerCase()] ?? 0,
+      groups
+    };
   }
   const catalogParents = $derived.by(() => {
     const menuRoots = catalogRoots.map(buildRoot).filter(Boolean) as CatalogMenuRoot[];
@@ -184,6 +218,10 @@
     pathname = $page.url.pathname;
     showSearch =
       pathname === '/' || pathname.startsWith('/catalog') || pathname.startsWith('/products');
+    // любая навигация закрывает каталог и меню: шапка не перемонтируется,
+    // и без этого открытый дропдаун/дровер переезжают на новую страницу
+    open = false;
+    menuOpen = false;
   });
   function syncMobile() {
     isMobile = window.innerWidth < 1024;
@@ -193,10 +231,8 @@
     window.addEventListener('resize', syncMobile);
     return () => window.removeEventListener('resize', syncMobile);
   });
-  function resetMenuState() {
-    expandedGroupLeaves = {};
-    openRootSlug = null;
-  }
+  // ВАЖНО: открытая категория (openRootSlug) нигде не сбрасывается —
+  // меню «помнит» место: закрыл и снова открыл — ты там же, где был (вариант C)
   function openMenu() {
     if (isMobile) return;
     clearTimeout(timeout);
@@ -206,24 +242,18 @@
     if (isMobile) return;
     timeout = setTimeout(() => {
       open = false;
-      resetMenuState();
     }, 160);
   }
   function toggleClick() {
     if (!isMobile) return;
     open = !open;
     if (open) menuOpen = false; // каталог и правое меню не сосуществуют
-    else resetMenuState();
   }
   function closeCatalog() {
     open = false;
-    resetMenuState();
   }
   function toggleRoot(rootSlug: string) {
     openRootSlug = openRootSlug === rootSlug ? null : rootSlug;
-  }
-  function toggleGroupLeaves(key: string) {
-    expandedGroupLeaves = { ...expandedGroupLeaves, [key]: !expandedGroupLeaves[key] };
   }
   function openRequestModal() {
     requestOpen = true;
@@ -246,86 +276,51 @@
   }
 </script>
 
-  {#snippet catalogTree()}
-    <div class="catalog-tree">
-      {#each catalogParents as parent}
-        <section class="tree-parent">
-          <div class="tree-parent__head"><p class="tree-parent__title">{parent.name}</p></div>
-          <div class="tree-parent__accordion">
-            {#each parent.items as root}
-              <article
-                class="accordion-item"
-                class:accordion-item--open={openRootSlug === root.slug}
+{#snippet catalogTree()}
+  <div class="catalog-tree">
+    {#each catalogParents as parent}
+      <section class="tree-parent">
+        <div class="tree-parent__head"><p class="tree-parent__title">{parent.name}</p></div>
+        <div class="tree-parent__accordion">
+          {#each parent.items as root}
+            <article class="acc-cat" class:acc-cat--open={openRootSlug === root.slug}>
+              <button
+                type="button"
+                class="acc-cat__row"
+                onclick={() => toggleRoot(root.slug)}
+                aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
               >
-                <div class="accordion-item__head">
-                  <div class="accordion-item__main">
-                    <a
-                      class="accordion-item__title"
-                      href={root.href}
-                      onclick={isMobile ? closeCatalog : undefined}>{root.name}</a
-                    >
-                  </div>
-                  {#if root.groups.length > 0}
-                    <div class="accordion-item__aside">
-                      <button
-                        class="accordion-item__toggle"
-                        type="button"
-                        onclick={() => toggleRoot(root.slug)}
-                        aria-expanded={openRootSlug === root.slug ? 'true' : 'false'}
-                        aria-label="Показать группы"
-                        ><div class="toggle__circle">
-                          {#if openRootSlug === root.slug}<Minus
-                              size={14}
-                              strokeWidth={2.25}
-                            />{:else}<Plus size={14} strokeWidth={2.25} />{/if}
-                        </div></button
-                      >
-                    </div>
+                <span class="acc-cat__name">{root.name}</span>
+                <span class="acc-cat__meta">
+                  {#if root.count > 0}<span class="acc-cat__count">{root.count}</span>{/if}
+                  {#if openRootSlug === root.slug}
+                    <ChevronUp size={18} strokeWidth={2.2} />
+                  {:else}
+                    <ChevronDown size={18} strokeWidth={2.2} />
                   {/if}
-                </div>
-                {#if openRootSlug === root.slug && root.groups.length > 0}
-                  <div class="accordion-item__body" transition:slide={slideTransition}>
+                </span>
+              </button>
+              {#if openRootSlug === root.slug && root.groups.length > 0}
+                <div class="acc-cat__card" transition:slide={slideTransition}>
+                  <div class="acc-cat__chips">
                     {#each root.groups as group}
-                      {@const groupKey = `${root.slug}:${group.slug}`}
-                      <div class="group-block">
-                        <a
-                          class="group-block__title"
-                          href={group.href}
-                          onclick={isMobile ? closeCatalog : undefined}>{group.name}</a
-                        >
-                        <div class="group-block__leaves">
-                          {#each expandedGroupLeaves[groupKey] ? group.leaves : group.leaves.slice(0, LEAVES_PREVIEW_LIMIT) as leaf}
-                            <a href={leaf.href} onclick={isMobile ? closeCatalog : undefined}
-                              >{leaf.title}</a
-                            >
-                          {/each}
-                        </div>
-                        {#if group.leaves.length > LEAVES_PREVIEW_LIMIT}
-                          <div class="group-block__footer">
-                            <button
-                              class="group-block__more"
-                              type="button"
-                              onclick={() => toggleGroupLeaves(groupKey)}
-                              aria-expanded={expandedGroupLeaves[groupKey] ? 'true' : 'false'}
-                              >{expandedGroupLeaves[groupKey]
-                                ? 'Скрыть'
-                                : `Ещё ${group.leaves.length - LEAVES_PREVIEW_LIMIT}`}</button
-                            >
-                          </div>
-                        {/if}
-                      </div>
+                      <a class="acc-cat__chip" href={group.href}>{group.name}</a>
                     {/each}
                   </div>
-                {/if}
-              </article>
-            {/each}
-          </div>
-        </section>
-      {/each}
-    </div>
-  {/snippet}
+                  <a class="acc-cat__all" href={root.href}
+                    >Смотреть все в «{root.name}» <ArrowRight size={14} strokeWidth={2.4} /></a
+                  >
+                </div>
+              {/if}
+            </article>
+          {/each}
+        </div>
+      </section>
+    {/each}
+  </div>
+{/snippet}
 
-  <nav class="nav container mx-auto px-3 sm:px-4">
+<div class="nav container mx-auto px-3 sm:px-4">
   <div
     class="nav__top flex min-h-15 flex-col gap-1.5 border-b border-black/5 py-2 md:min-h-11 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0"
   >
@@ -372,8 +367,7 @@
         ><span class="hidden md:inline">О компании</span></a
       >
       <a class="nav__about flex gap-x-1.5" href="/podbor"
-        ><Sparkles class="hidden md:block" size={16} strokeWidth={2.1} /><span
-          >ИИ подбор</span></a
+        ><Sparkles class="hidden md:block" size={16} strokeWidth={2.1} /><span>ИИ подбор</span></a
       >
       <div class="nav__contact !hidden md:!flex">
         <div class="nav__social">
@@ -398,13 +392,25 @@
       <a href="/user/info" onclick={closeMenuDrawer}
         ><User size={16} strokeWidth={2.1} /><span>Личный кабинет</span></a
       >
-      <a href="/sale" onclick={closeMenuDrawer}><BadgePercent size={16} strokeWidth={2.1} /><span>Акции</span></a>
-      <a href="/delivery" onclick={closeMenuDrawer}><Truck size={16} strokeWidth={2.1} /><span>Доставка</span></a>
-      <button type="button" onclick={() => { closeMenu(); openRequestModal(); }}
-        ><MessageCircleMore size={16} strokeWidth={2.1} /><span>Связаться</span></button
+      <a href="/sale" onclick={closeMenuDrawer}
+        ><BadgePercent size={16} strokeWidth={2.1} /><span>Акции</span></a
       >
-      <a href="/about" onclick={closeMenuDrawer}><Building2 size={16} strokeWidth={2.1} /><span>О нас</span></a>
-      <a href="/podbor" onclick={closeMenuDrawer}><Sparkles size={16} strokeWidth={2.1} /><span>Подбор техники</span></a>
+      <a href="/delivery" onclick={closeMenuDrawer}
+        ><Truck size={16} strokeWidth={2.1} /><span>Доставка</span></a
+      >
+      <button
+        type="button"
+        onclick={() => {
+          closeMenu();
+          openRequestModal();
+        }}><MessageCircleMore size={16} strokeWidth={2.1} /><span>Связаться</span></button
+      >
+      <a href="/about" onclick={closeMenuDrawer}
+        ><Building2 size={16} strokeWidth={2.1} /><span>О нас</span></a
+      >
+      <a href="/podbor" onclick={closeMenuDrawer}
+        ><Sparkles size={16} strokeWidth={2.1} /><span>Подбор техники</span></a
+      >
       <a href={LINK_TG} target="_blank" rel="noopener noreferrer"
         ><Send size={16} strokeWidth={2.1} /><span>Telegram</span></a
       >
@@ -416,24 +422,53 @@
       >
     </nav>
   </Drawer>
+</div>
 
+<!-- компактная строка (каталог + поиск): липнет к верху, прячется при скролле вниз,
+     возвращается при скролле вверх — синхронно с нижней панелью (scrollDirection) -->
+<nav
+  class="sticky-bar"
+  class:sticky-bar--hidden={scrollUi.headerHidden}
+  class:sticky-bar--raised={scrollUi.scrolled}
+  aria-label="Основное меню"
+>
+  <div class="sticky-bar__box container mx-auto px-3 sm:px-4">
   <div class="nav__inner h-20 lg:h-25">
     <a class="nav__logo hidden h-11.5 md:flex" href="/"
       ><img class="object-contain" src={logo1} alt="logo" /></a
     >
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="nav__catalog" class:hidden-on-search={searchExpanded} onmouseenter={openMenu} onmouseleave={closeMenu}>
+    <div
+      class="nav__catalog"
+      class:hidden-on-search={searchExpanded}
+      onmouseenter={openMenu}
+      onmouseleave={closeMenu}
+    >
       {#if isMobile}
-        <button class="catalog-trigger" type="button" onclick={toggleClick}
-          ><span class="catalog-trigger__left"><span>Каталог</span></span></button
-        >
+        {#if headerBack}
+          <a
+            class="catalog-trigger catalog-trigger--back"
+            href={headerBack.href}
+            aria-label="Назад"
+            onclick={() => {
+              open = false;
+              menuOpen = false;
+            }}
+          >
+            <ArrowLeft size={20} strokeWidth={2.6} />
+          </a>
+        {:else}
+          <button class="catalog-trigger" type="button" onclick={toggleClick}
+            ><span class="catalog-trigger__left"><span>Каталог</span></span></button
+          >
+        {/if}
       {:else}
         <a class="catalog-trigger" href="/catalog"
           ><span class="catalog-trigger__left"><Menu size={18} /><span>Каталог</span></span></a
         >
       {/if}
       {#if isMobile}
-        <Drawer side="left" open={open} width="min(440px, 86vw)" onclose={closeCatalog}>
+        <Drawer side="left" {open} width="min(440px, 86vw)" onclose={closeCatalog}>
           <div class="catalog-mobile-head">
             <a href="/catalog" class="catalog-mobile-link" onclick={closeCatalog}>Каталог</a>
             <button
@@ -504,13 +539,17 @@
       >
     </div>
   </div>
+  <!-- бэкдроп живёт внутри sticky-bar: панель создаёт stacking context,
+       снаружи его z-index перекрыл бы само меню -->
+  {#if user && userMenuOpen}<button
+      class="user-menu-backdrop"
+      type="button"
+      aria-label="Закрыть меню"
+      onclick={() => (userMenuOpen = false)}
+    ></button>{/if}
+  </div>
 </nav>
-{#if user && userMenuOpen}<button
-    class="user-menu-backdrop"
-    type="button"
-    aria-label="Закрыть меню"
-    onclick={() => (userMenuOpen = false)}
-  ></button>{/if}
+
 <LeadRequestModal bind:open={requestOpen} />
 <AuthModal bind:open={authOpen} bind:mode={authMode} />
 
@@ -544,7 +583,7 @@
     &__about {
       align-items: center;
       color: #202020;
-      font-size: 13px;
+      font-size: 0.8125rem;
       padding: 12px 0;
       font-weight: 700;
       line-height: 1.1;
@@ -573,8 +612,8 @@
       gap: 8px;
       color: #202020;
       text-decoration: none;
-      font-size: 14px;
-      font-weight: 800;
+      font-size: 0.875rem;
+      font-weight: 700;
       line-height: 1;
       :global(svg) {
         color: $green;
@@ -584,7 +623,7 @@
         color: $green;
       }
       @media (max-width: 360px) {
-        font-size: 12px;
+        font-size: 0.75rem;
         gap: 4px;
       }
       @media (min-width: 768px) {
@@ -607,6 +646,28 @@
       &.hidden-on-search {
         display: none;
       }
+      // двойной класс для специфичности выше базового .catalog-trigger (иначе 42px победит)
+      .catalog-trigger.catalog-trigger--back {
+        // высота инпута поиска (50px), радиус как у него — кнопки выглядят парой
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        padding: 0;
+        background: rgba($green, 0.08);
+        color: $green;
+        justify-content: center;
+        -webkit-tap-highlight-color: transparent;
+        transition:
+          background 0.18s ease,
+          transform 0.18s ease;
+        &:hover {
+          background: rgba($green, 0.16);
+          transform: scale(1.05);
+        }
+        &:active {
+          transform: scale(0.95);
+        }
+      }
       .catalog-trigger {
         display: inline-flex;
         align-items: center;
@@ -622,7 +683,7 @@
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          font-size: 14px;
+          font-size: 0.875rem;
           font-weight: 600;
         }
       }
@@ -632,7 +693,7 @@
         left: 0;
         z-index: 20;
         width: 440px;
-        max-height: min(78vh, 760px);
+        max-height: min(68vh, 620px);
         overflow: auto;
         border: 1px solid rgba($yellow, 0.22);
         border-radius: 18px;
@@ -661,13 +722,12 @@
       }
       .catalog-mobile-link {
         color: #141414;
-        font-size: 18px;
-        font-weight: 800;
+        font-size: 1.125rem;
+        font-weight: 700;
         text-decoration: underline;
         text-underline-offset: 4px;
       }
-      .catalog-close,
-      .accordion-item__toggle .toggle__circle {
+      .catalog-close {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -692,181 +752,123 @@
           border-bottom: 1px solid rgba($green, 0.12);
           border-top: 1px solid rgba($green, 0.12);
           background: rgba(128, 128, 128, 0.05);
-          padding: 16px;
+          padding: 10px 16px;
+          margin-bottom: 6px;
         }
         &__title {
           margin: 0;
           color: #1a1a1a;
-          font-size: 1.1rem;
+          font-size: 1rem;
           font-weight: 600;
           line-height: 1.12;
           letter-spacing: -0.02em;
         }
         &__accordion {
-          margin: 20px 16px 16px 16px;
-          overflow: hidden;
-          border: 1px solid rgba($green, 0.14);
-          border-radius: 22px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.035);
+          // без капсулы и без боковых/крайних отступов — все категории симметричны,
+          // зазор между заголовком и списком даёт margin у __head
+          margin: 0;
         }
       }
-      .accordion-item {
-        position: relative;
-        border-top: 1px solid rgba($green, 0.08);
+      .acc-cat {
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
         &:first-child {
           border-top: none;
         }
-        &--open .accordion-item__head {
-          background: rgb(248 249 250);
-        }
-        &__head {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 35px;
-          align-items: start;
-          gap: 12px;
-          padding: 8px 12px;
-          transition: background 0.18s ease;
-        }
-        &__main {
-          min-width: 0;
+        &__row {
           display: flex;
           align-items: center;
-          min-height: 38px;
-        }
-        &__aside {
-          display: flex;
-          align-items: flex-start;
-          justify-content: flex-end;
-        }
-        &__title {
-          display: block;
+          justify-content: space-between;
+          gap: 12px;
           width: 100%;
+          padding: 13px 16px;
+          border: 0;
+          background: none;
+          text-align: left;
+          cursor: pointer;
+        }
+        &__name {
           min-width: 0;
-          padding: 0 4px;
-          color: #1f1f1f;
+          color: #141414;
           font-size: 1rem;
-          font-weight: 500;
-          line-height: 1.2;
-          text-decoration: none;
-          &:hover {
-            text-decoration: underline;
-            text-underline-offset: 3px;
-          }
+          font-weight: 400;
+          line-height: 1.25;
         }
-        &__toggle {
-          position: absolute;
-          right: 0;
-          top: 0;
-          height: 100%;
-          max-height: 52px;
-          width: 50px;
-          &:hover .toggle__circle {
-            background: rgba($yellow, 0.08);
-          }
-          .toggle__circle {
-            border: 1px solid rgba($yellow, 0.7);
-            transition: background 0.18s ease;
-            border-radius: 999px;
-          }
-        }
-        &__body {
-          display: grid;
-          background: linear-gradient(180deg, rgb(248 249 250) 0%, rgba(#fff, 0) 100%);
-        }
-      }
-      .group-block {
-        display: grid;
-        gap: 12px;
-        padding: 16px;
-        border-top: 1px solid rgba($green, 0.08);
-        &:first-child {
-          border-top: none;
-        }
-        &__title {
-          position: relative;
+        &__meta {
           display: inline-flex;
           align-items: center;
-          width: fit-content;
-          max-width: 100%;
-          min-height: 28px;
-          padding-left: 16px;
-          color: #232323;
-          font-size: 16px;
-          line-height: 1.25;
-          text-decoration: none;
-          &::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 7px;
-            height: 7px;
-            border-radius: 999px;
-            background: rgba($yellow, 0.95);
-            transform: translateY(-50%);
-          }
-          &:hover {
-            text-decoration: underline;
-            text-underline-offset: 2px;
+          gap: 10px;
+          flex-shrink: 0;
+          :global(svg) {
+            color: #9ca3af;
           }
         }
-        &__leaves {
-          display: grid;
-          gap: 12px;
-          padding-left: 20px;
-          a {
-            position: relative;
-            display: block;
-            min-height: 24px;
-            padding-left: 16px;
-            color: #5b5b5b;
-            font-size: 15px;
-            line-height: 1.35;
-            text-decoration: none;
-            transition: color 0.18s ease;
-            &::before {
-              content: '';
-              position: absolute;
-              top: 0.72em;
-              left: 0;
-              width: 4px;
-              height: 4px;
-              border-radius: 999px;
-              background: rgba($green, 0.75);
-              transform: translateY(-50%);
-            }
-            &:hover {
-              color: #222;
-              text-decoration: underline;
-              text-underline-offset: 2px;
-            }
-          }
+        &__count {
+          color: #6b7280;
+          font-size: 0.875rem;
+          font-weight: 400;
         }
-        &__footer {
+        &__card {
+          margin: 0 12px 12px 12px;
+          padding: 12px;
+          border-radius: 12px;
+          // лёгкий зелёный — белые чипсы с их бордером и так читаются
+          background: rgba($green, 0.08);
+        }
+        &__chips {
           display: flex;
-          justify-content: flex-start;
-          padding-left: 20px;
+          flex-wrap: wrap;
+          gap: 8px;
         }
-        &__more {
-          min-height: 36px;
-          padding: 0 16px;
-          border: 1px solid rgba($yellow, 0.45);
-          border-radius: 16px;
+        &__chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 12px;
+          // бордер в полсилы зелёного всегда, на ховере — полный
+          border: 1px solid rgba($green, 0.5);
+          border-radius: 999px;
           background: #fff;
-          color: #3a3a3a;
-          font-size: 13px;
-          font-weight: 800;
-          cursor: pointer;
+          color: #1f2937;
+          font-size: 0.8125rem;
+          font-weight: 400;
+          text-decoration: none;
           transition:
-            border-color 0.18s ease,
-            background 0.18s ease,
-            color 0.18s ease;
+            background 0.16s ease,
+            border-color 0.16s ease,
+            color 0.16s ease;
           &:hover {
-            border-color: rgba($yellow, 0.75);
-            background: rgba($yellow, 0.08);
-            color: #171717;
+            border-color: $green;
+            background: #fff;
+            color: $green;
           }
         }
+        &__all {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 12px;
+          color: $green;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          font-style: italic;
+          text-decoration: none;
+          :global(svg) {
+            transition: transform 0.16s ease;
+          }
+          &:hover :global(svg) {
+            transform: translateX(3px);
+          }
+        }
+      }
+      // раскрытая категория: зелёное жирное название, зелёный шеврон, карточка
+      .acc-cat--open .acc-cat__row {
+        padding-bottom: 6px;
+      }
+      .acc-cat--open .acc-cat__name {
+        color: $green;
+        font-weight: 700;
+      }
+      .acc-cat--open .acc-cat__meta :global(svg) {
+        color: $green;
       }
       @media (max-width: 1023px) {
         // на мобилке каталог живёт в Drawer (слева), dropdown не нужен
@@ -922,12 +924,12 @@
       border-bottom: 1px solid rgba($green, 0.14);
       b {
         font-size: 13.5px;
-        font-weight: 800;
+        font-weight: 700;
         color: #111827;
         line-height: 1.3;
       }
       span {
-        font-size: 12px;
+        font-size: 0.75rem;
         color: #94a3b8;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -946,7 +948,7 @@
       border-radius: 10px;
       background: transparent;
       color: #202020;
-      font-size: 14px;
+      font-size: 0.875rem;
       text-decoration: none;
       cursor: pointer;
       &:hover {
@@ -977,14 +979,14 @@
     border-radius: 999px;
     background: red;
     color: #fff;
-    font-size: 10px;
+    font-size: 0.625rem;
     line-height: 1;
     box-sizing: border-box;
   }
   @media (max-width: 395px) {
     .nav {
       &__about {
-        font-size: 12px;
+        font-size: 0.75rem;
       }
     }
   }
@@ -994,7 +996,7 @@
     }
     .nav {
       &__about {
-        font-size: 11px;
+        font-size: 0.6875rem;
       }
     }
   }
@@ -1068,5 +1070,25 @@
     :global(.drawer--right) {
       display: none;
     }
+  }
+  // липкая компактная строка шапки. z-index 870: ниже дровера (880/890),
+  // нижней панели (900) и модалок (1000+), но выше контента страницы.
+  // ВАЖНО: без will-change — он держит панель на отдельном слое композитора,
+  // и фон catalog-dropdown рисуется под контентом страницы (прозрачный дропдаун)
+  .sticky-bar {
+    position: sticky;
+    top: 0;
+    z-index: 870;
+    transition: transform 0.28s ease;
+  }
+  .sticky-bar--hidden {
+    transform: translateY(-100%);
+  }
+  .sticky-bar__box {
+    background: #fff;
+    transition: box-shadow 0.28s ease;
+  }
+  .sticky-bar--raised .sticky-bar__box {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   }
 </style>

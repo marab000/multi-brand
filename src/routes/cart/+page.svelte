@@ -392,7 +392,7 @@
         margin: 0 0 12px;
         font-size: 42px;
         line-height: 1;
-        font-weight: 800;
+        font-weight: 700;
         letter-spacing: -0.04em;
       }
       p {
@@ -653,7 +653,7 @@
     }
     .sidebar-card__title {
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     .sidebar-card__text {
@@ -810,7 +810,7 @@
     &__title {
       margin: 8px 0 4px;
       font-size: 13.5px;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     &__opt {

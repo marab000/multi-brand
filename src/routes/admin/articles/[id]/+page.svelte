@@ -534,7 +534,7 @@
     margin-bottom: 20px;
     h1 {
       font-size: 20px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0;
       flex: 1;
     }
@@ -693,7 +693,7 @@
     margin-bottom: 14px;
     h2 {
       font-size: 17px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0;
     }
   }
@@ -850,7 +850,7 @@
     border-radius: 8px;
     background: transparent;
     font-size: 1.45rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.2;
     color: #111827;
     &:hover {
@@ -1194,7 +1194,7 @@
     h2 {
       margin: 0;
       font-size: 18px;
-      font-weight: 800;
+      font-weight: 700;
     }
   }
   .close-btn {
@@ -1247,7 +1247,7 @@
   }
   .tp-heading {
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 700;
     color: #111827;
     line-height: 1.2;
   }

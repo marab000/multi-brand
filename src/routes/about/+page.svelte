@@ -177,13 +177,13 @@
       margin: 0 0 14px;
       font-size: clamp(1.9rem, 4.5vw, 2.8rem);
       line-height: 1.1;
-      font-weight: 800;
+      font-weight: 700;
       color: $green;
     }
     h2 {
       margin: 0 0 10px;
       font-size: clamp(1.25rem, 2.8vw, 1.6rem);
-      font-weight: 800;
+      font-weight: 700;
       color: $green;
     }
     h3 {
@@ -243,7 +243,7 @@
     strong {
       font-size: clamp(2.6rem, 6vw, 4rem);
       line-height: 0.9;
-      font-weight: 800;
+      font-weight: 700;
       color: $green;
     }
     em {

@@ -34,7 +34,7 @@
     h1 {
       margin: 0 0 10px;
       font-size: 1.75rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
   }
@@ -66,7 +66,7 @@
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
     }
     .name {
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
       font-size: 0.98rem;
     }

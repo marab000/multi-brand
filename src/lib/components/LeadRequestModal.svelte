@@ -163,7 +163,7 @@
       color: #171717;
       font-size: 28px;
       line-height: 1.08;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.04em;
     }
     .modal-sub-big {
@@ -192,7 +192,7 @@
       height: 56px;
       border-radius: 16px;
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 700;
       &:disabled {
         opacity: 0.55;
         cursor: not-allowed;

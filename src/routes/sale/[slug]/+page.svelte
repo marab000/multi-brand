@@ -56,7 +56,7 @@
   h1 {
     margin: 0 0 10px;
     font-size: 1.625rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.2;
     color: #111827;
   }

@@ -72,18 +72,18 @@
     background: $green;
     color: #fff;
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 700;
   }
   .brand-name {
     font-size: 18px;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.06em;
     color: $green;
   }
   h1 {
     margin: 0 0 6px;
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.02em;
   }
   .subtitle {

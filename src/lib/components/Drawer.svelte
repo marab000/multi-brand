@@ -97,7 +97,7 @@
     }
     &__title {
       font-size: 1rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     &__close {

@@ -79,7 +79,7 @@
       color: #171717;
       font-size: 20px;
       line-height: 1.1;
-      font-weight: 800;
+      font-weight: 700;
       letter-spacing: -0.05em;
       @media (max-width: 768px) {
         font-size: 16px;
@@ -110,7 +110,7 @@
         padding: 0 14px;
         border-radius: 11px;
         font-size: 12.5px;
-        font-weight: 800;
+        font-weight: 700;
         transition:
           transform 0.18s ease,
           box-shadow 0.18s ease,

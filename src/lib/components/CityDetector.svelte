@@ -290,7 +290,7 @@
   .city-modal h3 {
     margin: 0 0 24px;
     font-size: 20px;
-    font-weight: 800;
+    font-weight: 700;
     color: #111827;
     line-height: 1.3;
   }

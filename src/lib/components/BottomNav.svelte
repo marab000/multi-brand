@@ -1,12 +1,19 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { onMount } from 'svelte';
   import { LayoutGrid, ShoppingCart, User, MoreHorizontal } from 'lucide-svelte';
   import { cart } from '$lib/stores/cart';
   import logo from '$lib/assets/logo1.png';
+  import { scrollUi, initScrollDirection } from '$lib/utils/scrollDirection.svelte';
 
   let cartCount = $derived($cart.reduce((sum, i) => sum + i.qty, 0));
 
   let pathname = $derived(page.url.pathname);
+
+  // скролл вниз — панель уезжает, вверх — возвращается (классика e-commerce).
+  // Состояние общее с шапкой (scrollDirection) — прячутся и показываются синхронно
+  let navHidden = $derived(scrollUi.bottomNavHidden);
+  onMount(() => initScrollDirection());
 
   // «Каталог» на мобиле не уводит на страницу — открывает боковой каталог в Header
   const openCatalog = (e: MouseEvent) => {
@@ -20,7 +27,11 @@
   };
 </script>
 
-<nav class="bottom-nav md:hidden!" aria-label="Мобильное меню">
+<nav
+  class="bottom-nav md:hidden!"
+  class:bottom-nav--hidden={navHidden}
+  aria-label="Мобильное меню"
+>
   <a
     class="bottom-nav__item"
     class:bottom-nav__item--active={pathname.startsWith('/catalog')}
@@ -82,6 +93,11 @@
     @media (min-width: 768px) {
       display: none;
     }
+    transition: transform 0.28s ease;
+    will-change: transform;
+  }
+  .bottom-nav--hidden {
+    transform: translateY(100%);
   }
   .bottom-nav__item {
     flex: 1;
@@ -123,7 +139,7 @@
     background: $yellow;
     color: #111;
     font-size: 0.625rem;
-    font-weight: 800;
+    font-weight: 700;
   }
   .bottom-nav__center {
     flex: 0 0 auto;

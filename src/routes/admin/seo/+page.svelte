@@ -223,7 +223,7 @@
     margin-bottom: 22px;
     &__title {
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #94a3b8;

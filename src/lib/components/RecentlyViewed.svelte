@@ -110,7 +110,7 @@
       margin-bottom: 14px;
       h2 {
         margin: 0;
-        font-size: 20px;
+        font-size: 1.25rem;
         line-height: 1.1;
         font-weight: 700;
         letter-spacing: -0.02em;
@@ -171,13 +171,13 @@
       }
       .name {
         min-height: 38px;
-        font-size: 14px;
+        font-size: 0.875rem;
         line-height: 1.35;
         font-weight: 600;
         color: #1a1a1a;
       }
       .price {
-        font-size: 18px;
+        font-size: 1.125rem;
         font-weight: 700;
         color: $green;
       }

@@ -64,7 +64,7 @@
   h1 {
     margin: 0;
     font-size: 2rem;
-    font-weight: 800;
+    font-weight: 700;
     color: #111827;
     @media (max-width: 640px) {
       font-size: 1.4rem;

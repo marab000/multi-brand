@@ -9,7 +9,8 @@
     Plus,
     Star,
     Heart,
-    Truck
+    Truck,
+    ShoppingCart
   } from 'lucide-svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
@@ -26,12 +27,12 @@
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
   import { imgUrl } from '$lib/s3Public';
-  export let product;
-  const image =
-    product.images && product.images.length
-      ? imgUrl(product.images.reduce((prev: any, curr: any) => prev.position < curr.position ? prev : curr
-        ).url, 480)
-      : '/images/no_image.png';
+  let { product } = $props();
+  // фото по позиции — для свайп-галереи прямо в карточке каталога
+  const cardImages = [...(product.images ?? [])].sort((a: any, b: any) => a.position - b.position);
+  const image = cardImages.length
+    ? imgUrl(cardImages[0].url, 480)
+    : '/images/no_image.png';
   const slug = slugify(product.name);
   const price = getProductPrice(product);
   const oldPrice = getBaseProductPrice(product);
@@ -39,17 +40,37 @@
   const monthlyPayment = getMonthlyPayment(price);
   const saving = hasDiscount ? oldPrice - price : 0;
   const ratingData = getProductRating(product.external_id || product.id || product.name);
-  $: stockLabel = (() => {
+  const stockLabel = $derived.by(() => {
     const s = product.stock;
     if (s === 1) return { text: 'В наличии — от 7 дней', tone: 'in' };
     if (s === 2) return { text: 'На удалённом складе — от 14 дней', tone: 'mid' };
     if (s === 3) return { text: 'Под заказ', tone: 'order' };
     return null;
-  })();
+  });
   const isProtected = isDiscountExcludedBrand(product.brand);
-  $: cartItem = $cart.find((item) => item.id === product.id);
-  $: qty = cartItem?.qty ?? 0;
-  $: isFavorite = $favorites.some((item) => item.id === product.id);
+  const cartItem = $derived($cart.find((item) => item.id === product.id));
+  const qty = $derived(cartItem?.qty ?? 0);
+  const isFavorite = $derived($favorites.some((item) => item.id === product.id));
+  // свайп-галерея: активный слайд + защита от перехода на товар после свайпа
+  let galleryEl: HTMLDivElement | undefined = $state();
+  let activeSlide = $state(0);
+  let lastSwipeAt = 0;
+  function handleGalleryScroll() {
+    lastSwipeAt = Date.now();
+    if (!galleryEl) return;
+    activeSlide = Math.round(galleryEl.scrollLeft / galleryEl.clientWidth);
+  }
+  function scrollToSlide(i: number) {
+    if (!galleryEl) return;
+    galleryEl.scrollTo({ left: i * galleryEl.clientWidth, behavior: 'smooth' });
+  }
+  // свайп по галерее не должен уводить на страницу товара
+  function handleCardClick(e: MouseEvent) {
+    if (Date.now() - lastSwipeAt < 300) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
   const toggleFavorite = () => {
     favorites.toggle({
       id: product.id,
@@ -79,7 +100,11 @@
 </script>
 
 <div class="card">
-  <a href={'/products/' + slug} data-sveltekit-preload-data="off">
+  <a
+    href={'/products/' + slug}
+    data-sveltekit-preload-data="off"
+    on:click={handleCardClick}
+  >
     <div class="image">
       <button
         type="button"
@@ -90,7 +115,38 @@
       >
         <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
       </button>
-      <img src={image} alt={product.name} loading="lazy" />
+      {#if cardImages.length > 1}
+        <!-- свайп-галерея: нативный scroll-snap, без библиотек -->
+        <div
+          class="gallery"
+          bind:this={galleryEl}
+          on:scroll={handleGalleryScroll}
+          on:pointerdown={() => (lastSwipeAt = Date.now())}
+        >
+          {#each cardImages as img, i (img.url)}
+            <img
+              src={imgUrl(img.url, 480)}
+              alt="{product.name} — фото {i + 1}"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              draggable="false"
+            />
+          {/each}
+        </div>
+        <div class="dots" role="tablist" aria-label="Фото товара">
+          <!-- точек максимум 6, даже если у товара 20 фото; активна последняя при листании дальше -->
+          {#each Array(Math.min(cardImages.length, 6)) as _, i (i)}
+            <button
+              type="button"
+              class="dot"
+              class:dot--active={Math.min(activeSlide, 5) === i}
+              aria-label={'Фото ' + (i + 1)}
+              on:click|preventDefault|stopPropagation={() => scrollToSlide(i)}
+            ></button>
+          {/each}
+        </div>
+      {:else}
+        <img src={image} alt={product.name} loading="lazy" />
+      {/if}
       <div class="rating-badge">
         <Star size={13} fill="currentColor" strokeWidth={0} />
         <span>{ratingData.rating}</span>
@@ -117,9 +173,40 @@
       <p class="stock-note stock-note--{stockLabel.tone}">{stockLabel.text}</p>
     {/if}
     <div class="price-row">
-      <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
-      {#if hasDiscount}
-        <p class="old-price">{formatPrice(oldPrice)} ₽</p>
+      <div class="price-wrap">
+        <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
+        {#if hasDiscount}
+          <p class="old-price">{formatPrice(oldPrice)} ₽</p>
+        {/if}
+      </div>
+      {#if qty > 0}
+        <div class="cart-mini">
+          <button
+            type="button"
+            aria-label="Уменьшить количество"
+            on:click|stopPropagation={() => cart.dec(product.id)}
+          >
+            <Minus size={14} strokeWidth={2.6} />
+          </button>
+          <span>{qty}</span>
+          <button
+            type="button"
+            aria-label="Увеличить количество"
+            on:click|stopPropagation={() => cart.inc(product.id)}
+          >
+            <Plus size={14} strokeWidth={2.6} />
+          </button>
+        </div>
+      {:else}
+        <button
+          class="cart-btn"
+          type="button"
+          aria-label="Добавить в корзину"
+          on:click|preventDefault|stopPropagation={addToCart}
+        >
+          <ShoppingCart size={15} strokeWidth={2.2} />
+          В корзину
+        </button>
       {/if}
     </div>
     <div class="installment">
@@ -145,27 +232,6 @@
       </div>
     {/if}
   </a>
-  {#if qty > 0}
-    <div class="cart-counter">
-      <button
-        type="button"
-        aria-label="Уменьшить количество"
-        on:click|stopPropagation={() => cart.dec(product.id)}
-      >
-        <Minus size={16} strokeWidth={2.6} />
-      </button>
-      <span>{qty}</span>
-      <button
-        type="button"
-        aria-label="Увеличить количество"
-        on:click|stopPropagation={() => cart.inc(product.id)}
-      >
-        <Plus size={16} strokeWidth={2.6} />
-      </button>
-    </div>
-  {:else}
-    <button class="btn primary" on:click|stopPropagation={addToCart}> В корзину </button>
-  {/if}
   <p class="order-note">
     <Truck size={13} strokeWidth={2.2} />
     Под заказ — доставим за 7 дней
@@ -234,6 +300,48 @@
         max-height: 165px;
         object-fit: contain;
       }
+      .gallery {
+        display: flex;
+        width: 100%;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+          display: none;
+        }
+        img {
+          flex: 0 0 100%;
+          width: 100%;
+          max-height: 165px;
+          object-fit: contain;
+          scroll-snap-align: start;
+          scroll-snap-stop: always;
+          user-select: none;
+        }
+      }
+      .dots {
+        position: absolute;
+        bottom: 8px;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        .dot {
+          width: 6px;
+          height: 6px;
+          padding: 0;
+          border: 0;
+          border-radius: 999px;
+          background: rgba(17, 24, 39, 0.22);
+          cursor: pointer;
+          transition: background 0.18s ease;
+          &--active {
+            background: rgba(17, 24, 39, 0.65);
+          }
+        }
+      }
     }
     .discount {
       position: absolute;
@@ -245,14 +353,14 @@
       padding: 8px 16px;
       background: $yellow;
       color: #111;
-      font-size: 11px;
-      font-weight: 900;
+      font-size: 0.6875rem;
+      font-weight: 700;
       line-height: 1;
       text-transform: uppercase;
       clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
       box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
       b {
-        font-size: 14px;
+        font-size: 0.875rem;
       }
     }
     .title-row {
@@ -263,7 +371,7 @@
     }
     h3 {
       margin: 0; /* глобальный margin из typography.scss в карточке лишний */
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 700;
       line-height: 1.3;
       /* длинные названия не должны растягивать всю строку грида — максимум 2 строки */
@@ -290,17 +398,17 @@
         color: #2f5f98;
       }
       span {
-        font-size: 10px;
+        font-size: 0.625rem;
         font-weight: 700;
         color: #24466f;
       }
       b {
-        font-size: 14px;
-        font-weight: 900;
+        font-size: 0.875rem;
+        font-weight: 700;
       }
     }
     .description {
-      font-size: 13px;
+      font-size: 0.8125rem;
       color: #777;
       white-space: nowrap;
       overflow: hidden;
@@ -335,7 +443,7 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
       color: #111827;
       font-size: 0.8125rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.2;
       white-space: nowrap;
 
@@ -345,24 +453,92 @@
     }
     .price-row {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .price-wrap {
+      display: flex;
       align-items: baseline;
       gap: 8px;
       flex-wrap: wrap;
+      min-width: 0;
+    }
+    .cart-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 38px;
+      padding: 0 12px;
+      flex-shrink: 0;
+      border: 1px solid #0f3d1f;
+      border-radius: 10px;
+      background: rgba(15, 61, 31, 0);
+      color: #000;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s ease, color 0.18s ease;
+      &:hover {
+        background: #0f3d1f;
+        color: #fff;
+      }
+    }
+    .cart-mini {
+      display: grid;
+      grid-template-columns: 32px 1fr 32px;
+      align-items: center;
+      height: 38px;
+      flex-shrink: 0;
+      overflow: hidden;
+      border: 1px solid #0f3d1f;
+      border-radius: 10px;
+      background: rgba(15, 61, 31, 0);
+      color: #000;
+      font-weight: 700;
+      button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        border: 0;
+        background: transparent;
+        color: #000;
+        cursor: pointer;
+        transition: background 0.18s ease;
+        &:nth-child(1) {
+          border-right: 1px solid #0f3d1f;
+        }
+        &:nth-child(3) {
+          border-left: 1px solid #0f3d1f;
+        }
+        &:hover {
+          background: #0f3d1f;
+          color: #fff;
+        }
+      }
+      span {
+        font-size: 0.8125rem;
+        text-align: center;
+      }
     }
     .price {
-      font-size: 18px;
+      margin: 0;
+      font-size: 1.125rem;
       font-weight: 700;
       color: $green;
     }
     .discount-price {
       color: #e31b23;
-      font-size: 24px;
-      font-weight: 900;
+      font-size: 1.5rem;
+      font-weight: 700;
       letter-spacing: -0.03em;
     }
     .old-price {
+      margin: 0;
       color: #111;
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 500;
       text-decoration: line-through;
       text-decoration-color: #e31b23;
@@ -380,7 +556,7 @@
       border: 1px solid rgba(227, 27, 35, 0.35);
       border-radius: 8px;
       color: #e31b23;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 700;
       line-height: 1.25;
       :global(svg) {
@@ -412,7 +588,7 @@
       border-radius: 8px;
       background: #111;
       color: #fff;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 600;
       line-height: 1.25;
       opacity: 0;
@@ -435,7 +611,7 @@
       height: 30px;
       padding: 0 12px;
       border-radius: 999px;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 700;
       letter-spacing: -0.01em;
     }
@@ -447,53 +623,6 @@
       background: #fdecec;
       color: #d92d20;
     }
-    .cart-counter {
-      box-sizing: border-box;
-      display: grid;
-      grid-template-columns: 44px 1fr 44px;
-      align-items: stretch;
-      width: 100%;
-      height: 42px;
-      min-height: 42px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.9);
-      border-radius: 10px;
-      background: $green-light;
-      color: #fff;
-      font-weight: 800;
-      line-height: 1;
-      button,
-      span {
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        min-height: 40px;
-        padding: 0;
-        line-height: 1;
-      }
-      button {
-        border: 0;
-        color: #fff;
-        background: transparent;
-        appearance: none;
-        transition: 0.18s ease;
-        &:first-child {
-          border-right: 1px solid rgba(255, 255, 255, 0.55);
-        }
-        &:last-child {
-          border-left: 1px solid rgba(255, 255, 255, 0.55);
-        }
-        &:hover {
-          background: color.scale($green-light, $lightness: -30%);
-        }
-      }
-      span {
-        font-size: 15px;
-        transform: translateY(-0.5px);
-      }
-    }
   }
   @media (max-width: 480px) {
     .card .title-row {
@@ -502,19 +631,10 @@
     .card .saving {
       padding: 8px 8px;
       span {
-        font-size: 9px;
+        font-size: 0.5625rem;
       }
       b {
-        font-size: 13px;
-      }
-    }
-    .card .cart-counter {
-      grid-template-columns: 40px 1fr 40px;
-      height: 40px;
-      min-height: 40px;
-      button,
-      span {
-        min-height: 38px;
+        font-size: 0.8125rem;
       }
     }
   }

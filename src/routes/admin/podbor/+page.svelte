@@ -551,7 +551,7 @@
   }
   h1 {
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 700;
     margin: 0 0 4px;
   }
   .hint {
@@ -605,7 +605,7 @@
   .segment-label {
     margin: 16px 0 8px;
     font-size: 14px;
-    font-weight: 800;
+    font-weight: 700;
     color: #111827;
   }
   .mode-hint {
@@ -855,7 +855,7 @@
     h1 {
       margin: 0 0 4px;
       font-size: 22px;
-      font-weight: 800;
+      font-weight: 700;
     }
   }
   .save-state {

@@ -22,9 +22,9 @@
   import mw from '$lib/assets/links/mw.webp';
   import wm from '$lib/assets/links/wm.webp';
   import hood from '$lib/assets/links/hood.webp';
-  import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
+  import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   import { imgUrl } from '$lib/s3Public';
   import grandexLogo from '$lib/assets/brands/Grandex Aqua.webp';
   import grandexMoiki from '$lib/assets/promo/grandex-moiki.webp';
@@ -128,6 +128,8 @@
 
   // п.5: преимущества раскрываются по клику
   let openFeatures = $state<Set<string>>(new Set());
+  // табы промо-блока брендов: Grandex / Omoikiri / Bone Crusher
+  let promoBrand = $state<'grandex' | 'omoikiri' | 'bone'>('grandex');
   function toggleFeature(title: string) {
     const next = new Set(openFeatures);
     next.has(title) ? next.delete(title) : next.add(title);
@@ -163,25 +165,34 @@
   {/if}
 </svelte:head>
 
-<section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
-  {#if mobileImages.length}
-    <div class="block lg:hidden">
-      <Slider imgPaths={mobileImages} />
-    </div>
-  {/if}
-  {#if desktopImages.length}
-    <div class="hidden lg:block">
-      <Slider imgPaths={desktopImages} />
-    </div>
-  {/if}
-</section>
+<!-- если все слайды скрыты — блока нет вовсе: aspect-ratio на секции держал бы пустое место -->
+{#if mobileImages.length || desktopImages.length}
+  <section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
+    {#if mobileImages.length}
+      <div class="block lg:hidden">
+        <Slider imgPaths={mobileImages} />
+      </div>
+    {/if}
+    {#if desktopImages.length}
+      <div class="hidden lg:block">
+        <Slider imgPaths={desktopImages} />
+      </div>
+    {/if}
+  </section>
+{/if}
+
+{#if data.syncBrands?.length}
+  <section class="mx-auto">
+    <BrandsGrid brands={data.syncBrands} />
+  </section>
+{/if}
 
 <section class="mx-auto">
   <a class="podbor-cta" href="/podbor">
     <div class="podbor-cta__main">
       <h2>
         Собери комплект техники
-        <em>с помощью ИИ-помощника<span class="hidden md:inline"> за 1 минуту</span></em>
+        <em>с помощью ИИ<span class="hidden md:inline"> за 1 минуту</span></em>
       </h2>
       <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет</p>
       <span class="podbor-cta__btn">Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span>
@@ -193,6 +204,18 @@
       loading="lazy"
     />
   </a>
+</section>
+
+<section class="mx-auto">
+  <h2 class="section-title">Популярные категории</h2>
+  <div class="categories-grid">
+    {#each categories as c}
+      <a href={c.link} class="category-card">
+        <span>{c.title}</span>
+        <img src={c.img} alt="" loading="lazy" decoding="async" width="480" height="240" />
+      </a>
+    {/each}
+  </div>
 </section>
 
 <section class="mx-auto">
@@ -240,95 +263,120 @@
 </section>
 
 <section class="mx-auto">
-  <h2 class="section-title">Популярные категории</h2>
-  <div class="categories-grid">
-    {#each categories as c}
-      <a href={c.link} class="category-card">
-        <span>{c.title}</span>
-        <img src={c.img} alt="" loading="lazy" decoding="async" width="480" height="240" />
-      </a>
-    {/each}
-  </div>
-</section>
-
-<section class="mx-auto">
   <div class="promo-banner promo-banner--grandex">
-    <div class="promo-banner__head">
-      <div class="promo-banner__icon">
-        <img src={grandexLogo} alt="Grandex Aqua" loading="lazy" />
+    {#snippet grandexBody()}
+      <div class="promo-banner__head">
+        <div class="promo-banner__icon">
+          <img src={grandexLogo} alt="Grandex Aqua" loading="lazy" />
+        </div>
+        <div class="promo-banner__text">
+          <strong>Grandex Aqua</strong>
+          <span>Бренд кухонных моек и смесителей с корнями в мире каменных столешниц. Созданы, чтобы служить рядом с камнем — эстетично, долго, безупречно.</span>
+        </div>
       </div>
-      <div class="promo-banner__text">
-        <strong>Grandex Aqua</strong>
-        <span>Бренд кухонных моек и смесителей с корнями в мире каменных столешниц. Созданы, чтобы служить рядом с камнем — эстетично, долго, безупречно.</span>
+      <div class="promo-cards">
+        <a href="/catalog/kuhonnye-moyki?brand=Grandex+Aqua" class="promo-card">
+          <img class="promo-card__img" src={grandexMoiki} alt="Мойки Grandex Aqua" loading="lazy" />
+          <span class="promo-card__name">Мойки</span>
+        </a>
+        <a href="/catalog/smesiteli?brand=Grandex+Aqua" class="promo-card">
+          <img class="promo-card__img" src={grandexSmesiteli} alt="Смесители Grandex Aqua" loading="lazy" />
+          <span class="promo-card__name">Смесители</span>
+        </a>
       </div>
-    </div>
-    <div class="promo-cards">
-      <a href="/catalog/kuhonnye-moyki?brand=Grandex+Aqua" class="promo-card">
-        <img class="promo-card__img" src={grandexMoiki} alt="Мойки Grandex Aqua" loading="lazy" />
-        <span class="promo-card__name">Мойки</span>
-      </a>
-      <a href="/catalog/smesiteli?brand=Grandex+Aqua" class="promo-card">
-        <img class="promo-card__img" src={grandexSmesiteli} alt="Смесители Grandex Aqua" loading="lazy" />
-        <span class="promo-card__name">Смесители</span>
-      </a>
-    </div>
-  </div>
-</section>
+    {/snippet}
+    {#snippet omoikiriBody()}
+      <div class="promo-banner__head">
+        <div class="promo-banner__icon">
+          <img src={omoikiriLogo} alt="Omoikiri" loading="lazy" />
+        </div>
+        <div class="promo-banner__text">
+          <strong>Omoikiri</strong>
+        </div>
+      </div>
+      <div class="promo-cards">
+        <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="promo-card">
+          <img
+            class="promo-card__img promo-card__img--catalog"
+            src={data.promoImages?.omoikiriMoiki ? imgUrl(data.promoImages.omoikiriMoiki, 480) : grandexMoiki}
+            alt="Мойки Omoikiri"
+            loading="lazy"
+          />
+          <span class="promo-card__name">Мойки</span>
+        </a>
+        <a href="/catalog/smesiteli?brand=Omoikiri" class="promo-card">
+          <img
+            class="promo-card__img promo-card__img--catalog"
+            src={data.promoImages?.omoikiriSmesiteli ? imgUrl(data.promoImages.omoikiriSmesiteli, 480) : grandexSmesiteli}
+            alt="Смесители Omoikiri"
+            loading="lazy"
+          />
+          <span class="promo-card__name">Смесители</span>
+        </a>
+        <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Omoikiri" class="promo-card">
+          <img
+            class="promo-card__img promo-card__img--catalog"
+            src={data.promoImages?.omoikiriIzmelchiteli ? imgUrl(data.promoImages.omoikiriIzmelchiteli, 480) : grandexSmesiteli}
+            alt="Измельчители Omoikiri"
+            loading="lazy"
+          />
+          <span class="promo-card__name">Измельчители пищевых отходов</span>
+        </a>
+      </div>
+    {/snippet}
+    {#snippet boneBody()}
+      <div class="promo-banner__head">
+        <div class="promo-banner__icon">
+          <img src={boneCrusherLogo} alt="Bone Crusher" loading="lazy" />
+        </div>
+        <div class="promo-banner__text">
+          <strong>Bone Crusher</strong>
+        </div>
+      </div>
+      <div class="promo-cards">
+        <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Bone+Crusher" class="promo-card">
+          <img
+            class="promo-card__img promo-card__img--catalog"
+            src={data.promoImages?.boneCrusherImg ? imgUrl(data.promoImages.boneCrusherImg, 480) : grandexMoiki}
+            alt="Измельчители Bone Crusher"
+            loading="lazy"
+          />
+          <span class="promo-card__name">Измельчители пищевых отходов</span>
+        </a>
+      </div>
+    {/snippet}
 
-<section class="mx-auto">
-  <div class="promo-banner promo-banner--grandex">
-    <div class="promo-banner__head">
-      <div class="promo-banner__icon">
-        <img src={omoikiriLogo} alt="Omoikiri" loading="lazy" />
-      </div>
-      <div class="promo-banner__text">
-        <strong>Omoikiri</strong>
-      </div>
+    <div class="promo-tabs" role="tablist" aria-label="Бренды">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={promoBrand === 'grandex'}
+        class:promo-tabs__active={promoBrand === 'grandex'}
+        onclick={() => (promoBrand = 'grandex')}>Grandex Aqua</button
+      >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={promoBrand === 'omoikiri'}
+        class:promo-tabs__active={promoBrand === 'omoikiri'}
+        onclick={() => (promoBrand = 'omoikiri')}>Omoikiri</button
+      >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={promoBrand === 'bone'}
+        class:promo-tabs__active={promoBrand === 'bone'}
+        onclick={() => (promoBrand = 'bone')}>Bone Crusher</button
+      >
     </div>
-    <div class="promo-cards">
-      <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="promo-card">
-        <img
-          class="promo-card__img promo-card__img--catalog"
-          src={data.promoImages?.omoikiriMoiki ? imgUrl(data.promoImages.omoikiriMoiki, 480) : grandexMoiki}
-          alt="Мойки Omoikiri"
-          loading="lazy"
-        />
-        <span class="promo-card__name">Мойки</span>
-      </a>
-      <a href="/catalog/smesiteli?brand=Omoikiri" class="promo-card">
-        <img
-          class="promo-card__img promo-card__img--catalog"
-          src={data.promoImages?.omoikiriSmesiteli ? imgUrl(data.promoImages.omoikiriSmesiteli, 480) : grandexSmesiteli}
-          alt="Смесители Omoikiri"
-          loading="lazy"
-        />
-        <span class="promo-card__name">Смесители</span>
-      </a>
-    </div>
-  </div>
-</section>
 
-<section class="mx-auto">
-  <div class="promo-banner promo-banner--grandex">
-    <div class="promo-banner__head">
-      <div class="promo-banner__icon">
-        <img src={boneCrusherLogo} alt="Bone Crusher" loading="lazy" />
-      </div>
-      <div class="promo-banner__text">
-        <strong>Bone Crusher</strong>
-      </div>
-    </div>
-    <div class="promo-cards">
-      <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Bone+Crusher" class="promo-card">
-        <img
-          class="promo-card__img promo-card__img--catalog"
-          src={data.promoImages?.boneCrusherImg ? imgUrl(data.promoImages.boneCrusherImg, 480) : grandexMoiki}
-          alt="Измельчители Bone Crusher"
-          loading="lazy"
-        />
-        <span class="promo-card__name">Измельчители пищевых отходов</span>
-      </a>
-    </div>
+    {#if promoBrand === 'grandex'}
+      {@render grandexBody()}
+    {:else if promoBrand === 'omoikiri'}
+      {@render omoikiriBody()}
+    {:else}
+      {@render boneBody()}
+    {/if}
   </div>
 </section>
 
@@ -362,45 +410,12 @@
 </section>
 {/if}
 
-{#if data.latestArticles?.length}
-  <section class="mx-auto">
-    <div class="articles-home__head">
-      <h2 class="section-title">Статьи</h2>
-      <a class="articles-home__all" href="/articles">Все статьи <ArrowRight size={16} strokeWidth={2.3} /></a>
-    </div>
-    <div class="articles-home__grid">
-      {#each data.latestArticles as article (article.id)}
-        <a class="articles-home__card" href="/articles/{article.slug}">
-          <div class="articles-home__cover">
-            {#if article.cover_url}
-              <img src={imgUrl(article.cover_url, 640)} alt={article.title} loading="lazy" />
-            {:else}
-              <div class="no-cover"></div>
-            {/if}
-          </div>
-          <div class="articles-home__body">
-            <h3>{article.title}</h3>
-            {#if article.description}
-              <p>{article.description}</p>
-            {/if}
-          </div>
-        </a>
-      {/each}
-    </div>
-  </section>
-{/if}
-
-<section class="mx-auto">
-  <h2 class="section-title">Бренды</h2>
-  <BrandsGrid brands={data.syncBrands} />
-</section>
-
 <section class="mx-auto">
 	<ReviewsSection />
 </section>
 
 <section class="mx-auto">
-  <div class="promo-banner">
+  <div class="promo-banner promo-banner--store">
     <div class="promo-banner__head">
       <div class="promo-banner__icon">
         <MapPin size={26} strokeWidth={2} color="#e6a73c" />
@@ -509,11 +524,14 @@
     &__main h2 {
       margin: 8px 0 0;
       font-size: clamp(20px, 1.9vw, 26px);
-      font-weight: 800;
+      font-weight: 700;
       color: #2e3d2f;
       line-height: 1.15;
 
       em {
+        // inline-block: «с помощью ИИ» переносится только целиком,
+        // предлог «с» не отрывается от фразы
+        display: inline-block;
         font-style: normal;
         color: #2f6b3a;
         // жёлтый маркер-подчёркивание как в референсе
@@ -539,7 +557,7 @@
       background: #f0c64b;
       color: #2e3d2f;
       font-size: 14.5px;
-      font-weight: 800;
+      font-weight: 700;
       box-shadow: 0 4px 10px rgba(240, 198, 75, 0.45);
       :global(svg) {
         transition: transform 0.15s ease;
@@ -606,26 +624,56 @@
       -webkit-mask-image: linear-gradient(to right, transparent 0, #000 110px);
 
       @media (max-width: 860px) {
-        display: none;
+        // фото не прячем — сжимаем и усиливаем левый фейд, чтобы текст читался
+        display: block;
+        width: 46%;
+        mask-image: linear-gradient(to right, transparent 0, #000 55px);
+        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 55px);
       }
     }
 
     @media (max-width: 860px) {
-      padding: 20px;
+      padding: 16px 44% 16px 16px;
       &__main {
-        align-items: center;
-        text-align: center;
+        align-items: flex-start;
+        text-align: left;
       }
       &__main p {
         max-width: none;
       }
       &__features {
-        justify-content: center;
+        justify-content: flex-start;
+        gap: 6px 14px;
         li {
-          flex-direction: column;
-          gap: 8px;
-          text-align: center;
+          flex-direction: row;
+          text-align: left;
+          :global(svg) {
+            width: 28px;
+            height: 28px;
+            padding: 6px;
+          }
         }
+      }
+      &__btn {
+        padding: 10px 18px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      // на 350px фото заходит ПОД текст с длинным левым фейдом:
+      // блок не растёт по высоте, текст читается поверх растворённой части
+      padding: 16px 12% 16px 16px;
+
+      &__main {
+        position: relative;
+        z-index: 1;
+      }
+
+      &__photo {
+        width: 52%;
+        mask-image: linear-gradient(to right, transparent 0, #000 70%);
+        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 70%);
       }
     }
   }
@@ -658,7 +706,7 @@
       flex: 1;
       margin: 0;
       font-size: 1.02rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
   }
@@ -695,10 +743,10 @@
 
     /* УЗКИЙ баннер (утверждено, п.18 «Размер баннера большой слишком»).
        Пропорции зафиксированы — высота НЕ зависит от размера окна:
-       мобилка 4:3 (слайды 800x600), десктоп 4:1 (формат слайдов 1600x400).
+       мобилка 2:1 (слайды 800x400), десктоп 4:1 (формат слайдов 1600x400).
        Высота на десктопе ≈ 310px при любой ширине — как в утверждённой версии.
        CLS = 0. */
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 2 / 1;
     @media (min-width: 1024px) {
       aspect-ratio: 4 / 1;
     }
@@ -710,9 +758,9 @@
     }
   }
   .section-title {
-    margin: 0 0 16px;
-    font-size: 1.375rem;
-    font-weight: 800;
+    margin: 0 0 10px;
+    font-size: 1.25rem;
+    font-weight: 700;
     line-height: 1.15;
     color: #111827;
   }
@@ -786,7 +834,7 @@
     h3 {
       margin: 0;
       font-size: 1rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.3;
       color: #111827;
       display: -webkit-box;
@@ -877,8 +925,15 @@
   }
   .categories-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
+  }
+  @media (max-width: 640px) {
+    // на узких экранах названия («Посудомоечные машины») в 3 колонки не влезают
+    // даже мелким шрифтом — на мобилке 2 колонки, 3 остаются от 640px
+    .categories-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   .category-card {
     display: flex;
@@ -898,8 +953,8 @@
       box-shadow 0.2s ease;
     span {
       order: 2;
-      font-size: 0.9375rem;
-      font-weight: 800;
+      font-size: 0.8125rem;
+      font-weight: 600;
       line-height: 1.25;
     }
     img {
@@ -957,7 +1012,7 @@
     background: var(--kit-color);
     color: #fff;
     font-size: 1rem;
-    font-weight: 900;
+    font-weight: 700;
     box-shadow: 0 10px 20px rgba(62, 111, 79, 0.22);
   }
   .kit-card__image {
@@ -986,7 +1041,7 @@
       max-width: 96%;
       margin: 0 auto;
       font-size: 1rem;
-      font-weight: 850;
+      font-weight: 700;
       line-height: 1.22;
       color: #111827;
     }
@@ -1008,7 +1063,7 @@
       color: #fff;
       font-size: 0.88rem;
       font-style: normal;
-      font-weight: 850;
+      font-weight: 700;
       svg {
         flex: 0 0 auto;
         transition: transform 0.2s ease;
@@ -1016,6 +1071,35 @@
     }
   }
   // ─── Promo banners (Grandex / AC) ───
+  .promo-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    button {
+      padding: 9px 18px;
+      border: 1px solid rgba(62, 111, 79, 0.25);
+      border-radius: 999px;
+      background: #fff;
+      color: #374151;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.18s ease;
+      &:hover {
+        border-color: rgba(62, 111, 79, 0.6);
+        color: #111827;
+      }
+    }
+    &__active {
+      border-color: transparent;
+      background: $green;
+      color: #fff;
+      &:hover {
+        border-color: transparent;
+        color: #fff;
+      }
+    }
+  }
   .promo-banner {
     display: flex;
     flex-direction: column;
@@ -1051,6 +1135,15 @@
       object-fit: contain;
     }
   }
+  .promo-banner--store .promo-banner__head {
+    /* текст слева, иконка справа (по просьбе — блок не должен центрироваться) */
+    justify-content: flex-start;
+    text-align: left;
+    .promo-banner__icon {
+      order: 2;
+      margin-left: auto;
+    }
+  }
   .promo-banner--grandex .promo-banner__icon {
     background: rgba(62, 111, 79, 0.1);
   }
@@ -1064,7 +1157,7 @@
     gap: 4px;
     strong {
       font-size: 1.125rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.2;
       color: #111827;
     }
@@ -1132,17 +1225,17 @@
   }
   .promo-card__name {
     font-size: 0.95rem;
-    font-weight: 800;
+    font-weight: 700;
     text-align: center;
     color: #111827;
   }
   section {
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-top: 12px;
+    margin-bottom: 12px;
   }
   @media (min-width: 640px) {
     .categories-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .category-card {
       flex-direction: row;
@@ -1230,7 +1323,7 @@
     h2 {
       margin: 0 0 16px;
       font-size: 1.6rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.2;
       color: #111827;
     }
@@ -1238,14 +1331,14 @@
     .seo-h1 {
       margin: 0 0 16px;
       font-size: 1.5rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.2;
       color: #111827;
     }
     h3 {
       margin: 24px 0 12px;
       font-size: 1.125rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     p {

@@ -138,7 +138,7 @@
     margin-bottom: 20px;
     h1 {
       font-size: 22px;
-      font-weight: 800;
+      font-weight: 700;
       margin: 0;
     }
   }

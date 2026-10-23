@@ -49,7 +49,7 @@
     h1 {
       margin: 12px 0 20px;
       font-size: 2rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
   }
@@ -122,7 +122,7 @@
   h2 {
     margin: 0;
     font-size: 1.1rem;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1.3;
     color: #111827;
     transition: color 0.15s;

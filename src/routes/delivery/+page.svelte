@@ -106,7 +106,7 @@
       margin: 0;
       color: #141414;
       font-size: 2.5rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.08;
       letter-spacing: -0.05em;
     }
@@ -125,7 +125,7 @@
     margin-bottom: 0.75rem;
     color: $green;
     font-size: 0.8125rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
@@ -145,7 +145,7 @@
       margin: 0 0 0.875rem;
       color: #141414;
       font-size: 1.5rem;
-      font-weight: 800;
+      font-weight: 700;
       line-height: 1.2;
     }
     p {

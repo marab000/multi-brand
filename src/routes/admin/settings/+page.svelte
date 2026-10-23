@@ -187,7 +187,7 @@
   }
   h1 {
     font-size: 22px;
-    font-weight: 800;
+    font-weight: 700;
     margin: 0 0 20px;
   }
   .mt-4 {
