@@ -198,6 +198,13 @@ function shortType(productType) {
 	if (t in TYPE_OVERRIDES) return TYPE_OVERRIDES[t]
 	return t.charAt(0).toLowerCase() + t.slice(1)
 }
+// Короткое название (бренд + модель) — до первой кириллицы; тип и цвет туда не входят.
+// Для хлебных крошек и других мест, где длинное обогащённое имя раздувает контент.
+function shortTitle(name) {
+  const m = String(name ?? '').match(/^[^А-Яа-яЁё]+/);
+  const model = m ? m[0].replace(/[\s,;.:()\-\/]+$/, '').trim() : '';
+  return model.length >= 2 ? model : String(name ?? '').trim();
+}
 function enrichName(name, productType, color) {
 	let result = name
 	const short = shortType(productType)
@@ -230,6 +237,7 @@ const rows = []
 			source: SOURCE,
 			brand: sql.json({ name: cleanName, api: apiBrand.NAME }),
 			name: displayName,
+			title_short: shortTitle(displayName),
 			description: item['ТекстовоеОписание'] ?? null,
 			category: rawCategory,
 			product_type: rawType,
@@ -268,6 +276,7 @@ const rows = []
 		source=excluded.source,
 		brand=excluded.brand,
 		name=excluded.name,
+		title_short=excluded.title_short,
 		description=excluded.description,
 		category=excluded.category,
 		product_type=excluded.product_type,

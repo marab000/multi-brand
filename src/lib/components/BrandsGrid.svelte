@@ -3,7 +3,8 @@
   // источник тот же, что у синка Тетриса (админка → «Тетрис»)
   import { brandSlug } from '$lib/utils/slugify';
 
-  let { brands = [] }: { brands?: string[] } = $props();
+  let { brands = [], static: isStatic = false }:
+    { brands?: string[]; static?: boolean } = $props();
 
   const images = import.meta.glob('/src/lib/assets/brands/*.{png,jpg,jpeg,webp}', {
     eager: true,
@@ -21,8 +22,20 @@
 </script>
 
 {#if brands.length}
-  <div class="marquee" aria-label="Бренды">
+  <div class="marquee" class:marquee--static={isStatic} aria-label="Бренды">
     <div class="marquee__track">
+      {#if isStatic}
+        {#each brands as brand (brand)}
+          <a href={`/brands/${brandSlug(brand)}`} class="brand">
+            <div class="logo">
+              {#if getImage(brand)}
+                <img src={getImage(brand)} alt={brand} loading="lazy" />
+              {/if}
+            </div>
+            <div class="name">{brand}</div>
+          </a>
+        {/each}
+      {:else}
       {#each [0, 1] as copy (copy)}
         <div class="marquee__row" aria-hidden={copy === 1}>
           {#each brands as brand (brand)}
@@ -41,6 +54,7 @@
           {/each}
         </div>
       {/each}
+      {/if}
     </div>
   </div>
 {/if}
@@ -61,6 +75,23 @@
     animation: brands-scroll 40s linear infinite;
     &:hover {
       animation-play-state: paused;
+    }
+  }
+  /* статичный режим (/catalog): обычная сетка, все бренды видны, ничего не крутится */
+  .marquee--static {
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+    .marquee__track {
+      display: grid;
+      /* 110px при контенте 1248px (контейнер 1280 - паддинги) = 10 колонок вместо 9 */
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      width: 100%;
+      animation: none;
+    }
+    .brand {
+      width: auto;
     }
   }
   .marquee__row {
@@ -120,6 +151,10 @@
      заказчик явно просил вращение (п.20 ТЗ). Пауза на hover сохраняется. */
 
   @media (max-width: 640px) {
+    /* 96px на мобиле = 3 колонки вместо 2 */
+    .marquee--static .marquee__track {
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    }
     .brand {
       width: 108px;
     }

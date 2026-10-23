@@ -19,6 +19,7 @@
   import { slugify } from '$lib/utils/slugify';
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
   import { imgUrl } from '$lib/s3Public';
+  import { backHref } from '$lib/stores/backHref';
   import { PiggyBank, Star, Minus, Plus } from 'lucide-svelte';
   register();
   type ProductPageProduct = Product & {
@@ -87,6 +88,12 @@
   function getKitItemName(item: ProductKitItem) {
     return item.child_product?.name || item.name || 'Товар комплекта';
   }
+  // стрелка «назад» в шапке на мобилке ведёт в категорию товара
+  $effect(() => {
+    backHref.set(breadcrumbs[breadcrumbs.length - 1]?.href ?? '/catalog');
+  });
+  // короткое название (бренд + модель) — для хлебных крошек, чтобы не раздувать строку
+  const shortName = $derived(p.title_short || p.name);
   function getKitItemBrand(item: ProductKitItem) {
     return item.child_product?.brand?.name || item.brand;
   }
@@ -187,13 +194,13 @@
 
 {#if p}
   <div class="mx-auto flex flex-col items-start">
-    <Breadcrumbs items={breadcrumbs} product={p.name} />
+    <Breadcrumbs items={breadcrumbs} product={shortName} />
     <div class="mt-6 mb-3 grid w-full gap-12 lg:grid-cols-2">
       <div class="w-full max-w-xl min-w-0">
         <div class="relative w-full">
         <swiper-container
           bind:this={mainSwiper}
-          class="aspect-square w-full rounded border bg-white"
+          class="aspect-square w-full rounded bg-white"
         >
           {#if images.length}
             {#each images as img, i}
@@ -255,7 +262,7 @@
         {/if}
       </div>
       <div>
-        <h1 class="mb-3 text-2xl font-semibold">{p.name}</h1>
+        <h1 class="mb-3 text-xl font-semibold">{p.name}</h1>
         {#if stockLabel}
           <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>{stockLabel.text}</p>
         {/if}
@@ -467,8 +474,8 @@
   }
   .product-price {
     color: #111;
-    font-size: 32px;
-    font-weight: 900;
+    font-size: 2rem;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: -0.03em;
   }
@@ -477,7 +484,7 @@
   }
   .old-product-price {
     color: #111;
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 500;
     line-height: 1;
     text-decoration: line-through;
@@ -492,14 +499,14 @@
     padding: 8px 16px;
     background: $yellow;
     color: #111;
-    font-size: 11px;
-    font-weight: 900;
+    font-size: 0.6875rem;
+    font-weight: 700;
     line-height: 1;
     text-transform: uppercase;
     clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
     b {
-      font-size: 14px;
+      font-size: 0.875rem;
     }
   }
   .product-benefits {
@@ -515,14 +522,14 @@
     border: 1px solid rgba(227, 27, 35, 0.35);
     border-radius: 8px;
     color: #e31b23;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 0.8125rem;
+    font-weight: 700;
     line-height: 1.25;
     span {
       display: block;
       margin-top: 4px;
       color: #000;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 600;
     }
   }
@@ -544,12 +551,12 @@
     }
     span {
       color: #24466f;
-      font-size: 11px;
+      font-size: 0.6875rem;
       font-weight: 700;
     }
     b {
-      font-size: 16px;
-      font-weight: 900;
+      font-size: 1rem;
+      font-weight: 700;
     }
   }
   .kit-block {
@@ -560,8 +567,8 @@
     background: #fff;
     h2 {
       margin: 0 0 16px;
-      font-size: 20px;
-      font-weight: 800;
+      font-size: 1.25rem;
+      font-weight: 700;
       line-height: 1.15;
     }
   }
@@ -597,14 +604,14 @@
   .kit-brand {
     margin-bottom: 4px;
     color: #777;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 700;
   }
   .kit-name {
     display: block;
     color: #111;
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 0.875rem;
+    font-weight: 700;
     line-height: 1.3;
     text-decoration: none;
     &:hover {
@@ -614,7 +621,7 @@
   .kit-description {
     margin-top: 4px;
     color: #777;
-    font-size: 12px;
+    font-size: 0.75rem;
     line-height: 1.35;
     display: -webkit-box;
     overflow: hidden;
@@ -625,8 +632,8 @@
   .kit-price {
     margin-top: 8px;
     color: $green;
-    font-size: 16px;
-    font-weight: 900;
+    font-size: 1rem;
+    font-weight: 700;
     line-height: 1;
   }
   .included-kits {
@@ -652,13 +659,13 @@
       background: #fff;
     }
     span {
-      font-size: 14px;
-      font-weight: 800;
+      font-size: 0.875rem;
+      font-weight: 700;
       line-height: 1.25;
     }
     b {
       color: $green;
-      font-size: 14px;
+      font-size: 0.875rem;
       white-space: nowrap;
     }
     &:hover span {
@@ -673,8 +680,8 @@
     border-radius: 10px;
     background: #eef4fb;
     color: #24466f;
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 0.875rem;
+    font-weight: 700;
     transition: 0.18s ease;
     &:hover {
       background: #e4edf8;
@@ -690,7 +697,7 @@
     border-radius: 12px;
     background: $green-light;
     color: #fff;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1;
     button,
     span {
@@ -717,7 +724,7 @@
       }
     }
     span {
-      font-size: 18px;
+      font-size: 1.125rem;
       min-width: 60px;
     }
   }
@@ -746,7 +753,7 @@
     &__title {
       margin: 0 0 16px;
       font-size: 1.35rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     &__grid {

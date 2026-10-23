@@ -20,14 +20,16 @@
 <svelte:head>
   {#if data.canonical}<link rel="canonical" href={data.canonical} />{/if}
   {#if data.metaDescription}<meta name="description" content={data.metaDescription} />{/if}
-  <title>{data.seoH1 ||
-    (data.isSearchPage && searchValue
-      ? `Поиск: ${searchValue} | MULTIBRAND`
-      : data.isSearchPage
-        ? 'Поиск | MULTIBRAND'
-        : data.page > 1
-          ? `${data.title} — страница ${data.page} | MULTIBRAND`
-          : `${data.title} | MULTIBRAND`)}</title>
+  <title
+    >{data.seoH1 ||
+      (data.isSearchPage && searchValue
+        ? `Поиск: ${searchValue} | MULTIBRAND`
+        : data.isSearchPage
+          ? 'Поиск | MULTIBRAND'
+          : data.page > 1
+            ? `${data.title} — страница ${data.page} | MULTIBRAND`
+            : `${data.title} | MULTIBRAND`)}</title
+  >
   {#if shouldNoindex}
     <meta name="robots" content="noindex, follow" />
   {/if}
@@ -135,7 +137,7 @@
     h2 {
       margin: 0 0 10px;
       font-size: 1.25rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #111827;
     }
     p {

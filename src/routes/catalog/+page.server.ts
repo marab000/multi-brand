@@ -24,8 +24,6 @@ export const load: PageServerLoad = async ({ url }) => {
     throw redirect(302, `/catalog/search?${params.toString()}`);
   }
 
-
-
   // Бренды для блока внизу каталога — из включённых в синке (админка → «Тетрис»)
   let syncBrands: string[] = [];
   try {
@@ -34,11 +32,26 @@ export const load: PageServerLoad = async ({ url }) => {
     // настроек ещё нет — блок просто не покажется
   }
 
-  const { roots, showcase } = await getLiveCatalog();
+  const [rootsAndShowcase, countRows] = await Promise.all([
+    getLiveCatalog(),
+    sql`
+      SELECT LOWER(TRIM(catalog_root_slug)) AS root_slug, COUNT(*)::int AS count
+      FROM products
+      WHERE catalog_root_slug IS NOT NULL AND price_rrc IS NOT NULL
+      GROUP BY 1
+    `
+  ]);
+  const { roots, showcase } = rootsAndShowcase;
+
+  const rootCounts: Record<string, number> = {};
+  for (const row of countRows as unknown as { root_slug: string; count: number }[]) {
+    rootCounts[row.root_slug] = row.count;
+  }
 
   return {
     catalogRoots: roots,
     catalogShowcase: showcase,
+    rootCounts,
     syncBrands
   };
 };

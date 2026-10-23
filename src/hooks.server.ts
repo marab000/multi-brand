@@ -28,6 +28,8 @@ async function ensureSlidesTable() {
     values ('cart_discount_percent', '15')
     on conflict (key) do nothing
   `;
+  // Короткое название товара (бренд + модель) — для хлебных крошек; заполняет sync
+  await sql`alter table products add column if not exists title_short text`;
   // Дефолтные исключённые бренды
   await sql`
     insert into settings (key, value)

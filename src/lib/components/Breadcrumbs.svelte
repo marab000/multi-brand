@@ -34,7 +34,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 4px;
-    font-size: 14px;
+    font-size: 0.875rem;
     line-height: 1.2;
     padding: 8px 12px;
     background: #f8f9fa;
@@ -64,6 +64,14 @@
       font-weight: 600;
       padding: 0;
       border-radius: 6px;
+      /* имя товара: перенос по словам разрешён, но не длиннее 2 строк */
+      &:last-child {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+      }
     }
   }
 </style>
