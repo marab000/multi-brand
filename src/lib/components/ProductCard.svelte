@@ -64,6 +64,37 @@
     if (!galleryEl) return;
     galleryEl.scrollTo({ left: i * galleryEl.clientWidth, behavior: 'smooth' });
   }
+  // драг мышкой на десктопе: та же прокрутка, что тач-свайп, со снапом к слайду
+  let isDragging = $state(false);
+  let dragStartX = 0;
+  let dragStartScroll = 0;
+  let dragMoved = false;
+  function handlePointerDown(e: PointerEvent) {
+    if (e.pointerType !== 'mouse' || !galleryEl) return;
+    // preventDefault гасит нативный drag ссылки/картинки, иначе браузер тащит <a>, а не галерею
+    e.preventDefault();
+    isDragging = true;
+    dragMoved = false;
+    dragStartX = e.clientX;
+    dragStartScroll = galleryEl.scrollLeft;
+    galleryEl.setPointerCapture(e.pointerId);
+  }
+  function handlePointerMove(e: PointerEvent) {
+    if (!isDragging || !galleryEl) return;
+    const dx = e.clientX - dragStartX;
+    if (Math.abs(dx) > 5) dragMoved = true;
+    galleryEl.scrollLeft = dragStartScroll - dx;
+  }
+  function handlePointerUp(e: PointerEvent) {
+    if (!isDragging) return;
+    isDragging = false;
+    if (galleryEl?.hasPointerCapture(e.pointerId)) galleryEl.releasePointerCapture(e.pointerId);
+    if (!dragMoved) return;
+    lastSwipeAt = Date.now();
+    // снапим к ближайшему слайду (на время ручного скролла snap был выключен)
+    const target = Math.round((galleryEl?.scrollLeft ?? 0) / (galleryEl?.clientWidth || 1));
+    scrollToSlide(target);
+  }
   // свайп по галерее не должен уводить на страницу товара
   function handleCardClick(e: MouseEvent) {
     if (Date.now() - lastSwipeAt < 300) {
@@ -119,9 +150,14 @@
         <!-- свайп-галерея: нативный scroll-snap, без библиотек -->
         <div
           class="gallery"
+          class:gallery--dragging={isDragging}
           bind:this={galleryEl}
           on:scroll={handleGalleryScroll}
-          on:pointerdown={() => (lastSwipeAt = Date.now())}
+          on:pointerdown={handlePointerDown}
+          on:pointermove={handlePointerMove}
+          on:pointerup={handlePointerUp}
+          on:pointercancel={handlePointerUp}
+          on:dragstart={(e) => e.preventDefault()}
         >
           {#each cardImages as img, i (img.url)}
             <img
@@ -308,6 +344,14 @@
         scrollbar-width: none;
         &::-webkit-scrollbar {
           display: none;
+        }
+        @media (hover: hover) and (pointer: fine) {
+          cursor: grab;
+          &.gallery--dragging {
+            cursor: grabbing;
+            scroll-snap-type: none; /* во время ручного скролла снап мешает scrollLeft */
+            user-select: none;
+          }
         }
         img {
           flex: 0 0 100%;

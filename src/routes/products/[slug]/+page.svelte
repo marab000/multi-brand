@@ -272,8 +272,24 @@
             <div class="old-product-price">{formatPrice(oldPrice)} ₽</div>
             <div class="product-discount"><span>АКЦИЯ</span><b>{getDiscountLabel()}</b></div>
           {/if}
+          <!-- кнопка в ряд с ценой, как в карточках каталога -->
+          <div class="ml-auto">
+            {#if qty > 0}
+              <div class="cart-counter">
+                <button type="button" aria-label="Уменьшить количество" onclick={() => cart.dec(p.id)}>
+                  <Minus size={18} strokeWidth={2.6} />
+                </button>
+                <span>{qty}</span>
+                <button type="button" aria-label="Увеличить количество" onclick={() => cart.inc(p.id)}>
+                  <Plus size={18} strokeWidth={2.6} />
+                </button>
+              </div>
+            {:else}
+              <button class="btn primary" onclick={addToCart}>В корзину</button>
+            {/if}
+          </div>
         </div>
-        <div class="product-benefits">
+        <div class="product-benefits mb-8">
           <div class="product-installment">
             от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}<span
               >Подробности уточняйте у менеджера</span
@@ -285,21 +301,6 @@
                 >{formatPrice(saving)} ₽</b
               >
             </div>
-          {/if}
-        </div>
-        <div class="mb-8 flex gap-3">
-          {#if qty > 0}
-            <div class="cart-counter">
-              <button type="button" aria-label="Уменьшить количество" onclick={() => cart.dec(p.id)}>
-                <Minus size={18} strokeWidth={2.6} />
-              </button>
-              <span>{qty}</span>
-              <button type="button" aria-label="Увеличить количество" onclick={() => cart.inc(p.id)}>
-                <Plus size={18} strokeWidth={2.6} />
-              </button>
-            </div>
-          {:else}
-            <button class="btn primary" onclick={addToCart}>В корзину</button>
           {/if}
         </div>
         {#if p.isKit && kitItems.length}
@@ -382,7 +383,7 @@
     </div>
   </div>
   {#if zoom}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90">
+    <div class="fixed inset-0 z-[1100] flex items-center justify-center bg-black">
       <button title="" class="absolute flex h-full w-full opacity-0" onclick={closeZoom}></button>
       <button
         onclick={closeZoom}
