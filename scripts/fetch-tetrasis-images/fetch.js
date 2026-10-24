@@ -34,6 +34,9 @@ const RETRY_DELAY = Number(process.env.FETCH_IMAGES_RETRY_DELAY || 3000)
 const JPEG_QUALITY = Number(process.env.FETCH_IMAGES_JPEG_QUALITY || 78)
 const MAX_SIZE = Number(process.env.FETCH_IMAGES_MAX_SIZE || 1600)
 const MIN_ORIGINAL_SIZE_KB = Number(process.env.FETCH_IMAGES_MIN_ORIGINAL_SIZE_KB || 120)
+// Капа картинок на товар: галереи тетриса бывают по 10-99 шт (превью + большие дубли),
+// для карточки достаточно первых N больших. 0 — без лимита.
+const MAX_IMAGES = Number(process.env.FETCH_IMAGES_MAX_IMAGES || 5)
 const SEARCH_MIN_SCORE = Number(process.env.FETCH_IMAGES_SEARCH_MIN_SCORE || 0.72)
 if (!Object.values(MODES).includes(MODE)) throw new Error(`Unknown FETCH_IMAGES_MODE: ${MODE}. Use: ${Object.values(MODES).join(', ')}`)
 if (!Object.values(SOURCES).includes(SOURCE)) throw new Error(`Unknown FETCH_IMAGES_SOURCE: ${SOURCE}. Use: ${Object.values(SOURCES).join(', ')}`)
@@ -222,35 +225,47 @@ async function getImages(page, url) {
 		if (status === 404) return { images: [], rawCount: 0, status: 'not-found' }
 		if (!(await isProductPage(page))) return { images: [], rawCount: 0, status: 'not-found' }
 		const images = await page.evaluate(() => {
-			const urls = []
-			const push = value => {
+			// Большие и мелкие (превью) варианты собираем РАЗДЕЛЬНО: раньше всё валилось
+			// в один список, и галерея из 5 фото превращалась в 10 картинок,
+			// половина — шакальные превью
+			const big = []
+			const small = []
+			const push = (bucket, value) => {
 				if (!value) return
 				const url = new URL(value, location.origin).href
-				if (!urls.includes(url)) urls.push(url)
+				if (!bucket.includes(url)) bucket.push(url)
 			}
-			const attrSelectors = [
+			const bigSelectors = [
 				['.item_slider .thumbs li[data-big_img]', 'data-big_img'],
-				['.item_slider .thumbs li[data-small_img]', 'data-small_img'],
 				['.item_slider li[data-big_img]', 'data-big_img'],
-				['.item_slider li[data-small_img]', 'data-small_img'],
 				['.item_slider img[xoriginal]', 'xoriginal'],
-				['.item_slider img[data-xpreview]', 'data-xpreview'],
-				['.item_slider img[data-src]', 'data-src'],
 				['.item_slider a.popup_link[href]', 'href'],
 				['.product-detail-gallery a.popup_link[href]', 'href'],
 				['.detail_picture a.popup_link[href]', 'href'],
 				['.slides a.popup_link[href]', 'href']
 			]
-			attrSelectors.forEach(([selector, attr]) => document.querySelectorAll(selector).forEach(node => push(node.getAttribute(attr))))
-			if (!urls.length) {
+			const smallSelectors = [
+				['.item_slider .thumbs li[data-small_img]', 'data-small_img'],
+				['.item_slider li[data-small_img]', 'data-small_img'],
+				['.item_slider img[data-xpreview]', 'data-xpreview'],
+				['.item_slider img[data-src]', 'data-src']
+			]
+			bigSelectors.forEach(([selector, attr]) => document.querySelectorAll(selector).forEach(node => push(big, node.getAttribute(attr))))
+			smallSelectors.forEach(([selector, attr]) => document.querySelectorAll(selector).forEach(node => push(small, node.getAttribute(attr))))
+			if (!big.length && !small.length) {
 				const imgSelectors = ['.item_slider img[src]', '.product-detail-gallery img[src]', '.detail_picture img[src]', '.slides img[src]', 'img.detail_picture[src]', 'img.product-detail-image[src]', 'img.xzoom-gallery[src]']
-				imgSelectors.forEach(selector => document.querySelectorAll(selector).forEach(img => push(img.getAttribute('src'))))
+				imgSelectors.forEach(selector => document.querySelectorAll(selector).forEach(img => push(small, img.getAttribute('src'))))
 			}
-			return urls
+			return { big, small }
 		})
-		const filtered = images.filter(url => !isNoImageUrl(url) && /\.(jpe?g|png|webp)(\?|$)/i.test(url))
-		if (!filtered.length && await hasNoImage(page)) return { images: [], rawCount: images.length, status: 'no-image' }
-		return { images: filtered, rawCount: images.length, status: filtered.length ? 'ok' : 'empty' }
+		// большие варианты в приоритете, мелкие — только если больших нет вообще;
+		// капа: первые MAX_IMAGES, галерея длиннее не нужна
+		const picked = images.big.length ? images.big : images.small
+		const filtered = picked
+			.filter(url => !isNoImageUrl(url) && /\.(jpe?g|png|webp)(\?|$)/i.test(url))
+			.slice(0, MAX_IMAGES > 0 ? MAX_IMAGES : undefined)
+		if (!filtered.length && await hasNoImage(page)) return { images: [], rawCount: images.big.length + images.small.length, status: 'no-image' }
+		return { images: filtered, rawCount: images.big.length + images.small.length, status: filtered.length ? 'ok' : 'empty' }
 	})
 }
 async function httpProbe(url) {
