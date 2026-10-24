@@ -138,17 +138,32 @@
 </script>
 
 <svelte:head>
-  <title>{data?.meta?.title || 'Бытовая техника в Казани — интернет-магазин Мультибренд | Рассрочка, доставка'}</title>
+  <title
+    >{data?.meta?.title ||
+      'Бытовая техника в Казани — интернет-магазин Мультибренд | Рассрочка, доставка'}</title
+  >
   {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
   <meta
     name="description"
     content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
   />
   {#if desktopImages[0]}
-    <link rel="preload" as="image" href={desktopImages[0]} media="(min-width: 1024px)" fetchpriority="high" />
+    <link
+      rel="preload"
+      as="image"
+      href={desktopImages[0]}
+      media="(min-width: 1024px)"
+      fetchpriority="high"
+    />
   {/if}
   {#if mobileImages[0]}
-    <link rel="preload" as="image" href={mobileImages[0]} media="(max-width: 1023px)" fetchpriority="high" />
+    <link
+      rel="preload"
+      as="image"
+      href={mobileImages[0]}
+      media="(max-width: 1023px)"
+      fetchpriority="high"
+    />
   {/if}
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="MULTIBRAND" />
@@ -181,21 +196,17 @@
   </section>
 {/if}
 
-{#if data.syncBrands?.length}
-  <section class="mx-auto">
-    <BrandsGrid brands={data.syncBrands} />
-  </section>
-{/if}
-
 <section class="mx-auto">
   <a class="podbor-cta" href="/podbor">
     <div class="podbor-cta__main">
       <h2>
         Собери комплект техники
-        <em>с помощью ИИ<span class="hidden md:inline"> за 1 минуту</span></em>
+        <em>с помощью ИИ <span class="hidden md:inline"> за 1 минуту</span></em>
       </h2>
       <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет</p>
-      <span class="podbor-cta__btn">Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span>
+      <span class="podbor-cta__btn"
+        >Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span
+      >
     </div>
     <img
       class="podbor-cta__photo"
@@ -205,6 +216,14 @@
     />
   </a>
 </section>
+
+{#if data.syncBrands?.length}
+  <!-- у marquee свой padding 12px (иначе тень плиток режется); отрицательными марджинами
+       компенсируем его и штатные 12px секции, чтобы итоговый зазор был 12px, а не 24+ -->
+  <section class="mx-auto -mt-3! -mb-3!">
+    <BrandsGrid brands={data.syncBrands} />
+  </section>
+{/if}
 
 <section class="mx-auto">
   <h2 class="section-title">Популярные категории</h2>
@@ -247,14 +266,14 @@
         {#if openFeatures.has(f.title)}
           <div class="feature-card__content">
             {#if f.text}<p>{f.text}</p>{/if}
-          {#if f.points}
-            {#if f.pointsTitle}<h4>{f.pointsTitle}</h4>{/if}
-            <ul>
-              {#each f.points as point}
-                <li>{point}</li>
-              {/each}
-            </ul>
-          {/if}
+            {#if f.points}
+              {#if f.pointsTitle}<h4>{f.pointsTitle}</h4>{/if}
+              <ul>
+                {#each f.points as point}
+                  <li>{point}</li>
+                {/each}
+              </ul>
+            {/if}
           </div>
         {/if}
       </div>
@@ -271,7 +290,10 @@
         </div>
         <div class="promo-banner__text">
           <strong>Grandex Aqua</strong>
-          <span>Бренд кухонных моек и смесителей с корнями в мире каменных столешниц. Созданы, чтобы служить рядом с камнем — эстетично, долго, безупречно.</span>
+          <span
+            >Бренд кухонных моек и смесителей с корнями в мире каменных столешниц. Созданы, чтобы
+            служить рядом с камнем — эстетично, долго, безупречно.</span
+          >
         </div>
       </div>
       <div class="promo-cards">
@@ -280,7 +302,12 @@
           <span class="promo-card__name">Мойки</span>
         </a>
         <a href="/catalog/smesiteli?brand=Grandex+Aqua" class="promo-card">
-          <img class="promo-card__img" src={grandexSmesiteli} alt="Смесители Grandex Aqua" loading="lazy" />
+          <img
+            class="promo-card__img"
+            src={grandexSmesiteli}
+            alt="Смесители Grandex Aqua"
+            loading="lazy"
+          />
           <span class="promo-card__name">Смесители</span>
         </a>
       </div>
@@ -298,7 +325,9 @@
         <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="promo-card">
           <img
             class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.omoikiriMoiki ? imgUrl(data.promoImages.omoikiriMoiki, 480) : grandexMoiki}
+            src={data.promoImages?.omoikiriMoiki
+              ? imgUrl(data.promoImages.omoikiriMoiki, 480)
+              : grandexMoiki}
             alt="Мойки Omoikiri"
             loading="lazy"
           />
@@ -307,7 +336,9 @@
         <a href="/catalog/smesiteli?brand=Omoikiri" class="promo-card">
           <img
             class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.omoikiriSmesiteli ? imgUrl(data.promoImages.omoikiriSmesiteli, 480) : grandexSmesiteli}
+            src={data.promoImages?.omoikiriSmesiteli
+              ? imgUrl(data.promoImages.omoikiriSmesiteli, 480)
+              : grandexSmesiteli}
             alt="Смесители Omoikiri"
             loading="lazy"
           />
@@ -316,7 +347,9 @@
         <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Omoikiri" class="promo-card">
           <img
             class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.omoikiriIzmelchiteli ? imgUrl(data.promoImages.omoikiriIzmelchiteli, 480) : grandexSmesiteli}
+            src={data.promoImages?.omoikiriIzmelchiteli
+              ? imgUrl(data.promoImages.omoikiriIzmelchiteli, 480)
+              : grandexSmesiteli}
             alt="Измельчители Omoikiri"
             loading="lazy"
           />
@@ -337,7 +370,9 @@
         <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Bone+Crusher" class="promo-card">
           <img
             class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.boneCrusherImg ? imgUrl(data.promoImages.boneCrusherImg, 480) : grandexMoiki}
+            src={data.promoImages?.boneCrusherImg
+              ? imgUrl(data.promoImages.boneCrusherImg, 480)
+              : grandexMoiki}
             alt="Измельчители Bone Crusher"
             loading="lazy"
           />
@@ -381,37 +416,54 @@
 </section>
 
 {#if AC_ENABLED}
-<section class="mx-auto">
-  <div class="promo-banner promo-banner--ac">
-    <div class="promo-banner__head">
-      <div class="promo-banner__icon">
-        <Wind size={26} strokeWidth={2} />
+  <section class="mx-auto">
+    <div class="promo-banner promo-banner--ac">
+      <div class="promo-banner__head">
+        <div class="promo-banner__icon">
+          <Wind size={26} strokeWidth={2} />
+        </div>
+        <div class="promo-banner__text">
+          <strong>Кондиционеры</strong>
+          <span
+            >Сплит-системы, инверторные и мобильные кондиционеры от проверенных брендов —
+            Electrolux, Ballu, Toshiba и другие.</span
+          >
+        </div>
       </div>
-      <div class="promo-banner__text">
-        <strong>Кондиционеры</strong>
-        <span>Сплит-системы, инверторные и мобильные кондиционеры от проверенных брендов — Electrolux, Ballu, Toshiba и другие.</span>
+      <div class="promo-cards">
+        <a
+          href="/catalog/klimaticheskaya-tehnika/kondicionery/split-sistemy-on-off"
+          class="promo-card"
+        >
+          <img class="promo-card__img" src={acSplit} alt="Сплит-система" loading="lazy" />
+          <span class="promo-card__name">Сплит-системы</span>
+        </a>
+        <a
+          href="/catalog/klimaticheskaya-tehnika/kondicionery/invertornye-split-sistemy"
+          class="promo-card"
+        >
+          <img
+            class="promo-card__img"
+            src={acInvertor}
+            alt="Инверторная сплит-система"
+            loading="lazy"
+          />
+          <span class="promo-card__name">Инверторные</span>
+        </a>
+        <a
+          href="/catalog/klimaticheskaya-tehnika/kondicionery/mobilnye-kondicionery"
+          class="promo-card"
+        >
+          <img class="promo-card__img" src={acMobile} alt="Мобильный кондиционер" loading="lazy" />
+          <span class="promo-card__name">Мобильные</span>
+        </a>
       </div>
     </div>
-    <div class="promo-cards">
-      <a href="/catalog/klimaticheskaya-tehnika/kondicionery/split-sistemy-on-off" class="promo-card">
-        <img class="promo-card__img" src={acSplit} alt="Сплит-система" loading="lazy" />
-        <span class="promo-card__name">Сплит-системы</span>
-      </a>
-      <a href="/catalog/klimaticheskaya-tehnika/kondicionery/invertornye-split-sistemy" class="promo-card">
-        <img class="promo-card__img" src={acInvertor} alt="Инверторная сплит-система" loading="lazy" />
-        <span class="promo-card__name">Инверторные</span>
-      </a>
-      <a href="/catalog/klimaticheskaya-tehnika/kondicionery/mobilnye-kondicionery" class="promo-card">
-        <img class="promo-card__img" src={acMobile} alt="Мобильный кондиционер" loading="lazy" />
-        <span class="promo-card__name">Мобильные</span>
-      </a>
-    </div>
-  </div>
-</section>
+  </section>
 {/if}
 
 <section class="mx-auto">
-	<ReviewsSection />
+  <ReviewsSection />
 </section>
 
 <section class="mx-auto">
@@ -467,27 +519,43 @@
   <div class="about-seo__inner">
     <h1 class="seo-h1">Бытовая техника в Казани — интернет-магазин «Мультибренд»</h1>
     <p>
-      Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации кухни и дома современной бытовой техникой в Казани. Мы собрали в одном каталоге продукцию ведущих мировых производителей, чтобы вы могли легко подобрать технику под любой интерьер, кухонный проект или готовый дизайн.
+      Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации
+      кухни и дома современной бытовой техникой в Казани. Мы собрали в одном каталоге продукцию
+      ведущих мировых производителей, чтобы вы могли легко подобрать технику под любой интерьер,
+      кухонный проект или готовый дизайн.
     </p>
     <p>
-      В нашем ассортименте представлена как крупная, так и мелкая бытовая техника, встраиваемые духовые шкафы и варочные панели, современные кухонные вытяжки и климатические системы для создания идеального микроклимата.
+      В нашем ассортименте представлена как крупная, так и мелкая бытовая техника, встраиваемые
+      духовые шкафы и варочные панели, современные кухонные вытяжки и климатические системы для
+      создания идеального микроклимата.
     </p>
     <p>
-      Мы уделяем особое внимание деталям, поэтому у нас вы найдете большой выбор кухонных моек, смесителей, измельчителей пищевых отходов (диспоузеров) и оригинальных запчастей к ним. Также мы поставляем профессиональную технику для бизнеса.
+      Мы уделяем особое внимание деталям, поэтому у нас вы найдете большой выбор кухонных моек,
+      смесителей, измельчителей пищевых отходов (диспоузеров) и оригинальных запчастей к ним. Также
+      мы поставляем профессиональную технику для бизнеса.
     </p>
 
     <h3>Почему выбирают «Мультибренд»?</h3>
     <ul>
-      <li><strong>Индивидуальный подбор:</strong> Поможем подобрать технику под ваши задачи. Подскажем по точным размерам, брендам, цветам, совместимости и комплектации.</li>
-      <li><strong>Шоурум в Казани:</strong> Вы можете оформить быструю доставку на сайте или посетить наш офлайн-магазин в Казани, чтобы вживую оценить качество товаров.</li>
-      <li><strong>Официальная гарантия:</strong> Работаем только с проверенными брендами и гарантируем высокое качество каждого прибора.</li>
+      <li>
+        <strong>Индивидуальный подбор:</strong> Поможем подобрать технику под ваши задачи. Подскажем по
+        точным размерам, брендам, цветам, совместимости и комплектации.
+      </li>
+      <li>
+        <strong>Шоурум в Казани:</strong> Вы можете оформить быструю доставку на сайте или посетить наш
+        офлайн-магазин в Казани, чтобы вживую оценить качество товаров.
+      </li>
+      <li>
+        <strong>Официальная гарантия:</strong> Работаем только с проверенными брендами и гарантируем высокое
+        качество каждого прибора.
+      </li>
     </ul>
     <p>
-      Оставьте заявку на сайте или свяжитесь с нами в Макс — эксперты «Мультибренд» помогут сделать вашу кухню функциональной, стильной и уютной!
+      Оставьте заявку на сайте или свяжитесь с нами в Макс — эксперты «Мультибренд» помогут сделать
+      вашу кухню функциональной, стильной и уютной!
     </p>
   </div>
 </section>
-
 
 <style lang="scss">
   // референс: белая карточка, слева текст + жёлтая кнопка + 3 преимущества,
@@ -503,7 +571,9 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     color: #2e3d2f;
     text-decoration: none;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
 
     &:hover {
       transform: translateY(-2px);
@@ -803,7 +873,9 @@
     background: #fff;
     text-decoration: none;
     color: inherit;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
@@ -840,7 +912,7 @@
       display: -webkit-box;
       overflow: hidden;
       -webkit-line-clamp: 2;
-    line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
       transition: color 0.15s;
     }
@@ -852,7 +924,7 @@
       display: -webkit-box;
       overflow: hidden;
       -webkit-line-clamp: 2;
-    line-clamp: 2;
+      line-clamp: 2;
       -webkit-box-orient: vertical;
     }
   }
@@ -1233,6 +1305,10 @@
     margin-top: 12px;
     margin-bottom: 12px;
   }
+  /* первая секция прижата к верху страницы, отступ снизу предыдущего блока её раздувает */
+  section:first-child {
+    margin-top: 0;
+  }
   @media (min-width: 640px) {
     .categories-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1293,7 +1369,7 @@
     .feature-card {
       padding: 16px;
     }
-        .kit-card {
+    .kit-card {
       min-height: 330px;
     }
     .kit-card__image {
