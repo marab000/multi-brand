@@ -13,13 +13,22 @@ export const POST: RequestHandler = async ({ cookies, locals }) => {
 		throw error(409, 'Прогон картинок уже идёт');
 	}
 
+	// счётчики обнуляем обязательно: setImagesState мержит patch поверх старого
+	// стейта, иначе прогрессбар до первого флеша скрипта покажет хвост прошлого прогона
 	await setImagesState({
 		status: 'running',
 		source: 'admin',
 		startedAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 		finishedAt: null,
-		error: null
+		error: null,
+		total: 0,
+		done: 0,
+		ok: 0,
+		notFound: 0,
+		noImage: 0,
+		errors: 0,
+		current: null
 	});
 
 	try {

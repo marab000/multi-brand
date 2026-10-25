@@ -657,7 +657,10 @@ async function main() {
 		try {
 			const prevRows = await sql`select value from settings where key = ${IMAGES_STATE_KEY} limit 1`
 			const prev = prevRows.length ? JSON.parse(prevRows[0].value) : null
-			if (prev?.status === 'running' && Date.now() - Date.parse(prev.updatedAt || 0) < STATE_STALE_MS) {
+			// запуск из админки лок не проверяет: её эндпоинт сам отказывает при
+			// живом прогоне (409), а запись running перед спавном иначе убивает
+			// собственного ребёнка этим же локом
+			if (RUN_SOURCE !== 'admin' && prev?.status === 'running' && Date.now() - Date.parse(prev.updatedAt || 0) < STATE_STALE_MS) {
 				await logError('ALREADY_RUNNING', 'второй запуск запрещён: предыдущий прогон ещё жив (heartbeat < 15 мин)')
 				await sql.end()
 				return
