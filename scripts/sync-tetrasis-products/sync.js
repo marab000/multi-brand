@@ -43,7 +43,7 @@ function slugify(str) {
 }
 const escapeRegExp = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // включённые бренды подгружаются из настроек админки в main(), до этого — brands.json
-let enabledBrands = brands.map(b => cleanBrand(b))
+let enabledBrands = brands.map(b => cleanBrand(typeof b === 'string' ? b : b?.name)).filter(Boolean)
 // исключённые категории — из настроек админки («Тетрис»), до этого — excluded-categories.json
 let excludedCatSet = new Set()
 async function log(...a) {
@@ -88,7 +88,7 @@ async function loadExcludedCategories() {
 	return { list: (excludedCategories.categories ?? []).map(s => String(s).trim()).filter(Boolean), source: 'json' }
 }
 async function loadBrandConfig() {
-	const fallback = mergeBrandLists(brands, [])
+	const fallback = mergeBrandLists(brands.map(b => (typeof b === 'string' ? b : b?.name)).filter(Boolean), [])
 	try {
 		const cfg = await getSetting(BRANDS_KEY)
 		if (cfg && Array.isArray(cfg.enabled)) {

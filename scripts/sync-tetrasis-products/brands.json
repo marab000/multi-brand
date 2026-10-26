@@ -1,57 +1,218 @@
 [
-  "AEG",
-  "ASKO",
-  "BEKO",
-  "Bone Crusher",
-  "BOSCH",
-  "Brandt",
-  "CANDY",
-  "De Dietrich",
-  "DeLonghi",
-  "Dunavox",
-  "Electrolux",
-  "ELICA",
-  "Elikor",
-  "Evelux",
-  "FABER",
-  "FALMEC",
-  "Franke",
-  "GORENJE",
-  "Grandex Aqua",
-  "GranFest",
-  "GRAUDE",
-  "Grundig",
-  "Haier",
-  "Hebermann",
-  "HIBERG",
-  "Hitachi",
-  "Hotpoint",
-  "INDESIT",
-  "Jacky's",
-  "KORTING",
-  "KRONA",
-  "Kuppersberg",
-  "KUPPERSBUSCH",
-  "LEX",
-  "LIEBHERR",
-  "Maunfeld",
-  "Meyvel",
-  "MIELE",
-  "MILLEN",
-  "Monsher",
-  "NEFF",
-  "Omoikiri",
-  "Schaub Lorenz",
-  "Schulthess",
-  "SEAMAN",
-  "SIEMENS",
-  "SMEG",
-  "Teka",
-	
-  "AC ELECTRIC",
-  "AURUS",
-  "BALLU",
-  "Royal Thermo",
-  "SHUFT",
-  "TOSHIBA"
+  {
+    "name": "AEG",
+    "source": "tetrasis"
+  },
+  {
+    "name": "ASKO",
+    "source": "tetrasis"
+  },
+  {
+    "name": "BEKO",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Bone Crusher",
+    "source": "tetrasis"
+  },
+  {
+    "name": "BOSCH",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Brandt",
+    "source": "tetrasis"
+  },
+  {
+    "name": "CANDY",
+    "source": "tetrasis"
+  },
+  {
+    "name": "De Dietrich",
+    "source": "tetrasis"
+  },
+  {
+    "name": "DeLonghi",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Dunavox",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Electrolux",
+    "source": "tetrasis"
+  },
+  {
+    "name": "ELICA",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Elikor",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Evelux",
+    "source": "tetrasis"
+  },
+  {
+    "name": "FABER",
+    "source": "tetrasis"
+  },
+  {
+    "name": "FALMEC",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Franke",
+    "source": "tetrasis"
+  },
+  {
+    "name": "GORENJE",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Grandex Aqua",
+    "source": "grandex-aqua"
+  },
+  {
+    "name": "GranFest",
+    "source": "tetrasis"
+  },
+  {
+    "name": "GRAUDE",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Grundig",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Haier",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Hebermann",
+    "source": "tetrasis"
+  },
+  {
+    "name": "HIBERG",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Hitachi",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Hotpoint",
+    "source": "tetrasis"
+  },
+  {
+    "name": "INDESIT",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Jacky's",
+    "source": "tetrasis"
+  },
+  {
+    "name": "KORTING",
+    "source": "tetrasis"
+  },
+  {
+    "name": "KRONA",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Kuppersberg",
+    "source": "tetrasis"
+  },
+  {
+    "name": "KUPPERSBUSCH",
+    "source": "tetrasis"
+  },
+  {
+    "name": "LEX",
+    "source": "tetrasis"
+  },
+  {
+    "name": "LIEBHERR",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Maunfeld",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Meyvel",
+    "source": "tetrasis"
+  },
+  {
+    "name": "MIELE",
+    "source": "tetrasis"
+  },
+  {
+    "name": "MILLEN",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Monsher",
+    "source": "tetrasis"
+  },
+  {
+    "name": "NEFF",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Omoikiri",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Schaub Lorenz",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Schulthess",
+    "source": "tetrasis"
+  },
+  {
+    "name": "SEAMAN",
+    "source": "tetrasis"
+  },
+  {
+    "name": "SIEMENS",
+    "source": "tetrasis"
+  },
+  {
+    "name": "SMEG",
+    "source": "tetrasis"
+  },
+  {
+    "name": "Teka",
+    "source": "tetrasis"
+  },
+  {
+    "name": "AC ELECTRIC",
+    "source": "rusklimat"
+  },
+  {
+    "name": "AURUS",
+    "source": "rusklimat"
+  },
+  {
+    "name": "BALLU",
+    "source": "rusklimat"
+  },
+  {
+    "name": "Royal Thermo",
+    "source": "rusklimat"
+  },
+  {
+    "name": "SHUFT",
+    "source": "rusklimat"
+  },
+  {
+    "name": "TOSHIBA",
+    "source": "tetrasis"
+  }
 ]

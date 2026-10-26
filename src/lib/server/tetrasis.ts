@@ -96,7 +96,11 @@ async function defaultBrands(): Promise<string[]> {
 	try {
 		const file = path.resolve('scripts/sync-tetrasis-products/brands.json');
 		const raw = JSON.parse(await fs.readFile(file, 'utf8'));
-		if (Array.isArray(raw)) return raw.map(cleanBrandName).filter(Boolean);
+		if (Array.isArray(raw)) {
+			return raw
+				.map((b: any) => cleanBrandName(typeof b === 'string' ? b : b?.name))
+				.filter(Boolean);
+		}
 	} catch {
 		// файла нет (например, на проде после переезда) — не беда
 	}

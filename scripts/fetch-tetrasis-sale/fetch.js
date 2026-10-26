@@ -105,7 +105,7 @@ async function main() {
     const all = [];
     for (const promo of promosRaw) {
       const haystack = `${normalize(promo.headline)} ${normalize(promo.articleBody || '')}`;
-      const brand = brands.find((b) => haystack.includes(normalize(b))) ?? null;
+      const brand = brands.find((b) => b.source === 'tetrasis' && haystack.includes(normalize(b.name))) ?? null;
       all.push({
         headline: promo.headline ?? '',
         brand,

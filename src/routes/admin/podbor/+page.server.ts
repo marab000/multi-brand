@@ -49,7 +49,8 @@ export const load: PageServerLoad = async () => {
   let allBrands: string[] = [];
   try {
     const brandsPath = path.resolve(process.cwd(), 'scripts/sync-tetrasis-products/brands.json');
-    allBrands = JSON.parse(fs.readFileSync(brandsPath, 'utf-8'));
+    const raw = JSON.parse(fs.readFileSync(brandsPath, 'utf-8'));
+    allBrands = raw.map((b: any) => (typeof b === 'string' ? b : b?.name)).filter(Boolean);
   } catch {
     // файл не найден — пустой список
   }

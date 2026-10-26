@@ -214,11 +214,12 @@ async function saveBrands(products) {
     await log('BRANDS', 'brands.json не найден, создаю новый')
   }
 
-  const existingNames = new Set(existing)
+  const existingNames = new Set(existing.map(b => (typeof b === 'string' ? b : b?.name)))
   let added = 0
   for (const brand of brands) {
     if (!existingNames.has(brand)) {
-      existing.push(brand)
+      // формат brands.json — объекты {name, source}
+      existing.push({ name: brand, source: 'rusklimat' })
       existingNames.add(brand)
       added++
       await log('BRANDS_ADD', brand)
