@@ -286,7 +286,8 @@
     idle: 'Ещё не запускалась',
     running: 'Идёт синхронизация…',
     done: 'Завершена',
-    failed: 'Ошибка'
+    failed: 'Ошибка',
+    interrupted: 'Прерван (kill / упавший коннект)'
   };
 </script>
 
@@ -366,7 +367,7 @@
         <div>
           Статус: <b
             class:ok={imagesState.status === 'done'}
-            class:err={imagesState.status === 'failed' || images.stale}>{imagesLabel}</b
+            class:err={imagesState.status === 'failed' || imagesState.status === 'interrupted' || images.stale}>{imagesLabel}</b
           >
         </div>
         <div>

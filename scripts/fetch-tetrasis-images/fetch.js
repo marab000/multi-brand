@@ -58,13 +58,20 @@ const STATE_STALE_MS = 15 * 60 * 1000
 const STATE_FLUSH_MS = 120 * 1000
 const RUN_SOURCE = process.env.FETCH_IMAGES_RUN_SOURCE === 'admin' ? 'admin' : 'cli'
 const runState = { status: 'running', mode: MODE, source: RUN_SOURCE, startedAt: now(), updatedAt: now(), finishedAt: null, error: null, total: 0, done: 0, ok: 0, notFound: 0, noImage: 0, errors: 0, current: null }
-async function flushState() {
+async function flushState(retries = 3) {
 	runState.done = progress.done
 	runState.updatedAt = now()
-	try {
-		const json = JSON.stringify(runState)
-		await sql`insert into settings (key, value, updated_at) values (${IMAGES_STATE_KEY}, ${json}, now()) on conflict (key) do update set value = ${json}, updated_at = now()`
-	} catch {}
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			const json = JSON.stringify(runState)
+			await sql`insert into settings (key, value, updated_at) values (${IMAGES_STATE_KEY}, ${json}, now()) on conflict (key) do update set value = ${json}, updated_at = now()`
+			return true
+		} catch (e) {
+			if (attempt < retries) await sleep(RETRY_DELAY * attempt)
+			else { console.error(now(), 'FLUSH_STATE_FAIL', e.message); return false }
+		}
+	}
+	return false
 }
 let lastStateFlush = 0
 async function flushStateThrottled() {
@@ -103,7 +110,14 @@ function brand(name) { return cleanName(name).split(' ')[0] || String(name || ''
 function normalizeName(value) { return translit(value).replace(/[^a-z0-9]+/gi, ' ').trim().replace(/\s+/g, ' ') }
 function compactName(value) { return normalizeName(value).replace(/\s+/g, '') }
 function normalizeBrand(value) { return normalizeName(value) }
-function allowedBrands() { return brands.map(b => normalizeBrand(b)).filter(Boolean) }
+function allowedBrands() {
+	// не-тетрисовые источники (brands.json → source) на сайте тетриса отсутствуют:
+	// каждый их товар кончается вечным NOT_FOUND — не берём их в прогон
+	return brands
+		.filter(b => b.source === 'tetrasis')
+		.map(b => normalizeBrand(b.name))
+		.filter(Boolean)
+}
 function addVariant(list, value) {
 	const v = cleanName(value)
 	if (v) list.push(v)
@@ -643,6 +657,24 @@ async function saveQueueAfterRun() {
 	await fs.writeJson(QUEUE_FILE, unique, { spaces: 2 })
 	await logInfo('QUEUE_UPDATED', `failed:${unique.length}`, `file:${QUEUE_FILE}`)
 }
+// финальный статус пишется один раз; SIGINT/SIGTERM (pm2 stop, ручный kill) —
+// честный «interrupted» вместо вечного running, по которому админка пишет «Процесс встал»
+let finalized = false
+async function finishState(status, error) {
+	if (finalized) return
+	finalized = true
+	runState.status = status
+	runState.error = error
+	runState.finishedAt = now()
+	await flushState()
+}
+for (const signal of ['SIGINT', 'SIGTERM']) {
+	process.on(signal, () => {
+		finishState('interrupted', `прерван сигналом ${signal}`)
+			.catch(() => null)
+			.finally(() => { sql.end().catch(() => null); process.exit(1) })
+	})
+}
 async function main() {
 	let browser
 	try {
@@ -650,7 +682,8 @@ async function main() {
 		await fs.writeFile(LOG, '')
 		// FETCH_IMAGES_BRANDS='gorenje,bosch' — запустить точечно по брендам (иначе все из brands.json)
 		const brandsFilter = String(process.env.FETCH_IMAGES_BRANDS || '').split(',').map(b => b.trim().toLowerCase()).filter(Boolean)
-		const selectedBrands = allowedBrands().filter(b => !brandsFilter.length || brandsFilter.includes(b.trim().toLowerCase()))
+		const selectedBrands = allowedBrands()
+			.filter(b => !brandsFilter.length || brandsFilter.includes(b.trim().toLowerCase()))
 		if (!selectedBrands.length) throw new Error('brands.json is empty (or FETCH_IMAGES_BRANDS matched nothing)')
 		// защита от второго запуска (админка/cron/вручную одновременно):
 		// предыдущий статус running жив, пока его heartbeat моложе 15 минут
@@ -682,17 +715,13 @@ async function main() {
 		await saveQueueAfterRun()
 		await browser.close()
 		browser = null
-		runState.status = 'done'
-		runState.finishedAt = now()
-		await flushState()
+		await finishState('done', null)
 		await logInfo('FINISHED')
 		await sql.end()
 	} catch (e) {
 		await logError('FATAL', e.stack || e.message)
-		runState.status = 'failed'
 		runState.error = String(e?.message || e).slice(0, 500)
-		runState.finishedAt = now()
-		await flushState().catch(() => null)
+		await finishState('failed', runState.error)
 		if (SOURCE === SOURCES.QUEUE) await saveQueueAfterRun().catch(() => null)
 		if (browser) await browser.close().catch(() => null)
 		await sql.end().catch(() => null)

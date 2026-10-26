@@ -11,7 +11,7 @@ export const IMAGES_STATE_KEY = 'tetrasis_images_state';
 export const STALE_RUNNING_MS = 15 * 60 * 1000;
 
 export type ImagesSyncState = {
-	status: 'idle' | 'running' | 'done' | 'failed';
+	status: 'idle' | 'running' | 'done' | 'failed' | 'interrupted';
 	mode?: string | null;
 	source?: 'admin' | 'cli' | null;
 	startedAt?: string | null;
