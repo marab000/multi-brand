@@ -11,8 +11,9 @@ import {
 } from '$lib/server/categories';
 import { sql } from '$lib/db';
 import { toDbPrice } from '$lib/utils/formatPrice';
-import { buildCategorySeo } from '$lib/server/seoText';
+import { buildCategorySeo, buildCategoryDescription } from '$lib/server/seoText';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
+import { applyMetaTemplate, getMetaTemplates } from '$lib/server/metaTemplates';
 
 function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | undefined {
   const specs: Record<string, { min?: number; max?: number }> = {};
@@ -43,7 +44,7 @@ function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | 
   return Object.keys(specs).length ? specs : undefined;
 }
 
-export const load: PageServerLoad = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params, url, locals }) => {
   const segments = params.params ? params.params.split('/') : [];
   const rootSlug = segments[0] ?? null;
   const groupSlug = segments[1] ?? null;
@@ -173,6 +174,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
   }
   // SEO-текст категории: только для чистых URL категории (без фильтров/поиска)
   let seo: { heading: string; paragraphs: string[] } | null = null;
+  let autoDescription: string | null = null;
   if (!isSearchPage && !hasAppliedFilters && total > 0 && currentRoot) {
     try {
       const slugCond =
@@ -198,6 +200,13 @@ export const load: PageServerLoad = async ({ params, url }) => {
       `;
       const toRub = (v: any) => (v == null ? null : Math.round(Number(v) * 1000));
       seo = buildCategorySeo({
+        name: title,
+        count: total,
+        brands: brandRows.map((b) => b.name),
+        minPrice: toRub(statsRows[0]?.min_p),
+        maxPrice: toRub(statsRows[0]?.max_p)
+      });
+      autoDescription = buildCategoryDescription({
         name: title,
         count: total,
         brands: brandRows.map((b) => b.name),
@@ -240,13 +249,26 @@ export const load: PageServerLoad = async ({ params, url }) => {
   }
 
   const canonical = metaO?.canonical
-    ? safeCanonical(metaO.canonical)
-    : safeCanonical(hasAppliedFilters || page > 1 ? categoryPath : url.pathname);
+    ? safeCanonical(metaO.canonical, locals.siteOrigin)
+    : safeCanonical(hasAppliedFilters || page > 1 ? categoryPath : url.pathname, locals.siteOrigin);
+
+  // Шаблон авто-меты для чистых категорий/подкатегорий (без фильтров и поиска):
+  // ручная запись seo_overrides сильнее шаблона, шаблон сильнее автогенерации
+  let tplTitle: string | null = null;
+  let tplDescription: string | null = null;
+  if (!isSearchPage && !hasAppliedFilters && currentRoot) {
+    const tpl = await getMetaTemplates();
+    tplTitle = applyMetaTemplate(tpl.subcategory_title, { категория: title });
+    tplDescription = applyMetaTemplate(tpl.subcategory_description, { категория: title });
+    if (page > 1 && tplTitle) tplTitle = `${tplTitle} — страница ${page}`;
+  }
 
   return {
+    // через ||, а не ??: в seo_overrides бывают пустые строки — они не должны глушить шаблон
+    seoTitle: metaO?.title || tplTitle,
     seoH1: metaO?.h1 ?? null,
     canonical,
-    metaDescription: metaO?.description ?? null,
+    metaDescription: metaO?.description || tplDescription || autoDescription,
     products,
     total,
     perPage,

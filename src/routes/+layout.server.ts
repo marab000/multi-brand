@@ -41,6 +41,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     rootCounts,
     contacts,
     searchHints: searchHintRows.map((r) => r.name),
-    user: locals.user
+    user: locals.user,
+    // город поддомена и origin для канониклов (msk./ufa. каноникалят сами на себя)
+    city: locals.city,
+    siteOrigin: locals.siteOrigin
   };
 };

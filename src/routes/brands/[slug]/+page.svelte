@@ -11,12 +11,12 @@
   <title>{data.metaTitle || `${brand} — купить в Казани | цены в интернет-магазине MULTIBRAND`}</title>
   <meta
     name="description"
-    content="{brand} в интернет-магазине «Мультибренд»: {data.total} товаров с ценами. Официальные поставки, гарантия производителя, рассрочка 0%, бесплатная доставка по Казани."
+    content={data.metaDescription || data.descriptionFallback}
   />
   <link rel="canonical" href={data.canonical || `https://multi-brand.online/brands/${brandSlug(brand)}`} />
   {#if data.metaDescription}<meta name="description" content={data.metaDescription} />{/if}
   <meta property="og:type" content="website" />
-  <meta property="og:title" content={`${brand} — купить в Казани | MULTIBRAND`} />
+  <meta property="og:title" content={data.ogTitle} />
   {#if data.products[0]?.images?.[0]?.url}
     <meta property="og:image" content={data.products[0].images[0].url} />
   {/if}
@@ -33,7 +33,7 @@
 
 <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'Бренды', href: '/brands' }, { name: brand }]} />
 
-<h1 class="text-[24px]! font-bold! mt-2! mb-2!">{data.seoH1 || `${brand} — купить в Казани`}</h1>
+<h1 class="text-[24px]! font-bold! mt-2! mb-2!">{data.seoH1 || data.h1Fallback}</h1>
 
 {#if data.rootLinks?.length}
   <div class="cat-links">

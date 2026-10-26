@@ -85,7 +85,7 @@ async function getFixedSlotImages(): Promise<Record<string, string>> {
   return {};
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
   const cfg = await loadPodborConfig();
   try {
     const slotImages = await getFixedSlotImages();
@@ -130,7 +130,7 @@ export const load: PageServerLoad = async () => {
       meta: {
         title: seoO?.title || 'Собери комплект техники — подбор за 1 минуту | Мультибренд Казань (MultiBrand)',
         description: seoO?.description || undefined,
-        canonical: seoO?.canonical ? safeCanonical(seoO.canonical) : safeCanonical('/podbor')
+        canonical: seoO?.canonical ? safeCanonical(seoO.canonical, locals.siteOrigin) : safeCanonical('/podbor', locals.siteOrigin)
       }
     };
   } catch {

@@ -19,9 +19,15 @@ type UrlEntry = {
   priority: number;
 };
 
-export const GET: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ url }) => {
   const today = new Date().toISOString().split('T')[0];
   const entries: UrlEntry[] = [];
+
+  // каждый домен (включая городские поддомены) отдаёт свой sitemap со своими URL;
+  // на поддоменах товаров/брендов/статей нет — там только главная и категории
+  const host = (url.host ?? '').toLowerCase().split(':')[0];
+  const isCitySubdomain = host.startsWith('msk.') || host.startsWith('ufa.');
+  const origin = isCitySubdomain ? `https://${host}` : SITE_URL;
 
   // 1. Статичные страницы
   const staticPages = [
@@ -38,7 +44,7 @@ export const GET: RequestHandler = async () => {
   ];
   for (const p of staticPages) {
     entries.push({
-      loc: `${SITE_URL}${p.path}`,
+      loc: `${origin}${p.path}`,
       lastmod: today,
       changefreq: 'weekly',
       priority: p.priority
@@ -65,7 +71,7 @@ export const GET: RequestHandler = async () => {
   for (const root of liveCatalog) {
     // root: /catalog/{root}
     entries.push({
-      loc: `${SITE_URL}/catalog/${root.slug}`,
+      loc: `${origin}/catalog/${root.slug}`,
       lastmod: today,
       changefreq: 'weekly',
       priority: 0.9
@@ -76,7 +82,7 @@ export const GET: RequestHandler = async () => {
       // Пропускаем default-группы (slug совпадает с root) — это дублирующий URL
       if (group.slug === root.slug) continue;
       entries.push({
-        loc: `${SITE_URL}/catalog/${root.slug}/${group.slug}`,
+        loc: `${origin}/catalog/${root.slug}/${group.slug}`,
         lastmod: today,
         changefreq: 'weekly',
         priority: 0.8
@@ -85,7 +91,7 @@ export const GET: RequestHandler = async () => {
       for (const leaf of group.leaves) {
         // leaf: /catalog/{root}/{group}/{leaf}
         entries.push({
-          loc: `${SITE_URL}/catalog/${root.slug}/${group.slug}/${leaf.slug}`,
+          loc: `${origin}/catalog/${root.slug}/${group.slug}/${leaf.slug}`,
           lastmod: today,
           changefreq: 'weekly',
           priority: 0.7
@@ -96,6 +102,8 @@ export const GET: RequestHandler = async () => {
 
   // 3. Товары: /products/{slug}
   // slug = slugify(name). Берём только id+name для скорости.
+  // На городских поддоменах пропускаем: товары там 301-ят на основной домен.
+  if (!isCitySubdomain) {
   const products = await sql`
     select p.id, p.name, p.updated_at
     from products p
@@ -108,16 +116,16 @@ export const GET: RequestHandler = async () => {
     if (!slug) continue;
     const lastmod = p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : today;
     entries.push({
-      loc: `${SITE_URL}/products/${slug}`,
+      loc: `${origin}/products/${slug}`,
       lastmod,
       changefreq: 'daily',
       priority: 0.6
     });
   }
 
-  // 3.5 Бренды: /brands и /brands/{slug} — только бренды с товарами
+  // 3.5 Бренды и 4. Статьи — тоже только на основном домене
   entries.push({
-    loc: `${SITE_URL}/brands`,
+    loc: `${origin}/brands`,
     lastmod: today,
     changefreq: 'weekly',
     priority: 0.7
@@ -134,7 +142,7 @@ export const GET: RequestHandler = async () => {
       const slug = brandSlug(b.name);
       if (!slug) continue;
       entries.push({
-        loc: `${SITE_URL}/brands/${slug}`,
+        loc: `${origin}/brands/${slug}`,
         lastmod: today,
         changefreq: 'daily',
         priority: 0.6
@@ -146,7 +154,7 @@ export const GET: RequestHandler = async () => {
 
   // 4. Статьи: /articles и /articles/{slug}
   entries.push({
-    loc: `${SITE_URL}/articles`,
+    loc: `${origin}/articles`,
     lastmod: today,
     changefreq: 'weekly',
     priority: 0.5
@@ -157,7 +165,7 @@ export const GET: RequestHandler = async () => {
     `;
     for (const a of articles) {
       entries.push({
-        loc: `${SITE_URL}/articles/${a.slug}`,
+        loc: `${origin}/articles/${a.slug}`,
         lastmod: a.updated_at ? new Date(a.updated_at).toISOString().split('T')[0] : today,
         changefreq: 'monthly',
         priority: 0.5
@@ -165,6 +173,9 @@ export const GET: RequestHandler = async () => {
     }
   } catch {
     // таблицы ещё нет
+  }
+
+  // конец блока «только основной домен» (товары, бренды, статьи)
   }
 
   // Дедупликация по loc (могут быть товары с одинаковыми именами)

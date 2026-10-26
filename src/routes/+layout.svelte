@@ -28,7 +28,9 @@ import Ticker from '$lib/components/Ticker.svelte';
     children: any;
   }>();
 
-  const canonicalUrl = $derived(`https://multi-brand.online${$page.url.pathname}`);
+  // каноникл на хосте запроса: поддомены (msk./ufa.) каноникалят сами на себя,
+  // на основном домене и в dev locals.siteOrigin = основной домен
+  const canonicalUrl = $derived(`${data.siteOrigin ?? 'https://multi-brand.online'}${$page.url.pathname}`);
   const contacts = $derived(data.contacts);
 
   // Schema.org: организация + локальный бизнес + сайт (глобально для всех страниц)
@@ -81,7 +83,8 @@ import Ticker from '$lib/components/Ticker.svelte';
 </script>
 
 <svelte:head>
-  <link rel="canonical" href={canonicalUrl} />
+  <!-- страницы со своим canonical рендерят его сами, иначе было бы два каноникла -->
+  {#if !$page.data?.canonical}<link rel="canonical" href={canonicalUrl} />{/if}
   <meta property="og:locale" content="ru_RU" />
   <meta property="og:site_name" content="MULTIBRAND" />
   {@html `<script type="application/ld+json">${JSON.stringify(orgSchema)}</script>`}

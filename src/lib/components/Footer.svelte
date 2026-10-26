@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Phone, Mail, MapPin } from 'lucide-svelte';
+  import { page } from '$app/stores';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
   import {
@@ -18,6 +19,8 @@
   const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
   const email = $derived(contacts?.email ?? SITE_EMAIL);
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
+  // текущий путь для переключателя городов (см. footer__cities)
+  const currentPath = $derived($page.url.pathname);
   const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
 
   const year = new Date().getFullYear();
@@ -111,6 +114,13 @@
   <div class="footer__bottom mx-auto flex max-w-[1280px] flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(66px+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:text-left">
     <p>© {year} MULTIBRAND — интернет-магазин бытовой техники в Казани</p>
     <p class="footer__requisites">ИНН 165123360719 · ОГРНИП 325169000035393</p>
+    <!-- перелинковка региональных поддоменов (до включения DNS ссылки ведут на основной домен) -->
+    <p class="footer__cities flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
+      <span>Вы в Казани:</span>
+      <a href="https://multi-brand.online{currentPath}">Казань</a>
+      <a href="https://msk.multi-brand.online{currentPath}">Москва</a>
+      <a href="https://ufa.multi-brand.online{currentPath}">Уфа</a>
+    </p>
     <p class="footer__legal-links flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
       <a href="/privacy">Политика обработки персональных данных</a>
       <a href="/offer">Договор оферты</a>
@@ -250,6 +260,19 @@
       text-underline-offset: 2px;
       &:hover {
         color: $yellow;
+      }
+    }
+
+    &__cities {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      a {
+        color: #cbd5e1;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        &:hover {
+          color: $yellow;
+        }
       }
     }
   }

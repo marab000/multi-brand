@@ -13,6 +13,7 @@
     ChevronDown
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
+  import { slide } from 'svelte/transition';
   import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
   import dw from '$lib/assets/links/dw.webp';
@@ -145,7 +146,8 @@
   {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
   <meta
     name="description"
-    content="Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка."
+    content={data?.meta?.description ||
+      'Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка.'}
   />
   {#if desktopImages[0]}
     <link
@@ -264,7 +266,7 @@
           <ChevronDown class="feature-card__chev" size={18} strokeWidth={2.2} />
         </button>
         {#if openFeatures.has(f.title)}
-          <div class="feature-card__content">
+          <div class="feature-card__content" transition:slide={{ duration: 220 }}>
             {#if f.text}<p>{f.text}</p>{/if}
             {#if f.points}
               {#if f.pointsTitle}<h4>{f.pointsTitle}</h4>{/if}
@@ -1161,14 +1163,15 @@
         border-color: rgba(62, 111, 79, 0.6);
         color: #111827;
       }
-    }
-    &__active {
-      border-color: transparent;
-      background: $green;
-      color: #fff;
-      &:hover {
+      // активный внутри button: специфичность выше базового, иначе белый фон побеждал
+      &.promo-tabs__active {
         border-color: transparent;
+        background: $green;
         color: #fff;
+        &:hover {
+          border-color: transparent;
+          color: #fff;
+        }
       }
     }
   }

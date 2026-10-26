@@ -2,8 +2,9 @@ import type { PageServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { getBrandConfig } from '$lib/server/tetrasis';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
+import { replaceCityPlaceholders } from '$lib/server/cityPlaceholders';
 
-export const load: PageServerLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ fetch, locals }) => {
   try {
     const res = await fetch('/api/slides');
     const data = await res.json();
@@ -72,9 +73,17 @@ export const load: PageServerLoad = async ({ fetch }) => {
       syncBrands,
       promoImages: { omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg, omoikiriIzmelchiteli },
       meta: {
-        title: seoO?.title || undefined,
-        description: seoO?.description || undefined,
-        canonical: seoO?.canonical ? safeCanonical(seoO.canonical) : safeCanonical('/')
+        title: seoO?.title ||
+          replaceCityPlaceholders(
+            'Бытовая техника в {городе} — интернет-магазин Мультибренд | Рассрочка, доставка',
+            locals.city
+          ),
+        description: seoO?.description ||
+          replaceCityPlaceholders(
+            'Интернет-магазин «Мультибренд» в {городе}: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка.',
+            locals.city
+          ),
+        canonical: seoO?.canonical ? safeCanonical(seoO.canonical, locals.siteOrigin) : safeCanonical('/', locals.siteOrigin)
       }
     };
   } catch {

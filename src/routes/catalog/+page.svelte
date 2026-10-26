@@ -295,7 +295,7 @@
   }
   .hub-cat--open .hub-cat__name {
     color: $green;
-    font-weight: 700;
+    font-weight: 500;
   }
   .hub-cat--open .hub-cat__meta :global(svg) {
     color: $green;

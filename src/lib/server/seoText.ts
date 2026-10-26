@@ -71,6 +71,19 @@ export function buildCategorySeo(stats: CategorySeoStats): CategorySeo | null {
 	};
 }
 
+/** Компактный meta description раздела — фолбэк, когда в админке нет ручного */
+export function buildCategoryDescription(stats: CategorySeoStats): string | null {
+	if (stats.count < 3) return null;
+	const countWord = plural(stats.count, 'товар', 'товара', 'товаров');
+	const price =
+		stats.minPrice != null && stats.maxPrice != null && stats.maxPrice > stats.minPrice
+			? ` Цены от ${fmt(stats.minPrice)} до ${fmt(stats.maxPrice)} ₽.`
+			: stats.minPrice != null
+				? ` Цены от ${fmt(stats.minPrice)} ₽.`
+				: '';
+	return `${stats.name} — ${fmt(stats.count)} ${countWord} в наличии в Казани.${price} Официальные поставки, гарантия производителя, рассрочка 0%, бесплатная доставка.`;
+}
+
 // ─── Бренды ───
 
 export { brandSlug } from '$lib/utils/slugify';

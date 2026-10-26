@@ -6,10 +6,11 @@ import { getCatalogRoots } from '$lib/server/categories';
 import { buildBrandSeo } from '$lib/server/seoText';
 import { brandSlug } from '$lib/utils/slugify';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
+import { replaceCityPlaceholders } from '$lib/server/cityPlaceholders';
 
 const perPage = 24;
 
-export const load: PageServerLoad = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params, url, locals }) => {
   // все бренды с товарами и их слаги — ищем наш
   const brandRows = await sql`
     select brand->>'name' as name, count(*)::int as c
@@ -69,11 +70,20 @@ export const load: PageServerLoad = async ({ params, url }) => {
   });
   const rootLinksFinal = rootLinks;
 
+  // Городовые фолбэки: {город...} подставляется по хосту (Казань / Москва / Уфа),
+  // на основном домене строки ровно те же, что раньше были захардкожены
   return {
     brand: brand.name,
-    metaTitle: metaO?.title ?? null,
+    metaTitle:
+      metaO?.title ??
+      replaceCityPlaceholders(`${brand.name} — купить в {городе} | цены в интернет-магазине MULTIBRAND`),
+    h1Fallback: replaceCityPlaceholders(`${brand.name} — купить в {городе}`),
+    ogTitle: replaceCityPlaceholders(`${brand.name} — купить в {городе} | MULTIBRAND`),
+    descriptionFallback: replaceCityPlaceholders(
+      `${brand.name} в интернет-магазине «Мультибренд»: ${total} товаров с ценами. Официальные поставки, гарантия производителя, рассрочка 0%, бесплатная доставка по {городе}.`
+    ),
     seoH1: metaO?.h1 ?? null,
-    canonical: metaO?.canonical ? safeCanonical(metaO.canonical) : safeCanonical(`/brands/${brandSlugKey}`),
+    canonical: metaO?.canonical ? safeCanonical(metaO.canonical, locals.siteOrigin) : safeCanonical(`/brands/${brandSlugKey}`, locals.siteOrigin),
     metaDescription: metaO?.description ?? null,
     total,
     products,

@@ -1,4 +1,5 @@
 import { sql } from '$lib/db';
+import { replaceCityPlaceholders, requestCity } from '$lib/server/cityPlaceholders';
 
 // Ручные SEO-переопределения страниц: title / description / h1 / canonical
 // и section_text — персональный текст спойлера «О разделе» для категорий.
@@ -46,11 +47,13 @@ export async function getSeoOverride(pageKey: string): Promise<SeoOverride | nul
 		if (!rows.length) return null;
 		const r = rows[0];
 		const out: SeoOverride = {
-			title: r.title ?? null,
-			description: r.description ?? null,
-			h1: r.h1 ?? null,
+			// публичная отдача: городовые плейсхолдеры ({Москва}, {городе}...) заменяем на
+			// город запроса (поддомен), админка читает сырое значение через listSeoOverrides
+			title: replaceCityPlaceholders(r.title, requestCity()),
+			description: replaceCityPlaceholders(r.description, requestCity()),
+			h1: replaceCityPlaceholders(r.h1, requestCity()),
 			canonical: r.canonical ?? null,
-			section_text: r.section_text ?? null
+			section_text: replaceCityPlaceholders(r.section_text, requestCity())
 		};
 		return out.title || out.description || out.h1 || out.canonical || out.section_text
 			? out
@@ -60,13 +63,16 @@ export async function getSeoOverride(pageKey: string): Promise<SeoOverride | nul
 	}
 }
 
-/** Каноникл из админки: только внутри нашего домена, иначе игнор */
-export function safeCanonical(raw: string | null | undefined): string | null {
+/** Каноникл из админки: только внутри нашего домена (включая городские поддомены), иначе игнор.
+ *  Относительные пути приставляются к origin запроса, чтобы поддомен каноникалил сам на себя. */
+export function safeCanonical(raw: string | null | undefined, origin = 'https://multi-brand.online'): string | null {
 	if (!raw) return null;
 	const value = raw.trim();
 	if (!value) return null;
-	const full = value.startsWith('http') ? value : `https://multi-brand.online${value.startsWith('/') ? '' : '/'}${value}`;
-	return full.startsWith('https://multi-brand.online') ? full : null;
+	const full = value.startsWith('http')
+		? value
+		: `${origin}${value.startsWith('/') ? '' : '/'}${value}`;
+	return /^https:\/\/([a-z0-9-]+\.)?multi-brand\.online/.test(full) ? full : null;
 }
 
 export async function upsertSeoOverride(

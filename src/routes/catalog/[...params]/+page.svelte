@@ -21,7 +21,7 @@
   {#if data.canonical}<link rel="canonical" href={data.canonical} />{/if}
   {#if data.metaDescription}<meta name="description" content={data.metaDescription} />{/if}
   <title
-    >{data.seoH1 ||
+    >{data.seoTitle ||
       (data.isSearchPage && searchValue
         ? `Поиск: ${searchValue} | MULTIBRAND`
         : data.isSearchPage

@@ -1,6 +1,11 @@
 declare global {
   namespace App {
     interface Locals {
+      // город поддомена (msk. = Москва, ufa. = Уфа, основной домен = Казань)
+      city: string;
+      // origin для канониклов/ссылок: на городском поддомене — сам поддомен,
+      // на основном домене и в dev — SITE_URL
+      siteOrigin: string;
       user: {
         id: number;
         email: string;

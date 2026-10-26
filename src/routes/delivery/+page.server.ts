@@ -3,13 +3,13 @@ import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 
 const DEFAULT_TITLE = 'Доставка — MULTIBRAND';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
   const o = await getSeoOverride('delivery');
   return {
     meta: {
       title: o?.title || DEFAULT_TITLE,
       description: o?.description || undefined,
-      canonical: o?.canonical ? safeCanonical(o.canonical) : safeCanonical('/delivery')
+      canonical: o?.canonical ? safeCanonical(o.canonical, locals.siteOrigin) : safeCanonical('/delivery', locals.siteOrigin)
     }
   };
 };

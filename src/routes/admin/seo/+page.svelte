@@ -91,6 +91,58 @@
     drafts[p.key] = { title: '', description: '', h1: '', canonical: '', sectionText: '' };
     void save(p);
   }
+
+  // массовая загрузка CSV: экспорт → заполняют → импорт (пустые ячейки ничего не трогают)
+  let importInput: HTMLInputElement | undefined = $state();
+  let importStatus = $state('');
+  let importing = $state(false);
+  async function handleImportFile(e: Event) {
+    const file = (e.currentTarget as HTMLInputElement).files?.[0];
+    if (!file) return;
+    importing = true;
+    importStatus = 'Загрузка…';
+    const body = new FormData();
+    body.append('file', file);
+    const res = await fetch('/api/admin/seo/import', { method: 'POST', body });
+    const json = await res.json().catch(() => null);
+    importing = false;
+    if (importInput) importInput.value = '';
+    if (res.ok) {
+      importStatus = `Обновлено страниц: ${json.updated}${json.errors?.length ? ', ошибок: ' + json.errors.length : ''}`;
+      // перезагружаем данные страницы, чтобы увидели свежие оверрайды
+      location.reload();
+    } else {
+      importStatus = json?.message ?? 'Ошибка импорта';
+    }
+  }
+
+  // шаблоны авто-мета-тегов для товаров и подкатегорий
+  let templates = $state({
+    product_title: '',
+    product_description: '',
+    subcategory_title: '',
+    subcategory_description: ''
+  });
+  let templatesStatus = $state('');
+  let templatesOpen = $state(false);
+  $effect(() => {
+    if (!templatesOpen || templates.product_title) return;
+    void fetch('/api/admin/seo/templates')
+      .then((r) => r.json())
+      .then((j) => {
+        if (j?.templates) templates = { ...templates, ...j.templates };
+      });
+  });
+  async function saveTemplates() {
+    templatesStatus = 'Сохранение…';
+    const res = await fetch('/api/admin/seo/templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(templates)
+    });
+    templatesStatus = res.ok ? 'Сохранено ✓' : 'Ошибка сохранения';
+    setTimeout(() => (templatesStatus = ''), 2500);
+  }
 </script>
 
 <div class="seo-admin">
@@ -100,9 +152,70 @@
       <p class="hint">
         Ручные title, description, H1 и canonical. Пустое поле = автогенерация. После сохранения
         изменения видны на сайте сразу.
+        <br />
+        Город: вместо названия города можно писать {'{'}Москва{'}'}, {'{'}Москве{'}'},
+        {'{'}Москвы{'}'} или {'{'}город{'}'}, {'{'}городе{'}'}, {'{'}города{'}'} в любом из этих
+        падежей. При показе страницы подставится город: сейчас на сайте Казань, после запуска
+        поддоменов msk./ufa. там будет Москва/Уфа.
       </p>
     </div>
+    <div class="head-tools">
+      <a class="btn-tool" href="/api/admin/seo/export" download>Экспорт CSV</a>
+      <button
+        type="button"
+        class="btn-tool"
+        disabled={importing}
+        onclick={() => importInput?.click()}
+      >
+        Импорт CSV
+      </button>
+      <input
+        type="file"
+        accept=".csv,text/csv"
+        bind:this={importInput}
+        onchange={handleImportFile}
+        hidden
+      />
+      {#if importStatus}<span class="hint">{importStatus}</span>{/if}
+      <button type="button" class="btn-tool" onclick={() => (templatesOpen = !templatesOpen)}>
+        Шаблоны мета-тегов {templatesOpen ? '▲' : '▼'}
+      </button>
+    </div>
   </div>
+
+  {#if templatesOpen}
+    <div class="templates">
+      <p class="hint">
+        Автоформирование мета-тегов для страниц, где нет ручных записей. Переменные:
+        {'{'}название{'}'}, {'{'}тип{'}'}, {'{'}бренд{'}'}, {'{'}цена{'}'} — товары;
+        {'{'}категория{'}'} — подкатегории; {'{'}город{'}'}, {'{'}города{'}'}, {'{'}городе{'}'},
+        {'{'}Москва{'}'} и т.п. — город (сейчас Казань). Ручные записи (в списке ниже и через
+        импорт) сильнее шаблонов.
+      </p>
+      <label>
+        <span>Товары: title</span>
+        <textarea rows="2" bind:value={templates.product_title}></textarea>
+      </label>
+      <label>
+        <span>Товары: description</span>
+        <textarea rows="3" bind:value={templates.product_description}></textarea>
+      </label>
+      <label>
+        <span>Подкатегории: title</span>
+        <textarea rows="2" bind:value={templates.subcategory_title}></textarea>
+      </label>
+      <label>
+        <span>Подкатегории: description</span>
+        <textarea rows="3" bind:value={templates.subcategory_description}></textarea>
+      </label>
+      <div class="templates__actions">
+        <button type="button" class="btn-tool btn-tool--save" onclick={saveTemplates}>
+          Сохранить шаблоны
+        </button>
+        {#if templatesStatus}<span class="hint">{templatesStatus}</span>{/if}
+      </div>
+    </div>
+  {/if}
 
   <input class="filter" type="text" placeholder="Поиск страницы…" bind:value={filter} />
 
@@ -193,11 +306,77 @@
     min-width: 0;
   }
   .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
     margin-bottom: 18px;
     h1 {
       margin: 0 0 6px;
       font-size: 22px;
       color: #111827;
+    }
+  }
+  .head-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-tool {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border: 1.5px solid #e4e7ec;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+    &:hover {
+      border-color: #b9c2cf;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    &--save {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+  }
+  .templates {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    margin-bottom: 18px;
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+    background: #fafafa;
+    label {
+      display: grid;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      textarea {
+        padding: 8px 10px;
+        border: 1.5px solid #e4e7ec;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+      }
+    }
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
   }
   .hint {

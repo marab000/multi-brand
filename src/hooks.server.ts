@@ -1,6 +1,9 @@
 import type { Handle } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { SESSION_COOKIE, deleteSessionCookie, validateSessionToken } from '$lib/server/auth';
 import { sql } from '$lib/db';
+import { cityContext, currentCityFromHost } from '$lib/server/cityPlaceholders';
+import { SITE_URL } from '$lib/config/site';
 
 let slidesMigrated = false;
 async function ensureSlidesTable() {
@@ -95,16 +98,35 @@ async function ensureSlidesTable() {
 
 export const handle: Handle = async ({ event, resolve }) => {
   ensureSlidesTable().catch((e) => console.error('Migration error:', e));
-  const token = event.cookies.get(SESSION_COOKIE);
-  if (!token) {
-    event.locals.user = null;
-    event.locals.session = null;
-    return resolve(event);
+
+  // Региональные поддомены (msk./ufa.): город и origin для канониклов.
+  // До включения DNS хост всегда основной, city = Казань — всё спит.
+  const host = (event.url.host ?? '').toLowerCase().split(':')[0];
+  const isCitySubdomain = host.startsWith('msk.') || host.startsWith('ufa.');
+  event.locals.city = currentCityFromHost(host);
+  event.locals.siteOrigin = isCitySubdomain ? `https://${host}` : SITE_URL;
+
+  // На городских поддоменах товары/корзина/админка не существуют: 301 на основной домен.
+  // Листаются только главная и категории. ВАЖНО: /api не редиректим — сайт сам дёргает
+  // свои API изнутри (например, fetch('/api/slides') на главной), редирект ломает его.
+  if (isCitySubdomain) {
+    const path = event.url.pathname;
+    if (/^\/(products|cart|favorites|user|admin|podbor|articles)\b/.test(path)) {
+      redirect(301, `${SITE_URL}${path}${event.url.search}`);
+    }
   }
-  const { user, session } = await validateSessionToken(token);
-  if (!user || !session) deleteSessionCookie(event.cookies);
-  event.locals.user = user;
-  event.locals.session = session;
-  return resolve(event);
-	
+
+  return cityContext.run({ city: event.locals.city }, async () => {
+    const token = event.cookies.get(SESSION_COOKIE);
+    if (!token) {
+      event.locals.user = null;
+      event.locals.session = null;
+      return resolve(event);
+    }
+    const { user, session } = await validateSessionToken(token);
+    if (!user || !session) deleteSessionCookie(event.cookies);
+    event.locals.user = user;
+    event.locals.session = session;
+    return resolve(event);
+  });
 };

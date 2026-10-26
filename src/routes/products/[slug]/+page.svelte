@@ -140,14 +140,10 @@
 </script>
 
 <svelte:head>
-  <title>{p ? (p.name.length > 55 ? p.name.slice(0, 55).trim() + '…' : p.name) + ' | MULTIBRAND' : 'Товар не найден | MULTIBRAND'}</title>
+  <title>{p ? data.metaTitle : 'Товар не найден | MULTIBRAND'}</title>
   <meta
     name="description"
-    content={p
-      ? `${p.product_type || p.name} ${p.brand?.name ?? ''} в Казани. ${p.name} — цена ${
-          price ? Math.round(price * 1000).toLocaleString('ru-RU') + ' ₽' : 'уточняйте'
-        }, доставка и гарантия. Купить в интернет-магазине MULTIBRAND.`.slice(0, 300)
-      : 'Товар не найден.'}
+    content={p ? data.metaDescription : 'Товар не найден.'}
   />
   {#if p}
     {@html `<script type="application/ld+json">${JSON.stringify({

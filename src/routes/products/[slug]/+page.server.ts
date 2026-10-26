@@ -2,6 +2,7 @@ import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { apiFetch } from '$lib/api';
 import { sql } from '$lib/db';
+import { applyMetaTemplate, formatPriceRub, getMetaTemplates } from '$lib/server/metaTemplates';
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
   // apiFetch бросает исключение при ошибке ответа — ловим и отдаём честный 404
@@ -42,5 +43,21 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
     alsoBought = [];
   }
 
-  return { product, alsoBought };
+  // Мета-теги: шаблон из админки (seo → «Шаблоны»), без ручных записей для товаров
+  const price = product.price_ric ?? product.price_rrc ?? null;
+  const tpl = await getMetaTemplates();
+  const metaTitle = applyMetaTemplate(tpl.product_title, {
+    название: product.name,
+    тип: product.product_type ?? '',
+    бренд: product.brand?.name ?? '',
+    цена: formatPriceRub(price)
+  }).slice(0, 200);
+  const metaDescription = applyMetaTemplate(tpl.product_description, {
+    название: product.name,
+    тип: product.product_type || product.name,
+    бренд: product.brand?.name ?? '',
+    цена: price != null ? formatPriceRub(price) : 'уточняйте'
+  }).slice(0, 300);
+
+  return { product, alsoBought, metaTitle, metaDescription };
 };
