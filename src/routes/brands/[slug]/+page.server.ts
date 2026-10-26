@@ -7,6 +7,7 @@ import { buildBrandSeo } from '$lib/server/seoText';
 import { brandSlug } from '$lib/utils/slugify';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 import { replaceCityPlaceholders } from '$lib/server/cityPlaceholders';
+import { applyMetaTemplate, getMetaTemplates } from '$lib/server/metaTemplates';
 
 const perPage = 24;
 
@@ -70,13 +71,14 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
   });
   const rootLinksFinal = rootLinks;
 
-  // Городовые фолбэки: {город...} подставляется по хосту (Казань / Москва / Уфа),
-  // на основном домене строки ровно те же, что раньше были захардкожены
+  // Городовые фолбэки: {город...} подставляется по хосту (Казань / Москва / Уфа).
+  // Иерархия: ручная запись → шаблон бренда из админки → автогенерация.
+  const tpl = await getMetaTemplates();
+  const brandTplTitle = applyMetaTemplate(tpl.brand_title, { бренд: brand.name });
+  const brandTplDescription = applyMetaTemplate(tpl.brand_description, { бренд: brand.name });
   return {
     brand: brand.name,
-    metaTitle:
-      metaO?.title ??
-      replaceCityPlaceholders(`${brand.name} — купить в {городе} | цены в интернет-магазине MULTIBRAND`),
+    metaTitle: metaO?.title || brandTplTitle,
     h1Fallback: replaceCityPlaceholders(`${brand.name} — купить в {городе}`),
     ogTitle: replaceCityPlaceholders(`${brand.name} — купить в {городе} | MULTIBRAND`),
     descriptionFallback: replaceCityPlaceholders(
@@ -84,7 +86,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
     ),
     seoH1: metaO?.h1 ?? null,
     canonical: metaO?.canonical ? safeCanonical(metaO.canonical, locals.siteOrigin) : safeCanonical(`/brands/${brandSlugKey}`, locals.siteOrigin),
-    metaDescription: metaO?.description ?? null,
+    metaDescription: metaO?.description || brandTplDescription || null,
     total,
     products,
     page,

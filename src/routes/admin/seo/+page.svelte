@@ -121,7 +121,9 @@
     product_title: '',
     product_description: '',
     subcategory_title: '',
-    subcategory_description: ''
+    subcategory_description: '',
+    brand_title: '',
+    brand_description: ''
   });
   let templatesStatus = $state('');
   let templatesOpen = $state(false);
@@ -207,6 +209,14 @@
       <label>
         <span>Подкатегории: description</span>
         <textarea rows="3" bind:value={templates.subcategory_description}></textarea>
+      </label>
+      <label>
+        <span>Бренды: title</span>
+        <textarea rows="2" bind:value={templates.brand_title}></textarea>
+      </label>
+      <label>
+        <span>Бренды: description</span>
+        <textarea rows="3" bind:value={templates.brand_description}></textarea>
       </label>
       <div class="templates__actions">
         <button type="button" class="btn-tool btn-tool--save" onclick={saveTemplates}>

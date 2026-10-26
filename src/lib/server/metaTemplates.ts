@@ -9,9 +9,15 @@ import { replaceCityPlaceholders, requestCity } from '$lib/server/cityPlaceholde
 // {категория} — подкатегории, {город}/{города}/{городе} и прямые {Москва}... —
 // город (на основном сайте Казань).
 
-export type MetaTemplateKind = 'product' | 'subcategory';
+export type MetaTemplateKind = 'product' | 'subcategory' | 'brand';
 
-export type MetaTemplates = Record<`${MetaTemplateKind}_title` | `${MetaTemplateKind}_description`, string>;
+export type MetaTemplates = Record<
+	`${MetaTemplateKind}_title` | `${MetaTemplateKind}_description`,
+	string
+>;
+
+// {store_name} — константа (сеошник использует в каждом шаблоне)
+export const STORE_NAME = 'Мультибренд';
 
 export const DEFAULT_TEMPLATES: MetaTemplates = {
 	product_title: '{название} | MULTIBRAND',
@@ -19,7 +25,10 @@ export const DEFAULT_TEMPLATES: MetaTemplates = {
 		'{тип} {бренд} в {городе}. {название} — цена {цена}, доставка и гарантия. Купить в интернет-магазине MULTIBRAND.',
 	subcategory_title: '{категория} купить в {городе} | Мультибренд',
 	subcategory_description:
-		'{категория} в {городе}: цены, характеристики, наличие. Доставка, гарантия, помощь в подборе. Купить в интернет-магазине Мультибренд.'
+		'{категория} в {городе}: цены, характеристики, наличие. Доставка, гарантия, помощь в подборе. Купить в интернет-магазине Мультибренд.',
+	brand_title: 'Бытовая техника {бренд} — купить в {городе} | Мультибренд',
+	brand_description:
+		'Техника {бренд} в каталоге Мультибренд: модели, характеристики и цены. Выберите товары {бренд} с доставкой в {городе}.'
 };
 
 const SETTINGS_KEY = 'seo_meta_templates';
@@ -45,13 +54,23 @@ export async function saveMetaTemplates(tpl: Partial<MetaTemplates>): Promise<Me
 	return merged;
 }
 
+// алиасы переменных из ТЗ сеошника: латиница → наши ключи (кириллица)
+const VAR_ALIASES: Record<string, string> = {
+	brand: 'бренд',
+	model: 'модель',
+	product_name: 'название',
+	category_name: 'категория',
+	page_name: 'категория'
+};
+
 /** Подставляет переменные шаблона + городовые плейсхолдеры. Неизвестные {скобки} не трогает. */
 export function applyMetaTemplate(
 	template: string,
 	vars: Record<string, string | number | null | undefined>
 ): string {
-	const withVars = template.replace(/\{([а-яё_-]+)\}/gi, (whole, rawKey: string) => {
-		const key = rawKey.toLowerCase();
+	const withVars = template.replace(/\{([а-яёa-z_-]+)\}/gi, (whole, rawKey: string) => {
+		const key = VAR_ALIASES[rawKey.toLowerCase()] ?? rawKey.toLowerCase();
+		if (key === 'store_name') return STORE_NAME;
 		if (!(key in vars)) return whole;
 		const value = vars[key];
 		return value == null || value === '' ? whole : String(value);

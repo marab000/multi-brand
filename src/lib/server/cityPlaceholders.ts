@@ -4,12 +4,12 @@
 // Поддомены (msk./ufa.) на этапе Phase 0 ещё не включены — currentCityFromHost уже
 // готова к ним, надо будет только включить в +layout.server.ts чтение хоста.
 
-export type CityForms = { nom: string; gen: string; prep: string };
+export type CityForms = { nom: string; gen: string; prep: string; acc: string };
 
 export const CITIES: Record<string, CityForms> = {
-	Казань: { nom: 'Казань', gen: 'Казани', prep: 'Казани' },
-	Москва: { nom: 'Москва', gen: 'Москвы', prep: 'Москве' },
-	Уфа: { nom: 'Уфа', gen: 'Уфы', prep: 'Уфе' }
+	Казань: { nom: 'Казань', gen: 'Казани', prep: 'Казани', acc: 'Казань' },
+	Москва: { nom: 'Москва', gen: 'Москвы', prep: 'Москве', acc: 'Москву' },
+	Уфа: { nom: 'Уфа', gen: 'Уфы', prep: 'Уфе', acc: 'Уфу' }
 };
 
 export const DEFAULT_CITY = 'Казань';
@@ -47,14 +47,21 @@ const TOKENS: Record<string, TokenRef> = (() => {
 	t['город'] = 'nom';
 	t['города'] = 'gen';
 	t['городе'] = 'prep';
+	t['городвин'] = 'acc';
+	// алиасы из ТЗ сеошника ({city_in} = «в Москве» с предлогом, см. case в replace)
+	t['city'] = 'nom';
+	t['city_gen'] = 'gen';
+	t['city_in'] = 'prep';
+	t['city_to'] = 'acc';
 	return t;
 })();
 
 /**
  * Заменяет городовые плейсхолдеры в тексте.
  * Скобка задаёт только падеж ({Москве}, {Уфе}, {городе} — всё предложный), город
- * подставляется текущий. Незнакомые {скобки} не трогаем, чтобы опечатка не молча
- * ломала текст, а была видна при вычитке.
+ * подставляется текущий. Алиасы сеошника: {city}, {city_gen} (родительный),
+ * {city_in} («в Москве», с предлогом), {city_to} («в Москву», винительный).
+ * Незнакомые {скобки} не трогаем, чтобы опечатка не молча ломала текст.
  */
 export function replaceCityPlaceholders(
 	text: string | null | undefined,
@@ -62,8 +69,11 @@ export function replaceCityPlaceholders(
 ): string {
 	if (!text || !text.includes('{')) return text ?? '';
 	const city = CITIES[currentCity] ?? CITIES[DEFAULT_CITY];
-	return text.replace(/\{([а-яё-]+)\}/gi, (whole, word: string) => {
+	return text.replace(/\{([а-яёa-z_-]+)\}/gi, (whole, word: string) => {
 		const form = TOKENS[word.toLowerCase()];
-		return form ? city[form] : whole;
+		if (!form) return whole;
+		if (form === 'prep' && word.toLowerCase() === 'city_in') return `в ${city.prep}`;
+		if (form === 'acc' && word.toLowerCase() === 'city_to') return `в ${city.acc}`;
+		return city[form];
 	});
 }

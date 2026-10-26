@@ -16,7 +16,9 @@ export async function PUT({ request, cookies, locals }) {
 		product_title: pick(body.product_title),
 		product_description: pick(body.product_description),
 		subcategory_title: pick(body.subcategory_title),
-		subcategory_description: pick(body.subcategory_description)
+		subcategory_description: pick(body.subcategory_description),
+		brand_title: pick(body.brand_title),
+		brand_description: pick(body.brand_description)
 	});
 	return json({ ok: true, templates: saved });
 }
