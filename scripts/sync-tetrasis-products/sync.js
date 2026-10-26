@@ -43,7 +43,11 @@ function slugify(str) {
 }
 const escapeRegExp = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // включённые бренды подгружаются из настроек админки в main(), до этого — brands.json
-let enabledBrands = brands.map(b => cleanBrand(typeof b === 'string' ? b : b?.name)).filter(Boolean)
+// (в дефолт только source='tetrasis': у чужих конвейеров на АПИ тетриса пусто)
+let enabledBrands = brands
+	.filter(b => typeof b === 'string' || b?.source === 'tetrasis')
+	.map(b => cleanBrand(typeof b === 'string' ? b : b?.name))
+	.filter(Boolean)
 // исключённые категории — из настроек админки («Тетрис»), до этого — excluded-categories.json
 let excludedCatSet = new Set()
 async function log(...a) {

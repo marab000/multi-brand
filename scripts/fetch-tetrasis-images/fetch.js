@@ -34,6 +34,10 @@ const RETRY_DELAY = Number(process.env.FETCH_IMAGES_RETRY_DELAY || 3000)
 const JPEG_QUALITY = Number(process.env.FETCH_IMAGES_JPEG_QUALITY || 78)
 const MAX_SIZE = Number(process.env.FETCH_IMAGES_MAX_SIZE || 1600)
 const MIN_ORIGINAL_SIZE_KB = Number(process.env.FETCH_IMAGES_MIN_ORIGINAL_SIZE_KB || 120)
+// негативный кэш: not-found/no-image товар пропускается, пока misses < MAX_MISSES,
+// дальше — раз в RECHECK_DAYS (последняя попытка остыла — товар снова в выборке)
+const MAX_MISSES = Number(process.env.FETCH_IMAGES_MAX_MISSES || 3)
+const RECHECK_DAYS = Number(process.env.FETCH_IMAGES_RECHECK_DAYS || 7)
 // Капа картинок на товар: галереи тетриса бывают по 10-99 шт (превью + большие дубли),
 // для карточки достаточно первых N больших. 0 — без лимита.
 const MAX_IMAGES = Number(process.env.FETCH_IMAGES_MAX_IMAGES || 5)
@@ -456,6 +460,22 @@ async function prepareImage(p, imgUrl, pos) {
 async function saveMissingImages(rows) {
 	for (const row of rows) await sql`insert into product_images(id,product_id,url,source,source_url,position) values(${row.id},${row.product_id},${row.url},${row.source},${row.source_url},${row.position})`
 }
+async function ensureMissesTable() {
+	await sql`create table if not exists image_fetch_misses (
+		product_id uuid primary key references products(id) on delete cascade,
+		misses integer not null default 0,
+		last_attempt timestamptz not null default now()
+	)`
+}
+async function recordMiss(p) {
+	try {
+		await sql`insert into image_fetch_misses (product_id, misses, last_attempt) values (${p.id}, 1, now())
+			on conflict (product_id) do update set misses = image_fetch_misses.misses + 1, last_attempt = now()`
+	} catch (e) { await logWarn('MISS_RECORD_FAIL', p.name, e.message) }
+}
+async function clearMiss(p) {
+	try { await sql`delete from image_fetch_misses where product_id = ${p.id}` } catch {}
+}
 async function replaceProductImages(p, rows) {
 	const oldRows = await sql`select url from product_images where product_id=${p.id} and source='fetch'`
 	await sql.begin(async tx => {
@@ -488,6 +508,7 @@ async function processProduct(page, p) {
 		if (direct.url) url = direct.url
 		if (!url && direct.status === 'no-image') {
 			runState.noImage++
+			await recordMiss(p)
 			await logInfo('NO_IMAGE', label, 'stage:direct', 'direct:no-image', 'search:skipped')
 			await sleep(PRODUCT_DELAY)
 			return
@@ -500,6 +521,7 @@ async function processProduct(page, p) {
 			if (viaSitemap?.url) url = viaSitemap.url
 			else if (viaSitemap?.status === 'no-image') {
 				runState.noImage++
+				await recordMiss(p)
 				await logInfo('NO_IMAGE', label, 'stage:sitemap', 'sitemap:no-image', 'search:skipped')
 				await sleep(PRODUCT_DELAY)
 				return
@@ -507,6 +529,7 @@ async function processProduct(page, p) {
 		}
 		if (!url && direct.authoritative) {
 			runState.notFound++
+			await recordMiss(p)
 			await logError('NOT_FOUND', label, 'stage:direct', `direct:${direct.status}`, 'search:skipped', `tried:${direct.tried}`)
 			failQueueItem(p, 'not-found')
 			await sleep(PRODUCT_DELAY)
@@ -522,6 +545,7 @@ async function processProduct(page, p) {
 				if (direct?.status === 'no-image') await logInfo('NO_IMAGE', label, `stage:${stage}`, `direct:${direct.status}`, `search:${search?.status || 'not-used'}`)
 				else {
 					runState.notFound++
+					await recordMiss(p)
 					await logError('NOT_FOUND', label, `stage:${stage}`, `direct:${direct?.status || 'fail'}`, `search:${search?.status || 'not-used'}`, debug ? `best:${debug.score}:${String(debug.title).trim().replace(/\s+/g, ' ')}` : 'best:-', debug ? `query:${debug.query}` : 'query:-')
 				failQueueItem(p, 'not-found')
 			}
@@ -532,9 +556,10 @@ async function processProduct(page, p) {
 		const imageResult = await getImages(page, url)
 		images = imageResult.images
 		if (!images.length) {
-			if (imageResult.status === 'no-image') { runState.noImage++; await logInfo('NO_IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`) }
+			if (imageResult.status === 'no-image') { runState.noImage++; await recordMiss(p); await logInfo('NO_IMAGE', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`) }
 			else {
 				runState.notFound++
+				await recordMiss(p)
 				await logError('NO_IMAGES_FOUND', label, 'stage:images', `reason:${imageResult.status}`, `raw:${imageResult.rawCount || 0}`, `url:${url}`)
 				failQueueItem(p, 'no-images')
 			}
@@ -553,6 +578,7 @@ async function processProduct(page, p) {
 			pos++; await sleep(IMAGE_DELAY)
 		}
 		if (!rows.length) {
+			await clearMiss(p)
 			await logWarn('SKIP', label, `imgs:${images.length}`, `skip:${skipCount}`, 'reason:already-exists')
 			await sleep(PRODUCT_DELAY)
 			return
@@ -567,6 +593,7 @@ async function processProduct(page, p) {
 		const matched = foundSource === 'direct' ? direct.tried : `${search?.score || '-'}:${String(search?.title || '-').trim().replace(/\s+/g, ' ')}`
 		const query = foundSource === 'search' ? `query:${search?.query || '-'}` : 'query:-'
 		runState.ok++
+		await clearMiss(p)
 		await logSuccess('OK', label, `source:${foundSource}`, query, `matched:${matched}`, `imgs:${rows.length}/${images.length}`, `size:${originalKb}KB->${finalKb}KB`, `optimized:${optimizedCount}`, `original:${originalCount}`, `replaced:${deleted}`, `skip:${skipCount}`)
 		await sleep(PRODUCT_DELAY)
 	} catch (e) {
@@ -631,10 +658,18 @@ async function loadQueueProducts() {
 }
 async function loadDbProducts(selectedBrands) {
 	if (MODE === MODES.MISSING) {
+		// негативный кэш: замороженные (misses >= MAX_MISSES) re-enter выборку,
+		// только когда с последней попытки прошло RECHECK_DAYS — «повтор раз в неделю»
 		return await sql`
 			select p.id,p.name,p.source,p.raw->>'РабочееНаименование' as raw_name from products p
 			where not exists(select 1 from product_images pi where pi.product_id=p.id and pi.source='fetch')
 				and lower(trim(p.brand->>'name')) in ${sql(selectedBrands)}
+				and not exists(
+					select 1 from image_fetch_misses m
+					where m.product_id = p.id
+						and m.misses >= ${MAX_MISSES}
+						and m.last_attempt > now() - make_interval(days => ${RECHECK_DAYS})
+				)
 			order by p.name
 		`
 	}
@@ -700,6 +735,16 @@ async function main() {
 			}
 		} catch {}
 		await logInfo('START', `source:${SOURCE}`, `mode:${MODE}`, `threads:${THREADS}`, `brands:${selectedBrands.length}`, `queue:${QUEUE_FILE}`)
+		await ensureMissesTable()
+		if (MODE === MODES.MISSING && SOURCE === SOURCES.DB) {
+			try {
+				const frozen = await sql`select count(*)::int as n from image_fetch_misses m
+					join products p on p.id = m.product_id
+					where m.misses >= ${MAX_MISSES} and m.last_attempt > now() - make_interval(days => ${RECHECK_DAYS})
+						and lower(trim(p.brand->>'name')) in ${sql(selectedBrands)}`
+				if (frozen[0].n) await logInfo('NEGATIVE_CACHE', `пропущено вечных not-found: ${frozen[0].n} (misses>=${MAX_MISSES}, перепроверка раз в ${RECHECK_DAYS} дн.)`)
+			} catch {}
+		}
 		await loadSitemapIndex()
 		browser = await puppeteer.launch({ headless: HEADLESS, defaultViewport: null, args: ['--no-sandbox', '--disable-setuid-sandbox'] })
 		const products = SOURCE === SOURCES.QUEUE ? await loadQueueProducts() : await loadDbProducts(selectedBrands)

@@ -89,8 +89,9 @@ async function fetchApiBrands(): Promise<string[] | null> {
 	}
 }
 
-// brands.json — дефолтный список (канонические имена)
-async function defaultBrands(): Promise<string[]> {
+// бренды чужих конвейеров из brands.json (source !== 'tetrasis'): в админке
+// показываются, но тумблер синка для них заблокирован — АПИ тетриса их не имеет
+export async function externalBrands(): Promise<string[]> {
 	const fs = await import('node:fs/promises');
 	const path = await import('node:path');
 	try {
@@ -98,6 +99,27 @@ async function defaultBrands(): Promise<string[]> {
 		const raw = JSON.parse(await fs.readFile(file, 'utf8'));
 		if (Array.isArray(raw)) {
 			return raw
+				.filter((b: any) => typeof b !== 'string' && b?.source && b.source !== 'tetrasis')
+				.map((b: any) => cleanBrandName(b?.name))
+				.filter(Boolean);
+		}
+	} catch {
+		// файла нет — внешних брендов не знаем
+	}
+	return [];
+}
+
+// brands.json — справочник: канонические имена + источник конвейера ({name, source}).
+// В синк по умолчанию годятся только tetrasis-бренды — у остальных на АПИ тетриса пусто.
+async function defaultBrands(source?: 'tetrasis'): Promise<string[]> {
+	const fs = await import('node:fs/promises');
+	const path = await import('node:path');
+	try {
+		const file = path.resolve('scripts/sync-tetrasis-products/brands.json');
+		const raw = JSON.parse(await fs.readFile(file, 'utf8'));
+		if (Array.isArray(raw)) {
+			return raw
+				.filter((b: any) => !source || typeof b === 'string' || b?.source === source)
 				.map((b: any) => cleanBrandName(typeof b === 'string' ? b : b?.name))
 				.filter(Boolean);
 		}
@@ -111,10 +133,13 @@ async function defaultBrands(): Promise<string[]> {
 export async function getBrandConfig(): Promise<BrandConfig> {
 	const stored = await getSetting(BRANDS_KEY);
 	const fallback = await defaultBrands();
+	// дефолтный enabled — только тетрисовые бренды, иначе при первом засеве
+	// в синк попадает климат/чужие конвейеры и висит мёртвым грузом
+	const enabledFallback = await defaultBrands('tetrasis');
 	const allBase = mergeBrandLists(Array.isArray(stored?.all) ? stored.all : [], fallback);
 	const enabled = Array.isArray(stored?.enabled)
 		? stored.enabled.map(cleanBrandName).filter(Boolean)
-		: fallback;
+		: enabledFallback;
 
 	let all = allBase;
 	// первый запуск: тянем полный список брендов из АПИ

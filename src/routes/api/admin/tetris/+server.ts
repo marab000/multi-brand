@@ -7,7 +7,8 @@ import {
 	getSyncStateView,
 	cleanBrandName,
 	getExcludedCategories,
-	saveExcludedCategories
+	saveExcludedCategories,
+	externalBrands
 } from '$lib/server/tetrasis';
 import type { RequestHandler } from './$types';
 
@@ -68,6 +69,7 @@ export const GET: RequestHandler = async ({ cookies, locals }) => {
 			products: counts[name.toLowerCase()] ?? 0,
 			external: extCounts[name.toLowerCase()] ?? 0
 		})),
+		externalBrands: await externalBrands(),
 		categories,
 		sync: view
 	});

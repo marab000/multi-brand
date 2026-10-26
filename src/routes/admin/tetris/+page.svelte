@@ -48,11 +48,16 @@
   let {
     data
   }: {
-    data: { brands: string[]; enabled: string[]; categories?: CategoryRow[]; sync: SyncView; images?: ImagesView; counts?: Record<string, number>; extCounts?: Record<string, number> };
+    data: { brands: string[]; enabled: string[]; externalBrands?: string[]; categories?: CategoryRow[]; sync: SyncView; images?: ImagesView; counts?: Record<string, number>; extCounts?: Record<string, number> };
   } = $props();
 
   let brands: string[] = $state(data.brands ?? []);
   let enabledList: string[] = $state(data.enabled ?? []);
+  // внешние бренды из реестра (brands.json → source !== 'tetrasis'): тумблер заблокирован,
+  // даже если их товаров сейчас в базе нет (например, сезонку удалили)
+  let externalSet: Set<string> = $state(
+    new Set((data.externalBrands ?? []).map((b) => b.toLowerCase()))
+  );
   let categories: CategoryRow[] = $state(data.categories ?? []);
   // список исключённых категорий (галочка на строке = синхронизируется)
   let excludedList: string[] = $state(
@@ -75,10 +80,13 @@
     return counts[name.toLowerCase()] ?? 0;
   }
 
-  // товары бренда есть, но не из тетрис-синка (rusklimat, grandex-aqua, комплекты) —
-  // тумблер Тетриса ими не управляет
+  // бренд чужого конвейера: либо помечен в реестре (brands.json → source), либо
+  // товары есть, но не из тетрис-синка — тумблер Тетриса ими не управляет
   function isExternal(name: string): boolean {
-    return productsOf(name) === 0 && (extCounts[name.toLowerCase()] ?? 0) > 0;
+    return (
+      externalSet.has(name.toLowerCase()) ||
+      (productsOf(name) === 0 && (extCounts[name.toLowerCase()] ?? 0) > 0)
+    );
   }
 
   let saveState: '' | 'saving' | 'saved' | 'error' = $state('');
@@ -160,6 +168,7 @@
       if (!res.ok) return;
       const json = await res.json();
       brands = json.brands.map((b: any) => b.name);
+      externalSet = new Set((json.externalBrands ?? []).map((b: string) => String(b).toLowerCase()));
       const nextCounts: Record<string, number> = {};
       const nextExt: Record<string, number> = {};
       for (const b of json.brands) {
@@ -346,8 +355,9 @@
     {#if unmatched.length}
       <p class="text-amber-700 mt-3">
         Бренды поставщика без сопоставления (не синхронизируются): {unmatched.join(', ')}. Чтобы
-        включить, добавьте название в
+        включить, добавьте в
         <code>scripts/sync-tetrasis-products/brands.json</code>
+        запись {'{ "name": "Бренд", "source": "tetrasis" }'}
       </p>
     {/if}
   </div>

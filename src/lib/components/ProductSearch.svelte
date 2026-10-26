@@ -17,19 +17,22 @@
     score: number;
   };
 
-  let query = '';
-  let searchFocused = false;
+  // ВАЖНО: файл в runes-режиме (из-за $props()), поэтому весь стейт — только $state.
+  // Обычные let здесь не реактивны: дропдаун подсказок просто не рисуется
+  // (проявилось после перехода на Svelte 5; варнинг non_reactive_update был подавлен).
+  let query = $state('');
+  let searchFocused = $state(false);
   let inputEl: HTMLInputElement | null | undefined;
 
   function setInputPlaceholder(text: string) {
     inputEl?.setAttribute('placeholder', text);
   }
-  let results: any[] = [];
-  let open = false;
-  let selected = -1;
+  let results: any[] = $state([]);
+  let open = $state(false);
+  let selected = $state(-1);
   let timer: any;
-  let suggestions: SearchSuggestion[] = [];
-  let loading = false;
+  let suggestions: SearchSuggestion[] = $state([]);
+  let loading = $state(false);
 
   async function search() {
     const value = query.trim();
