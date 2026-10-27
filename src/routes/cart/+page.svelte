@@ -81,12 +81,12 @@
               <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>
                 {item.name}
               </a>
-              {#if item.color || item.qty > 1}
-                <p class="sub">{[item.color, `${item.qty} шт.`].filter(Boolean).join(' · ')}</p>
+              {#if item.color}
+                <p class="sub">{item.color}</p>
               {/if}
               <p class="price">{formatPrice(item.price * item.qty)} ₽</p>
-              {#if item.bundle && item.oldPrice && item.oldPrice > item.price}
-                <!-- у товара из комплекта выгода показывается баллами, а не зачёркнутой ценой -->
+              {#if item.oldPrice && item.oldPrice > item.price}
+                <!-- выгода не зачёркиванием, а баллами: сколько баллов получит юзер за покупку -->
                 <p class="bonus-points"><BonusIcon /> + {formatPrice((item.oldPrice - item.price) * item.qty)} баллов</p>
               {/if}
               {#if item.bundle}
@@ -105,9 +105,10 @@
                   ><Plus size="14" strokeWidth="2.5" /></button
                 >
               </div>
-              <button class="remove" onclick={() => cart.remove(item.id)}
-                ><Trash size="14" strokeWidth="2.5" /></button
-              >
+              <button class="remove" onclick={() => cart.remove(item.id)}>
+                <Trash size="14" strokeWidth="2.5" />
+                <span>Удалить</span>
+              </button>
             </div>
           </div>
         {/each}
@@ -148,10 +149,14 @@
                 <b>−{formatPrice(bonusWriteOff)} ₽</b>
               </div>
             {/if}
-            <div class="row row--result">
-              <span>Товары после бонусов:</span>
+            <div class="row">
+              <span>Стоимость товара после бонусов:</span>
               <b>{formatPrice(payable)} ₽</b>
             </div>
+          </div>
+          <div class="total-block">
+            <span>Итого</span>
+            <b>{formatPrice(payable)} ₽</b>
           </div>
           <p class="delivery-note">Стоимость и сроки доставки уточняются при оформлении</p>
           <div class="actions">
@@ -232,7 +237,11 @@
       }
     }
     .cart {
-      grid-template-columns: 1fr 320px;
+      // на узком десктопе (1024–1279) сайдбар тянется пропорционально, а не висит фикс-колонкой
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 34%);
+      @media (min-width: 1280px) {
+        grid-template-columns: minmax(0, 1fr) 320px;
+      }
       .items {
         display: flex;
         flex-direction: column;
@@ -261,7 +270,12 @@
         }
       }
       .info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         min-width: 0;
+        align-self: stretch;
+        height: 100%;
       }
       .name {
         display: inline-block;
@@ -282,6 +296,8 @@
       }
       .price {
         margin: 6px 0 0;
+        margin-top: auto;
+        padding-top: 6px;
         font-size: 17px;
         font-weight: 700;
         line-height: 1.15;
@@ -309,7 +325,10 @@
         display: flex;
         flex-direction: column;
         align-items: flex-end;
+        justify-content: space-between;
         gap: 10px;
+        align-self: stretch;
+        height: 100%;
       }
       .qty {
         display: flex;
@@ -335,14 +354,22 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 33px;
+        gap: 6px;
         height: 33px;
+        padding: 0 10px;
         border: 1px solid rgba(255, 0, 0, 0.25);
         border-radius: 12px;
         color: rgba(255, 0, 0, 0.5);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        background: transparent;
+        transition: 0.15s ease;
         &:hover {
           border: 1px solid rgba(255, 0, 0, 0.5);
           background: rgba(255, 0, 0, 0.05);
+          color: #e31b23;
         }
       }
     }
@@ -353,7 +380,6 @@
       gap: 8px;
       width: fit-content;
       margin-left: auto;
-      margin-top: 16px;
       padding: 0 20px;
       height: 44px;
       border: 1.5px solid rgba(255, 0, 0, 0.25);
@@ -430,15 +456,20 @@
       &--bonus b {
         color: #a16207;
       }
-      &--result {
-        padding-top: 8px;
-        border-top: 1px solid #f1f1f1;
-        font-size: 15px;
-        font-weight: 700;
-        color: #111827;
-        b {
-          font-size: 17px;
-        }
+    }
+    .total-block {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+      b {
+        font-size: 20px;
+        white-space: nowrap;
       }
     }
     .delivery-note {
@@ -481,6 +512,14 @@
           gap: 12px;
           padding: 12px;
         }
+        .info {
+          align-self: auto;
+          height: auto;
+        }
+        .price {
+          margin-top: 6px;
+          padding-top: 0;
+        }
         .image-link {
           width: 90px;
           height: 118px;
@@ -495,6 +534,8 @@
           grid-column: 1 / -1;
           flex-direction: row;
           align-items: center;
+          align-self: auto;
+          height: auto;
           justify-content: space-between;
           padding-top: 12px;
           border-top: 1px solid #f1f1f1;
@@ -503,7 +544,6 @@
           justify-content: flex-start;
         }
         .remove {
-          width: 34px;
           height: 34px;
         }
       }
