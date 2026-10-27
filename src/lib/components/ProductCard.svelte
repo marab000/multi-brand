@@ -124,6 +124,7 @@
       image,
       slug,
       description: product.description,
+      color: product.specs?.['Цвет'] ?? null,
       brand: product.brand?.name,
       protected: isProtected
     });
@@ -195,7 +196,7 @@
       {/if}
     </div>
     <div class="title-row">
-      <h3>{product.name}</h3>
+      <p class="card-name">{product.name}</p>
       {#if hasDiscount}
         <div class="saving">
           <PiggyBank size={17} strokeWidth={2.2} />
@@ -285,6 +286,10 @@
     flex-direction: column;
     gap: 12px;
     transition: all 0.25s ease;
+    // глобальный margin у p из typography.scss ломает ритм — отступы здесь держит только flex gap
+    p {
+      margin: 0;
+    }
     a {
       display: flex;
       flex-direction: column;
@@ -413,8 +418,9 @@
       align-items: center;
       gap: 12px;
     }
-    h3 {
-      margin: 0; /* глобальный margin из typography.scss в карточке лишний */
+    /* имя товара не в заголовке (h3 ломал иерархию H1-H2-H3), стили прежние */
+    .card-name {
+      margin: 0;
       font-size: 0.9375rem;
       font-weight: 700;
       line-height: 1.3;
@@ -563,6 +569,7 @@
         }
       }
       span {
+        padding: 0 10px;
         font-size: 0.8125rem;
         text-align: center;
       }

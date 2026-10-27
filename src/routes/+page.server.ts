@@ -45,22 +45,51 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       promoPick('Omoikiri', 'izmelchiteli-pischevyh-othodov')
     ]);
 
-    // Хиты продаж: 8 товаров с ценой и картинкой, выбор каждый раз новый
+    // Хиты продаж: только Asko (стирки/сушки), Liebherr (холодильники/морозилки)
+    // и Franke (духовки/варки/вытяжки/свч). Десять на десктоп (2 ряда по 5),
+    // на мобилке лишние прячет CSS. Бакеты по брендам с чередованием — чтобы
+    // все три бренда гарантированно были в секции, внутри бакета случайный выбор.
+    const HIT_COLUMNS = 5; // колонок на десктопе
+    const HITS_TOTAL = HIT_COLUMNS * 2;
+    const pickHits = (brand: string, groups: string[], limit: number) => sql`
+      SELECT p.id, p.name, p.product_type, p.price_rrc, p.price_ric, p.specs,
+             p.brand,
+             COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
+      FROM products p
+      LEFT JOIN product_images pi ON pi.product_id = p.id
+      WHERE p.price_rrc IS NOT NULL
+        AND EXISTS (SELECT 1 FROM product_images x WHERE x.product_id = p.id)
+        AND p.product_type NOT ILIKE 'комплект%'
+        AND p.brand->>'name' = ${brand}
+        AND p.catalog_group_slug IN ${sql(groups)}
+      GROUP BY p.id
+      ORDER BY random()
+      LIMIT ${limit}
+    `;
     let hits: any[] = [];
     try {
-      hits = await sql`
-        SELECT p.id, p.name, p.product_type, p.price_rrc, p.price_ric, p.specs,
-               p.brand,
-               COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
-        FROM products p
-        LEFT JOIN product_images pi ON pi.product_id = p.id
-        WHERE p.price_rrc IS NOT NULL
-          AND EXISTS (SELECT 1 FROM product_images x WHERE x.product_id = p.id)
-          AND p.product_type NOT ILIKE 'комплект%'
-        GROUP BY p.id
-        ORDER BY random()
-        LIMIT 8
-      `;
+      const [asko, liebherr, franke] = await Promise.all([
+        pickHits('ASKO', ['stiralnye-i-sushilnye-mashiny'], 6),
+        pickHits('LIEBHERR', ['holodilniki-i-morozilniki'], 6),
+        pickHits('Franke', [
+          'duhovye-shkafy',
+          'varochnye-poverhnosti',
+          'vytyazhki-vstraivaemye',
+          'vytyazhki-otdelnostoyaschie',
+          'mikrovolnovye-pechi'
+        ], 6)
+      ]);
+      // чередуем бакеты: Asko, Liebherr, Franke, Asko, ...
+      const pools = [asko, liebherr, franke].map((p) => [...p]);
+      const seen = new Set<string>();
+      for (let round = 0; hits.length < HITS_TOTAL && pools.some((p) => p.length); round++) {
+        const pool = pools[round % pools.length];
+        const item = pool.shift();
+        if (item && !seen.has(item.id)) {
+          seen.add(item.id);
+          hits.push(item);
+        }
+      }
     } catch {
       hits = [];
     }

@@ -20,6 +20,8 @@ export type CartItem = {
   qty: number;
   slug?: string;
   description?: string | null;
+  /** Цвет из характеристик — показывается в корзине вместо описания */
+  color?: string | null;
   brand?: string | null;
   protected?: boolean;
   /** Товар из конструктора «Собери комплект техники»: цена живая (следует за базой),
@@ -81,6 +83,7 @@ function createCart() {
                 image: product.images?.[0]?.url ?? item.image,
                 slug: slugify(product.name),
                 description: product.description,
+                color: product.specs?.['Цвет'] ?? item.color ?? null,
                 brand: product.brand?.name ?? item.brand
               } satisfies CartItem;
             }
@@ -95,6 +98,7 @@ function createCart() {
               image: product.images?.[0]?.url ?? item.image,
               slug: slugify(product.name),
               description: product.description,
+              color: product.specs?.['Цвет'] ?? item.color ?? null,
               brand: product.brand?.name ?? item.brand,
               protected: isDiscountExcludedBrand(product.brand)
             } satisfies CartItem;

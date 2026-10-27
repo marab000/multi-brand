@@ -1,101 +1,19 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { cart } from '$lib/stores/cart';
   import { imgUrl } from '$lib/s3Public';
   import { formatPrice } from '$lib/utils/formatPrice';
   import { applyCartDiscount, isDiscountExcludedBrand } from '$lib/utils/pricing';
-  import { apiFetch } from '$lib/api';
-  import { toast } from 'svelte-sonner';
-  import Modal from '$lib/components/Modal.svelte';
   import BonusIcon from '$lib/components/BonusIcon.svelte';
   import CartPdfExport from '$lib/components/CartPdfExport.svelte';
-  import {
-    Menu,
-    Minus,
-    Plus,
-    Trash,
-    BadgePercent,
-    ArrowRight,
-    Truck,
-    CreditCard,
-    Wallet,
-    Banknote,
-    QrCode,
-    Smartphone,
-    ChevronDown,
-    ShoppingBag
-  } from 'lucide-svelte';
-  import { phoneMask } from '$lib/actions/phoneMask';
-  import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
+  import { Menu, Minus, Plus, Trash, ArrowRight, ShoppingBag } from 'lucide-svelte';
   import cartEmptyImage from '$lib/assets/cart-empty.webp';
-  import { openOtp } from '$lib/utils/otp';
   let { data } = $props<{ data: PageData }>();
-  let nameInput: HTMLInputElement;
-  let phoneInput: HTMLInputElement;
-  let name = data.user?.full_name ?? '';
-  let phone = getPhoneLocalDigits(data.user?.phone);
   const cartDiscountPercent = data.cartDiscountPercent ?? 0;
   const excludedBrands = data.excludedBrands ?? [];
-  let showModal = false;
-  const reachGoal = (goal: string) => {
-    if (typeof window === 'undefined') return;
-    window.ym?.(108518016, 'reachGoal', goal);
-  };
-  function focusField(el: HTMLInputElement) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.focus();
-  }
-  const submit = async () => {
-    if (!name.trim()) {
-      toast.error('Введите имя');
-      focusField(nameInput);
-      return;
-    }
-    if (!isValidRuPhone(phone)) {
-      toast.error('Введите корректный номер телефона');
-      focusField(phoneInput);
-      return;
-    }
-    const items = $cart.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      oldPrice: i.oldPrice ?? null,
-      qty: i.qty,
-      slug: i.slug ?? null
-    }));
-    try {
-      await apiFetch(fetch, '/api/orders', {
-        method: 'POST',
-        body: JSON.stringify({
-          name,
-          phone: normalizeRuPhone(phone),
-          items,
-          message: [
-            `Доставка: ${delivery === 'kazan' ? 'по Казани (бесплатно)' : delivery === 'rt' ? 'по Татарстану' : 'самовывоз, Индустриальный парк M-7'}`,
-            `Оплата: ${installment === 'now' ? 'оплата сразу' : `рассрочка ${installment} мес. 0%`}`,
-            bonusMessage
-          ].join('\n')
-        }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      reachGoal('cart_submit');
-      cart.clear();
-      if (data.user) {
-        toast.success('Заказ создан');
-        await goto('/user/orders');
-        return;
-      }
-      showModal = true;
-      name = '';
-      phone = '';
-    } catch {
-      toast.error('Ошибка при оформлении заказа');
-    }
-  };
-  // Скидка применяется только к товарам, чей бренд не в списке исключений (защищённый ассортимент)
+  // Скидка корзины показывается не снижением цены, а бонусами: начисляем баллы
+  // и сразу списываем их в счёт оплаты (сумма к оплате меньше на bonusWriteOff)
   const itemDiscountedPrice = (i: {
     price: number;
     qty: number;
@@ -109,24 +27,22 @@
   const totalWithDiscount = $derived(
     $cart.reduce((sum, i) => sum + itemDiscountedPrice(i) * i.qty, 0)
   );
-  const savings = $derived(total - totalWithDiscount);
-  const hasDiscount = $derived(savings > 0);
+  const bonusWriteOff = $derived(Math.max(0, total - totalWithDiscount));
+  const hasBonusWriteOff = $derived(bonusWriteOff > 0);
+  const payable = $derived(total - bonusWriteOff);
+  const itemsCount = $derived($cart.reduce((sum, i) => sum + i.qty, 0));
+  const countLabel = $derived(
+    itemsCount % 10 === 1 && itemsCount % 100 !== 11
+      ? 'товар'
+      : [2, 3, 4].includes(itemsCount % 10) && ![12, 13, 14].includes(itemsCount % 100)
+        ? 'товара'
+        : 'товаров'
+  );
   // Бонус за комплект (п.15): суммарная выгода по товарам из конструктора
   const bundleBonus = $derived(
     $cart.reduce((sum, i) => sum + (i.bundle && i.oldPrice && i.oldPrice > i.price ? (i.oldPrice - i.price) * i.qty : 0), 0)
   );
   const hasBundleBonus = $derived(bundleBonus > 0);
-  const bonusMessage = hasBundleBonus
-    ? `Оставьте заявку, чтобы получить ${formatPrice(bundleBonus)} ₽ баллами`
-    : '';
-  // Способ получения и рассрочка
-  let delivery = $state<'kazan' | 'rt' | 'pickup'>('kazan');
-  let installment = $state<'6' | '12' | 'now'>('now');
-  const closeModal = () => (showModal = false);
-  let openAccordion = $state<string | null>(null);
-  const toggleAccordion = (id: string) => {
-    openAccordion = openAccordion === id ? null : id;
-  };
   onMount(() => {
     cart.sync();
   });
@@ -147,32 +63,37 @@
       <a class="btn primary gap-3" href="/catalog"><Menu size={18} />Перейти в каталог</a>
     </div>
   {:else}
-    <h1 class="pt-3 pb-1">Корзина</h1>
+    <h1 class="pt-3 pb-1">
+      Корзина <span class="count">{itemsCount} {countLabel}</span>
+    </h1>
     <div class="cart mb-3 flex flex-col gap-3 lg:mb-4 lg:grid lg:gap-5">
       <div class="items">
-        {#each $cart as item}
+        {#each $cart as item (item.id)}
           <div class="item">
-            <div class="item-main">
-              <a
-                class="image-link"
-                href={item.slug ? `/products/${item.slug}` : undefined}
-                aria-label={item.name}
-              >
-                <img src={imgUrl(item.image, 320)} alt={item.name} />
+            <a
+              class="image-link"
+              href={item.slug ? `/products/${item.slug}` : undefined}
+              aria-label={item.name}
+            >
+              <img src={imgUrl(item.image, 320)} alt={item.name} />
+            </a>
+            <div class="info">
+              <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>
+                {item.name}
               </a>
-              <div class="info">
-                <a class="name" href={item.slug ? `/products/${item.slug}` : undefined}>
-                  {item.name}
-                </a>
-                {#if item.bundle}
-                  <span class="bundle-badge">
-                    <ShoppingBag size={12} strokeWidth={2.4} /> Из комплекта «Собери комплект техники»</span
-                  >
-                {/if}
-                {#if item.description}
-                  <p class="description">{item.description}</p>
-                {/if}
-              </div>
+              {#if item.color || item.qty > 1}
+                <p class="sub">{[item.color, `${item.qty} шт.`].filter(Boolean).join(' · ')}</p>
+              {/if}
+              <p class="price">{formatPrice(item.price * item.qty)} ₽</p>
+              {#if item.bundle && item.oldPrice && item.oldPrice > item.price}
+                <!-- у товара из комплекта выгода показывается баллами, а не зачёркнутой ценой -->
+                <p class="bonus-points"><BonusIcon /> + {formatPrice((item.oldPrice - item.price) * item.qty)} баллов</p>
+              {/if}
+              {#if item.bundle}
+                <span class="bundle-badge">
+                  <ShoppingBag size={12} strokeWidth={2.4} /> Из комплекта «Собери комплект техники»</span
+                >
+              {/if}
             </div>
             <div class="item-actions">
               <div class="qty">
@@ -184,20 +105,6 @@
                   ><Plus size="14" strokeWidth="2.5" /></button
                 >
               </div>
-              <div class="sum-wrap">
-                {#if item.bundle && item.oldPrice && item.oldPrice > item.price}
-                  <!-- у товара из комплекта выгода показывается баллами, а не зачёркнутой ценой -->
-                  <p class="discount-sum sum">{formatPrice(item.price * item.qty)} ₽</p>
-                  <p class="bonus-points"><BonusIcon /> + {formatPrice((item.oldPrice - item.price) * item.qty)} баллов</p>
-                {:else if cartDiscountPercent > 0 && !isDiscountExcludedBrand(item.brand, item.protected, excludedBrands)}
-                  <p class="old-sum">{formatPrice(item.price * item.qty)} ₽</p>
-                  <p class="discount-sum sum">
-                    {formatPrice(itemDiscountedPrice(item) * item.qty)} ₽
-                  </p>
-                {:else}
-                  <p class="sum">{formatPrice(item.price * item.qty)} ₽</p>
-                {/if}
-              </div>
               <button class="remove" onclick={() => cart.remove(item.id)}
                 ><Trash size="14" strokeWidth="2.5" /></button
               >
@@ -206,16 +113,12 @@
         {/each}
 
         <button class="clear-cart" onclick={() => cart.clear()}>
-          <Trash size={15} strokeWidth={2.4} />
+          <Trash size={15} strokeWidth="2.4" />
           Очистить корзину
         </button>
       </div>
       <div class="sidebar">
         <div class="sidebar-card checkout">
-          <div class="sidebar-card__head-static">
-            <span class="sidebar-card__icon"><BadgePercent size={18} strokeWidth={2.2} /></span>
-            <span class="sidebar-card__title">Оформление</span>
-          </div>
           {#if hasBundleBonus}
             <div class="bonus-banner">
               <span class="bonus-banner__gift">🎁</span>
@@ -225,139 +128,38 @@
               </span>
             </div>
           {/if}
-          <div class="total">
-            <span>Итого:</span>
-            <div class="total-prices">
-              {#if cartDiscountPercent > 0 && hasDiscount}
-                <span class="old-sum">{formatPrice(total)} ₽</span>
-                <b class="discount-sum">{formatPrice(totalWithDiscount)} ₽</b>
-              {:else}
-                <b>{formatPrice(total)} ₽</b>
-              {/if}
-            </div>
-          </div>
-          <input
-            class="input primary"
-            placeholder="Ваше имя"
-            bind:value={name}
-            bind:this={nameInput}
-          />
-          <div class="with-prefix">
-            <span class="prefix">+7</span>
-            <input
-              class="input primary"
-              placeholder="999 123 45 67"
-              autocomplete="tel"
-              inputmode="numeric"
-              value={phone}
-              bind:this={phoneInput}
-              use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
-            />
-          </div>
-          <div class="steps-group">
-            <p class="steps-group__title">Способ получения:</p>
-            {#each [
-              { v: 'kazan', label: '🚚 Доставка по Казани — бесплатно' },
-              { v: 'rt', label: '🚚 Доставка по Татарстану — от 150 000 ₽ бесплатно' },
-              { v: 'pickup', label: '📦 Самовывоз: Индустриальный парк M-7' }
-            ] as opt (opt.v)}
-              <label class="steps-group__opt">
-                <input type="radio" bind:group={delivery} value={opt.v} />
-                <span>{opt.label}</span>
-              </label>
-            {/each}
-            <p class="steps-group__title">Рассрочка:</p>
-            {#each [
-              { v: '6', label: '6 месяцев — 0%' },
-              { v: '12', label: '12 месяцев — 0%' },
-              { v: 'now', label: 'Оплата сразу' }
-            ] as opt (opt.v)}
-              <label class="steps-group__opt">
-                <input type="radio" bind:group={installment} value={opt.v} />
-                <span>{opt.label}</span>
-              </label>
-            {/each}
-          </div>
-          <div class="actions">
-            <button class="btn primary" onclick={submit}>Оставить заявку</button>
-          </div>
-        </div>
-
-        <div class="sidebar-card accordion">
-          <button class="sidebar-card__head" onclick={() => toggleAccordion('delivery')}>
-            <span class="sidebar-card__head-left">
-              <span class="sidebar-card__icon"><Truck size={18} strokeWidth={2.2} /></span>
-              <span class="sidebar-card__title">Доставка</span>
-            </span>
-            <ChevronDown
-              size={18}
-              strokeWidth={2.2}
-              class={'chevron' + (openAccordion === 'delivery' ? ' chevron--open' : '')}
-            />
-          </button>
-          {#if openAccordion === 'delivery'}
-            <div class="accordion-body">
-              <p class="sidebar-card__text">
-                Бесплатная доставка по Казани и РТ. После оформления заказа менеджер свяжется с вами
-                и согласует удобное время.
-              </p>
-            </div>
-          {/if}
-        </div>
-
-        <!-- <div class="sidebar-card accordion">
-          <button class="sidebar-card__head" onclick={() => toggleAccordion('payment')}>
-            <span class="sidebar-card__head-left">
-              <span class="sidebar-card__icon"><Wallet size={18} strokeWidth={2.2} /></span>
-              <span class="sidebar-card__title">Оплата</span>
-            </span>
-            <ChevronDown size={18} strokeWidth={2.2} class={'chevron' + (openAccordion === 'payment' ? ' chevron--open' : '')} />
-          </button>
-          {#if openAccordion === 'payment'}
-            <div class="accordion-body">
-              <div class="payment-icons">
-                <div class="payment-icon" title="Оплата по QR"><QrCode size={22} strokeWidth={1.8} /></div>
-                <div class="payment-icon" title="Терминал"><Smartphone size={22} strokeWidth={1.8} /></div>
-                <div class="payment-icon" title="Картой"><CreditCard size={22} strokeWidth={1.8} /></div>
-                <div class="payment-icon" title="Наличные"><Banknote size={22} strokeWidth={1.8} /></div>
+          {#if hasBonusWriteOff}
+            <div class="bonus-card">
+              <div class="bonus-card__head">
+                <BonusIcon />
+                <span>Бонусы применены</span>
               </div>
+              <p class="bonus-card__sum">Списано {formatPrice(bonusWriteOff)} ₽</p>
             </div>
           {/if}
-        </div> -->
-
-        <div class="sidebar-card accordion">
-          <button class="sidebar-card__head" onclick={() => toggleAccordion('installment')}>
-            <span class="sidebar-card__head-left">
-              <span class="sidebar-card__icon"><BadgePercent size={18} strokeWidth={2.2} /></span>
-              <span class="sidebar-card__title">Рассрочка 0-0-12</span>
-            </span>
-            <ChevronDown
-              size={18}
-              strokeWidth={2.2}
-              class={'chevron' + (openAccordion === 'installment' ? ' chevron--open' : '')}
-            />
-          </button>
-          {#if openAccordion === 'installment'}
-            <div class="accordion-body">
-              <p class="sidebar-card__text">
-                Без переплат и скрытых комиссий на 12 месяцев. Техника сразу, первый платёж через
-                месяц.
-              </p>
-              <button
-                class="btn secondary mt-2"
-                onclick={(e) => {
-                  e.stopPropagation();
-                  openOtp({
-                    cart: $cart.map((i) => ({
-                      name: i.name,
-                      price: i.price,
-                      quantity: i.qty
-                    }))
-                  });
-                }}>Оформить заявку</button
-              >
+          <div class="rows">
+            <div class="row">
+              <span>Товары ({itemsCount}):</span>
+              <b>{formatPrice(total)} ₽</b>
             </div>
-          {/if}
+            {#if hasBonusWriteOff}
+              <div class="row row--bonus">
+                <span>Списание бонусов:</span>
+                <b>−{formatPrice(bonusWriteOff)} ₽</b>
+              </div>
+            {/if}
+            <div class="row row--result">
+              <span>Товары после бонусов:</span>
+              <b>{formatPrice(payable)} ₽</b>
+            </div>
+          </div>
+          <p class="delivery-note">Стоимость и сроки доставки уточняются при оформлении</p>
+          <div class="actions">
+            <a class="btn primary" href="/checkout">
+              Перейти к оформлению
+              <ArrowRight size={17} strokeWidth={2.2} />
+            </a>
+          </div>
         </div>
 
         <CartPdfExport {total} user={data.user} />
@@ -365,12 +167,6 @@
     </div>
   {/if}
 </div>
-
-<Modal
-  open={showModal}
-  text="Мы получили ваш заказ! Скоро свяжемся с вами, чтобы уточнить детали."
-  onClose={closeModal}
-/>
 
 <style lang="scss">
   .cart-page {
@@ -410,24 +206,21 @@
         font-weight: 700;
       }
     }
-    .old-sum {
-      color: #111;
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 1;
-      text-decoration: line-through;
-      text-decoration-color: #e31b23;
-      text-decoration-thickness: 1.5px;
-      opacity: 0.62;
-      white-space: nowrap;
+    h1 {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
     }
-    .discount-sum {
-      color: #e31b23;
+    .count {
+      font-size: 15px;
+      font-weight: 600;
+      color: #667085;
     }
     .bonus-points {
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      margin: 4px 0 0;
       color: #111827;
       font-size: 0.8125rem;
       font-weight: 600;
@@ -447,20 +240,13 @@
       }
       .item {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 86px minmax(0, 1fr) auto;
         align-items: center;
         gap: 16px;
         padding: 12px 16px;
         border: 1px solid #eee;
         border-radius: 12px;
         background: #fff;
-      }
-      .item-main {
-        display: grid;
-        grid-template-columns: 86px minmax(0, 1fr);
-        align-items: center;
-        gap: 16px;
-        min-width: 0;
       }
       .image-link {
         display: flex;
@@ -488,18 +274,25 @@
           color: $green;
         }
       }
-      .description {
-        margin-top: 4px;
-        color: #777;
-        font-size: 13px;
-        line-height: 1.35;
+      .sub {
+        margin: 4px 0 0;
+        color: #9ca3af;
+        font-size: 12.5px;
+        line-height: 1.3;
+      }
+      .price {
+        margin: 6px 0 0;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.15;
+        white-space: nowrap;
       }
       .bundle-badge {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         width: fit-content;
-        margin-top: 4px;
+        margin-top: 6px;
         padding: 4px 8px;
         border-radius: 999px;
         background: rgba($green, 0.1);
@@ -513,10 +306,10 @@
         }
       }
       .item-actions {
-        display: grid;
-        grid-template-columns: 110px 110px 42px;
-        align-items: center;
-        gap: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
       }
       .qty {
         display: flex;
@@ -537,19 +330,6 @@
             opacity: 0.9;
           }
         }
-      }
-      .sum-wrap {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-        min-width: 0;
-      }
-      .sum {
-        font-size: 16px;
-        font-weight: 700;
-        white-space: nowrap;
-        text-align: right;
       }
       .remove {
         display: flex;
@@ -604,98 +384,77 @@
       border-radius: 12px;
       background: #fff;
     }
-    .sidebar-card__head {
+    .bonus-card {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      width: 100%;
-      padding: 0;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font: inherit;
-      text-align: left;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px;
+      border: 1px solid #f0dfa8;
+      border-radius: 12px;
+      background: #fef9e7;
+      &__head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #a16207;
+        font-size: 13.5px;
+        font-weight: 700;
+        :global(svg.bonus-icon) {
+          color: #e6a73c;
+        }
+      }
+      &__sum {
+        margin: 0;
+        color: #111827;
+        font-size: 14px;
+        font-weight: 700;
+      }
     }
-    .sidebar-card__head-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .accordion-body {
+    .rows {
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
-    :global(.chevron) {
-      color: #94a3b8;
-      transition: transform 0.2s ease;
-      flex-shrink: 0;
-    }
-    :global(.chevron--open) {
-      transform: rotate(180deg);
-    }
-    .sidebar-card__head-static {
+    .row {
       display: flex;
-      align-items: center;
+      align-items: baseline;
+      justify-content: space-between;
       gap: 8px;
-    }
-    .sidebar-card__icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: rgba($green, 0.08);
-      color: $green;
-      flex-shrink: 0;
-    }
-    .sidebar-card__title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #111827;
-    }
-    .sidebar-card__text {
-      margin: 0;
       font-size: 13.5px;
-      line-height: 1.45;
-      color: #667085;
-    }
-    .payment-icons {
-      display: flex;
-      gap: 8px;
-    }
-    .payment-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: #f8f9fa;
-      color: #64748b;
-    }
-    .checkout {
-      .total {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 18px;
-        .total-prices {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 4px;
-          b {
-            font-size: 20px;
-          }
+      color: #374151;
+      b {
+        font-size: 15px;
+        color: #111827;
+        white-space: nowrap;
+      }
+      &--bonus b {
+        color: #a16207;
+      }
+      &--result {
+        padding-top: 8px;
+        border-top: 1px solid #f1f1f1;
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+        b {
+          font-size: 17px;
         }
       }
+    }
+    .delivery-note {
+      margin: 0;
+      color: #9ca3af;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .checkout {
       .actions {
         display: flex;
         flex-direction: column;
         gap: 12px;
+        .btn {
+          justify-content: center;
+        }
       }
     }
   }
@@ -717,16 +476,10 @@
       }
       .cart {
         .item {
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
+          grid-template-columns: 90px minmax(0, 1fr);
+          align-items: start;
           gap: 12px;
           padding: 12px;
-        }
-        .item-main {
-          grid-template-columns: 90px minmax(0, 1fr);
-          align-items: flex-start;
-          gap: 12px;
         }
         .image-link {
           width: 90px;
@@ -738,31 +491,16 @@
             object-fit: contain;
           }
         }
-        .name {
-          font-size: 14px;
-        }
-        .description {
-          margin-top: 4px;
-          font-size: 12.5px;
-          line-height: 1.35;
-        }
         .item-actions {
-          display: grid;
-          grid-template-columns: auto 1fr auto;
+          grid-column: 1 / -1;
+          flex-direction: row;
           align-items: center;
-          gap: 12px;
+          justify-content: space-between;
           padding-top: 12px;
           border-top: 1px solid #f1f1f1;
         }
         .qty {
           justify-content: flex-start;
-        }
-        .sum-wrap {
-          align-items: center;
-        }
-        .sum {
-          font-size: 15px;
-          text-align: center;
         }
         .remove {
           width: 34px;
@@ -799,29 +537,6 @@
         font-style: normal;
         font-size: 12px;
         color: #92400e;
-      }
-    }
-  }
-  .steps-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 12px 0 4px;
-    &__title {
-      margin: 8px 0 4px;
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #111827;
-    }
-    &__opt {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13.5px;
-      color: #374151;
-      cursor: pointer;
-      input {
-        accent-color: $green;
       }
     }
   }

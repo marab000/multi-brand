@@ -20,7 +20,7 @@
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
   import { imgUrl } from '$lib/s3Public';
   import { backHref } from '$lib/stores/backHref';
-  import { PiggyBank, Star, Minus, Plus } from 'lucide-svelte';
+  import { PiggyBank, Star, Minus, Plus, ChevronDown } from 'lucide-svelte';
   register();
   type ProductPageProduct = Product & {
     isKit?: boolean;
@@ -128,6 +128,7 @@
       image,
       slug,
       description: p.description,
+      color: p.specs?.['Цвет'] ?? null,
       brand: p.brand?.name,
       protected: isDiscountExcludedBrand(p.brand)
     });
@@ -361,20 +362,72 @@
             {/if}
           </section>
         {/if}
-        {#if specs.length}
-          <div>
-            <h2 class="mb-4 font-semibold">Характеристики</h2>
-            <div class="space-y-2 pb-5 text-sm">
-              {#each specs as s}
-                <div class="flex items-baseline gap-2">
-                  <span class="min-w-0 max-w-45 break-words text-gray-500">{s.name}</span>
-                  <span class="flex-1 border-b border-dashed border-gray-300"></span>
-                  <span class="min-w-0 max-w-50 break-words text-right">{s.value}</span>
+        <div class="product-accordions">
+          <details class="accordion">
+            <summary>
+              <span>Описание</span>
+              <ChevronDown size={18} strokeWidth={2.2} />
+            </summary>
+            <div class="accordion-body">
+              {#if p.description}
+                <p class="accordion-text">{p.description}</p>
+              {/if}
+              {#if specs.length}
+                <h3 class="accordion-subtitle">Характеристики</h3>
+                <div class="space-y-2 text-sm">
+                  {#each specs as s}
+                    <div class="flex items-baseline gap-2">
+                      <span class="min-w-0 max-w-45 break-words text-gray-500">{s.name}</span>
+                      <span class="flex-1 border-b border-dashed border-gray-300"></span>
+                      <span class="min-w-0 max-w-50 break-words text-right">{s.value}</span>
+                    </div>
+                  {/each}
                 </div>
-              {/each}
+              {/if}
             </div>
-          </div>
-        {/if}
+          </details>
+          <details class="accordion">
+            <summary>
+              <span>Доставка</span>
+              <ChevronDown size={18} strokeWidth={2.2} />
+            </summary>
+            <div class="accordion-body">
+              <p class="accordion-text">
+                Доставка по Казани — бесплатно. После оформления заказа менеджер свяжется с вами,
+                подтвердит наличие товара, адрес и согласует удобное время.
+              </p>
+              <p class="accordion-text">
+                Доставка в другие регионы России рассчитывается индивидуально — стоимость, сроки и
+                варианты уточняйте у менеджера при оформлении заказа. Перед доставкой мы
+                дополнительно проверяем заказ и связываемся с вами.
+              </p>
+              <a class="accordion-link" href="/delivery">Подробнее о доставке</a>
+            </div>
+          </details>
+          <details class="accordion">
+            <summary>
+              <span>Гарантия</span>
+              <ChevronDown size={18} strokeWidth={2.2} />
+            </summary>
+            <div class="accordion-body">
+              <p class="accordion-text">
+                Продаём только оригинальную технику — на неё действует гарантия производителя: от 1
+                года до 3 лет (срок зависит от категории товара и бренда, указан в гарантийном
+                талоне).
+              </p>
+              <ul class="accordion-list">
+                <li>Правильно оформленный гарантийный талон с печатью магазина</li>
+                <li>Кассовый чек — обязательный документ для сервисного центра</li>
+                <li>Помогаем подготовить документы и оформить заявку в сервис</li>
+              </ul>
+              <p class="accordion-text">
+                Гарантийные случаи рассматриваются в авторизованных сервисных центрах
+                производителя, магазин оказывает информационную поддержку на каждом этапе.
+              </p>
+              <a class="accordion-link" href="/garantiya">Подробнее о гарантии</a>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   </div>
@@ -684,6 +737,81 @@
       background: #e4edf8;
     }
   }
+  .product-accordions {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .accordion {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 14px 16px;
+      cursor: pointer;
+      list-style: none;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      user-select: none;
+      &::-webkit-details-marker {
+        display: none;
+      }
+      :global(svg) {
+        flex-shrink: 0;
+        color: #6b7280;
+        transition: transform 0.18s ease;
+      }
+    }
+    &[open] {
+      summary :global(svg) {
+        transform: rotate(180deg);
+      }
+    }
+  }
+  .accordion-body {
+    padding: 0 16px 16px;
+  }
+  .accordion-text {
+    margin: 0 0 8px;
+    color: #374151;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+  .accordion-subtitle {
+    margin: 16px 0 12px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #111827;
+  }
+  .accordion-list {
+    margin: 0 0 8px;
+    padding-left: 0;
+    list-style-position: inside;
+    li {
+      color: #374151;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin-bottom: 4px;
+    }
+  }
+  .accordion-link {
+    display: inline-block;
+    margin-top: 4px;
+    color: $green;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
   .cart-counter {
     box-sizing: border-box;
     display: grid;
@@ -691,9 +819,10 @@
     align-items: stretch;
     height: 48px;
     overflow: hidden;
+    border: 1px solid #0f3d1f;
     border-radius: 12px;
-    background: $green-light;
-    color: #fff;
+    background: transparent;
+    color: #000;
     font-weight: 700;
     line-height: 1;
     button,
@@ -706,18 +835,18 @@
     }
     button {
       border: 0;
-      color: #fff;
+      color: #000;
       background: transparent;
       cursor: pointer;
       transition: 0.18s ease;
       &:first-child {
-        border-right: 1px solid rgba(255, 255, 255, 0.55);
+        border-right: 1px solid #0f3d1f;
       }
       &:last-child {
-        border-left: 1px solid rgba(255, 255, 255, 0.55);
+        border-left: 1px solid #0f3d1f;
       }
       &:hover {
-        filter: brightness(0.82);
+        background: rgba(15, 61, 31, 0.08);
       }
     }
     span {

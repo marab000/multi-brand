@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
   try {
     const rows = await sql`
-      select p.id, p.name, p.description, p.brand,
+      select p.id, p.name, p.description, p.brand, p.specs,
              p.price_rrc, p.price_ric, p.external_id, p.raw,
              coalesce(
                json_agg(json_build_object('url', pi.url, 'position', pi.position) order by pi.position)

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Phone, Mail, MapPin } from 'lucide-svelte';
+  import { Phone, Mail, MapPin, ChevronDown } from 'lucide-svelte';
   import { page } from '$app/stores';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
@@ -24,6 +24,11 @@
   const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
 
   const year = new Date().getFullYear();
+
+  // аккордеоны колонок: на мобильных список свёрнут, на десктопе (≥640px) раскрыт всегда через CSS
+  let openCatalog = $state(false);
+  let openBuyers = $state(false);
+  let openCompany = $state(false);
 </script>
 
 <footer class="footer">
@@ -76,8 +81,13 @@
     </div>
 
     <div class="footer__col">
-      <h4 class="footer__title">Каталог</h4>
-      <ul class="footer__links">
+      <h4 class="footer__title">
+        <button type="button" class:open={openCatalog} onclick={() => (openCatalog = !openCatalog)} aria-expanded={openCatalog}>
+          Каталог
+          <ChevronDown size={16} strokeWidth={2.2} />
+        </button>
+      </h4>
+      <ul class="footer__links" class:collapsed={!openCatalog}>
         {#if data.catalogRoots?.length}
           {#each data.catalogRoots as root (root.slug)}
             <li><a href="/catalog/{root.slug}">{root.name}</a></li>
@@ -90,8 +100,13 @@
     </div>
 
     <div class="footer__col">
-      <h4 class="footer__title">Покупателям</h4>
-      <ul class="footer__links">
+      <h4 class="footer__title">
+        <button type="button" class:open={openBuyers} onclick={() => (openBuyers = !openBuyers)} aria-expanded={openBuyers}>
+          Покупателям
+          <ChevronDown size={16} strokeWidth={2.2} />
+        </button>
+      </h4>
+      <ul class="footer__links" class:collapsed={!openBuyers}>
         <li><a href="/sale">Акции</a></li>
         <li><a href="/delivery">Доставка</a></li>
         <li><a href="/podbor">Собери комплект техники 🔥</a></li>
@@ -102,8 +117,13 @@
     </div>
 
     <div class="footer__col">
-      <h4 class="footer__title">Компания</h4>
-      <ul class="footer__links">
+      <h4 class="footer__title">
+        <button type="button" class:open={openCompany} onclick={() => (openCompany = !openCompany)} aria-expanded={openCompany}>
+          Компания
+          <ChevronDown size={16} strokeWidth={2.2} />
+        </button>
+      </h4>
+      <ul class="footer__links" class:collapsed={!openCompany}>
         <li><a href="/about">О компании</a></li>
         <li><a href="/articles">Статьи</a></li>
         <li><a href="/contacts">Контакты</a></li>
@@ -190,6 +210,31 @@
       margin: 0 0 12px;
       text-transform: uppercase;
       letter-spacing: 0.04em;
+
+      button {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        letter-spacing: inherit;
+        text-transform: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        :global(svg) {
+          color: #94a3b8;
+          transition: transform 0.2s ease;
+        }
+
+        &.open :global(svg) {
+          transform: rotate(180deg);
+        }
+      }
     }
 
     &__links {
@@ -209,6 +254,25 @@
         &:hover {
           color: #fff;
         }
+      }
+    }
+
+    // на мобильных списки колонок свёрнуты, разворачиваются тапом по заголовку
+    &__links.collapsed {
+      display: none;
+    }
+
+    @media (min-width: 640px) {
+      &__title button {
+        cursor: default;
+
+        :global(svg) {
+          display: none;
+        }
+      }
+
+      &__links.collapsed {
+        display: flex;
       }
     }
 

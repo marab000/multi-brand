@@ -23,6 +23,7 @@
   import mw from '$lib/assets/links/mw.webp';
   import wm from '$lib/assets/links/wm.webp';
   import hood from '$lib/assets/links/hood.webp';
+  import vm from '$lib/assets/links/vm.webp';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
@@ -124,6 +125,13 @@
       title: 'Вытяжки',
       link: '/catalog/vytyazhki',
       img: hood
+    },
+    // винные шкафы добирают чётность сетки на мобилке (2×5); на десктопе 9 = ровно 3×3
+    {
+      title: 'Винные шкафы',
+      link: '/catalog/krupnaya-bytovaya-tehnika/vinnye-shkafy',
+      img: vm,
+      mobileOnly: true
     }
   ];
 
@@ -219,25 +227,28 @@
   </a>
 </section>
 
-{#if data.syncBrands?.length}
-  <!-- у marquee свой padding 12px (иначе тень плиток режется); отрицательными марджинами
-       компенсируем его и штатные 12px секции, чтобы итоговый зазор был 12px, а не 24+ -->
-  <section class="mx-auto -mt-3! -mb-3!">
-    <BrandsGrid brands={data.syncBrands} />
-  </section>
-{/if}
-
 <section class="mx-auto">
   <h2 class="section-title">Популярные категории</h2>
   <div class="categories-grid">
     {#each categories as c}
-      <a href={c.link} class="category-card">
+      <a href={c.link} class="category-card flex-col lg:flex-row" class:category-card--mobile-only={c.mobileOnly}>
         <span>{c.title}</span>
         <img src={c.img} alt="" loading="lazy" decoding="async" width="480" height="240" />
       </a>
     {/each}
   </div>
 </section>
+
+{#if data.syncBrands?.length}
+  <section class="mx-auto">
+    <h2 class="section-title">Бренды</h2>
+    <!-- у marquee свой padding 12px (иначе тень плиток режется); отрицательными марджинами
+         компенсируем его и штатные 12px секции, чтобы итоговый зазор был 12px, а не 24+ -->
+    <div class="-mt-3! -mb-3!">
+      <BrandsGrid brands={data.syncBrands} />
+    </div>
+  </section>
+{/if}
 
 <section class="mx-auto">
   <h2 class="section-title">Хиты продаж</h2>
@@ -756,8 +767,12 @@
     @media (min-width: 1280px) {
       grid-template-columns: repeat(5, 1fr);
     }
+    // на узких экранах показываем только 6 хитов, десятый десяток не нужен
     @media (max-width: 1024px) {
       grid-template-columns: repeat(2, 1fr);
+      > :global(:nth-child(n + 7)) {
+        display: none;
+      }
     }
     @media (max-width: 560px) {
       grid-template-columns: 1fr;
@@ -1011,7 +1026,7 @@
   }
   .category-card {
     display: flex;
-    flex-direction: column;
+    // направление (колонка → ряд от lg) задаётся tailwind-классами flex-col lg:flex-row
     align-items: stretch;
     gap: 8px;
     padding: 12px;
@@ -1025,6 +1040,12 @@
       transform 0.2s ease,
       border-color 0.2s ease,
       box-shadow 0.2s ease;
+    // мобильная категория добирает чётность сетки, на десктопе не показывается
+    &--mobile-only {
+      @media (min-width: 641px) {
+        display: none;
+      }
+    }
     span {
       order: 2;
       font-size: 0.8125rem;
@@ -1316,12 +1337,18 @@
     .categories-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+    .promo-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  // горизонтальная карточка только от lg (tailwind lg:flex-row): 640–1024 остаются колонкой и не режутся
+  @media (min-width: 1024px) {
     .category-card {
-      flex-direction: row;
       align-items: center;
-      gap: 20px;
+      gap: 0;
       min-height: 108px;
-      padding: 16px 20px;
+      // слева 0: картинка прижата к краю карточки
+      padding: 16px 16px 16px 0;
       span {
         order: 2;
         font-size: 1.02rem;
@@ -1333,9 +1360,6 @@
         object-fit: contain;
         border-radius: 0;
       }
-    }
-    .promo-cards {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   @media (max-width: 639px) {
