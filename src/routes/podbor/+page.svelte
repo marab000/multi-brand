@@ -43,10 +43,8 @@
 
   // 12 категорий в порядке из ТЗ
   const slotMeta = SLOT_ORDER.map((key) => ({ key, label: SLOT_LABELS[key] }));
-  // выбранное (включая дефолтное) всплывает наверх сетки, внутри групп порядок из ТЗ
-  const orderedSlotMeta = $derived(
-    [...slotMeta].sort((a, b) => Number(slotSelected(b.key)) - Number(slotSelected(a.key)))
-  );
+  // порядок категорий всегда из ТЗ, выбранное наверх не поднимаем
+  const orderedSlotMeta = $derived(slotMeta);
   function slotSelected(key: string): boolean {
     const group = SLOT_GROUPS[key];
     if (group) return group.options.some((o) => selected[o.key]);
@@ -127,6 +125,12 @@
   const steps = ['Техника', 'Уровень бюджета', 'Бренд'];
   // шаг 1 = заполнена первая четверть, метка «Техника» ровно под ней
   const progress = $derived(Math.min(step, steps.length) / steps.length);
+
+  // при смене шага возвращаем пользователя наверх страницы
+  $effect(() => {
+    void step;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   // конфетти — один залп при появлении результата
   $effect(() => {
@@ -515,7 +519,7 @@
     <header class="wizard__head wizard__head--party">
       <p class="wizard__eyebrow">🎉 Поздравляем!</p>
       <h1>Ваш комплект собран</h1>
-      <p class="wizard__sub">Получите персональную скидку, менеджер зафиксирует её на 3 дня</p>
+      <p class="wizard__sub">Менеджер проконсультирует и отправит персональную подборку с ценами в мессенджер</p>
     </header>
 
     <div class="wizard__items">
@@ -573,10 +577,10 @@
     {#if !tooFewKinds}
       <div class="wizard__lead">
         {#if leadSent}
-          <p class="wizard__lead-done">Заявка отправлена — менеджер свяжется с вами в ближайшее время и зафиксирует персональную цену.</p>
+          <p class="wizard__lead-done">Заявка отправлена — менеджер свяжется с вами в ближайшее время и зафиксирует персональную подборку.</p>
         {:else if leadOpen}
           <div transition:slide={{ duration: 260 }}>
-          <p class="wizard__lead-title">Менеджер рассчитает персональную цену комплекта и зафиксирует её на 3 дня</p>
+          <p class="wizard__lead-title">Куда отправить подборку?</p>
           <div class="wizard__lead-fields">
             <input type="text" placeholder="Ваше имя" bind:value={leadName} />
             <div class="with-prefix">
@@ -590,13 +594,13 @@
               />
             </div>
             <button type="button" disabled={leadLoading || !leadName.trim() || leadPhone.trim().length !== 10} onclick={submitLead}>
-              {leadLoading ? 'Отправляем…' : 'Получить расчёт'}
+              {leadLoading ? 'Отправляем…' : 'Отправить подборку'}
             </button>
           </div>
           </div>
         {:else}
           <button type="button" class="wizard__lead-cta" onclick={() => (leadOpen = true)}>
-            Узнать персональную цену
+            Получить персональную подборку
           </button>
         {/if}
       </div>
@@ -614,25 +618,27 @@
 
 <section class="podbor-seo" aria-label="О конструкторе комплектов">
   <h2>Конструктор кухни — собрать комплект техники за минуту</h2>
-  <p>
-    Онлайн-конструктор <b>Мультибренд</b> помогает собрать комплект встраиваемой техники для кухни
-    без изучения сотен карточек: варочная панель, духовой шкаф, вытяжка, посудомоечная машина,
-    холодильник, микроволновая печь, стиральная и сушильная машина. Ответьте на четыре вопроса —
-    какая техника нужна, какой у вас бюджет и какие бренды предпочитаете — а подборщик
-    соберёт согласованный комплект из 12 категорий. Уровень бюджета работает внутри каждой
-    категории отдельно, поэтому «невыполнимых» сочетаний не бывает: и газовая панель с классическим
-    духовым шкафом, и полностью индукционная кухня соберутся в один комплект.
-  </p>
-  <p>
-    Каждый товар комплекта можно заменить альтернативой в один клик — подберём похожую модель в том
-    же ценовом сегменте. В конструкторе участвуют Haier, Korting, GORENJE, BOSCH, NEFF, SIEMENS,
-    LIEBHERR, SMEG, ASKO, Kuppersbusch и другие бренды — от практичных моделей до премиума. Все
-    поставщики официальные, техника с гарантией, доставка по Казани и Республике Татарстан.
-    Загляните в наш офлайн-магазин на Чистопольской, 66 — комплект можно посмотреть вживую.
-  </p>
+  <details class="podbor-seo__intro">
+    <summary>Подробнее о конструкторе</summary>
+    <p>
+      Онлайн-конструктор <b>Мультибренд</b> помогает собрать комплект встраиваемой техники для кухни
+      без изучения сотен карточек: варочная панель, духовой шкаф, вытяжка, посудомоечная машина,
+      холодильник, микроволновая печь, стиральная и сушильная машина. Ответьте на четыре вопроса —
+      какая техника нужна, какой у вас бюджет и какие бренды предпочитаете — а подборщик
+      соберёт согласованный комплект из 12 категорий. Уровень бюджета работает внутри каждой
+      категории отдельно, поэтому «невыполнимых» сочетаний не бывает: и газовая панель с классическим
+      духовым шкафом, и полностью индукционная кухня соберутся в один комплект.
+    </p>
+    <p>
+      Каждый товар комплекта можно заменить альтернативой в один клик — подберём похожую модель в том
+      же ценовом сегменте. В конструкторе участвуют Haier, Korting, GORENJE, BOSCH, NEFF, SIEMENS,
+      LIEBHERR, SMEG, ASKO, Kuppersbusch и другие бренды — от практичных моделей до премиума. Все
+      поставщики официальные, техника с гарантией, доставка по Казани и Республике Татарстан.
+      Загляните в наш офлайн-магазин на Чистопольской, 66 — комплект можно посмотреть вживую.
+    </p>
 
-  <h3>Уровни бюджета в конструкторе</h3>
-  <div class="podbor-seo__table-wrap">
+    <h3 class="podbor-seo__intro-title">Уровни бюджета в конструкторе</h3>
+    <div class="podbor-seo__table-wrap">
     <table>
       <thead>
         <tr>
@@ -654,10 +660,10 @@
         </tr>
       </tbody>
     </table>
-  </div>
+    </div>
+  </details>
 
-  <h3 id="faq">Частые вопросы</h3>
-  <div class="podbor-seo__faq">
+  <h3 id="faq">Частые вопросы</h3>  <div class="podbor-seo__faq">
     <details>
       <summary>Как собрать комплект кухонной техники?</summary>
       <p>
@@ -1036,7 +1042,7 @@
     }
     &__brand-chip {
       padding: 8px 16px;
-      border: 1px solid #d4d8de;
+      border: 2px solid #d4d8de;
       border-radius: 999px;
       background: #fff;
       font-size: 13.5px;
@@ -1559,7 +1565,7 @@
       color: #111827;
     }
     h3 {
-      margin: 28px 0 12px;
+      margin: 20px 0 10px;
       font-size: 17px;
       color: #111827;
       scroll-margin-top: 92px;
@@ -1571,6 +1577,34 @@
     }
     b {
       color: #111827;
+    }
+
+    &__intro {
+      margin-bottom: 20px;
+      background: #fff;
+      border: 1px solid #e4e7ec;
+      border-radius: 14px;
+      summary {
+        padding: 14px 16px;
+      }
+      p {
+        padding: 0 16px;
+        margin: 0 0 12px;
+        &:last-child {
+          margin-bottom: 0;
+          padding-bottom: 16px;
+        }
+      }
+      .podbor-seo__table-wrap {
+        margin: 4px 16px 16px;
+        border-radius: 10px;
+      }
+      .podbor-seo__intro-title {
+        margin: 16px 16px 10px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #111827;
+      }
     }
 
     &__table-wrap {
@@ -1585,7 +1619,7 @@
       background: #fff;
     }
     th {
-      padding: 12px 16px;
+      padding: 9px 12px;
       background: #f8fafc;
       text-align: left;
       font-weight: 700;
@@ -1594,10 +1628,10 @@
       white-space: nowrap;
     }
     td {
-      padding: 12px 16px;
+      padding: 9px 12px;
       border-bottom: 1px solid #f1f5f9;
       vertical-align: top;
-      line-height: 1.5;
+      line-height: 1.45;
     }
     tr:last-child td {
       border-bottom: none;
@@ -1660,6 +1694,49 @@
       details p {
         padding-left: 16px;
       }
+    }
+  }
+
+  // результат (шаг 4) на мобилке: компактнее карточки и зазоры
+  @media (max-width: 640px) {
+    .wizard {
+      padding-top: 16px;
+    }
+    .wizard__head {
+      margin-bottom: 12px;
+    }
+    .wizard__items {
+      gap: 8px;
+    }
+    .wizard__item {
+      padding: 12px;
+      gap: 8px;
+      border-radius: 14px;
+      &-label {
+        font-size: 10.5px;
+      }
+      &-main {
+        gap: 6px;
+      }
+      &-link {
+        gap: 10px;
+        img,
+        .wizard__item-noimg {
+          width: 64px;
+          height: 64px;
+          border-radius: 10px;
+        }
+      }
+      &-name {
+        font-size: 13.5px;
+      }
+      &-brand {
+        font-size: 11.5px;
+      }
+    }
+    .wizard__swap-btn {
+      padding: 6px 10px;
+      font-size: 11.5px;
     }
   }
 </style>
