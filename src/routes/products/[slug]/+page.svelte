@@ -21,6 +21,7 @@
   import { imgUrl } from '$lib/s3Public';
   import { backHref } from '$lib/stores/backHref';
   import { PiggyBank, Star, Minus, Plus, ChevronDown } from 'lucide-svelte';
+  import { getKeySpecs } from '$lib/utils/keySpecs';
   register();
   type ProductPageProduct = Product & {
     isKit?: boolean;
@@ -55,6 +56,9 @@
           : null
   );
   const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
+  const keySpecs = $derived(getKeySpecs(p));
+  // подзаголовок под h1: цвет · тип товара (как на референсе)
+  const subline = $derived([p.specs?.['Цвет'], p.product_type].filter(Boolean).join(' · '));
   const kitItems = $derived(p.kitItems || []);
   const includedInKits = $derived(p.includedInKits || []);
   const visibleIncludedInKits = $derived(includedInKits.slice(0, includedVisibleCount));
@@ -192,12 +196,31 @@
 {#if p}
   <div class="mx-auto flex flex-col items-start">
     <Breadcrumbs items={breadcrumbs} product={shortName} />
-    <div class="mt-6 mb-3 grid w-full gap-12 lg:grid-cols-2">
-      <div class="w-full max-w-xl min-w-0">
+    <div class="product-head my-3 lg:my-4">
+      <h1>{p.name}</h1>
+      {#if subline}
+        <p class="product-head__subline">{subline}</p>
+      {/if}
+      <div class="product-head__rating">
+        <span class="stars" aria-hidden="true">
+          {#each Array(5) as _, i}
+            <Star
+              size={15}
+              strokeWidth={0}
+              fill="currentColor"
+              class={i >= Math.round(Number(ratingData.rating)) ? 'dim' : ''}
+            />
+          {/each}
+        </span>
+        <b>{ratingData.rating}</b>
+      </div>
+    </div>
+    <div class="mb-3 grid w-full gap-4 lg:gap-6 lg:grid-cols-2">
+      <div class="flex w-full max-w-xl min-w-0 flex-col gap-3 lg:gap-4">
         <div class="relative w-full">
         <swiper-container
           bind:this={mainSwiper}
-          class="aspect-square w-full rounded bg-white"
+          class="aspect-square w-full rounded-lg bg-white"
         >
           {#if images.length}
             {#each images as img, i}
@@ -225,23 +248,19 @@
             </swiper-slide>
           {/if}
         </swiper-container>
-        <div class="product-rating">
-          <Star size={15} fill="currentColor" strokeWidth={0} />
-          <span>{ratingData.rating}</span>
-        </div>
         </div>
         {#if images.length > 1}
-          <div class="relative mt-4">
+          <div class="relative">
             <swiper-container
               class="thumbs"
               slides-per-view="4"
-              space-between="10"
+              space-between="8"
               watch-slides-progress="true"
             >
               {#each images as img, i}
                 <swiper-slide>
                   <button
-                    class="aspect-square w-full cursor-pointer overflow-hidden rounded border hover:border-black"
+                    class="aspect-square w-full cursor-pointer overflow-hidden rounded-lg border border-[#e4e7ec] hover:border-[#94a3b8]"
                     aria-label={`Фото ${i + 1}`}
                     onclick={() => mainSwiper?.swiper?.slideTo(i)}
                   >
@@ -257,9 +276,22 @@
             </swiper-container>
           </div>
         {/if}
+        {#if keySpecs.length}
+          <div class="product-keyspecs product-keyspecs--mobile">
+            {#each keySpecs as ks (ks.name)}
+              {@const SpecIcon = ks.icon}
+              <div class="keyspec">
+                <SpecIcon size={20} strokeWidth={1.8} />
+                <span class="keyspec__text">
+                  <b>{ks.value}</b>
+                  <small>{ks.name}</small>
+                </span>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
-      <div>
-        <h1 class="mb-3 text-xl font-semibold">{p.name}</h1>
+      <div class="flex flex-col gap-2 lg:gap-3">
         {#if stockLabel}
           <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>{stockLabel.text}</p>
         {/if}
@@ -286,7 +318,7 @@
             {/if}
           </div>
         </div>
-        <div class="product-benefits mb-8">
+        <div class="product-benefits">
           <div class="product-installment">
             от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}<span
               >Подробности уточняйте у менеджера</span
@@ -361,6 +393,20 @@
               >
             {/if}
           </section>
+        {/if}
+        {#if keySpecs.length}
+          <div class="product-keyspecs product-keyspecs--desktop">
+            {#each keySpecs as ks (ks.name)}
+              {@const SpecIcon = ks.icon}
+              <div class="keyspec">
+                <SpecIcon size={20} strokeWidth={1.8} />
+                <span class="keyspec__text">
+                  <b>{ks.value}</b>
+                  <small>{ks.name}</small>
+                </span>
+              </div>
+            {/each}
+          </div>
         {/if}
         <div class="product-accordions">
           <details class="accordion">
@@ -464,7 +510,7 @@
 {/if}
 
 {#if p && data.alsoBought?.length}
-  <section class="also-bought mx-auto w-full">
+  <section class="also-bought mx-auto w-full mt-4 lg:mt-6">
     <h2 class="also-bought__title">С этим товаром покупают</h2>
     <div class="also-bought__grid">
       {#each data.alsoBought as item (item.id)}
@@ -475,6 +521,10 @@
 {/if}
 
 <style lang="scss">
+  .thumbs {
+    // компактные превью: 4 слайда по ~72px, не растягиваемся на всю колонку
+    max-width: 320px;
+  }
   .gallery-image {
     width: 100%;
     height: 100%;
@@ -486,28 +536,98 @@
   .no-image {
     cursor: default;
   }
-  .product-rating {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.375rem 0.625rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0.25rem 0.875rem rgba(0, 0, 0, 0.14);
-  color: #111827;
-  font-size: 0.875rem;
-  font-weight: 700;
-  white-space: nowrap;
-  :global(svg) {
-    color: #f59e0b;
+  .product-head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $sp-2;
+    h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      @media (min-width: 640px) {
+        font-size: 1.5rem;
+      }
+    }
+    &__subline {
+      margin: 0;
+      color: #6b7280;
+      font-size: 0.9375rem;
+      line-height: 1.35;
+    }
+    &__rating {
+      display: flex;
+      align-items: center;
+      gap: $sp-2;
+      margin: 0;
+      .stars {
+        display: inline-flex;
+        gap: $sp-1;
+        :global(svg) {
+          color: $yellow;
+        }
+        :global(svg.dim) {
+          color: #e4e7ec;
+        }
+      }
+      b {
+        font-size: 0.9375rem;
+        color: #111827;
+      }
+    }
   }
-}
+  .product-keyspecs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $sp-2 $sp-4;
+    margin: 0;
+    // мобилка: под миниатюрами; десктоп: в правой колонке над описанием
+    &--desktop {
+      display: none;
+    }
+    @media (min-width: 1024px) {
+      &--mobile {
+        display: none;
+      }
+      &--desktop {
+        display: grid;
+      }
+    }
+    .keyspec {
+      display: flex;
+      align-items: center;
+      gap: $sp-2;
+      min-width: 0;
+      color: #111827;
+      :global(svg) {
+        flex-shrink: 0;
+        color: $green;
+      }
+      &__text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.15;
+        b {
+          font-size: 0.875rem;
+          font-weight: 700;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        small {
+          color: #94a3b8;
+          font-size: 0.75rem;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
   .product-stock {
-    margin: 0 0 12px;
     font-size: 0.875rem;
     font-weight: 600;
     color: #94a3b8;
@@ -518,12 +638,14 @@
   .product-price-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: $sp-2;
     flex-wrap: wrap;
-    margin-bottom: 12px;
+    @media (min-width: 1024px) {
+      gap: $sp-3;
+    }
   }
   .product-price {
-    color: #111;
+    color: #111827;
     font-size: 2rem;
     font-weight: 700;
     line-height: 1;
@@ -533,9 +655,9 @@
     color: #e31b23;
   }
   .old-product-price {
-    color: #111;
+    color: #111827;
     font-size: 1.125rem;
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1;
     text-decoration: line-through;
     text-decoration-color: #e31b23;
@@ -545,16 +667,15 @@
   .product-discount {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
+    gap: $sp-2;
+    padding: $sp-2 $sp-4;
     background: $yellow;
-    color: #111;
+    color: #111827;
     font-size: 0.6875rem;
     font-weight: 700;
     line-height: 1;
     text-transform: uppercase;
     clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
     b {
       font-size: 0.875rem;
     }
@@ -562,13 +683,15 @@
   .product-benefits {
     display: flex;
     align-items: stretch;
-    gap: 12px;
+    gap: $sp-2;
     flex-wrap: wrap;
-    margin: 0 0 24px;
+    @media (min-width: 1024px) {
+      gap: $sp-3;
+    }
   }
   .product-installment {
     width: fit-content;
-    padding: 8px 12px;
+    padding: $sp-2 $sp-3;
     border: 1px solid rgba(227, 27, 35, 0.35);
     border-radius: 8px;
     color: #e31b23;
@@ -577,8 +700,8 @@
     line-height: 1.25;
     span {
       display: block;
-      margin-top: 4px;
-      color: #000;
+      margin-top: $sp-1;
+      color: #111827;
       font-size: 0.6875rem;
       font-weight: 600;
     }
@@ -587,20 +710,20 @@
     display: inline-grid;
     grid-template-columns: auto auto;
     align-items: center;
-    column-gap: 7px;
+    column-gap: $sp-2;
     row-gap: 2px;
-    padding: 8px 12px;
-    border: 1px solid #dbe7f6;
+    padding: $sp-2 $sp-3;
+    border: 1px solid #e4e7ec;
     border-radius: 8px;
-    background: #eef4fb;
-    color: #24466f;
+    background: #fafafa;
+    color: #111827;
     line-height: 1;
     :global(svg) {
       grid-row: span 2;
-      color: #2f5f98;
+      color: $green;
     }
     span {
-      color: #24466f;
+      color: #6b7280;
       font-size: 0.6875rem;
       font-weight: 700;
     }
@@ -610,14 +733,16 @@
     }
   }
   .kit-block {
-    margin: 0 0 32px;
-    padding: 20px;
+    margin: 0 0 $sp-6;
+    padding: $sp-3;
     border: 1px solid #eee;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #fff;
+    @media (min-width: 1024px) {
+      padding: $sp-4;
+    }
     h2 {
-      margin: 0 0 16px;
-      font-size: 1.25rem;
+      margin: 0 0 $sp-4;
       font-weight: 700;
       line-height: 1.15;
     }
@@ -625,52 +750,56 @@
   .kit-items {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: $sp-3;
   }
   .kit-item {
     display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
-    gap: 16px;
-    padding: 12px;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: $sp-3;
+    padding: $sp-3;
     border: 1px solid #eee;
     border-radius: 12px;
     background: #fafafa;
+    @media (min-width: 768px) {
+      grid-template-columns: 96px minmax(0, 1fr);
+    }
   }
   .kit-image {
     aspect-ratio: 1;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #fff;
     overflow: hidden;
     img {
       width: 100%;
       height: 100%;
       object-fit: contain;
-      padding: 8px;
+      padding: $sp-2;
     }
   }
   .kit-info {
     min-width: 0;
   }
   .kit-brand {
-    margin-bottom: 4px;
-    color: #777;
+    margin-bottom: $sp-1;
+    color: #6b7280;
     font-size: 0.75rem;
     font-weight: 700;
   }
   .kit-name {
     display: block;
-    color: #111;
+    color: #111827;
     font-size: 0.875rem;
     font-weight: 700;
     line-height: 1.3;
     text-decoration: none;
+    transition: color 0.15s ease;
     &:hover {
       color: $green;
     }
   }
   .kit-description {
-    margin-top: 4px;
-    color: #777;
+    margin-top: $sp-1;
+    color: #6b7280;
     font-size: 0.75rem;
     line-height: 1.35;
     display: -webkit-box;
@@ -680,7 +809,7 @@
     -webkit-box-orient: vertical;
   }
   .kit-price {
-    margin-top: 8px;
+    margin-top: $sp-2;
     color: $green;
     font-size: 1rem;
     font-weight: 700;
@@ -688,25 +817,32 @@
   }
   .included-kits {
     display: grid;
-    gap: 12px;
+    gap: $sp-3;
   }
   .included-kit {
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: $sp-3;
+    padding: $sp-3;
     border: 1px solid #eee;
     border-radius: 12px;
     color: inherit;
     text-decoration: none;
     background: #fafafa;
+    @media (min-width: 768px) {
+      grid-template-columns: 64px minmax(0, 1fr) auto;
+    }
     img {
-      width: 64px;
-      height: 64px;
+      width: 54px;
+      height: 54px;
       object-fit: contain;
       border-radius: 8px;
       background: #fff;
+      @media (min-width: 768px) {
+        width: 64px;
+        height: 64px;
+      }
     }
     span {
       font-size: 0.875rem;
@@ -717,41 +853,44 @@
       color: $green;
       font-size: 0.875rem;
       white-space: nowrap;
+      grid-column: 2;
+      @media (min-width: 768px) {
+        grid-column: auto;
+      }
     }
     &:hover span {
       color: $green;
     }
   }
   .kit-show-more {
-    margin-top: 12px;
+    margin-top: $sp-3;
     width: 100%;
-    height: 42px;
-    border: 1px solid #dbe7f6;
-    border-radius: 10px;
-    background: #eef4fb;
-    color: #24466f;
+    height: 44px;
+    border: 1px solid rgba($green, 0.25);
+    border-radius: 8px;
+    background: rgba($green, 0.06);
+    color: $green;
     font-size: 0.875rem;
     font-weight: 700;
-    transition: 0.18s ease;
+    transition: background 0.15s ease;
     &:hover {
-      background: #e4edf8;
+      background: rgba($green, 0.12);
     }
   }
   .product-accordions {
     display: grid;
-    gap: 10px;
-    margin-bottom: 8px;
+    gap: $sp-2;
   }
   .accordion {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e4e7ec;
     border-radius: 12px;
     background: #fff;
     summary {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      padding: 14px 16px;
+      gap: $sp-2;
+      padding: $sp-3 $sp-4;
       cursor: pointer;
       list-style: none;
       font-weight: 600;
@@ -763,7 +902,7 @@
       :global(svg) {
         flex-shrink: 0;
         color: #6b7280;
-        transition: transform 0.18s ease;
+        transition: transform 0.15s ease;
       }
     }
     &[open] {
@@ -773,10 +912,13 @@
     }
   }
   .accordion-body {
-    padding: 0 16px 16px;
+    padding: 0 $sp-3 $sp-3;
+    @media (min-width: 1024px) {
+      padding: 0 $sp-4 $sp-4;
+    }
   }
   .accordion-text {
-    margin: 0 0 8px;
+    margin: 0 0 $sp-2;
     color: #374151;
     font-size: 0.875rem;
     line-height: 1.6;
@@ -785,25 +927,25 @@
     }
   }
   .accordion-subtitle {
-    margin: 16px 0 12px;
+    margin: $sp-4 0 $sp-3;
     font-size: 0.9375rem;
     font-weight: 600;
     color: #111827;
   }
   .accordion-list {
-    margin: 0 0 8px;
+    margin: 0 0 $sp-2;
     padding-left: 0;
     list-style-position: inside;
     li {
       color: #374151;
       font-size: 0.875rem;
       line-height: 1.6;
-      margin-bottom: 4px;
+      margin-bottom: $sp-1;
     }
   }
   .accordion-link {
     display: inline-block;
-    margin-top: 4px;
+    margin-top: $sp-1;
     color: $green;
     font-size: 0.875rem;
     font-weight: 600;
@@ -819,10 +961,10 @@
     align-items: stretch;
     height: 48px;
     overflow: hidden;
-    border: 1px solid #0f3d1f;
+    border: 1px solid $green;
     border-radius: 12px;
     background: transparent;
-    color: #000;
+    color: #111827;
     font-weight: 700;
     line-height: 1;
     button,
@@ -835,62 +977,41 @@
     }
     button {
       border: 0;
-      color: #000;
+      color: #111827;
       background: transparent;
       cursor: pointer;
-      transition: 0.18s ease;
+      transition: background 0.15s ease;
       &:first-child {
-        border-right: 1px solid #0f3d1f;
+        border-right: 1px solid $green;
       }
       &:last-child {
-        border-left: 1px solid #0f3d1f;
+        border-left: 1px solid $green;
       }
       &:hover {
-        background: rgba(15, 61, 31, 0.08);
+        background: rgba($green, 0.08);
       }
     }
     span {
-      font-size: 1.125rem;
+      font-size: 1rem;
       min-width: 60px;
     }
   }
-  @media (max-width: 640px) {
-    .kit-block {
-      padding: 16px;
-    }
-    .kit-item {
-      grid-template-columns: 76px minmax(0, 1fr);
-      gap: 12px;
-      padding: 12px;
-    }
-    .included-kit {
-      grid-template-columns: 54px minmax(0, 1fr);
-      img {
-        width: 54px;
-        height: 54px;
-      }
-      b {
-        grid-column: 2;
-      }
-    }
-  }
   .also-bought {
-    margin-top: 28px;
     &__title {
-      margin: 0 0 16px;
-      font-size: 1.35rem;
+      margin: 0 0 $sp-4;
+      font-size: 1.25rem;
       font-weight: 700;
       color: #111827;
     }
     &__grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+      gap: $sp-4;
+      @media (min-width: 640px) {
         grid-template-columns: repeat(2, 1fr);
       }
-      @media (max-width: 560px) {
-        grid-template-columns: 1fr;
+      @media (min-width: 1024px) {
+        grid-template-columns: repeat(4, 1fr);
       }
     }
   }
