@@ -8,6 +8,74 @@ button {
   }
 }
 
+// нативная синяя рамка фокуса — глушим у всех полей и для всех движков
+input,
+textarea,
+select {
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+// нативные чекбоксы/радио — единый фирменный стиль вместо браузерной синевы
+input[type='checkbox'],
+input[type='radio'] {
+  appearance: none;
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  margin: 0;
+  border: 2px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: 0.18s;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+input[type='checkbox'] {
+  &:checked {
+    border-color: $green-light;
+    background: $green-light;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 8px;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: translate(-50%, -60%) rotate(45deg);
+    }
+  }
+}
+input[type='radio'] {
+  border-radius: 50%;
+  &:checked {
+    border-color: $green-light;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $green-light;
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
 .btn {
   height: 44px;
   padding: 0 16px;

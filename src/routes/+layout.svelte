@@ -16,7 +16,6 @@
   import type { Contacts } from '$lib/server/contacts';
   import '$lib/styles/controls.scss';
   import '$lib/styles/typography.scss';
-  import HelpWithSelection from '$lib/components/HelpWithSelection.svelte';
 import Ticker from '$lib/components/Ticker.svelte';
 
   let { data, children } = $props<{
@@ -105,10 +104,6 @@ import Ticker from '$lib/components/Ticker.svelte';
 >
   {@render children()}
   <Toaster richColors position="top-center" />
-  <!-- блок помощи с подбором — только в корзине -->
-  {#if $page.url.pathname === '/cart'}
-    <HelpWithSelection contacts={data.contacts} />
-  {/if}
 </main>
 
 <Footer {data} />

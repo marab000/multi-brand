@@ -6,6 +6,23 @@ html {
   overflow-x: clip;
 }
 
+/* @tailwindcss/forms красит фокус в свой синий ring (box-shadow через --tw-ring-*) и синий
+   border — глушим по всему сайту, фокус выражается фирменной зелёной рамкой */
+input:focus,
+input:focus-visible,
+textarea:focus,
+select:focus {
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  outline: none;
+}
+input[type='checkbox']:focus,
+input[type='radio']:focus,
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+  box-shadow: none;
+}
+
 /* Кнопка-действие в тостах (svelte-sonner): зелёная, в стиле сайта вместо чёрной.
    Специфичность и !important — потому что sonner красит своей инжектируемой таблицей. */
 li[data-sonner-toast] [data-button] {

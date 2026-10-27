@@ -1,15 +1,7 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 
-const DEFAULT_TITLE = 'Контакты | MULTIBRAND';
-
-export const load: PageServerLoad = async ({ locals }) => {
-  const o = await getSeoOverride('contacts');
-  return {
-    meta: {
-      title: o?.title || DEFAULT_TITLE,
-      description: o?.description || undefined,
-      canonical: o?.canonical ? safeCanonical(o.canonical, locals.siteOrigin) : safeCanonical('/contacts', locals.siteOrigin)
-    }
-  };
+// Страницы «Контакты» больше нет — контент живёт в «О компании»
+export const load: PageServerLoad = async () => {
+  redirect(301, '/about');
 };

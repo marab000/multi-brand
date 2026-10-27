@@ -81,12 +81,12 @@
     </div>
 
     <div class="footer__col">
-      <h4 class="footer__title">
+      <h3 class="footer__title">
         <button type="button" class:open={openCatalog} onclick={() => (openCatalog = !openCatalog)} aria-expanded={openCatalog}>
           Каталог
           <ChevronDown size={16} strokeWidth={2.2} />
         </button>
-      </h4>
+      </h3>
       <ul class="footer__links" class:collapsed={!openCatalog}>
         {#if data.catalogRoots?.length}
           {#each data.catalogRoots as root (root.slug)}
@@ -100,12 +100,12 @@
     </div>
 
     <div class="footer__col">
-      <h4 class="footer__title">
+      <h3 class="footer__title">
         <button type="button" class:open={openBuyers} onclick={() => (openBuyers = !openBuyers)} aria-expanded={openBuyers}>
           Покупателям
           <ChevronDown size={16} strokeWidth={2.2} />
         </button>
-      </h4>
+      </h3>
       <ul class="footer__links" class:collapsed={!openBuyers}>
         <li><a href="/sale">Акции</a></li>
         <li><a href="/delivery">Доставка</a></li>
@@ -117,16 +117,15 @@
     </div>
 
     <div class="footer__col">
-      <h4 class="footer__title">
+      <h3 class="footer__title">
         <button type="button" class:open={openCompany} onclick={() => (openCompany = !openCompany)} aria-expanded={openCompany}>
           Компания
           <ChevronDown size={16} strokeWidth={2.2} />
         </button>
-      </h4>
+      </h3>
       <ul class="footer__links" class:collapsed={!openCompany}>
         <li><a href="/about">О компании</a></li>
         <li><a href="/articles">Статьи</a></li>
-        <li><a href="/contacts">Контакты</a></li>
       </ul>
     </div>
   </div>
