@@ -4,12 +4,12 @@
 // Поддомены (msk./ufa.) на этапе Phase 0 ещё не включены — currentCityFromHost уже
 // готова к ним, надо будет только включить в +layout.server.ts чтение хоста.
 
-export type CityForms = { nom: string; gen: string; prep: string; acc: string };
+export type CityForms = { nom: string; gen: string; dat: string; prep: string; acc: string };
 
 export const CITIES: Record<string, CityForms> = {
-	Казань: { nom: 'Казань', gen: 'Казани', prep: 'Казани', acc: 'Казань' },
-	Москва: { nom: 'Москва', gen: 'Москвы', prep: 'Москве', acc: 'Москву' },
-	Уфа: { nom: 'Уфа', gen: 'Уфы', prep: 'Уфе', acc: 'Уфу' }
+	Казань: { nom: 'Казань', gen: 'Казани', dat: 'Казани', prep: 'Казани', acc: 'Казань' },
+	Москва: { nom: 'Москва', gen: 'Москвы', dat: 'Москве', prep: 'Москве', acc: 'Москву' },
+	Уфа: { nom: 'Уфа', gen: 'Уфы', dat: 'Уфе', prep: 'Уфе', acc: 'Уфу' }
 };
 
 export const DEFAULT_CITY = 'Казань';
@@ -46,6 +46,7 @@ const TOKENS: Record<string, TokenRef> = (() => {
 	}
 	t['город'] = 'nom';
 	t['города'] = 'gen';
+	t['городу'] = 'dat';
 	t['городе'] = 'prep';
 	t['городвин'] = 'acc';
 	// алиасы из ТЗ сеошника ({city_in} = «в Москве» с предлогом, см. case в replace)
