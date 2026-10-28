@@ -65,11 +65,12 @@
     gap: 12px;
     .row {
       display: grid;
-      grid-template-columns: 70px 1fr 130px 90px;
+      // мобильная раскладка (одна колонка), десктоп — в @media (min-width: 768px)
+      grid-template-columns: 1fr;
       align-items: start;
       background: #fff;
       padding: 14px;
-      gap: 8px;
+      gap: 10px;
       border-radius: 14px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       .cell {
@@ -106,6 +107,9 @@
             .name {
               flex: 1;
               color: #333;
+              // мобилка: длинные имена переносятся; десктоп — в @media (min-width: 768px)
+              word-break: break-word;
+              min-width: 0;
             }
             .price {
               color: #666;
@@ -115,8 +119,10 @@
           }
         }
         &.total {
+          // мобилка: влево; десктоп — в @media (min-width: 768px)
+          justify-content: flex-start;
           font-weight: 700;
-          text-align: right;
+          text-align: left;
           color: $green;
           .discount {
             font-size: 12px;
@@ -125,22 +131,27 @@
         }
         &.date {
           display: flex;
-          justify-content: flex-end;
-          text-align: end;
+          // мобилка: влево; десктоп — в @media (min-width: 768px)
+          justify-content: flex-start;
+          text-align: left;
           font-size: 12px;
           color: #666;
         }
       }
     }
   }
-  @media (max-width: 768px) {
+  @media (min-width: 768px) {
     .table .row {
-      grid-template-columns: 1fr;
-      gap: 10px;
+      grid-template-columns: 70px 1fr 130px 90px;
+      gap: 8px;
       .cell.total,
       .cell.date {
-        justify-content: flex-start;
-        text-align: left;
+        justify-content: flex-end;
+        text-align: right;
+      }
+      .cell.items .item .name {
+        word-break: normal;
+        min-width: auto;
       }
     }
   }

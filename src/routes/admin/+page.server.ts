@@ -1,35 +1,43 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { sql } from '$lib/db';
-import bcrypt from 'bcryptjs';
+import {
+  SESSION_COOKIE,
+  createSession,
+  hasRole,
+  normalizeEmail,
+  setSessionCookie,
+  verifyPassword
+} from '$lib/server/auth';
 
-const COOKIE = 'admin_session';
+// Единый вход в админку: сайт-аккаунт из users (email или телефон) с ролью
+// admin/seo. Сессия — стандартная, как на сайте (user_sessions + cookie 'session').
 
-export const load = async ({ cookies }) => {
-  const session = cookies.get(COOKIE);
-  if (session) throw redirect(302, '/admin/orders');
+export const load = async ({ locals }) => {
+  if (hasRole(locals.user, 'admin') || hasRole(locals.user, 'seo')) {
+    throw redirect(302, '/admin/orders');
+  }
 };
 
 export const actions = {
   default: async ({ request, cookies }) => {
     const data = await request.formData();
-    const login = String(data.get('login'));
+    const login = String(data.get('login')).trim();
     const password = String(data.get('password'));
+    const failMsg = 'Неверный логин или пароль';
 
-    const users = await sql`SELECT * FROM admin_users WHERE login=${login}`;
-    if (!users.length) return fail(400, { error: 'Неверный логин или пароль' });
+    const rows = await sql`
+      select id, email, password_hash, roles
+      from users
+      where email = ${normalizeEmail(login)} or phone = ${login}
+      limit 1
+    `;
+    const user = rows[0];
+    if (!user) return fail(400, { error: failMsg });
+    if (!(await verifyPassword(password, user.password_hash))) return fail(400, { error: failMsg });
+    if (!hasRole(user, 'admin') && !hasRole(user, 'seo')) return fail(400, { error: failMsg });
 
-    const user = users[0];
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return fail(400, { error: 'Неверный логин или пароль' });
-
-    cookies.set(COOKIE, String(user.id), {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      // Не вечная сессия: протухает через 7 дней
-      maxAge: 60 * 60 * 24 * 7
-    });
-
+    const { token, expiresAt } = await createSession(user.id);
+    setSessionCookie(cookies, token, expiresAt);
     throw redirect(302, '/admin/orders');
   }
 };

@@ -57,15 +57,18 @@
   }
   .row {
     display: grid;
-    grid-template-columns: 1.6fr 1fr 1fr 110px;
+    // мобильная раскладка (одна колонка, шапка скрыта), десктоп — в @media (min-width: 768px)
+    grid-template-columns: 1fr;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: #fff;
     padding: 12px 14px;
     border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     color: inherit;
     &.head {
+      // на мобилке шапка скрыта; десктоп — в @media (min-width: 768px)
+      display: none;
       background: transparent;
       box-shadow: none;
       padding: 0 14px;
@@ -123,19 +126,20 @@
     &.date {
       font-size: 12px;
       color: #666;
-      text-align: right;
+      // мобилка: влево; десктоп — в @media (min-width: 768px)
+      text-align: left;
     }
   }
-  @media (max-width: 768px) {
+  @media (min-width: 768px) {
     .row {
-      grid-template-columns: 1fr;
-      gap: 6px;
-    }
-    .row.head {
-      display: none;
-    }
-    .cell.date {
-      text-align: left;
+      grid-template-columns: 1.6fr 1fr 1fr 110px;
+      gap: 8px;
+      &.head {
+        display: grid;
+      }
+      .cell.date {
+        text-align: right;
+      }
     }
   }
 </style>

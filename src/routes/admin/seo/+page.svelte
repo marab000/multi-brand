@@ -385,6 +385,7 @@
     }
     &__actions {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
     }
@@ -441,8 +442,9 @@
     }
     &__head {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 12px;
+      gap: 4px $sp-3;
       width: 100%;
       padding: 12px 14px;
       border: none;
@@ -462,9 +464,11 @@
       color: #94a3b8;
       font-size: 12.5px;
       flex: 1;
+      flex-basis: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-all;
     }
     &__saved {
       color: $green;
@@ -472,11 +476,10 @@
       font-weight: 700;
     }
     &__fields {
-      padding: 4px 14px 14px;
+      padding: $sp-3 $sp-3 $sp-4;
       display: grid;
       gap: 10px;
       border-top: 1px solid #f1f5f9;
-      padding-top: 12px;
       label {
         display: grid;
         gap: 4px;
@@ -490,6 +493,8 @@
       }
       input,
       textarea {
+        width: 100%;
+        box-sizing: border-box;
         padding: 9px 12px;
         border: 1.5px solid #e4e7ec;
         border-radius: 10px;
@@ -504,6 +509,7 @@
     }
     &__actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       .save {
         padding: 9px 18px;
@@ -535,6 +541,27 @@
   }
   .empty {
     color: #94a3b8;
+  }
+
+  @media (min-width: 640px) {
+    .templates__actions {
+      flex-wrap: nowrap;
+    }
+    .row__head {
+      flex-wrap: nowrap;
+      gap: $sp-3;
+      .row__path {
+        flex-basis: auto;
+        white-space: nowrap;
+        word-break: normal;
+      }
+    }
+    .row__fields {
+      padding: 12px 14px 14px;
+    }
+    .row__actions {
+      flex-wrap: nowrap;
+    }
   }
 </style>
 

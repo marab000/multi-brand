@@ -149,15 +149,10 @@
 
   // Приоритетные, сгруппированные по слотам — блок «Приоритетные товары» разбит на 4 категории
   const priorityBySlot = $derived.by(() => {
-    const groups: Record<string, typeof priorityItems> = {
-      hob: [],
-      oven: [],
-      hood: [],
-      dishwasher: [],
-      none: []
-    };
+    const groups: Record<string, typeof priorityItems> = { none: [] };
+    for (const slot of Object.keys(SLOT_TYPES)) groups[slot] = [];
     for (const p of priorityItems) {
-      groups[slotOf(p.product_type) ?? 'none'].push(p);
+      (groups[slotOf(p.product_type) ?? 'none'] ?? groups.none).push(p);
     }
     return groups;
   });
@@ -563,7 +558,7 @@
     }
   }
   .card {
-    padding: 24px;
+    padding: 16px;
     border: 1px solid #eee;
     border-radius: 14px;
     background: #fff;
@@ -789,6 +784,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex-wrap: wrap;
       font-size: 12px;
       color: #94a3b8;
     }
@@ -852,6 +848,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+    flex-wrap: wrap;
     h1 {
       margin: 0 0 4px;
       font-size: 22px;
@@ -870,6 +867,21 @@
       background: rgba($green, 0.1);
       color: $green;
       font-weight: 600;
+    }
+  }
+  /* Десктоп: возвращаем значения по умолчанию */
+  @media (min-width: 640px) {
+    .head {
+      flex-wrap: nowrap;
+    }
+    .card {
+      padding: 24px;
+    }
+    .priority-item,
+    .search-result {
+      &__meta {
+        flex-wrap: nowrap;
+      }
     }
   }
 </style>

@@ -21,7 +21,7 @@
       <span class="label">Логин</span>
       <div class="input-wrap">
         <User size={18} strokeWidth={2} />
-        <input name="login" placeholder="admin" autocomplete="username" required />
+        <input name="login" placeholder="email или телефон" autocomplete="username" required />
       </div>
     </label>
 
@@ -50,9 +50,9 @@
   .login-card {
     width: 100%;
     max-width: 400px;
-    padding: 40px 36px 36px;
+    padding: $sp-8 $sp-6 $sp-6;
     background: #fff;
-    border-radius: 20px;
+    border-radius: 16px;
     border: 1px solid #e9ece8;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
   }
@@ -166,10 +166,10 @@
       transform: scale(0.99);
     }
   }
-  @media (max-width: 480px) {
+  @media (min-width: 640px) {
     .login-card {
-      padding: 32px 22px 28px;
-      border-radius: 16px;
+      padding: 40px 36px 36px;
+      border-radius: 20px;
     }
   }
 </style>

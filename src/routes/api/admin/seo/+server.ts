@@ -23,8 +23,7 @@ export async function PUT({ request, cookies, locals }) {
 	const known = await buildSeoPageList();
 	if (!known.some((p) => p.key === key)) throw error(400, 'Неизвестная страница');
 
-	const who =
-		locals.user?.email ?? `admin#${cookies.get('admin_session') ?? '?'}`;
+	const who = locals.user?.email ?? 'unknown';
 	await upsertSeoOverride(key, {
 		title: typeof body.title === 'string' ? body.title : null,
 		description: typeof body.description === 'string' ? body.description : null,

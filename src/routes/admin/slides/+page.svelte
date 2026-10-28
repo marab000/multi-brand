@@ -311,8 +311,10 @@
   }
   .header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: $sp-3;
     margin-bottom: 20px;
     h1 {
       font-size: 22px;
@@ -350,10 +352,10 @@
     gap: 12px;
   }
   .slide-card {
-    display: grid;
-    grid-template-columns: 24px 32px 1fr auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: $sp-3;
     padding: 14px;
     border: 1px solid #eee;
     border-radius: 12px;
@@ -371,7 +373,7 @@
     }
   }
   .slide-card__grip {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     color: #cbd5e1;
@@ -394,6 +396,9 @@
   }
   .slide-card__preview {
     display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
     gap: 12px;
   }
   .preview-block {
@@ -402,6 +407,7 @@
     gap: 4px;
     img {
       width: 200px;
+      max-width: 100%;
       height: 70px;
       object-fit: cover;
       border-radius: 6px;
@@ -419,6 +425,7 @@
   }
   .slide-card__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
   }
   .icon-btn {
@@ -459,12 +466,15 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.5);
-    padding: 20px;
+    padding: $sp-3;
+    align-items: flex-end;
   }
   .modal-content {
     width: 100%;
     max-width: 640px;
-    padding: 24px;
+    padding: $sp-4;
+    max-height: 90vh;
+    overflow-y: auto;
     border-radius: 16px;
     background: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
@@ -497,7 +507,7 @@
   }
   .upload-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 16px;
     margin-bottom: 20px;
   }
@@ -551,6 +561,7 @@
   }
   .modal-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
   }
@@ -584,6 +595,44 @@
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .header {
+      flex-wrap: nowrap;
+      gap: 0;
+    }
+    .slide-card {
+      display: grid;
+      flex-wrap: nowrap;
+      grid-template-columns: 24px 32px 1fr auto;
+    }
+    .slide-card__grip {
+      display: flex;
+    }
+    .slide-card__preview {
+      flex: 0 1 auto;
+      min-width: auto;
+      flex-wrap: nowrap;
+    }
+    .slide-card__actions {
+      flex-wrap: nowrap;
+    }
+    .modal-overlay {
+      padding: 20px;
+      align-items: center;
+    }
+    .modal-content {
+      padding: 24px;
+      max-height: none;
+      overflow-y: visible;
+    }
+    .upload-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .modal-actions {
+      flex-wrap: nowrap;
     }
   }
 </style>

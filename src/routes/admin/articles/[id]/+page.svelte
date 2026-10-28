@@ -530,7 +530,8 @@
   .editor__top {
     display: flex;
     align-items: center;
-    gap: 14px;
+    flex-wrap: wrap;
+    gap: $sp-2;
     margin-bottom: 20px;
     h1 {
       font-size: 20px;
@@ -555,6 +556,7 @@
   }
   .editor__top-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .btn-preview {
@@ -628,7 +630,8 @@
     flex-wrap: wrap;
   }
   .cover-preview {
-    width: 220px;
+    width: 100%;
+    max-width: 220px;
     height: 120px;
     object-fit: cover;
     border-radius: 10px;
@@ -729,7 +732,7 @@
   .paper {
     max-width: 730px;
     margin: 0 auto;
-    padding: 26px 30px;
+    padding: $sp-4 $sp-3;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
     background: #fff;
@@ -1177,12 +1180,14 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.5);
-    padding: 20px;
+    padding: $sp-3;
   }
   .modal-content {
     width: 100%;
     max-width: 560px;
-    padding: 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: $sp-4;
     border-radius: 16px;
     background: #fff;
   }
@@ -1214,7 +1219,7 @@
   }
   .types-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
     gap: 10px;
   }
   .type-card {
@@ -1331,5 +1336,39 @@
     font-size: 11.5px;
     color: #94a3b8;
     line-height: 1.3;
+  }
+
+  /* ===== Десктоп (mobile-first: база — мобильные значения) ===== */
+  @media (min-width: 640px) {
+    .editor__top {
+      flex-wrap: nowrap;
+      gap: 14px;
+    }
+    .editor__top-actions {
+      flex-wrap: nowrap;
+    }
+    .cover-preview {
+      width: 220px;
+      max-width: none;
+    }
+    .paper {
+      padding: 26px 30px;
+    }
+    .types-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .modal-overlay {
+      padding: 20px;
+    }
+    .modal-content {
+      max-height: none;
+      overflow-y: visible;
+      padding: 24px;
+    }
+  }
+  @media (min-width: 768px) {
+    .types-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
 </style>

@@ -194,16 +194,17 @@
     margin-top: 16px;
   }
   .settings-card {
-    padding: 24px;
+    padding: $sp-4;
     border: 1px solid #eee;
     border-radius: 14px;
     background: #fff;
   }
   .setting-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: $sp-3;
   }
   .setting-info {
     display: flex;
@@ -323,11 +324,8 @@
   }
   .contacts-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 0.75rem;
-    @media (max-width: 40rem) {
-      grid-template-columns: 1fr;
-    }
   }
   .contact-field {
     display: flex;
@@ -393,11 +391,13 @@
   .settings-actions {
     margin-top: 20px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: stretch;
   }
   .btn-save {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    width: 100%;
     gap: 8px;
     height: 44px;
     padding: 0 22px;
@@ -414,6 +414,26 @@
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .settings-card {
+      padding: $sp-6;
+    }
+    .setting-row {
+      flex-wrap: nowrap;
+      gap: 20px;
+    }
+    .contacts-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .settings-actions {
+      justify-content: flex-end;
+    }
+    .btn-save {
+      width: auto;
+      justify-content: flex-start;
     }
   }
 </style>

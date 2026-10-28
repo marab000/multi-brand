@@ -93,7 +93,8 @@
   }
   .card {
     background: #fff;
-    padding: 16px;
+    // мобилка; десктоп — в @media (min-width: 640px)
+    padding: 12px;
     border-radius: 14px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
@@ -116,8 +117,13 @@
   }
   .line {
     display: grid;
-    grid-template-columns: 80px 1fr auto;
+    // мобильная раскладка (2 колонки + grid-areas), десктоп — в @media (min-width: 640px)
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'num sum'
+      'num date';
     gap: 10px;
+    row-gap: 2px;
     padding: 8px 0;
     font-size: 13px;
     text-decoration: none;
@@ -130,10 +136,12 @@
       color: $green;
     }
     .num {
+      grid-area: num;
       font-weight: 600;
       color: #555;
     }
     .sum {
+      grid-area: sum;
       color: #333;
       em {
         font-style: normal;
@@ -143,8 +151,25 @@
       }
     }
     .date {
+      grid-area: date;
       color: #999;
       font-size: 12px;
+      white-space: nowrap;
+    }
+  }
+  @media (min-width: 640px) {
+    .card {
+      padding: 16px;
+    }
+    .line {
+      grid-template-columns: 80px 1fr auto;
+      grid-template-areas: none;
+      row-gap: 10px;
+      .num,
+      .sum,
+      .date {
+        grid-area: auto;
+      }
     }
   }
 </style>

@@ -45,15 +45,18 @@
 <style lang="scss">
   .admin {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
     background: #fafafa;
   }
+  /* мобилка — база: сайдбар сверху, меню горизонтальным скроллом */
   .sidebar {
-    width: 240px;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    padding: 12px;
-    gap: 30px;
+    padding: $sp-3;
+    gap: $sp-2;
+    border-bottom: 1px solid #e9ece8;
   }
   .logo {
     font-size: 20px;
@@ -72,12 +75,17 @@
   }
   nav {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    gap: $sp-2;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
   }
   a {
     text-decoration: none;
-    padding: 10px 15px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: $sp-2 $sp-3;
     border-radius: 10px;
     color: #333;
     background: #fff;
@@ -94,7 +102,7 @@
     border-color: $yellow;
   }
   a.logout {
-    margin-top: 16px;
+    margin-left: auto;
     color: $error;
     border: 1px solid rgba($error, 0.3);
     &:hover {
@@ -108,7 +116,36 @@
     /* flex-элемент должен уметь сжиматься — иначе внутренние блоки
        фиксированной ширины выталкивают его за край экрана */
     min-width: 0;
-    padding: 25px;
+    padding: $sp-3;
     overflow-y: visible;
+  }
+  /* десктоп: сайдбар слева, меню колонкой */
+  @media (min-width: 768px) {
+    .admin {
+      flex-direction: row;
+    }
+    .sidebar {
+      width: 240px;
+      gap: 30px;
+      padding: $sp-3;
+      border-bottom: none;
+    }
+    nav {
+      flex-direction: column;
+      gap: $sp-3;
+      overflow-x: visible;
+      padding-bottom: 0;
+    }
+    a {
+      white-space: normal;
+      padding: $sp-3;
+    }
+    a.logout {
+      margin-left: 0;
+      margin-top: $sp-4;
+    }
+    .content {
+      padding: 25px;
+    }
   }
 </style>

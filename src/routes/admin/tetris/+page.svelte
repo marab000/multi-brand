@@ -507,11 +507,13 @@
   .tetris-admin {
     max-width: 56.25rem;
   }
+  /* Мобильные значения в базе, десктоп восстанавливается от 640px */
   .head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
     margin-bottom: 1.25rem;
     h1 {
       margin: 0 0 0.375rem;
@@ -553,6 +555,7 @@
   }
   .sync-btn {
     flex-shrink: 0;
+    width: 100%;
     padding: 0.75rem 1.375rem;
     border: none;
     border-radius: 0.75rem;
@@ -602,6 +605,7 @@
   .counters-row {
     display: flex;
     gap: 0.75rem;
+    flex-wrap: wrap;
     margin: 0.75rem 0 0;
   }
   .run-details {
@@ -625,7 +629,7 @@
     border-radius: 0.625rem;
     background: #fafafa;
     cursor: help;
-    white-space: nowrap;
+    white-space: normal;
     b {
       font-size: 0.9375rem;
       color: #111827;
@@ -660,13 +664,13 @@
     }
   }
   .brands-list {
-    max-height: 26.25rem;
+    max-height: 55vh;
     overflow-y: auto;
     border: 0.0625rem solid #e4e7ec;
     border-radius: 0.75rem;
     background: #fff;
-    @media (max-width: 40rem) {
-      max-height: 55vh;
+    @media (min-width: 640px) {
+      max-height: 26.25rem;
     }
   }
   .brand-row {
@@ -751,6 +755,21 @@
     padding: 1rem 0.75rem;
     color: #94a3b8;
     font-size: 0.875rem;
+  }
+  /* Десктоп: возвращаем значения по умолчанию */
+  @media (min-width: 640px) {
+    .head {
+      flex-wrap: nowrap;
+    }
+    .sync-btn {
+      width: auto;
+    }
+    .counters-row {
+      flex-wrap: nowrap;
+    }
+    .mini-counter {
+      white-space: nowrap;
+    }
   }
 </style>
 

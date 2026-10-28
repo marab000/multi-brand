@@ -67,7 +67,7 @@ export async function POST({ request, cookies, locals }) {
 	const known = new Map(pages.map((p) => [p.key, p]));
 	const byPath = new Map(pages.map((p) => [p.path.replace(/\/$/, ''), p.key]));
 
-	const who = locals.user?.email ?? `admin#${cookies.get('admin_session') ?? '?'}`;
+	const who = locals.user?.email ?? 'unknown';
 	let updated = 0;
 	const errors: string[] = [];
 

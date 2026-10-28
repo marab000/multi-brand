@@ -144,6 +144,7 @@
   }
   .create-box {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
     input {
@@ -194,9 +195,9 @@
   }
   .card {
     display: grid;
-    grid-template-columns: 90px 1fr auto;
+    grid-template-columns: 1fr;
     align-items: center;
-    gap: 16px;
+    gap: $sp-2;
     padding: 12px;
     border: 1px solid #eee;
     border-radius: 12px;
@@ -244,7 +245,8 @@
   .card__meta {
     display: flex;
     align-items: center;
-    gap: 14px;
+    flex-wrap: wrap;
+    gap: $sp-2;
     margin-top: 4px;
     font-size: 12.5px;
     color: #94a3b8;
@@ -263,6 +265,7 @@
   }
   .card__actions {
     display: flex;
+    justify-content: flex-end;
     gap: 4px;
   }
   .icon-btn {
@@ -288,6 +291,24 @@
         background: rgba(255, 0, 0, 0.06);
         color: #e31b23;
       }
+    }
+  }
+
+  /* ===== Десктоп (mobile-first: база — мобильные значения) ===== */
+  @media (min-width: 640px) {
+    .create-box {
+      flex-wrap: nowrap;
+    }
+    .card {
+      grid-template-columns: 90px 1fr auto;
+      gap: $sp-4;
+    }
+    .card__meta {
+      flex-wrap: nowrap;
+      gap: 14px;
+    }
+    .card__actions {
+      justify-content: flex-start;
     }
   }
 </style>

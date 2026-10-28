@@ -112,10 +112,16 @@
     gap: 12px;
     .row {
       display: grid;
-      grid-template-columns: 80px 200px 1fr 125px 110px 74px;
+      // мобильная раскладка (2 колонки + grid-areas), десктоп — в @media (min-width: 768px)
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        'id total'
+        'user user'
+        'items items'
+        'status status';
       align-items: center;
       background: #fff;
-      padding: 14px;
+      padding: 12px;
       gap: 8px;
       border-radius: 14px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -123,9 +129,11 @@
         font-size: 14px;
         position: relative;
         &.id {
+          grid-area: id;
           font-weight: 700;
         }
         &.user {
+          grid-area: user;
           font-weight: 500;
           .phone {
             font-size: 12px;
@@ -133,10 +141,12 @@
           }
         }
         &.items {
+          grid-area: items;
           font-size: 13px;
           color: #333;
         }
         &.status {
+          grid-area: status;
           display: flex;
           align-items: center;
           gap: 6px;
@@ -145,8 +155,13 @@
             align-items: start;
             gap: 6px;
             flex: 1;
+            // на мобилке контейнер переносится, селект на всю ширину;
+            // десктопное поведение — в @media (min-width: 640px)
+            flex-wrap: wrap;
             select {
               flex: 1;
+              width: 100%;
+              min-width: 0;
               padding: 6px 8px;
               border-radius: 8px;
               border: 1px solid #ddd;
@@ -223,18 +238,47 @@
           }
         }
         &.date {
-          display: flex;
+          // на мобилке колонка даты скрыта, десктоп — в @media (min-width: 768px)
+          display: none;
           justify-content: flex-end;
           text-align: end;
           font-size: 12px;
           color: #666;
         }
         &.total {
+          grid-area: total;
           font-weight: 700;
           text-align: right;
           white-space: nowrap;
           color: $green;
         }
+      }
+    }
+  }
+  @media (min-width: 640px) {
+    .table .row {
+      padding: 14px;
+      .cell.status .status-edit-container {
+        flex-wrap: nowrap;
+        select {
+          width: auto;
+        }
+      }
+    }
+  }
+  @media (min-width: 768px) {
+    .table .row {
+      grid-template-columns: 80px 200px 1fr 125px 110px 74px;
+      grid-template-areas: none;
+      .cell.id,
+      .cell.user,
+      .cell.items,
+      .cell.status,
+      .cell.total {
+        grid-area: auto;
+      }
+      .cell.date {
+        display: flex;
       }
     }
   }
