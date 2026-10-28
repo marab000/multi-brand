@@ -4,14 +4,15 @@
   import { register } from 'swiper/element/bundle';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
+    applyCartDiscount,
     getBaseProductPrice,
     getDiscountLabel,
-    getInstallmentLabel,
-    getMonthlyPayment,
     getProductPrice,
     hasProductDiscount,
     isDiscountExcludedBrand
   } from '$lib/utils/pricing';
+  import Installment from '$lib/components/Installment.svelte';
+  import CartButton from '$lib/components/CartButton.svelte';
   import { getProductRating } from '$lib/utils/productRating';
   import { cart } from '$lib/stores/cart';
   import type { Product, ProductKitItem, ProductKitLink } from '$lib/types/product';
@@ -20,7 +21,8 @@
   import { recentlyViewed } from '$lib/stores/recentlyViewed';
   import { imgUrl } from '$lib/s3Public';
   import { backHref } from '$lib/stores/backHref';
-  import { PiggyBank, Star, Minus, Plus, ChevronDown } from 'lucide-svelte';
+  import { PiggyBank, Star, ChevronDown, Gift } from 'lucide-svelte';
+  import { slide } from 'svelte/transition';
   import { getKeySpecs } from '$lib/utils/keySpecs';
   register();
   type ProductPageProduct = Product & {
@@ -30,7 +32,15 @@
   };
   // Комплекты временно убраны с сайта (функционал сохранён — вернуть true)
   const KITS_ENABLED = false;
-  let { data } = $props<{ data: { product: ProductPageProduct | null; alsoBought?: any[] } }>();
+  let { data } = $props<{
+    data: {
+      product: ProductPageProduct | null;
+      alsoBought?: any[];
+      city?: string;
+      bonusPercent?: number;
+      excludedBrands?: string[];
+    };
+  }>();
   const p = $derived(data.product);
   if (!p) throw new Error('Product is null');
   let mainSwiper = $state<any>(null);
@@ -44,21 +54,32 @@
   const price = $derived(getProductPrice(p));
   const oldPrice = $derived(getBaseProductPrice(p));
   const hasDiscount = $derived(hasProductDiscount(p) && oldPrice !== null && oldPrice > price);
-  const monthlyPayment = $derived(getMonthlyPayment(price));
   const saving = $derived(hasDiscount && oldPrice !== null ? oldPrice - price : 0);
+  // Бонус баллами — по логике корзины: процент от цены, на исключённые бренды не начисляется
+  const bonus = $derived(
+    isDiscountExcludedBrand(p.brand, false, data.excludedBrands)
+      ? 0
+      : price - applyCartDiscount(price, data.bonusPercent)
+  );
+  // stock из Тетриса — остаток в штуках (склад Доскино, срок 7 дней), не статус.
   const stockLabel = $derived(
-    p.stock === 1
+    p.stock !== null && p.stock > 0
       ? { text: 'В наличии — доставка от 7 дней', tone: 'in' }
-      : p.stock === 2
-        ? { text: 'На удалённом складе — от 14 дней', tone: 'mid' }
-        : p.stock === 3
-          ? { text: 'Под заказ', tone: 'order' }
-          : null
+      : { text: 'На удалённом складе', tone: 'order' }
   );
   const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
   const keySpecs = $derived(getKeySpecs(p));
   // подзаголовок под h1: цвет · тип товара (как на референсе)
   const subline = $derived([p.specs?.['Цвет'], p.product_type].filter(Boolean).join(' · '));
+  // аккордеоны: независимые, состояние в объекте (кнопки вместо details — плавно во всех браузерах)
+  let openAcc = $state<{ desc: boolean; delivery: boolean; warranty: boolean }>({
+    desc: false,
+    delivery: false,
+    warranty: false
+  });
+  function toggleAcc(key: keyof typeof openAcc) {
+    openAcc = { ...openAcc, [key]: !openAcc[key] };
+  }
   const kitItems = $derived(p.kitItems || []);
   const includedInKits = $derived(p.includedInKits || []);
   const visibleIncludedInKits = $derived(includedInKits.slice(0, includedVisibleCount));
@@ -123,22 +144,18 @@
   function closeZoom() {
     zoom = false;
   }
-  function addToCart() {
-    cart.add({
-      id: p.id,
-      name: p.name,
-      price,
-      oldPrice: hasDiscount ? oldPrice : null,
-      image,
-      slug,
-      description: p.description,
-      color: p.specs?.['Цвет'] ?? null,
-      brand: p.brand?.name,
-      protected: isDiscountExcludedBrand(p.brand)
-    });
-  }
-  const cartItem = $derived($cart.find((i) => i.id === p.id));
-  const qty = $derived(cartItem?.qty ?? 0);
+  const cartItemData = $derived({
+    id: p.id,
+    name: p.name,
+    price,
+    oldPrice: hasDiscount ? oldPrice : null,
+    image,
+    slug,
+    description: p.description,
+    color: p.specs?.['Цвет'] ?? null,
+    brand: p.brand?.name,
+    protected: isDiscountExcludedBrand(p.brand)
+  });
   onMount(() => {
     recentlyViewed.add({ id: p.id, name: p.name, slug, image, price, description: p.description });
   });
@@ -166,7 +183,7 @@
     <meta property="og:title" content={p.name} />
     <meta
       property="og:description"
-      content={`${p.product_type || p.name} ${p.brand?.name ?? ''} — ${price ? Math.round(price * 1000).toLocaleString('ru-RU') + ' ₽' : 'цена по запросу'}, доставка по Казани и РФ, гарантия производителя.`}
+      content={`${p.product_type || p.name} ${p.brand?.name ?? ''} — ${price ? Math.round(price * 1000).toLocaleString('ru-RU') + ' ₽' : 'цена по запросу'}, доставка по ${data.city === 'Москва' ? 'Москве' : data.city === 'Уфа' ? 'Уфе' : 'Казани'} и РФ, гарантия производителя.`}
     />
     <meta property="og:url" content={`https://multi-brand.online/products/${slug}`} />
     {#if images[0]?.url}
@@ -292,9 +309,6 @@
         {/if}
       </div>
       <div class="flex flex-col gap-2 lg:gap-3">
-        {#if stockLabel}
-          <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>{stockLabel.text}</p>
-        {/if}
         <div class="product-price-row">
           <div class:discount-price={hasDiscount} class="product-price">{formatPrice(price)} ₽</div>
           {#if hasDiscount}
@@ -303,27 +317,14 @@
           {/if}
           <!-- кнопка в ряд с ценой, как в карточках каталога -->
           <div class="ml-auto">
-            {#if qty > 0}
-              <div class="cart-counter">
-                <button type="button" aria-label="Уменьшить количество" onclick={() => cart.dec(p.id)}>
-                  <Minus size={18} strokeWidth={2.6} />
-                </button>
-                <span>{qty}</span>
-                <button type="button" aria-label="Увеличить количество" onclick={() => cart.inc(p.id)}>
-                  <Plus size={18} strokeWidth={2.6} />
-                </button>
-              </div>
-            {:else}
-              <button class="btn primary" onclick={addToCart}>В корзину</button>
-            {/if}
+            <CartButton item={cartItemData} />
           </div>
         </div>
+        {#if stockLabel}
+          <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>{stockLabel.text}</p>
+        {/if}
         <div class="product-benefits">
-          <div class="product-installment">
-            от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}<span
-              >Подробности уточняйте у менеджера</span
-            >
-          </div>
+          <Installment price={price} />
           {#if saving > 0}
             <div class="product-saving">
               <PiggyBank size={18} strokeWidth={2.2} /><span>Экономия</span><b
@@ -332,6 +333,29 @@
             </div>
           {/if}
         </div>
+        {#if bonus > 0}
+          <div class="product-bonus">
+            <Gift size={26} strokeWidth={1.8} />
+            <div class="product-bonus__text">
+              <b>Бонус {formatPrice(bonus)} ₽</b>
+              <span>Можно использовать весь бонус</span>
+            </div>
+          </div>
+        {/if}
+        {#if keySpecs.length}
+          <div class="product-keyspecs product-keyspecs--desktop">
+            {#each keySpecs as ks (ks.name)}
+              {@const SpecIcon = ks.icon}
+              <div class="keyspec">
+                <SpecIcon size={20} strokeWidth={1.8} />
+                <span class="keyspec__text">
+                  <b>{ks.value}</b>
+                  <small>{ks.name}</small>
+                </span>
+              </div>
+            {/each}
+          </div>
+        {/if}
         {#if p.isKit && kitItems.length}
           <section class="kit-block">
             <h2>Состав комплекта</h2>
@@ -394,85 +418,104 @@
             {/if}
           </section>
         {/if}
-        {#if keySpecs.length}
-          <div class="product-keyspecs product-keyspecs--desktop">
-            {#each keySpecs as ks (ks.name)}
-              {@const SpecIcon = ks.icon}
-              <div class="keyspec">
-                <SpecIcon size={20} strokeWidth={1.8} />
-                <span class="keyspec__text">
-                  <b>{ks.value}</b>
-                  <small>{ks.name}</small>
-                </span>
-              </div>
-            {/each}
-          </div>
-        {/if}
         <div class="product-accordions">
-          <details class="accordion">
-            <summary>
+          <div class="accordion" class:open={openAcc.desc}>
+            <button
+              type="button"
+              class="accordion__summary"
+              aria-expanded={openAcc.desc}
+              onclick={() => toggleAcc('desc')}
+            >
               <span>Описание</span>
               <ChevronDown size={18} strokeWidth={2.2} />
-            </summary>
-            <div class="accordion-body">
-              {#if p.description}
-                <p class="accordion-text">{p.description}</p>
-              {/if}
-              {#if specs.length}
-                <h3 class="accordion-subtitle">Характеристики</h3>
-                <div class="space-y-2 text-sm">
-                  {#each specs as s}
-                    <div class="flex items-baseline gap-2">
-                      <span class="min-w-0 max-w-45 break-words text-gray-500">{s.name}</span>
-                      <span class="flex-1 border-b border-dashed border-gray-300"></span>
-                      <span class="min-w-0 max-w-50 break-words text-right">{s.value}</span>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-          </details>
-          <details class="accordion">
-            <summary>
+            </button>
+            {#if openAcc.desc}
+              <div
+                class="accordion-body"
+                transition:slide={{ duration: 200 }}
+                id="accordion-desc"
+              >
+                {#if p.description}
+                  <p class="accordion-text">{p.description}</p>
+                {/if}
+                {#if specs.length}
+                  <h3 class="accordion-subtitle">Характеристики</h3>
+                  <div class="space-y-2 text-sm">
+                    {#each specs as s}
+                      <div class="flex items-baseline gap-2">
+                        <span class="min-w-0 max-w-45 break-words text-gray-500">{s.name}</span>
+                        <span class="flex-1 border-b border-dashed border-gray-300"></span>
+                        <span class="min-w-0 max-w-50 break-words text-right">{s.value}</span>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+          <div class="accordion" class:open={openAcc.delivery}>
+            <button
+              type="button"
+              class="accordion__summary"
+              aria-expanded={openAcc.delivery}
+              onclick={() => toggleAcc('delivery')}
+            >
               <span>Доставка</span>
               <ChevronDown size={18} strokeWidth={2.2} />
-            </summary>
-            <div class="accordion-body">
-              <p class="accordion-text">
-                Доставка по Казани — бесплатно. После оформления заказа менеджер свяжется с вами,
-                подтвердит наличие товара, адрес и согласует удобное время.
-              </p>
-              <p class="accordion-text">
-                Доставка в другие регионы России рассчитывается индивидуально — стоимость, сроки и
-                варианты уточняйте у менеджера при оформлении заказа. Перед доставкой мы
-                дополнительно проверяем заказ и связываемся с вами.
-              </p>
-              <a class="accordion-link" href="/delivery">Подробнее о доставке</a>
-            </div>
-          </details>
-          <details class="accordion">
-            <summary>
+            </button>
+            {#if openAcc.delivery}
+              <div
+                class="accordion-body"
+                transition:slide={{ duration: 200 }}
+                id="accordion-delivery"
+              >
+                <p class="accordion-text">
+                  Доставка по {data.city === 'Москва' ? 'Москве' : data.city === 'Уфа' ? 'Уфе' : 'Казани'} — бесплатно. После оформления заказа менеджер свяжется с вами,
+                  подтвердит наличие товара, адрес и согласует удобное время.
+                </p>
+                <p class="accordion-text">
+                  Доставка в другие регионы России рассчитывается индивидуально — стоимость, сроки и
+                  варианты уточняйте у менеджера при оформлении заказа. Перед доставкой мы
+                  дополнительно проверяем заказ и связываемся с вами.
+                </p>
+                <a class="accordion-link" href="/delivery">Подробнее о доставке</a>
+              </div>
+            {/if}
+          </div>
+          <div class="accordion" class:open={openAcc.warranty}>
+            <button
+              type="button"
+              class="accordion__summary"
+              aria-expanded={openAcc.warranty}
+              onclick={() => toggleAcc('warranty')}
+            >
               <span>Гарантия</span>
               <ChevronDown size={18} strokeWidth={2.2} />
-            </summary>
-            <div class="accordion-body">
-              <p class="accordion-text">
-                Продаём только оригинальную технику — на неё действует гарантия производителя: от 1
-                года до 3 лет (срок зависит от категории товара и бренда, указан в гарантийном
-                талоне).
-              </p>
-              <ul class="accordion-list">
-                <li>Правильно оформленный гарантийный талон с печатью магазина</li>
-                <li>Кассовый чек — обязательный документ для сервисного центра</li>
-                <li>Помогаем подготовить документы и оформить заявку в сервис</li>
-              </ul>
-              <p class="accordion-text">
-                Гарантийные случаи рассматриваются в авторизованных сервисных центрах
-                производителя, магазин оказывает информационную поддержку на каждом этапе.
-              </p>
-              <a class="accordion-link" href="/garantiya">Подробнее о гарантии</a>
-            </div>
-          </details>
+            </button>
+            {#if openAcc.warranty}
+              <div
+                class="accordion-body"
+                transition:slide={{ duration: 200 }}
+                id="accordion-warranty"
+              >
+                <p class="accordion-text">
+                  Продаём только оригинальную технику — на неё действует гарантия производителя: от 1
+                  года до 3 лет (срок зависит от категории товара и бренда, указан в гарантийном
+                  талоне).
+                </p>
+                <ul class="accordion-list">
+                  <li>Правильно оформленный гарантийный талон с печатью магазина</li>
+                  <li>Кассовый чек — обязательный документ для сервисного центра</li>
+                  <li>Помогаем подготовить документы и оформить заявку в сервис</li>
+                </ul>
+                <p class="accordion-text">
+                  Гарантийные случаи рассматриваются в авторизованных сервисных центрах
+                  производителя, магазин оказывает информационную поддержку на каждом этапе.
+                </p>
+                <a class="accordion-link" href="/garantiya">Подробнее о гарантии</a>
+              </div>
+            {/if}
+          </div>
         </div>
       </div>
     </div>
@@ -510,7 +553,7 @@
 {/if}
 
 {#if p && data.alsoBought?.length}
-  <section class="also-bought mx-auto w-full mt-4 lg:mt-6">
+  <section class="also-bought mx-auto w-full mt-4 lg:mt-6 mb-4 lg:mb-6">
     <h2 class="also-bought__title">С этим товаром покупают</h2>
     <div class="also-bought__grid">
       {#each data.alsoBought as item (item.id)}
@@ -578,12 +621,20 @@
       }
     }
   }
+  // одинаковый блок 2x2 с разделителями на мобилке (под галереей) и десктопе (в правой колонке)
   .product-keyspecs {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: $sp-2 $sp-4;
+    grid-auto-rows: 1fr;
+    align-items: center;
+    // вместо gap — паддинг ячеек: разделители тянутся на всю ширину/высоту
+    gap: 0;
     margin: 0;
-    // мобилка: под миниатюрами; десктоп: в правой колонке над описанием
+    padding: $sp-2 $sp-3;
+    border: 1px solid rgba($green, 0.25);
+    border-radius: 10px;
+    background: rgba($green, 0.06);
+    // мобилка: под миниатюрами; десктоп: в правой колонке
     &--desktop {
       display: none;
     }
@@ -596,11 +647,20 @@
       }
     }
     .keyspec {
+      padding: $sp-2 $sp-3;
+      &:nth-child(odd) {
+        border-right: 1px solid rgba($green, 0.18);
+      }
+      &:nth-child(-n + 2) {
+        border-bottom: 1px solid rgba($green, 0.18);
+      }
+      display: flex;
       display: flex;
       align-items: center;
       gap: $sp-2;
       min-width: 0;
       color: #111827;
+
       :global(svg) {
         flex-shrink: 0;
         color: $green;
@@ -608,6 +668,7 @@
       &__text {
         display: flex;
         flex-direction: column;
+        gap: 2px;
         min-width: 0;
         line-height: 1.15;
         b {
@@ -618,7 +679,7 @@
           white-space: nowrap;
         }
         small {
-          color: #94a3b8;
+          color: $green-light;
           font-size: 0.75rem;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -628,9 +689,10 @@
     }
   }
   .product-stock {
+    margin: 0;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: $green-light;
     &--in {
       color: $green;
     }
@@ -646,7 +708,7 @@
   }
   .product-price {
     color: #111827;
-    font-size: 2rem;
+    font-size: 1.75rem;
     font-weight: 700;
     line-height: 1;
     letter-spacing: -0.03em;
@@ -689,23 +751,6 @@
       gap: $sp-3;
     }
   }
-  .product-installment {
-    width: fit-content;
-    padding: $sp-2 $sp-3;
-    border: 1px solid rgba(227, 27, 35, 0.35);
-    border-radius: 8px;
-    color: #e31b23;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    line-height: 1.25;
-    span {
-      display: block;
-      margin-top: $sp-1;
-      color: #111827;
-      font-size: 0.6875rem;
-      font-weight: 600;
-    }
-  }
   .product-saving {
     display: inline-grid;
     grid-template-columns: auto auto;
@@ -730,6 +775,35 @@
     b {
       font-size: 1rem;
       font-weight: 700;
+    }
+  }
+  .product-bonus {
+    display: flex;
+    align-items: center;
+    gap: $sp-3;
+    padding: $sp-3 $sp-4;
+    border: 1px solid #f2e3a1;
+    border-radius: 12px;
+    background: #fbf3cd;
+    color: #111827;
+    :global(svg) {
+      flex-shrink: 0;
+      color: #111827;
+    }
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      b {
+        font-size: 1.125rem;
+        font-weight: 700;
+        line-height: 1.15;
+      }
+      span {
+        font-size: 0.8125rem;
+        font-weight: 600;
+      }
     }
   }
   .kit-block {
@@ -868,7 +942,7 @@
     height: 44px;
     border: 1px solid rgba($green, 0.25);
     border-radius: 8px;
-    background: rgba($green, 0.06);
+    background: rgba($green, 0.08);
     color: $green;
     font-size: 0.875rem;
     font-weight: 700;
@@ -885,30 +959,34 @@
     border: 1px solid #e4e7ec;
     border-radius: 12px;
     background: #fff;
-    summary {
+    &.open {
+      border-color: #d4d8de;
+    }
+    .accordion__summary {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: $sp-2;
+      width: 100%;
       padding: $sp-3 $sp-4;
+      border: 0;
+      background: transparent;
       cursor: pointer;
-      list-style: none;
+      text-align: left;
+      font: inherit;
       font-weight: 600;
       font-size: 0.9375rem;
+      color: #111827;
       user-select: none;
-      &::-webkit-details-marker {
-        display: none;
-      }
+      border-radius: 12px;
       :global(svg) {
         flex-shrink: 0;
         color: #6b7280;
-        transition: transform 0.15s ease;
+        transition: transform 0.2s ease;
       }
     }
-    &[open] {
-      summary :global(svg) {
-        transform: rotate(180deg);
-      }
+    &.open .accordion__summary :global(svg) {
+      transform: rotate(180deg);
     }
   }
   .accordion-body {
@@ -952,48 +1030,6 @@
     text-decoration: none;
     &:hover {
       text-decoration: underline;
-    }
-  }
-  .cart-counter {
-    box-sizing: border-box;
-    display: grid;
-    grid-template-columns: 52px 1fr 52px;
-    align-items: stretch;
-    height: 48px;
-    overflow: hidden;
-    border: 1px solid $green;
-    border-radius: 12px;
-    background: transparent;
-    color: #111827;
-    font-weight: 700;
-    line-height: 1;
-    button,
-    span {
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-    }
-    button {
-      border: 0;
-      color: #111827;
-      background: transparent;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      &:first-child {
-        border-right: 1px solid $green;
-      }
-      &:last-child {
-        border-left: 1px solid $green;
-      }
-      &:hover {
-        background: rgba($green, 0.08);
-      }
-    }
-    span {
-      font-size: 1rem;
-      min-width: 60px;
     }
   }
   .also-bought {

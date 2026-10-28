@@ -2,32 +2,34 @@
   import {
     ShieldCheck,
     BadgePercent,
-    CalendarDays,
-    Info,
+    Gift,
     PiggyBank,
     Minus,
     Plus,
     Star,
     Heart,
-    Truck,
     ShoppingCart
   } from 'lucide-svelte';
+  import Installment from '$lib/components/Installment.svelte';
+  import CartButton from '$lib/components/CartButton.svelte';
   import { formatPrice } from '$lib/utils/formatPrice';
   import {
+    applyCartDiscount,
     getBaseProductPrice,
     getDiscountLabel,
-    getInstallmentLabel,
-    getMonthlyPayment,
     getProductPrice,
     hasProductDiscount,
     isDiscountExcludedBrand
   } from '$lib/utils/pricing';
   import { getProductRating } from '$lib/utils/productRating';
   import { slugify } from '$lib/utils/slugify';
-  import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
   import { imgUrl } from '$lib/s3Public';
-  let { product } = $props();
+  let {
+    product,
+    bonusPercent = 0,
+    excludedBrands = []
+  } = $props();
   // фото по позиции — для свайп-галереи прямо в карточке каталога
   const cardImages = [...(product.images ?? [])].sort((a: any, b: any) => a.position - b.position);
   const image = cardImages.length
@@ -37,19 +39,18 @@
   const price = getProductPrice(product);
   const oldPrice = getBaseProductPrice(product);
   const hasDiscount = hasProductDiscount(product) && oldPrice !== null && oldPrice > price;
-  const monthlyPayment = getMonthlyPayment(price);
   const saving = hasDiscount ? oldPrice - price : 0;
   const ratingData = getProductRating(product.external_id || product.id || product.name);
   const stockLabel = $derived.by(() => {
+    // stock из Тетриса — это остаток в штуках на складе Доскино (срок 7 дней),
+    // а не статус. Пусто/0 — на основном складе неизвестно, считаем
+    // «На удалённом складе»: их сайт показывает удалёнку там, где обмен пуст.
     const s = product.stock;
-    if (s === 1) return { text: 'В наличии — от 7 дней', tone: 'in' };
-    if (s === 2) return { text: 'На удалённом складе — от 14 дней', tone: 'mid' };
-    if (s === 3) return { text: 'Под заказ', tone: 'order' };
-    return null;
+    return s !== null && s > 0
+      ? { text: 'В наличии — от 7 дней', tone: 'in' }
+      : { text: 'На удалённом складе', tone: 'order' };
   });
   const isProtected = isDiscountExcludedBrand(product.brand);
-  const cartItem = $derived($cart.find((item) => item.id === product.id));
-  const qty = $derived(cartItem?.qty ?? 0);
   const isFavorite = $derived($favorites.some((item) => item.id === product.id));
   // свайп-галерея: активный слайд + защита от перехода на товар после свайпа
   let galleryEl: HTMLDivElement | undefined = $state();
@@ -115,20 +116,24 @@
       protected: isProtected
     });
   };
-  const addToCart = () => {
-    cart.add({
-      id: product.id,
-      name: product.name,
-      price,
-      oldPrice: hasDiscount ? oldPrice : null,
-      image,
-      slug,
-      description: product.description,
-      color: product.specs?.['Цвет'] ?? null,
-      brand: product.brand?.name,
-      protected: isProtected
-    });
-  };
+  // Бонус (как на странице товара): процент от цены, исключённые бренды не участвуют
+  const bonus = $derived(
+    bonusPercent > 0 && !isDiscountExcludedBrand(product.brand, false, excludedBrands)
+      ? price - applyCartDiscount(price, bonusPercent)
+      : 0
+  );
+  const cartItemData = $derived({
+    id: product.id,
+    name: product.name,
+    price,
+    oldPrice: hasDiscount ? oldPrice : null,
+    image,
+    slug,
+    description: product.description,
+    color: product.specs?.['Цвет'] ?? null,
+    brand: product.brand?.name,
+    protected: isProtected
+  });;
 </script>
 
 <div class="card">
@@ -206,9 +211,6 @@
       {/if}
     </div>
     {#if product.description}<p class="description mt-auto">{product.description}</p>{/if}
-    {#if stockLabel}
-      <p class="stock-note stock-note--{stockLabel.tone}">{stockLabel.text}</p>
-    {/if}
     <div class="price-row">
       <div class="price-wrap">
         <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
@@ -216,46 +218,15 @@
           <p class="old-price">{formatPrice(oldPrice)} ₽</p>
         {/if}
       </div>
-      {#if qty > 0}
-        <div class="cart-mini">
-          <button
-            type="button"
-            aria-label="Уменьшить количество"
-            on:click|stopPropagation={() => cart.dec(product.id)}
-          >
-            <Minus size={14} strokeWidth={2.6} />
-          </button>
-          <span>{qty}</span>
-          <button
-            type="button"
-            aria-label="Увеличить количество"
-            on:click|stopPropagation={() => cart.inc(product.id)}
-          >
-            <Plus size={14} strokeWidth={2.6} />
-          </button>
-        </div>
-      {:else}
-        <button
-          class="cart-btn"
-          type="button"
-          aria-label="Добавить в корзину"
-          on:click|preventDefault|stopPropagation={addToCart}
-        >
-          <ShoppingCart size={15} strokeWidth={2.2} />
-          В корзину
-        </button>
-      {/if}
+      <CartButton item={cartItemData} stopPropagation />
     </div>
-    <div class="installment">
-      <CalendarDays size={14} strokeWidth={2.2} />
-      <span class="installment-text">
-        от {formatPrice(monthlyPayment)} ₽/мес. · {getInstallmentLabel()}
-      </span>
-      <span class="installment-info" aria-label="Информация о рассрочке">
-        <Info size={14} strokeWidth={2.2} />
-        <span class="installment-tooltip">Подробности уточняйте у менеджера</span>
-      </span>
-    </div>
+    <Installment price={price} compact />
+    {#if bonus > 0}
+      <div class="product-bonus">
+        <Gift size={18} strokeWidth={2} />
+        <span class="product-bonus__text">Бонус <b>{formatPrice(bonus)} ₽</b></span>
+      </div>
+    {/if}
     {#if hasDiscount}
       <div class="badges">
         <span class="badge good">
@@ -268,11 +239,10 @@
         </span>
       </div>
     {/if}
+    {#if stockLabel}
+      <p class="stock-note stock-note--{stockLabel.tone}">{stockLabel.text}</p>
+    {/if}
   </a>
-  <p class="order-note">
-    <Truck size={13} strokeWidth={2.2} />
-    Под заказ — доставим за 7 дней
-  </p>
 </div>
 
 <style lang="scss">
@@ -280,12 +250,12 @@
   .card {
     border: 1px solid #eee;
     background: #fff;
-    border-radius: 14px;
-    padding: 12px;
+    border-radius: 12px;
+    @include card-padding;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    transition: all 0.25s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     // глобальный margin у p из typography.scss ломает ритм — отступы здесь держит только flex gap
     p {
       margin: 0;
@@ -324,9 +294,9 @@
         border: none;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.85);
-        color: #bbb;
+        color: #94a3b8;
         cursor: pointer;
-        transition: 0.18s ease;
+        transition: background 0.15s ease, color 0.15s ease;
         backdrop-filter: blur(4px);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         &:hover {
@@ -376,7 +346,7 @@
         z-index: 2;
         display: flex;
         justify-content: center;
-        gap: 5px;
+        gap: $sp-1;
         .dot {
           width: 6px;
           height: 6px;
@@ -385,7 +355,7 @@
           border-radius: 999px;
           background: rgba(17, 24, 39, 0.22);
           cursor: pointer;
-          transition: background 0.18s ease;
+          transition: background 0.15s ease;
           &--active {
             background: rgba(17, 24, 39, 0.65);
           }
@@ -401,13 +371,12 @@
       gap: 8px;
       padding: 8px 16px;
       background: $yellow;
-      color: #111;
+      color: #111827;
       font-size: 0.6875rem;
       font-weight: 700;
       line-height: 1;
       text-transform: uppercase;
       clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
       b {
         font-size: 0.875rem;
       }
@@ -435,22 +404,22 @@
       display: inline-grid;
       grid-template-columns: auto auto;
       align-items: center;
-      column-gap: 6px;
-      row-gap: 1px;
-      padding: 8px 12px;
-      border: 1px solid #dbe7f6;
+      column-gap: $sp-2;
+      row-gap: 2px;
+      padding: $sp-2 $sp-3;
+      border: 1px solid #e4e7ec;
       border-radius: 8px;
-      background: #eef4fb;
-      color: #24466f;
+      background: #fafafa;
+      color: #111827;
       line-height: 1;
       :global(svg) {
         grid-row: span 2;
-        color: #2f5f98;
+        color: $green;
       }
       span {
         font-size: 0.625rem;
         font-weight: 700;
-        color: #24466f;
+        color: #6b7280;
       }
       b {
         font-size: 0.875rem;
@@ -459,21 +428,21 @@
     }
     .description {
       font-size: 0.8125rem;
-      color: #777;
+      color: #6b7280;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .stock-note {
       margin: 0;
-      font-size: 0.78125rem;
+      font-size: 0.75rem;
       font-weight: 600;
       line-height: 1.3;
       &--in {
         color: $green;
       }
       &--mid {
-        color: #b45309;
+        color: $warning-dark;
       }
       &--order {
         color: #94a3b8;
@@ -498,7 +467,7 @@
       white-space: nowrap;
 
       :global(svg) {
-        color: #f59e0b;
+        color: $yellow;
       }
     }
     .price-row {
@@ -514,140 +483,47 @@
       flex-wrap: wrap;
       min-width: 0;
     }
-    .cart-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      height: 38px;
-      padding: 0 12px;
-      flex-shrink: 0;
-      border: 1px solid #0f3d1f;
-      border-radius: 10px;
-      background: rgba(15, 61, 31, 0);
-      color: #000;
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.18s ease, color 0.18s ease;
-      &:hover {
-        background: #0f3d1f;
-        color: #fff;
-      }
-    }
-    .cart-mini {
-      display: grid;
-      grid-template-columns: 32px 1fr 32px;
-      align-items: center;
-      height: 38px;
-      flex-shrink: 0;
-      overflow: hidden;
-      border: 1px solid #0f3d1f;
-      border-radius: 10px;
-      background: rgba(15, 61, 31, 0);
-      color: #000;
-      font-weight: 700;
-      button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        border: 0;
-        background: transparent;
-        color: #000;
-        cursor: pointer;
-        transition: background 0.18s ease;
-        &:nth-child(1) {
-          border-right: 1px solid #0f3d1f;
-        }
-        &:nth-child(3) {
-          border-left: 1px solid #0f3d1f;
-        }
-        &:hover {
-          background: #0f3d1f;
-          color: #fff;
-        }
-      }
-      span {
-        padding: 0 10px;
-        font-size: 0.8125rem;
-        text-align: center;
-      }
-    }
     .price {
       margin: 0;
-      font-size: 1.125rem;
+      font-size: 0.9375rem;
       font-weight: 700;
       color: $green;
+      white-space: nowrap;
     }
     .discount-price {
       color: #e31b23;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 700;
       letter-spacing: -0.03em;
     }
     .old-price {
       margin: 0;
-      color: #111;
+      color: #111827;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 600;
       text-decoration: line-through;
       text-decoration-color: #e31b23;
       text-decoration-thickness: 2px;
       opacity: 0.65;
     }
-    .installment {
-      position: relative;
+    .product-bonus {
       display: flex;
       align-items: center;
-      gap: 8px;
-      width: 100%;
-      min-height: 30px;
-      padding: 8px 12px;
-      border: 1px solid rgba(227, 27, 35, 0.35);
+      gap: $sp-2;
+      padding: $sp-1 $sp-2;
+      border: 1px solid #f2e3a1;
       border-radius: 8px;
-      color: #e31b23;
-      font-size: 0.6875rem;
-      font-weight: 700;
-      line-height: 1.25;
-      :global(svg) {
-        flex: 0 0 auto;
-      }
-    }
-    .installment-text {
-      white-space: normal;
-      overflow: visible;
-      text-overflow: clip;
-    }
-    .installment-info {
-      position: relative;
-      display: inline-flex;
-      margin-left: auto;
-      cursor: help;
-      &:hover .installment-tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-      }
-    }
-    .installment-tooltip {
-      position: absolute;
-      right: 0;
-      bottom: calc(100% + 8px);
-      width: 190px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      background: #111;
-      color: #fff;
-      font-size: 0.6875rem;
+      background: #fbf3cd;
+      color: #111827;
+      font-size: 0.75rem;
       font-weight: 600;
-      line-height: 1.25;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(4px);
-      transition: 0.18s ease;
-      z-index: 10;
-      pointer-events: none;
+      :global(svg) {
+        flex-shrink: 0;
+        color: #111827;
+      }
+      &__text b {
+        font-weight: 700;
+      }
     }
     .badges {
       display: flex;
@@ -667,40 +543,36 @@
       letter-spacing: -0.01em;
     }
     .good {
-      background: #eef7e8;
-      color: #4d7b37;
+      background: rgba($green, 0.08);
+      color: $green;
     }
     .sale {
-      background: #fdecec;
-      color: #d92d20;
+      background: rgba($accent-red, 0.08);
+      color: $accent-red;
     }
   }
-  @media (max-width: 480px) {
-    .card .title-row {
-      align-items: start;
+  .card .title-row {
+    align-items: start;
+    @media (min-width: 640px) {
+      align-items: center;
     }
-    .card .saving {
-      padding: 8px 8px;
+  }
+  .card .saving {
+    padding: $sp-2;
+    span {
+      font-size: 0.5625rem;
+    }
+    b {
+      font-size: 0.8125rem;
+    }
+    @media (min-width: 640px) {
+      padding: $sp-2 $sp-3;
       span {
-        font-size: 0.5625rem;
+        font-size: 0.625rem;
       }
       b {
-        font-size: 0.8125rem;
+        font-size: 0.875rem;
       }
-    }
-  }
-  .order-note {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin: 0;
-    color: #94a3b8;
-    font-size: 11.5px;
-    font-weight: 600;
-    line-height: 1.2;
-    :global(svg) {
-      color: $green;
-      flex-shrink: 0;
     }
   }
 </style>

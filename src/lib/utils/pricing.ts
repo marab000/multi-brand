@@ -12,7 +12,7 @@ export function getDiscountLabel() {
   return `-${DISCOUNT_PERCENT}%`;
 }
 export function getInstallmentLabel() {
-  return `рассрочка ${INSTALLMENT_MONTHS} мес.`;
+  return `на ${INSTALLMENT_MONTHS} мес.`;
 }
 type BrandLike =
   | string

@@ -3,8 +3,9 @@ import { error, redirect } from '@sveltejs/kit';
 import { apiFetch } from '$lib/api';
 import { sql } from '$lib/db';
 import { applyMetaTemplate, formatPriceRub, getMetaTemplates } from '$lib/server/metaTemplates';
+import { DEFAULT_CART_DISCOUNT_PERCENT, DEFAULT_EXCLUDED_BRANDS } from '$lib/utils/pricing';
 
-export const load: PageServerLoad = async ({ params, fetch }) => {
+export const load: PageServerLoad = async ({ params, fetch, locals }) => {
   // apiFetch бросает исключение при ошибке ответа — ловим и отдаём честный 404
   let product: any = null;
   try {
@@ -59,5 +60,24 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
     цена: price != null ? formatPriceRub(price) : 'уточняйте'
   }).slice(0, 300);
 
-  return { product, alsoBought, metaTitle, metaDescription };
+  // Бонус (как в корзине): процент списывается баллами, на исключённые бренды не начисляется
+  let bonusPercent = DEFAULT_CART_DISCOUNT_PERCENT;
+  let excludedBrands: string[] = DEFAULT_EXCLUDED_BRANDS;
+  try {
+    const rows = await sql`SELECT key, value FROM settings WHERE key IN ('cart_discount_percent', 'excluded_brands')`;
+    for (const row of rows) {
+      if (row.key === 'cart_discount_percent') bonusPercent = Number(row.value) || 0;
+      if (row.key === 'excluded_brands') {
+        try {
+          excludedBrands = JSON.parse(row.value);
+        } catch {
+          // оставляем дефолт
+        }
+      }
+    }
+  } catch {
+    // таблицы нет — дефолт
+  }
+
+  return { product, alsoBought, metaTitle, metaDescription, city: locals.city, bonusPercent, excludedBrands };
 };
