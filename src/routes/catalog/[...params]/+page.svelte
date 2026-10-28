@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import ProductList from '$lib/components/ProductList.svelte';
+  import CatalogSort from '$lib/components/CatalogSort.svelte';
   import { page } from '$app/stores';
   export let data: PageData;
   $: products = data.products ?? [];
@@ -49,7 +50,8 @@
 </svelte:head>
 
 <main class="catalog-content">
-  <h1 class="title text-[24px]!">
+  <div class="flex items-center justify-between gap-2 sm:gap-3 mb-2">
+    <h1 class="title text-[24px]!">
     {#if data.seoH1}
       {data.seoH1}
     {:else if data.category}
@@ -64,13 +66,22 @@
       Каталог
     {/if}
   </h1>
+    <div class="hidden lg:block">
+      <CatalogSort />
+    </div>
+  </div>
   {#if products.length}
     <ProductList
       {products}
+      bonusPercent={data.bonusPercent ?? 0}
+      excludedBrands={data.excludedBrands ?? []}
       currentPage={data.page}
       pages={data.pages}
       currentSearch={data.currentSearch}
-    />
+      sortSlotMobileOnly
+    >
+      <CatalogSort slot="sort" />
+    </ProductList>
   {:else}
     <div class="empty-state mb-3 lg:mb-4">
       {#if isOnlySearchEmpty}
@@ -104,15 +115,15 @@
 
 <style lang="scss">
   .cat-seo {
-    margin-top: 26px;
-    margin-bottom: 26px;
-    padding-top: 14px;
+    margin-top: $sp-6;
+    margin-bottom: $sp-6;
+    padding-top: $sp-4;
     border-top: 1px solid #eceff1;
     summary {
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: $sp-1;
       font-size: 13.5px;
       font-weight: 600;
       color: #64748b;
@@ -132,16 +143,16 @@
       &::before {
         transform: rotate(90deg);
       }
-      margin-bottom: 10px;
+      margin-bottom: $sp-2;
     }
     h2 {
-      margin: 0 0 10px;
+      margin: 0 0 $sp-2;
       font-size: 1.25rem;
       font-weight: 700;
       color: #111827;
     }
     p {
-      margin: 0 0 10px;
+      margin: 0 0 $sp-2;
       max-width: 860px;
       font-size: 0.95rem;
       line-height: 1.65;
@@ -162,13 +173,13 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 42px 20px;
+    padding: $sp-8 $sp-4;
     border: 1px solid #eee;
     border-radius: 16px;
     background: #fff;
     text-align: center;
     .empty-state__title {
-      font-size: 20px;
+      font-size: 1.25rem;
       font-weight: 700;
       line-height: 1.2;
       color: #151515;

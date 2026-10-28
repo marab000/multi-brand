@@ -10,6 +10,7 @@ import {
   getCatalogRoots
 } from '$lib/server/categories';
 import { sql } from '$lib/db';
+import { DEFAULT_CART_DISCOUNT_PERCENT, DEFAULT_EXCLUDED_BRANDS } from '$lib/utils/pricing';
 import { toDbPrice } from '$lib/utils/formatPrice';
 import { buildCategorySeo, buildCategoryDescription } from '$lib/server/seoText';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
@@ -263,7 +264,28 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
     if (page > 1 && tplTitle) tplTitle = `${tplTitle} — страница ${page}`;
   }
 
+  // Бонус (как на карточке товара): процент из настроек, на исключённые бренды не начисляется
+  let bonusPercent = DEFAULT_CART_DISCOUNT_PERCENT;
+  let excludedBrands: string[] = DEFAULT_EXCLUDED_BRANDS;
+  try {
+    const rows = await sql`SELECT key, value FROM settings WHERE key IN ('cart_discount_percent', 'excluded_brands')`;
+    for (const row of rows) {
+      if (row.key === 'cart_discount_percent') bonusPercent = Number(row.value) || 0;
+      if (row.key === 'excluded_brands') {
+        try {
+          excludedBrands = JSON.parse(row.value);
+        } catch {
+          // оставляем дефолт
+        }
+      }
+    }
+  } catch {
+    // таблицы нет — дефолт
+  }
+
   return {
+    bonusPercent,
+    excludedBrands,
     // через ||, а не ??: в seo_overrides бывают пустые строки — они не должны глушить шаблон
     seoTitle: metaO?.title || tplTitle,
     seoH1: metaO?.h1 ?? null,

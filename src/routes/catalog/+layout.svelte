@@ -87,12 +87,12 @@
 <style lang="scss">
   .catalog-layout {
     display: grid;
-    margin-top: 20px;
+    margin-top: $sp-4;
     grid-template-columns: 1fr;
     gap: 16px;
     @media (min-width: 1024px) {
       grid-template-columns: 250px 1fr;
-      gap: 20px;
+      gap: $sp-4;
     }
     @media (min-width: 1280px) {
       grid-template-columns: 300px 1fr;
@@ -140,7 +140,7 @@
     .close {
       background: none;
       border: none;
-      font-size: 20px;
+      font-size: 1.25rem;
       cursor: pointer;
     }
   }

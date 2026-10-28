@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { ChevronDown, ChevronUp, Check } from 'lucide-svelte';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import Pagination from '$lib/components/Pagination.svelte';
   export let products: any[] = [];
@@ -9,75 +8,39 @@
   export let pages = 1;
   export let currentSearch = '';
   export let showFiltersButton = true;
-  const sortOptions = [
-    { value: 'default', label: 'По умолчанию' },
-    { value: 'price_asc', label: 'Сначала дешевле' },
-    { value: 'price_desc', label: 'Сначала дороже' }
-  ];
-  let isSortOpen = false;
-  $: currentSort = $page.url.searchParams.get('sort') ?? 'default';
-  $: currentSortLabel = sortOptions.find((item) => item.value === currentSort)?.label ?? 'По умолчанию';
+  export let showSort = true;
+  // слот сортировки прячем на десктопе (каталог: сорт живёт в шапке с H1)
+  export let sortSlotMobileOnly = false;
+  export let bonusPercent = 0;
+  export let excludedBrands: string[] = [];
   function goToPage(p: number) {
     const params = new URLSearchParams($page.url.searchParams);
     params.set('page', String(p));
     goto(`${$page.url.pathname}?${params.toString()}`, { keepFocus: true, noScroll: true });
-  }
-  function applySort(sort: string) {
-    const params = new URLSearchParams($page.url.searchParams);
-    if (sort === 'default') params.delete('sort');
-    else params.set('sort', sort);
-    params.set('page', '1');
-    isSortOpen = false;
-    goto(`${$page.url.pathname}?${params.toString()}`, { keepFocus: true, noScroll: true });
-  }
-  function toggleSort() {
-    isSortOpen = !isSortOpen;
-  }
-  function closeSort() {
-    isSortOpen = false;
   }
   function openFilters() {
     window.dispatchEvent(new CustomEvent('catalog:open-filters'));
   }
 </script>
 
-<svelte:body onclick={closeSort} />
-
 {#if products.length === 0}
   <p>Товары не найдены</p>
 {:else}
-  <div class="topbar" class:topbar--right={!showFiltersButton}>
-    {#if showFiltersButton}
-      <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
-    {/if}
-    <div class="sort" onclick={(e) => e.stopPropagation()}>
-      <button class="sort__trigger" type="button" onclick={toggleSort} aria-expanded={isSortOpen ? 'true' : 'false'}>
-        <span>{currentSortLabel}</span>
-        {#if isSortOpen}
-          <ChevronUp size={18} strokeWidth={2.1} />
-        {:else}
-          <ChevronDown size={18} strokeWidth={2.1} />
-        {/if}
-      </button>
-      {#if isSortOpen}
-        <div class="sort__dropdown">
-          {#each sortOptions as option}
-            <button class="sort__option" class:sort__option--active={option.value === currentSort} type="button" onclick={() => applySort(option.value)}>
-              <span class="sort__check">
-                {#if option.value === currentSort}
-                  <Check size={18} strokeWidth={2.4} />
-                {/if}
-              </span>
-              <span>{option.label}</span>
-            </button>
-          {/each}
+  {#if showFiltersButton || showSort}
+    <div class="topbar" class:topbar--right={!showFiltersButton}>
+      {#if showFiltersButton}
+        <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
+      {/if}
+      {#if showSort}
+        <div class={sortSlotMobileOnly ? 'lg:hidden' : ''}>
+          <slot name="sort" />
         </div>
       {/if}
     </div>
-  </div>
+  {/if}
   <div class="grid">
     {#each products as product (product.id)}
-      <ProductCard {product} />
+      <ProductCard {product} {bonusPercent} {excludedBrands} />
     {/each}
   </div>
   {#if pages > 1}
@@ -90,8 +53,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 8px;
+    gap: $sp-3;
+    margin-bottom: $sp-2;
     &.topbar--right {
       justify-content: flex-end;
     }
@@ -102,101 +65,17 @@
   .filters-trigger {
     flex: 0 0 auto;
     min-height: 46px;
-    padding: 0 14px;
-    border-radius: 10px;
+    padding: 0 $sp-3;
+    border-radius: 8px;
     border: 1px solid #eee;
     background: #fff;
     font-weight: 600;
     white-space: nowrap;
   }
-  .sort {
-    position: relative;
-    min-width: 200px;
-    @media (max-width: 1023px) {
-      min-width: 0;
-      width: auto;
-      flex: 0 1 186px;
-    }
-    .sort__trigger {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      width: 100%;
-      min-height: 46px;
-      padding: 0 14px;
-      border: 1.5px solid #2e3437;
-      border-radius: 10px;
-      background: #fff;
-      color: #2e3437;
-      font-size: 0.95rem;
-      font-weight: 500;
-      line-height: 1.2;
-      cursor: pointer;
-      transition: background 0.18s ease, border-color 0.18s ease;
-      &[aria-expanded='true'] {
-        border-color: #e6a73c;
-      }
-      &:hover {
-        background: #fafafa;
-      }
-      :global(svg) {
-        flex: 0 0 auto;
-      }
-      @media (max-width: 1023px) {
-        min-height: 42px;
-        padding: 0 12px;
-        font-size: 0.9rem;
-      }
-    }
-    .sort__dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      z-index: 20;
-      width: 100%;
-      overflow: hidden;
-      border-radius: 10px;
-      background: #fff;
-      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    .sort__option {
-      display: grid;
-      grid-template-columns: 14px 1fr;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      min-height: 46px;
-      padding: 0 14px;
-      border: none;
-      background: #fff;
-      color: #111;
-      text-align: left;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.18s ease;
-      &:hover {
-        background: #f3f1ee;
-      }
-      &.sort__option--active {
-        background: #f3f1ee;
-      }
-    }
-    .sort__check {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      min-width: 18px;
-      height: 18px;
-    }
-  }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 8px;
-    margin-bottom: 30px;
+    gap: $sp-2;
+    margin-bottom: $sp-6;
   }
 </style>

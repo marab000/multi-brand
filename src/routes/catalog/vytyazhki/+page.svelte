@@ -8,6 +8,7 @@
 
 <script lang="ts">
   import ProductList from '$lib/components/ProductList.svelte';
+  import CatalogSort from '$lib/components/CatalogSort.svelte';
   import type { PageData } from './$types';
   export let data: PageData;
   $: products = data.products ?? [];
@@ -20,7 +21,9 @@
     currentPage={data.page}
     pages={data.pages}
     currentSearch={data.currentSearch}
-  />
+  >
+    <CatalogSort slot="sort" />
+  </ProductList>
 </main>
 
 <style lang="scss">

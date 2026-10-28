@@ -180,8 +180,8 @@
     border-top: 1px solid rgba($green, 0.12);
     border-bottom: 1px solid rgba($green, 0.12);
     background: rgba(128, 128, 128, 0.05);
-    padding: 10px 16px;
-    margin-bottom: 6px;
+    padding: $sp-2 $sp-4;
+    margin-bottom: $sp-1;
     border-radius: 0;
     &::after {
       display: none;
@@ -213,7 +213,7 @@
       justify-content: space-between;
       gap: 12px;
       width: 100%;
-      padding: 13px 16px;
+      padding: $sp-3 $sp-4;
       border: 0;
       background: none;
       text-align: left;
@@ -229,7 +229,7 @@
     &__meta {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: $sp-2;
       flex-shrink: 0;
       :global(svg) {
         color: #9ca3af;
@@ -275,7 +275,7 @@
     &__all {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: $sp-1;
       margin-top: 12px;
       color: $green;
       font-size: 0.8125rem;
@@ -291,7 +291,7 @@
     }
   }
   .hub-cat--open .hub-cat__row {
-    padding-bottom: 6px;
+    padding-bottom: $sp-1;
   }
   .hub-cat--open .hub-cat__name {
     color: $green;
