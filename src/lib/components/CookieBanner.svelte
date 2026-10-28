@@ -60,17 +60,17 @@
   }
   .cookie-banner__text {
     flex: 1;
-    font-size: 13px;
+    font-size: 0.8125rem;
     line-height: 1.4;
   }
   .cookie-banner__btn {
     flex-shrink: 0;
     padding: 10px 20px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     background: $green;
     color: #fff;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 700;
     cursor: pointer;
     transition: filter 0.15s ease;

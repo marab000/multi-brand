@@ -103,7 +103,7 @@ import Ticker from '$lib/components/Ticker.svelte';
   class="container mx-auto mb-5 min-h-screen rounded-2xl border border-[#00000015] bg-gray-50 p-3 pb-0! lg:p-4"
 >
   {@render children()}
-  <Toaster richColors position="top-center" />
+  <Toaster position="top-center" />
 </main>
 
 <Footer {data} />

@@ -33,27 +33,24 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 4px 6px;
     font-size: 0.875rem;
     line-height: 1.2;
-    padding: 8px 12px;
-    background: #f8f9fa;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
     @media (max-width: 1024px) {
       font-size: 0.8rem;
     }
     @media (max-width: 768px) {
-      padding: 6px 8px;
       font-size: 0.75rem;
     }
     a {
       color: #2b2b2b;
       text-decoration: none;
-      padding: 0;
-      border-radius: 6px;
+      padding: 2px 4px;
+      margin: -2px -4px;
+      border-radius: 4px;
       transition: 0.2s;
       &:hover {
+        color: #000;
         background: #e9ecef;
       }
     }
@@ -62,8 +59,8 @@
     }
     .current {
       font-weight: 600;
-      padding: 0;
-      border-radius: 6px;
+      padding: 2px 4px;
+      margin: -2px -4px;
       /* имя товара: перенос по словам разрешён, но не длиннее 2 строк */
       &:last-child {
         display: -webkit-box;

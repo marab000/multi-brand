@@ -86,7 +86,7 @@
       display: grid;
       /* 110px при контенте 1248px (контейнер 1280 - паддинги) = 10 колонок вместо 9 */
       grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 10px;
+      gap: $sp-2;
       width: 100%;
       animation: none;
     }
@@ -96,7 +96,7 @@
   }
   .marquee__row {
     display: flex;
-    gap: 10px;
+    gap: $sp-2;
     /* расстояние между концом круга и началом следующего = внутреннему gap */
     padding-right: 10px;
   }

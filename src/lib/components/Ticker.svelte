@@ -25,13 +25,13 @@
     overflow: hidden;
     background: #fff;
     color: #334155;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 13px 0;
     @media (max-width: 640px) {
-      font-size: 11.5px;
+      font-size: 0.6875rem;
       padding: 10px 0;
     }
     /* мягкий белый фейд — ширина равна расстоянию от края экрана до контента

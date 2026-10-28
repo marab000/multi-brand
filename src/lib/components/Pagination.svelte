@@ -76,7 +76,7 @@
 <style lang="scss">
   .pagination {
     display: flex;
-    gap: 6px;
+    gap: $sp-1;
     justify-content: center;
     flex-wrap: wrap;
   }
@@ -84,14 +84,14 @@
     min-width: 38px;
     height: 38px;
     padding: 0 10px;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid #eee;
     background: #fff;
     color: #222;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
     text-decoration: none;
     transition: 0.2s;

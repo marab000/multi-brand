@@ -100,7 +100,7 @@
   .article-blocks {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: $sp-4;
   }
 
   .block-heading {
@@ -125,7 +125,7 @@
     margin: 6px 0;
     img {
       width: 100%;
-      border-radius: 14px;
+      border-radius: 12px;
       border: 1px solid rgba(15, 23, 42, 0.06);
     }
     figcaption {
@@ -166,9 +166,9 @@
   .block-callout {
     display: flex;
     align-items: flex-start;
-    gap: 14px;
+    gap: $sp-3;
     padding: 16px 18px;
-    border-radius: 14px;
+    border-radius: 12px;
     border: 1.5px solid;
 
     &[data-color='green'] {
@@ -220,7 +220,7 @@
       border-radius: 12px;
       background: $green;
       color: #fff;
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 700;
       text-decoration: none;
       transition: filter 0.15s;
@@ -233,7 +233,7 @@
   .block-video {
     position: relative;
     overflow: hidden;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #000;
     video {
       width: 100%;

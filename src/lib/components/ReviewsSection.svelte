@@ -156,7 +156,7 @@
   .reviews-section {
     padding: 24px;
     border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 20px;
+    border-radius: 16px;
     background: #fff;
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
   }
@@ -165,7 +165,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 20px;
+    gap: $sp-4;
     margin-bottom: 20px;
 
     h2 {

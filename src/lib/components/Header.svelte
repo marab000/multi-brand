@@ -508,7 +508,7 @@
           >
         </button>
         {#if user && userMenuOpen}
-          <div class="user-menu">
+          <div class="user-menu anim-drop-in">
             <div class="user-menu__hello">
               <b>Приветствуем, {user.full_name || user.email}!</b>
               {#if user.email && user.email !== user.full_name}<span>{user.email}</span>{/if}
@@ -557,38 +557,15 @@
   .nav {
     background: #fff;
 
-    &__info-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #f1f1f1;
-    }
-    &__info-bar-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #64748b;
-      :global(svg) {
-        color: $green;
-      }
-    }
-    &__info-bar-right {
-      display: flex;
-      align-items: center;
-    }
-
     &__about {
       align-items: center;
-      color: #202020;
+      color: #111827;
       font-size: 0.8125rem;
       padding: 12px 0;
       font-weight: 700;
       line-height: 1.1;
       text-decoration: none;
-      transition: color 0.18s ease;
+      transition: color 0.15s ease;
       :global(svg) {
         color: $green;
         flex: 0 0 auto;
@@ -610,7 +587,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      color: #202020;
+      color: #111827;
       text-decoration: none;
       font-size: 0.875rem;
       font-weight: 700;
@@ -622,12 +599,8 @@
       &:hover {
         color: $green;
       }
-      @media (max-width: 360px) {
-        font-size: 0.75rem;
-        gap: 4px;
-      }
       @media (min-width: 768px) {
-        gap: 8px;
+        gap: $sp-2;
         font-size: 1.05rem;
         font-weight: 700;
       }
@@ -635,9 +608,9 @@
     &__inner {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: $sp-3;
       @media (min-width: 1024px) {
-        gap: 20px;
+        gap: $sp-4;
       }
     }
     &__catalog {
@@ -658,8 +631,8 @@
         justify-content: center;
         -webkit-tap-highlight-color: transparent;
         transition:
-          background 0.18s ease,
-          transform 0.18s ease;
+          background 0.15s ease,
+          transform 0.15s ease;
         &:hover {
           background: rgba($green, 0.16);
           transform: scale(1.05);
@@ -673,39 +646,39 @@
         align-items: center;
         justify-content: center;
         height: 42px;
-        padding: 0 16px;
+        padding: 0 $sp-4;
         border-radius: 12px;
         text-decoration: none;
         color: #fff;
         background: rgba($green-light, 1);
-        transition: background 0.18s ease;
+        transition: background 0.15s ease;
         &__left {
           display: inline-flex;
           align-items: center;
-          gap: 8px;
+          gap: $sp-2;
           font-size: 0.875rem;
           font-weight: 600;
         }
       }
       .catalog-dropdown {
         position: absolute;
-        top: calc(100% + 10px);
+        top: calc(100% + $sp-2);
         left: 0;
         z-index: 20;
         width: 440px;
         max-height: min(68vh, 620px);
         overflow: auto;
         border: 1px solid rgba($yellow, 0.22);
-        border-radius: 18px;
+        border-radius: 16px;
         background: #fff;
         box-shadow: 0 18px 44px rgba(0, 0, 0, 0.1);
         opacity: 0;
         visibility: hidden;
         transform: translateY(8px);
         transition:
-          opacity 0.18s ease,
-          visibility 0.18s ease,
-          transform 0.18s ease;
+          opacity 0.15s ease,
+          visibility 0.15s ease,
+          transform 0.15s ease;
         &.visible {
           opacity: 1;
           visibility: visible;
@@ -716,9 +689,9 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 12px;
-        padding: 16px 16px 0px;
+        gap: $sp-3;
+        margin-bottom: $sp-3;
+        padding: $sp-4 $sp-4 0;
       }
       .catalog-mobile-link {
         color: #141414;
@@ -744,7 +717,7 @@
       }
       .catalog-close {
         border: 1px solid rgba($green, 0.5);
-        border-radius: 10px;
+        border-radius: 8px;
       }
       .tree-parent {
         display: grid;
@@ -752,8 +725,8 @@
           border-bottom: 1px solid rgba($green, 0.12);
           border-top: 1px solid rgba($green, 0.12);
           background: rgba(128, 128, 128, 0.05);
-          padding: 10px 16px;
-          margin-bottom: 6px;
+          padding: $sp-3 $sp-4;
+          margin-bottom: $sp-2;
         }
         &__title {
           margin: 0;
@@ -778,9 +751,9 @@
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
+          gap: $sp-3;
           width: 100%;
-          padding: 13px 16px;
+          padding: $sp-3 $sp-4;
           border: 0;
           background: none;
           text-align: left;
@@ -796,7 +769,7 @@
         &__meta {
           display: inline-flex;
           align-items: center;
-          gap: 10px;
+          gap: $sp-2;
           flex-shrink: 0;
           :global(svg) {
             color: #9ca3af;
@@ -808,8 +781,8 @@
           font-weight: 400;
         }
         &__card {
-          margin: 0 12px 12px 12px;
-          padding: 12px;
+          margin: 0 $sp-3 $sp-3;
+          padding: $sp-3;
           border-radius: 12px;
           // лёгкий зелёный — белые чипсы с их бордером и так читаются
           background: rgba($green, 0.08);
@@ -817,24 +790,24 @@
         &__chips {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: $sp-2;
         }
         &__chip {
           display: inline-flex;
           align-items: center;
-          padding: 8px 12px;
+          padding: $sp-2 $sp-3;
           // бордер в полсилы зелёного всегда, на ховере — полный
           border: 1px solid rgba($green, 0.5);
           border-radius: 999px;
           background: #fff;
-          color: #1f2937;
+          color: #374151;
           font-size: 0.8125rem;
           font-weight: 400;
           text-decoration: none;
           transition:
-            background 0.16s ease,
-            border-color 0.16s ease,
-            color 0.16s ease;
+            background 0.15s ease,
+            border-color 0.15s ease,
+            color 0.15s ease;
           &:hover {
             border-color: $green;
             background: #fff;
@@ -844,15 +817,15 @@
         &__all {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          margin-top: 12px;
+          gap: $sp-2;
+          margin-top: $sp-3;
           color: $green;
           font-size: 0.8125rem;
           font-weight: 600;
           font-style: italic;
           text-decoration: none;
           :global(svg) {
-            transition: transform 0.16s ease;
+            transition: transform 0.15s ease;
           }
           &:hover :global(svg) {
             transform: translateX(3px);
@@ -861,7 +834,7 @@
       }
       // раскрытая категория: зелёное жирное название, зелёный шеврон, карточка
       .acc-cat--open .acc-cat__row {
-        padding-bottom: 6px;
+        padding-bottom: $sp-2;
       }
       .acc-cat--open .acc-cat__name {
         color: $green;
@@ -884,7 +857,7 @@
     @media (min-width: 1024px) {
       display: flex;
     }
-    gap: 20px;
+    gap: $sp-4;
     button,
     a {
       display: flex;
@@ -892,9 +865,9 @@
       justify-content: center;
       width: 42px;
       height: 42px;
-      border-radius: 10px;
+      border-radius: 8px;
       background: rgba($green, 0.05);
-      transition: 0.2s;
+      transition: background 0.2s ease;
       :global(svg) {
         color: $green;
       }
@@ -911,19 +884,19 @@
   }
   .user-menu {
     position: absolute;
-    top: calc(100% + 10px);
+    top: calc(100% + $sp-2);
     right: 0;
     z-index: 1002;
     min-width: 190px;
-    padding: 8px;
+    padding: $sp-2;
     &__hello {
       display: grid;
-      gap: 4px;
-      padding: 8px 12px 12px;
-      margin-bottom: 8px;
+      gap: $sp-1;
+      padding: $sp-2 $sp-3 $sp-3;
+      margin-bottom: $sp-2;
       border-bottom: 1px solid rgba($green, 0.14);
       b {
-        font-size: 13.5px;
+        font-size: 0.8125rem;
         font-weight: 700;
         color: #111827;
         line-height: 1.3;
@@ -936,7 +909,7 @@
       }
     }
     border: 1px solid rgba($green, 0.14);
-    border-radius: 14px;
+    border-radius: 12px;
     background: #fff;
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.12);
     a,
@@ -944,16 +917,16 @@
       width: 100%;
       height: 40px;
       justify-content: flex-start;
-      padding: 0 12px;
-      border-radius: 10px;
+      padding: 0 $sp-3;
+      border-radius: 8px;
       background: transparent;
-      color: #202020;
+      color: #111827;
       font-size: 0.875rem;
       text-decoration: none;
       cursor: pointer;
       &:hover {
         background: rgba($green, 0.06) !important;
-        color: #202020 !important;
+        color: #111827 !important;
       }
     }
     .user-menu__admin {
@@ -977,38 +950,21 @@
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    background: red;
+    background: $accent-red;
     color: #fff;
     font-size: 0.625rem;
     line-height: 1;
     box-sizing: border-box;
   }
-  @media (max-width: 395px) {
-    .nav {
-      &__about {
-        font-size: 0.75rem;
-      }
-    }
-  }
-  @media (max-width: 378px) {
-    .nav__top-links {
-      gap: 12px;
-    }
-    .nav {
-      &__about {
-        font-size: 0.6875rem;
-      }
-    }
-  }
   .nav__contact {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: $sp-3;
   }
   .nav__social {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: $sp-2;
     a {
       display: flex;
       align-items: center;
@@ -1035,18 +991,18 @@
   .drawer-links {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 12px 8px;
+    gap: $sp-1;
+    padding: $sp-3 $sp-2;
 
     a,
     button {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: $sp-3;
       width: 100%;
-      padding: 12px 12px;
+      padding: $sp-3;
       border: 0;
-      border-radius: 10px;
+      border-radius: 8px;
       background: none;
       color: #111827;
       font-size: 0.9375rem;

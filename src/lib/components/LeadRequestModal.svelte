@@ -133,7 +133,7 @@
     transform: translate(-50%, -50%);
     @media (max-width: 640px) {
       padding: 22px;
-      border-radius: 20px;
+      border-radius: 16px;
     }
     .close {
       position: absolute;
@@ -167,13 +167,13 @@
       letter-spacing: -0.04em;
     }
     .modal-sub-big {
-      font-size: 17px;
+      font-size: 1rem;
       font-weight: 700;
     }
     p {
       margin: 8px 0 20px;
       color: #64748b;
-      font-size: 15px;
+      font-size: 0.9375rem;
       line-height: 1.45;
     }
     form {
@@ -187,11 +187,11 @@
       resize: vertical;
     }
     .submit {
-      gap: 10px;
+      gap: $sp-2;
       width: 100%;
       height: 56px;
       border-radius: 16px;
-      font-size: 15px;
+      font-size: 0.9375rem;
       font-weight: 700;
       &:disabled {
         opacity: 0.55;

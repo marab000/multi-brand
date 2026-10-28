@@ -119,7 +119,7 @@
     }
     .list {
       display: flex;
-      gap: 10px;
+      gap: $sp-2;
       overflow-x: auto;
       overflow-y: visible;
       padding: 2px 2px 14px;
@@ -140,7 +140,7 @@
     .item {
       flex: 0 0 210px;
       display: grid;
-      gap: 10px;
+      gap: $sp-2;
       padding: 12px;
       border: 1px solid #eee;
       border-radius: 16px;
@@ -184,7 +184,7 @@
     }
     @media (max-width: 768px) {
       padding: 18px 14px 18px;
-      border-radius: 18px;
+      border-radius: 16px;
       .item {
         flex-basis: 180px;
       }

@@ -626,7 +626,7 @@
     &__main p {
       margin: 8px 0 12px;
       max-width: 480px;
-      font-size: 13.5px;
+      font-size: 0.8125rem;
       line-height: 1.45;
       color: #7d8a7e;
     }
@@ -639,7 +639,7 @@
       border-radius: 999px;
       background: #f0c64b;
       color: #2e3d2f;
-      font-size: 14.5px;
+      font-size: 0.875rem;
       font-weight: 700;
       box-shadow: 0 4px 10px rgba(240, 198, 75, 0.45);
       :global(svg) {
@@ -679,13 +679,13 @@
           line-height: 1.25;
         }
         b {
-          font-size: 13px;
+          font-size: 0.8125rem;
           font-weight: 700;
           color: #2e3d2f;
         }
         i {
           font-style: normal;
-          font-size: 12.5px;
+          font-size: 0.8125rem;
           color: #8a978b;
         }
       }
@@ -726,7 +726,7 @@
       }
       &__features {
         justify-content: flex-start;
-        gap: 6px 14px;
+        gap: $sp-1 14px;
         li {
           flex-direction: row;
           text-align: left;
@@ -739,7 +739,7 @@
       }
       &__btn {
         padding: 10px 18px;
-        font-size: 13px;
+        font-size: 0.8125rem;
       }
     }
 
@@ -811,7 +811,7 @@
     gap: 8px;
     p {
       margin: 0;
-      font-size: 14px;
+      font-size: 0.875rem;
       line-height: 1.5;
       color: #374151;
       b {
@@ -864,7 +864,7 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 700;
     color: $green;
     text-decoration: none;
@@ -947,7 +947,7 @@
   }
   .features-grid {
     display: grid;
-    gap: 20px;
+    gap: $sp-4;
     /* карточки естественной высоты: раскрытая растёт, закрытые не тянутся за ней */
     align-items: start;
     .feature-card {
@@ -1058,7 +1058,7 @@
       height: auto;
       aspect-ratio: 480 / 240;
       object-fit: cover;
-      border-radius: 10px;
+      border-radius: 8px;
     }
     &:hover {
       transform: translateY(-2px);
@@ -1073,7 +1073,7 @@
     min-height: 360px;
     overflow: hidden;
     border: 1px solid rgba(62, 111, 79, 0.12);
-    border-radius: 18px;
+    border-radius: 16px;
     background: #fff;
     color: #111827;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -1199,9 +1199,9 @@
   .promo-banner {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: $sp-4;
     padding: 24px;
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
   }
   .promo-banner--grandex {
@@ -1377,7 +1377,7 @@
     .promo-banner__icon {
       width: 48px;
       height: 48px;
-      border-radius: 14px;
+      border-radius: 12px;
     }
     .promo-banner__text {
       align-items: center;
@@ -1420,7 +1420,7 @@
     &__inner {
       padding: 28px;
       border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 20px;
+      border-radius: 16px;
       background: #fff;
     }
     h2 {

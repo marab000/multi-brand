@@ -2,24 +2,12 @@
   import { onMount } from 'svelte';
   import { imgUrl } from '$lib/s3Public';
   import { favorites } from '$lib/stores/favorites';
+  import CartButton from '$lib/components/CartButton.svelte';
   import { cart } from '$lib/stores/cart';
   import { formatPrice } from '$lib/utils/formatPrice';
   import { Menu, Trash } from 'lucide-svelte';
   import cartEmptyImage from '$lib/assets/cart-empty.webp';
 
-  const addToCart = (item: (typeof $favorites)[0]) => {
-    cart.add({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      oldPrice: item.oldPrice ?? null,
-      image: item.image,
-      slug: item.slug,
-      description: item.description,
-      brand: item.brand,
-      protected: item.protected
-    });
-  };
 
   onMount(() => {
     favorites.sync();
@@ -68,7 +56,19 @@
             </div>
           </div>
           <div class="item-actions">
-            <button class="btn primary" on:click={() => addToCart(item)}>В корзину</button>
+            <CartButton
+              item={{
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                oldPrice: item.oldPrice ?? null,
+                image: item.image,
+                slug: item.slug,
+                description: item.description,
+                brand: item.brand,
+                protected: item.protected
+              }}
+            />
             <button class="remove" on:click={() => favorites.remove(item.id)}>
               <Trash size={14} strokeWidth={2.5} />
             </button>

@@ -183,7 +183,9 @@ async function syncBrand(apiBrand) {
 		return false
 	}
 	const priceMap = extractPrices(pricesRaw)
-	// остатки: '1' — склад (7 дней), '2' — удалённый склад (14 дней), '3'/пусто — под заказ
+	// Остаток — это КОЛИЧЕСТВО штук на складе Доскино (срок 7 дней), не статус.
+	// Пусто — не «нет в наличии»: удалённый склад в файловый обмен не выгружается
+	// (проверено: их сайт показывает «на удаленном складе N шт» при пустом Остатоке).
 	const stockMap = new Map(
 		(Array.isArray(stockRaw) ? stockRaw : []).map((item) => [item['НоменклатураID'], Number(item['Остаток']) || null])
 	)

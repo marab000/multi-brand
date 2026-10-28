@@ -119,10 +119,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    margin: -10px;
-    padding: 10px;
-    border-radius: 10px;
+    gap: $sp-2;
+    margin: -$sp-2;
+    padding: $sp-2;
+    border-radius: 8px;
   }
   .label-main {
     display: flex;
@@ -134,7 +134,7 @@
     min-width: 0;
   }
   .dot {
-    margin-right: 10px;
+    margin-right: $sp-2;
     width: 12px;
     height: 12px;
     min-width: 12px;

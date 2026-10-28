@@ -3,6 +3,8 @@
 // по набору шаблонов. Выбор шаблона детерминирован slug'ом — текст на странице
 // стабильный между загрузками (для поисковика), но у разных категорий разный.
 
+import { replaceCityPlaceholders } from '$lib/server/cityPlaceholders';
+
 export type CategorySeoStats = {
 	name: string;
 	count: number;
@@ -47,7 +49,7 @@ export function buildCategorySeo(stats: CategorySeoStats): CategorySeo | null {
 	const countWord = plural(stats.count, 'товар', 'товара', 'товаров');
 	const p1 =
 		`${price ? price + '. ' : ''}В разделе собран ${fmt(stats.count)} ${countWord}` +
-		` категории «${stats.name}» — все позиции в наличии на складе в Казани или под заказ с доставкой за 7 дней.`;
+		` категории «${stats.name}» — все позиции в наличии на складе в {городе} или под заказ с доставкой за 7 дней.`;
 
 	const brandList = stats.brands.slice(0, 6).join(', ');
 	const p2Variants = [
@@ -58,15 +60,15 @@ export function buildCategorySeo(stats: CategorySeoStats): CategorySeo | null {
 	const p2 = stats.brands.length >= 2 ? pick(p2Variants, s) : null;
 
 	const p3Variants = [
-		'Доставим по Казани бесплатно, отправим в любой регион России. Действует рассрочка 0% на 12 месяцев — без переплат и скрытых комиссий.',
+		'Доставим по {городу} бесплатно, отправим в любой регион России. Действует рассрочка 0% на 12 месяцев — без переплат и скрытых комиссий.',
 		'Поможем с выбором: подскажем по размерам, совместимости и комплектации. Консультант на связи ежедневно с 9:00 до 21:00.',
 		'Можно оформить рассрочку 0% на 12 месяцев, а технику — бесплатно хранить на нашем складе, пока идёт ремонт.'
 	];
 	const p3 = pick(p3Variants, s >> 3);
 
-	const paragraphs = [p1, ...(p2 ? [p2] : []), p3].filter(Boolean);
+	const paragraphs = [p1, ...(p2 ? [p2] : []), p3].filter(Boolean).map((t) => replaceCityPlaceholders(t));
 	return {
-		heading: `«${stats.name}» — купить в Казани с доставкой и гарантией`,
+		heading: replaceCityPlaceholders(`«${stats.name}» — купить в {городе} с доставкой и гарантией`),
 		paragraphs
 	};
 }
@@ -81,7 +83,7 @@ export function buildCategoryDescription(stats: CategorySeoStats): string | null
 			: stats.minPrice != null
 				? ` Цены от ${fmt(stats.minPrice)} ₽.`
 				: '';
-	return `${stats.name} — ${fmt(stats.count)} ${countWord} в наличии в Казани.${price} Официальные поставки, гарантия производителя, рассрочка 0%, бесплатная доставка.`;
+	return replaceCityPlaceholders(`${stats.name} — ${fmt(stats.count)} ${countWord} в наличии в {городе}.${price} Официальные поставки, гарантия производителя, рассрочка 0%, бесплатная доставка.`);
 }
 
 // ─── Бренды ───
@@ -110,7 +112,7 @@ export function buildBrandSeo(stats: BrandSeoStats): CategorySeo | null {
 	const countWord = plural(stats.count, 'товар', 'товара', 'товаров');
 	const p1 =
 		`${price ? price + '. ' : ''}${stats.name} в каталоге «Мультибренд» — ${fmt(stats.count)} ${countWord}` +
-		` в наличии на складе в Казани или под заказ с доставкой за 7 дней. Официальные поставки, гарантия производителя.`;
+		` в наличии на складе в {городе} или под заказ с доставкой за 7 дней. Официальные поставки, гарантия производителя.`;
 
 	const rootsList = stats.roots.slice(0, 5).join(', ');
 	const p2Variants = [
@@ -121,8 +123,8 @@ export function buildBrandSeo(stats: BrandSeoStats): CategorySeo | null {
 	const p2 = stats.roots.length >= 2 ? pick(p2Variants, s) : null;
 
 	const p3Variants = [
-		'Доставим по Казани бесплатно, отправим в любой регион России. Рассрочка 0% на 12 месяцев — оформление онлайн за 15 минут.',
-		'Все товары ${brand} можно увидеть вживую в нашем салоне на Чистопольской, 66, в Казани. Ежедневно с 9:00 до 21:00.'.replace(
+		'Доставим по {городу} бесплатно, отправим в любой регион России. Рассрочка 0% на 12 месяцев — оформление онлайн за 15 минут.',
+		'Все товары ${brand} можно увидеть вживую в нашем салоне на Чистопольской, 66. Ежедневно с 9:00 до 21:00.'.replace(
 			'${brand}',
 			stats.name
 		),
@@ -130,9 +132,9 @@ export function buildBrandSeo(stats: BrandSeoStats): CategorySeo | null {
 	];
 	const p3 = pick(p3Variants, s >> 3);
 
-	const paragraphs = [p1, ...(p2 ? [p2] : []), p3].filter(Boolean);
+	const paragraphs = [p1, ...(p2 ? [p2] : []), p3].filter(Boolean).map((t) => replaceCityPlaceholders(t));
 	return {
-		heading: `${stats.name} — купить в Казани с доставкой и гарантией`,
+		heading: replaceCityPlaceholders(`${stats.name} — купить в {городе} с доставкой и гарантией`),
 		paragraphs
 	};
 }

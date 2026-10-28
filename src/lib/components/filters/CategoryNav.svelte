@@ -187,7 +187,7 @@
   .group-item,
   .nav-item {
     border: 1px solid #eee;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #fafafa;
     overflow: hidden;
   }
@@ -218,8 +218,8 @@
   .group-link,
   .nav-item {
     flex: 1;
-    padding: 10px;
-    font-size: 14px;
+    padding: $sp-2;
+    font-size: 0.875rem;
     font-weight: 400;
     line-height: 1.2;
   }
@@ -281,16 +281,16 @@
   }
   .leaf-link {
     display: block;
-    padding: 10px;
+    padding: $sp-2;
     border: 1px solid #eee;
-    border-radius: 10px;
+    border-radius: 8px;
     background: #fafafa;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 400;
     line-height: 1.2;
     &:hover {
-      color: #111;
-      background: #f3f3f3;
+      color: #111827;
+      background: #f8fafc;
     }
     &.active {
       color: #111;

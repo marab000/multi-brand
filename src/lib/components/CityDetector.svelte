@@ -149,7 +149,7 @@
     border: none;
     background: transparent;
     color: #64748b;
-    font-size: 13px;
+    font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
     transition: color 0.15s ease;
@@ -192,7 +192,7 @@
       padding: 0 10px;
       border: 1px solid #e4e7ec;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 0.8125rem;
       outline: none;
       &:focus {
         border-color: $green;
@@ -214,7 +214,7 @@
     border-radius: 8px;
     background: transparent;
     color: #1d2939;
-    font-size: 13.5px;
+    font-size: 0.8125rem;
     font-weight: 600;
     text-align: left;
     cursor: pointer;
@@ -232,7 +232,7 @@
   .city-empty {
     padding: 14px 10px;
     color: #94a3b8;
-    font-size: 13px;
+    font-size: 0.8125rem;
     text-align: center;
     margin: 0;
   }
@@ -251,7 +251,7 @@
     width: 100%;
     max-width: 380px;
     padding: 32px 28px 28px;
-    border-radius: 20px;
+    border-radius: 16px;
     background: #fff;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
     text-align: center;
@@ -289,7 +289,7 @@
   }
   .city-modal h3 {
     margin: 0 0 24px;
-    font-size: 20px;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #111827;
     line-height: 1.3;
@@ -297,7 +297,7 @@
   .city-modal__actions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: $sp-2;
   }
   .city-modal__yes {
     display: inline-flex;
@@ -309,7 +309,7 @@
     border-radius: 12px;
     background: $green;
     color: #fff;
-    font-size: 15px;
+    font-size: 0.9375rem;
     font-weight: 700;
     cursor: pointer;
     transition: filter 0.15s ease;
@@ -323,7 +323,7 @@
     border-radius: 12px;
     background: #fff;
     color: #475569;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     transition: 0.15s ease;

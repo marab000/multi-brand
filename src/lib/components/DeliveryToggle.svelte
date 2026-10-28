@@ -54,8 +54,8 @@
     &__toggle {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 4px;
-      padding: 4px;
+      gap: $sp-1;
+      padding: $sp-1;
       border-radius: 12px;
       background: #f3f4f6;
 
@@ -63,13 +63,13 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 7px;
+        gap: $sp-2;
         height: 40px;
         border: 0;
-        border-radius: 9px;
+        border-radius: 8px;
         background: transparent;
         color: #6b7280;
-        font-size: 14px;
+        font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
         transition: background 0.15s ease, color 0.15s ease;
@@ -92,8 +92,8 @@
     &__info {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      margin-top: 12px;
+      gap: $sp-2;
+      margin-top: $sp-3;
     }
 
     &__info-icon {
@@ -102,7 +102,7 @@
       justify-content: center;
       width: 36px;
       height: 36px;
-      border-radius: 10px;
+      border-radius: 8px;
       background: rgba($green, 0.08);
       color: $green;
       flex-shrink: 0;
@@ -110,14 +110,14 @@
 
     &__info-title {
       margin: 0;
-      font-size: 14px;
+      font-size: 0.875rem;
       font-weight: 700;
       color: #111827;
     }
 
     &__info-text {
       margin: 2px 0 0;
-      font-size: 13px;
+      font-size: 0.8125rem;
       line-height: 1.4;
       color: #667085;
     }

@@ -120,7 +120,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: 0.875rem;
     color: #475569;
     input {
       width: 70px;
@@ -128,7 +128,7 @@
       padding: 0 10px;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 0.875rem;
       &:focus {
         outline: none;
         border-color: $green;

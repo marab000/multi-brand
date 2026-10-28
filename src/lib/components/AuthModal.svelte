@@ -161,9 +161,9 @@
     max-width: 380px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: $sp-2;
     padding: 24px;
-    border-radius: 18px;
+    border-radius: 16px;
     background: #fff;
     box-shadow: 0 18px 60px rgba(0, 0, 0, 0.18);
     h2 {

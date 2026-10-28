@@ -111,7 +111,7 @@
   .messenger {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: $sp-2;
 
     text-decoration: none;
 
@@ -159,7 +159,7 @@
 
       color: #161616;
 
-      font-size: 13px;
+      font-size: 0.8125rem;
       font-weight: 600;
       line-height: 1;
 

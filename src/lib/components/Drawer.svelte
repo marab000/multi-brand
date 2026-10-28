@@ -107,7 +107,7 @@
       width: 36px;
       height: 36px;
       border: 0;
-      border-radius: 10px;
+      border-radius: 8px;
       background: #f1f5f9;
       cursor: pointer;
     }

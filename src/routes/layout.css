@@ -26,12 +26,40 @@ input[type='radio']:focus-visible {
 /* Кнопка-действие в тостах (svelte-sonner): зелёная, в стиле сайта вместо чёрной.
    Специфичность и !important — потому что sonner красит своей инжектируемой таблицей. */
 li[data-sonner-toast] [data-button] {
-  background: #3fae5a !important;
+  background: #3e6f4f !important;
   color: #fff !important;
   border: none !important;
   border-radius: 8px !important;
   font-weight: 600;
 }
 li[data-sonner-toast] [data-button]:hover {
-  background: #35994e !important;
+  background: #35603f !important;
+}
+
+/* Тосты (svelte-sonner): без richColors, фирменная палитра (токены variables.scss:
+   $green-light #3e6f4f, $accent-red #e31b23, $warning-dark #b45309, $green #0f3d1f).
+   Специфичность и !important — sonner красит своей инжектируемой таблицей. */
+li[data-sonner-toast] {
+  background: #fff !important;
+  color: #111827 !important;
+  border: 1px solid #e9ece8 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(15, 61, 31, 0.12) !important;
+  font-size: 0.875rem;
+}
+li[data-sonner-toast][data-type='success'] {
+  border-color: rgba(62, 111, 79, 0.45) !important;
+}
+li[data-sonner-toast][data-type='success'] [data-icon] {
+  color: #3e6f4f !important;
+}
+li[data-sonner-toast][data-type='error'] {
+  border-color: rgba(227, 27, 35, 0.4) !important;
+}
+li[data-sonner-toast][data-type='error'] [data-icon] {
+  color: #e31b23 !important;
+}
+li[data-sonner-toast][data-type='warning'] [data-icon],
+li[data-sonner-toast][data-type='info'] [data-icon] {
+  color: #b45309 !important;
 }

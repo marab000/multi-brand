@@ -170,26 +170,26 @@
     }
 
     &__about {
-      margin-top: 12px;
+      margin-top: $sp-3;
       font-size: 0.8125rem;
       line-height: 1.55;
       color: #94a3b8;
     }
 
     &__contacts {
-      margin-top: 16px;
+      margin-top: $sp-4;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: $sp-2;
     }
 
     &__contact {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13.5px;
+      gap: $sp-2;
+      font-size: 0.8125rem;
       font-weight: 600;
-      color: #e2e8f0;
+      color: #cbd5e1;
       text-decoration: none;
 
       :global(svg) {
@@ -206,7 +206,7 @@
       font-size: 0.875rem;
       font-weight: 700;
       color: #fff;
-      margin: 0 0 12px;
+      margin: 0 0 $sp-3;
       text-transform: uppercase;
       letter-spacing: 0.04em;
 
@@ -237,15 +237,16 @@
     }
 
     &__links {
+      animation: drop-in 0.15s ease;
       list-style: none;
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: $sp-2;
 
       a {
-        font-size: 13.5px;
+        font-size: 0.8125rem;
         color: #94a3b8;
         text-decoration: none;
         transition: color 0.15s ease;
@@ -279,22 +280,22 @@
     &__bottom {
       p {
         margin: 0;
-        font-size: 12.5px;
+        font-size: 0.75rem;
         color: #94a3b8;
       }
     }
 
     &__disclaimer {
       max-width: 900px;
-      font-size: 11.5px !important;
+      font-size: 0.6875rem !important;
       line-height: 1.5;
       color: #64748b !important;
     }
 
     &__messengers {
       display: flex;
-      gap: 12px;
-      margin-top: 12px;
+      gap: $sp-3;
+      margin-top: $sp-3;
 
       a {
         display: flex;
@@ -302,7 +303,7 @@
         justify-content: center;
         width: 38px;
         height: 38px;
-        border-radius: 10px;
+        border-radius: 8px;
         background: rgba(255, 255, 255, 0.08);
         transition: background 0.15s;
 

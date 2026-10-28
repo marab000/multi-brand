@@ -187,7 +187,7 @@
   .video-card {
     position: absolute;
     overflow: hidden;
-    border-radius: 14px;
+    border-radius: 12px;
     background: #000;
 
     @media (min-width: 480px) {

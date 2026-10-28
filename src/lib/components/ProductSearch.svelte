@@ -246,7 +246,7 @@
         transform: translateY(-50%);
         height: 38px;
         width: 38px;
-        border-radius: 10px;
+        border-radius: 8px;
         border: none;
         background: linear-gradient(135deg, $green-soft, $green-light);
         color: #fff;
@@ -296,7 +296,7 @@
       right: 0;
       z-index: 50;
       background: #fff;
-      border-radius: 14px;
+      border-radius: 12px;
       border: 1px solid #eee;
       box-shadow: 0 15px 30px rgba(0, 0, 0, 0.06);
       overflow: hidden;
@@ -327,7 +327,7 @@
         align-items: center;
       }
       .name {
-        font-size: 14px;
+        font-size: 0.875rem;
         font-weight: 500;
       }
       .brand {
@@ -357,7 +357,7 @@
   }
   .all {
     padding: 12px 16px;
-    font-size: 14px;
+    font-size: 0.875rem;
     border-top: 1px solid #eee;
     border-top-right-radius: 0;
     border-top-left-radius: 0;

@@ -166,14 +166,14 @@
     }
     .filter-block {
       border: 1px solid #eee;
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
       background: #fff;
       @media (min-width: 1024px) {
         &:first-child {
           margin-top: 0;
         }
-        margin: 20px 0;
+        margin: $sp-4 0;
       }
       @media (max-width: 1023px) {
         margin: 12px 0;
@@ -183,18 +183,18 @@
         justify-content: space-between;
         align-items: center;
         width: 100%;
-        padding: 12px 14px;
+        padding: $sp-3 $sp-3;
         font-weight: 600;
         background: #fafafa;
       }
       .filter-content {
         &:not(.scroll) {
-          padding: 10px 12px;
+          padding: $sp-2 $sp-3;
         }
         &.scroll {
-          padding: 10px 0 12px 10px;
+          padding: $sp-2 0 $sp-3 $sp-2;
           :global(.group) {
-            margin-right: 10px;
+            margin-right: $sp-2;
           }
         }
         :global(.filter-body) {
@@ -205,14 +205,14 @@
         }
         :global(.group) {
           border: 1px solid #eee;
-          border-radius: 10px;
+          border-radius: 8px;
           overflow: hidden;
         }
         :global(.row) {
           display: flex;
           align-items: center;
-          gap: 10px;
-          padding: 10px;
+          gap: $sp-2;
+          padding: $sp-2;
           background: #fafafa;
           cursor: pointer;
           &:hover {
@@ -243,7 +243,7 @@
           justify-content: flex-start;
           text-align: left;
           width: 100%;
-          gap: 10px;
+          gap: $sp-2;
           padding: 8px 8px 8px 20px;
           cursor: pointer;
           &:hover {
@@ -261,7 +261,7 @@
     .reset-btn {
       margin-top: 10px;
       padding: 12px;
-      border-radius: 10px;
+      border-radius: 8px;
       border: none;
       background: $yellow;
       font-weight: 600;

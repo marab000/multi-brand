@@ -414,7 +414,7 @@
                 {#if isGroupHead}
                   <div class="wizard__dd">
                     {#if openGroup === s.key}
-                      <div class="wizard__dd-list">
+                      <div class="wizard__dd-list anim-drop-in">
                         {#each g.options as o (o.key)}
                           <button
                             type="button"
@@ -551,7 +551,7 @@
           </div>
 
           {#if swapOpen === i.slot}
-            <div class="wizard__swaps">
+            <div class="wizard__swaps anim-drop-in">
               {#each result.picks.find((p) => p.slot === i.slot)?.alternatives ?? [] as alt (alt.id)}
                 <button
                   type="button"
@@ -1055,7 +1055,7 @@
       }
       &.active {
         border-color: $green;
-        background: #fff;
+        background: rgba($green, 0.1);
         color: $green;
       }
     }
@@ -1680,6 +1680,9 @@
     }
     details[open] summary::before {
       content: '−';
+    }
+    details[open] > *:not(summary) {
+      animation: drop-in 0.15s ease;
     }
     details p {
       padding: 0 16px 16px 44px;

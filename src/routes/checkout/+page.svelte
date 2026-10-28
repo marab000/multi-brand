@@ -341,37 +341,37 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 36px 20px 32px;
+      padding: $sp-8 $sp-4;
       border: 1px solid #e9ece8;
       border-radius: 16px;
       background: linear-gradient(180deg, #fff 0%, #f8faf8 100%);
       text-align: center;
       h2 {
-        margin: 0 0 12px;
-        font-size: 42px;
+        margin: 0 0 $sp-3;
+        font-size: 2.625rem;
         line-height: 1;
         font-weight: 700;
         letter-spacing: -0.04em;
       }
       p {
         max-width: 420px;
-        margin: 0 0 24px;
+        margin: 0 0 $sp-6;
         color: #667085;
-        font-size: 17px;
+        font-size: 1rem;
         line-height: 1.5;
       }
       .btn {
         min-width: 220px;
         height: 52px;
         border-radius: 16px;
-        font-size: 15px;
+        font-size: 0.9375rem;
         font-weight: 700;
       }
     }
     .subtitle {
-      margin: 0 0 16px;
+      margin: 0 0 $sp-4;
       color: #667085;
-      font-size: 15px;
+      font-size: 0.9375rem;
     }
     .cart {
       grid-template-columns: minmax(0, 1fr) 340px;
@@ -385,8 +385,8 @@
     .block {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding: 16px;
+      gap: $sp-3;
+      padding: $sp-4;
       border: 1px solid #eee;
       border-radius: 12px;
       background: #fff;
@@ -395,11 +395,11 @@
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        gap: 8px;
+        gap: $sp-2;
 
         h2 {
           margin: 0;
-          font-size: 15px;
+          font-size: 0.9375rem;
           font-weight: 700;
           color: #111827;
         }
@@ -407,7 +407,7 @@
 
       &__link {
         color: $green;
-        font-size: 13px;
+        font-size: 0.8125rem;
         font-weight: 600;
         text-decoration: none;
         &:hover {
@@ -418,12 +418,12 @@
     .fields {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: $sp-2;
     }
     .fields-row {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
+      gap: $sp-2;
     }
     .comment {
       min-height: 84px;
@@ -432,22 +432,22 @@
     .hint {
       margin: 0;
       color: #9ca3af;
-      font-size: 12.5px;
+      font-size: 0.8125rem;
       line-height: 1.4;
     }
     .order-items {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: $sp-2;
     }
     .item {
       display: grid;
       grid-template-columns: 64px minmax(0, 1fr) auto;
       align-items: center;
-      gap: 14px;
-      padding: 8px;
+      gap: $sp-3;
+      padding: $sp-2;
       border: 1px solid #f1f1f1;
-      border-radius: 10px;
+      border-radius: 8px;
       background: #fafafa;
     }
     .image-link {
@@ -467,7 +467,7 @@
     }
     .name {
       display: inline-block;
-      font-size: 13.5px;
+      font-size: 0.8125rem;
       font-weight: 600;
       line-height: 1.3;
       color: inherit;
@@ -484,24 +484,24 @@
     }
     .sum {
       margin: 0;
-      font-size: 14.5px;
+      font-size: 0.875rem;
       font-weight: 700;
       white-space: nowrap;
     }
     .payment-opts {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: $sp-2;
     }
     .payment-opt {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 0 14px;
+      gap: $sp-2;
+      padding: 0 $sp-3;
       height: 42px;
       border: 1.5px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 13.5px;
+      border-radius: 8px;
+      font-size: 0.8125rem;
       font-weight: 600;
       color: #374151;
       cursor: pointer;
@@ -525,8 +525,8 @@
     .sidebar-card {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding: 16px;
+      gap: $sp-3;
+      padding: $sp-4;
       border: 1px solid #eee;
       border-radius: 12px;
       background: #fff;
@@ -535,7 +535,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      padding: 12px;
+      padding: $sp-3;
       border: 1px solid #f0dfa8;
       border-radius: 12px;
       background: #fef9e7;
@@ -544,7 +544,7 @@
         align-items: center;
         gap: 6px;
         color: #a16207;
-        font-size: 13.5px;
+        font-size: 0.8125rem;
         font-weight: 700;
         :global(svg.bonus-icon) {
           color: #e6a73c;
@@ -553,24 +553,24 @@
       &__sum {
         margin: 0;
         color: #111827;
-        font-size: 14px;
+        font-size: 0.875rem;
         font-weight: 700;
       }
     }
     .rows {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: $sp-2;
     }
     .row {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      gap: 8px;
-      font-size: 13.5px;
+      gap: $sp-2;
+      font-size: 0.8125rem;
       color: #374151;
       b {
-        font-size: 15px;
+        font-size: 0.9375rem;
         color: #111827;
         white-space: nowrap;
       }
@@ -580,7 +580,7 @@
       &--result {
         padding-top: 8px;
         border-top: 1px solid #f1f1f1;
-        font-size: 15px;
+        font-size: 0.9375rem;
         font-weight: 700;
         color: #111827;
         b {
@@ -589,14 +589,14 @@
       }
       &__free {
         color: $green;
-        font-size: 13.5px;
+        font-size: 0.8125rem;
       }
     }
     .agree {
       display: flex;
       align-items: flex-start;
-      gap: 8px;
-      font-size: 12.5px;
+      gap: $sp-2;
+      font-size: 0.8125rem;
       line-height: 1.45;
       color: #667085;
       cursor: pointer;
@@ -612,7 +612,7 @@
       .actions {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: $sp-2;
         .btn {
           justify-content: center;
         }
@@ -623,7 +623,7 @@
           gap: 6px;
           margin: 0;
           color: #9ca3af;
-          font-size: 12.5px;
+          font-size: 0.8125rem;
           a {
             color: #374151;
             font-weight: 600;
@@ -645,7 +645,7 @@
           font-size: 32px;
         }
         p {
-          font-size: 15px;
+          font-size: 0.9375rem;
         }
       }
       .sidebar {

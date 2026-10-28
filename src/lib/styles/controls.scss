@@ -1,6 +1,21 @@
 @use './variables' as *;
 @use 'sass:color';
 
+// появление дропдаунов/раскрытых аккордеонов: лёгкий выезд сверху
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-$sp-1);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.anim-drop-in {
+  animation: drop-in 0.15s ease;
+}
+
 button {
   cursor: pointer;
   &:focus-visible {
@@ -84,6 +99,8 @@ input[type='radio'] {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: $sp-2;
+  white-space: nowrap;
   transition: 0.2s;
   cursor: pointer;
   &.primary {
@@ -91,6 +108,18 @@ input[type='radio'] {
     color: white;
     &:hover:not(.disabled):not(:disabled) {
       background-color: color.scale($green-light, $lightness: -30%);
+    }
+  }
+  // зелёная outline-кнопка («В корзину» на сайте): ховер — лёгкая зелёная
+  // заливка + текст в цвет рамки, без полной заливки
+  &.outline {
+    border: 1px solid $green;
+    background: transparent;
+    color: #111827;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover:not(:disabled) {
+      background: rgba($green, 0.1);
+      color: $green;
     }
   }
   &.secondary {
@@ -112,6 +141,54 @@ input[type='radio'] {
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
+  }
+}
+
+// Счётчик количества в корзине (− qty +): один на весь сайт — карточка каталога,
+// страница товара, корзина. Стили повторяют outline-кнопку «В корзину»:
+// та же высота 34px, обводка 2px, ховер — лёгкая зелёная заливка.
+.cart-counter {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  align-items: stretch;
+  height: 34px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid $yellow;
+  border-radius: 8px;
+  background: transparent;
+  color: #111827;
+  font-weight: 700;
+  line-height: 1;
+  button,
+  span {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  button {
+    border: 0;
+    color: #111827;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:first-child {
+      border-right: 1px solid $yellow;
+    }
+    &:last-child {
+      border-left: 1px solid $yellow;
+    }
+    &:hover {
+      background: rgba($yellow, 0.12);
+      color: #111827;
+    }
+  }
+  span {
+    font-size: 0.9375rem;
+    padding: 0 $sp-2;
   }
 }
 
