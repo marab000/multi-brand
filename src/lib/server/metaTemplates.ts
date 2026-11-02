@@ -6,10 +6,12 @@ import { replaceCityPlaceholders, requestCity } from '$lib/server/cityPlaceholde
 // из него. Ручные записи в seo_overrides всегда сильнее шаблона.
 //
 // Переменные шаблона: {название} {тип} {бренд} {цена} — товары,
-// {категория} — подкатегории, {город}/{города}/{городе} и прямые {Москва}... —
-// город (на основном сайте Казань).
+// {категория} — подкатегории, {категория} {бренд} — бренд+категория,
+// {город}/{города}/{городе} и прямые {Москва}... — город (на основном сайте Казань).
+// Алиасы из ТЗ сеошника: {category_name} = {категория}, {brand} = {бренд},
+// {city_in} = «в Казани», {city_to} = «в Казань», {store_name} = константа.
 
-export type MetaTemplateKind = 'product' | 'subcategory' | 'brand';
+export type MetaTemplateKind = 'product' | 'subcategory' | 'brand' | 'brand_category';
 
 export type MetaTemplates = Record<
 	`${MetaTemplateKind}_title` | `${MetaTemplateKind}_description`,
@@ -28,7 +30,11 @@ export const DEFAULT_TEMPLATES: MetaTemplates = {
 		'{категория} в {городе}: цены, характеристики, наличие. Доставка, гарантия, помощь в подборе. Купить в интернет-магазине Мультибренд.',
 	brand_title: 'Бытовая техника {бренд} — купить в {городе} | Мультибренд',
 	brand_description:
-		'Техника {бренд} в каталоге Мультибренд: модели, характеристики и цены. Выберите товары {бренд} с доставкой в {городе}.'
+		'Техника {бренд} в каталоге Мультибренд: модели, характеристики и цены. Выберите товары {бренд} с доставкой в {городе}.',
+	// ТЗ сеошника (02.11.2026): страницы «Бренд+Категория»
+	brand_category_title: '{category_name} {brand} — купить {city_in} | {store_name}',
+	brand_category_description:
+		'{category_name} {brand} в интернет-магазине {store_name}: модели, характеристики и цены. Закажите с доставкой {city_to}.'
 };
 
 const SETTINGS_KEY = 'seo_meta_templates';

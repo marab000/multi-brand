@@ -253,14 +253,36 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
     ? safeCanonical(metaO.canonical, locals.siteOrigin)
     : safeCanonical(hasAppliedFilters || page > 1 ? categoryPath : url.pathname, locals.siteOrigin);
 
-  // Шаблон авто-меты для чистых категорий/подкатегорий (без фильтров и поиска):
+  // Шаблон авто-меты для чистых категорий/подкатегорий (без фильтров и поиска),
+  // а также для страниц «Бренд+Категория» (единственный фильтр — один бренд):
   // ручная запись seo_overrides сильнее шаблона, шаблон сильнее автогенерации
   let tplTitle: string | null = null;
   let tplDescription: string | null = null;
-  if (!isSearchPage && !hasAppliedFilters && currentRoot) {
+  let tplH1: string | null = null;
+  if (!isSearchPage && currentRoot) {
     const tpl = await getMetaTemplates();
-    tplTitle = applyMetaTemplate(tpl.subcategory_title, { категория: title });
-    tplDescription = applyMetaTemplate(tpl.subcategory_description, { категория: title });
+    const onlyBrandFilter =
+      brands.length === 1 &&
+      !hasSearch &&
+      selectedTypes.length === 0 &&
+      colors.length === 0 &&
+      priceMin == null &&
+      priceMax == null &&
+      !specs;
+    if (onlyBrandFilter) {
+      tplH1 = `${title} ${brands[0]}`;
+      tplTitle = applyMetaTemplate(tpl.brand_category_title, {
+        категория: title,
+        бренд: brands[0]
+      });
+      tplDescription = applyMetaTemplate(tpl.brand_category_description, {
+        категория: title,
+        бренд: brands[0]
+      });
+    } else if (!hasAppliedFilters) {
+      tplTitle = applyMetaTemplate(tpl.subcategory_title, { категория: title });
+      tplDescription = applyMetaTemplate(tpl.subcategory_description, { категория: title });
+    }
     if (page > 1 && tplTitle) tplTitle = `${tplTitle} — страница ${page}`;
   }
 
@@ -288,7 +310,8 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
     excludedBrands,
     // через ||, а не ??: в seo_overrides бывают пустые строки — они не должны глушить шаблон
     seoTitle: metaO?.title || tplTitle,
-    seoH1: metaO?.h1 ?? null,
+    // через ||, а не ??: пустые строки в seo_overrides не должны глушить шаблон
+    seoH1: metaO?.h1 || tplH1,
     canonical,
     metaDescription: metaO?.description || tplDescription || autoDescription,
     products,

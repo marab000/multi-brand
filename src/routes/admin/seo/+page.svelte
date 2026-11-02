@@ -123,7 +123,9 @@
     subcategory_title: '',
     subcategory_description: '',
     brand_title: '',
-    brand_description: ''
+    brand_description: '',
+    brand_category_title: '',
+    brand_category_description: ''
   });
   let templatesStatus = $state('');
   let templatesOpen = $state(false);
@@ -190,8 +192,10 @@
       <p class="hint">
         Автоформирование мета-тегов для страниц, где нет ручных записей. Переменные:
         {'{'}название{'}'}, {'{'}тип{'}'}, {'{'}бренд{'}'}, {'{'}цена{'}'} — товары;
-        {'{'}категория{'}'} — подкатегории; {'{'}город{'}'}, {'{'}города{'}'}, {'{'}городе{'}'},
-        {'{'}Москва{'}'} и т.п. — город (сейчас Казань). Ручные записи (в списке ниже и через
+        {'{'}категория{'}'} — подкатегории; {'{'}категория{'}'} {'{'}бренд{'}'} — бренд+категория;
+        {'{'}город{'}'}, {'{'}города{'}'}, {'{'}городе{'}'}, {'{'}Москва{'}'} и т.п. — город (сейчас
+        Казань); алиасы: {'{'}category_name{'}'}, {'{'}brand{'}'}, {'{'}city_in{'}'} («в Казани»),
+        {'{'}city_to{'}'} («в Казань»), {'{'}store_name{'}'}. Ручные записи (в списке ниже и через
         импорт) сильнее шаблонов.
       </p>
       <label>
@@ -217,6 +221,14 @@
       <label>
         <span>Бренды: description</span>
         <textarea rows="3" bind:value={templates.brand_description}></textarea>
+      </label>
+      <label>
+        <span>Бренд+категория: title</span>
+        <textarea rows="2" bind:value={templates.brand_category_title}></textarea>
+      </label>
+      <label>
+        <span>Бренд+категория: description</span>
+        <textarea rows="3" bind:value={templates.brand_category_description}></textarea>
       </label>
       <div class="templates__actions">
         <button type="button" class="btn-tool btn-tool--save" onclick={saveTemplates}>
