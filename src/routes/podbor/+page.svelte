@@ -66,12 +66,31 @@
     ].filter((g) => g.brands.length > 0 && g.name === (tier === 4 ? 'Премиум' : 'Оптимальный'))
   );
     let brands = $state<string[]>([]);
+  let openFaq = $state<number | null>(null);
   let leadName = $state('');
   let leadPhone = $state('');
   let leadLoading = $state(false);
   let leadSent = $state(false);
   let leadOpen = $state(false);
   // FAQPage-разметка для поисковиков (rich results по вопросам конструктора)
+  const faq = [
+    {
+      q: 'Как собрать комплект кухонной техники?',
+      a: 'Ответьте на четыре вопроса конструктора: отметьте нужную технику (варочная панель, духовой шкаф, вытяжка, посудомоечная машина и ещё 8 категорий), выберите уровень бюджета, бренды и цвет. Подборщик соберёт комплект за минуту, а каждый товар можно заменить альтернативой из каталога.'
+    },
+    {
+      q: 'Чем выгодна покупка техники комплектом?',
+      a: 'Менеджер подберёт аналог, если товара не будет в наличии, и зафиксирует цены комплекта после подбора, ничего считать не нужно. Оформление через короткую заявку: менеджер свяжется, подтвердит детали и забронирует товары по актуальной цене.'
+    },
+    {
+      q: 'Какие бренды техники участвуют в подборе?',
+      a: 'Korting, Haier, GORENJE, BOSCH, NEFF, SIEMENS, LIEBHERR, SMEG, ASKO, Kuppersbusch и другие производители — от доступных моделей до премиум-сегмента. Список брендов расширяется, а оборудование поставляется официально и с гарантией.'
+    },
+    {
+      q: 'Вы доставляете комплекты по Казани?',
+      a: 'Да, доставляем по Казани и Республике Татарстан. Посмотреть технику вживую можно в офлайн-магазине Мультибренд на ул. Чистопольская, 66 — ежедневно с 9:00 до 21:00.'
+    }
+  ];
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -663,39 +682,24 @@
     </div>
   </details>
 
-  <h3 id="faq">Частые вопросы</h3>  <div class="podbor-seo__faq">
-    <details>
-      <summary>Как собрать комплект кухонной техники?</summary>
-      <p>
-        Ответьте на четыре вопроса конструктора: отметьте нужную технику (варочная панель, духовой
-        шкаф, вытяжка, посудомоечная машина и ещё 8 категорий), выберите уровень бюджета, бренды и
-        цвет. Подборщик соберёт комплект за минуту, а каждый товар можно заменить альтернативой из
-        каталога.
-      </p>
-    </details>
-    <details>
-      <summary>Чем выгодна покупка техники комплектом?</summary>
-      <p>
-        Менеджер подберёт аналог, если товара не будет в наличии, и зафиксирует цены комплекта
-        после подбора, ничего считать не нужно. Оформление через короткую заявку: менеджер свяжется,
-        подтвердит детали и забронирует товары по актуальной цене.
-      </p>
-    </details>
-    <details>
-      <summary>Какие бренды техники участвуют в подборе?</summary>
-      <p>
-        Korting, Haier, GORENJE, BOSCH, NEFF, SIEMENS, LIEBHERR, SMEG, ASKO, Kuppersbusch и другие
-        производители — от доступных моделей до премиум-сегмента. Список брендов расширяется, а
-        оборудование поставляется официально и с гарантией.
-      </p>
-    </details>
-    <details>
-      <summary>Вы доставляете комплекты по Казани?</summary>
-      <p>
-        Да, доставляем по Казани и Республике Татарстан. Посмотреть технику вживую можно в
-        офлайн-магазине Мультибренд на ул. Чистопольская, 66 — ежедневно с 9:00 до 21:00.
-      </p>
-    </details>
+  <h3 id="faq">Частые вопросы</h3>
+  <div class="podbor-seo__faq">
+    {#each faq as f, i (f.q)}
+      <div class="podbor-seo__faq-item" class:open={openFaq === i}>
+        <button
+          type="button"
+          class="podbor-seo__faq-q"
+          aria-expanded={openFaq === i}
+          onclick={() => (openFaq = openFaq === i ? null : i)}
+        >
+          <span>{f.q}</span>
+          <ChevronDown size={16} strokeWidth={2.2} />
+        </button>
+        {#if openFaq === i}
+          <p class="podbor-seo__faq-a" transition:slide={{ duration: 200 }}>{f.a}</p>
+        {/if}
+      </div>
+    {/each}
   </div>
 </section>
 
@@ -1681,8 +1685,52 @@
     details[open] summary::before {
       content: '−';
     }
-    details[open] > *:not(summary) {
-      animation: drop-in 0.15s ease;
+    &__faq-item {
+      background: #fff;
+      border: 1px solid #e4e7ec;
+      border-radius: 12px;
+      overflow: hidden;
+      &.open {
+        border-color: #d4d8de;
+      }
+    }
+    &__faq-q {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $sp-2;
+      width: 100%;
+      padding: $sp-3 $sp-4;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #111827;
+      :global(svg) {
+        flex-shrink: 0;
+        color: #6b7280;
+        transition: transform 0.2s ease;
+      }
+      &:hover {
+        background: #f8fafc;
+      }
+    }
+    &.open &__faq-q {
+      color: #14532d;
+      :global(svg) {
+        transform: rotate(180deg);
+        color: $green;
+      }
+    }
+    &__faq-a {
+      margin: 0;
+      padding: 0 $sp-4 $sp-3;
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      color: #374151;
     }
     details p {
       padding: 0 16px 16px 44px;

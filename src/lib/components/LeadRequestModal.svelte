@@ -4,12 +4,16 @@
   import { apiFetch } from '$lib/api';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
-  let { open = $bindable(false) } = $props<{ open?: boolean }>();
+  let { open = $bindable(false), prefill = '' } = $props<{ open?: boolean; prefill?: string }>();
   let name = $state('');
   let phone = $state('');
   let message = $state('');
   let agree = $state(false);
   let loading = $state(false);
+  // открывая форму с prefill, подставляем его в сообщение (квиз на главной и т.п.)
+  $effect(() => {
+    if (open && prefill) message = prefill;
+  });
   const reachGoal = (goal: string) => {
     if (typeof window === 'undefined') return;
     window.ym?.(108518016, 'reachGoal', goal);

@@ -27,6 +27,7 @@
   import ProductCard from '$lib/components/ProductCard.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
+  import SelectionQuiz from '$lib/components/SelectionQuiz.svelte';
   import { imgUrl } from '$lib/s3Public';
   import grandexLogo from '$lib/assets/brands/Grandex Aqua.webp';
   import grandexMoiki from '$lib/assets/promo/grandex-moiki.webp';
@@ -192,6 +193,7 @@
 
 <!-- если все слайды скрыты — блока нет вовсе: aspect-ratio на секции держал бы пустое место -->
 {#if mobileImages.length || desktopImages.length}
+  <h1 class="sr-only">Бытовая техника в Казани — интернет-магазин «Мультибренд»</h1>
   <section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
     {#if mobileImages.length}
       <div class="block lg:hidden">
@@ -257,6 +259,10 @@
       <ProductCard product={hit} />
     {/each}
   </div>
+</section>
+
+<section class="mx-auto">
+  <SelectionQuiz />
 </section>
 
 <section class="mx-auto">
@@ -530,7 +536,6 @@
 
 <section class="about-seo mx-auto">
   <div class="about-seo__inner">
-    <h1 class="seo-h1">Бытовая техника в Казани — интернет-магазин «Мультибренд»</h1>
     <p>
       Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации
       кухни и дома современной бытовой техникой в Казани. Мы собрали в одном каталоге продукцию
@@ -1426,14 +1431,6 @@
     h2 {
       margin: 0 0 16px;
       font-size: 1.6rem;
-      font-weight: 700;
-      line-height: 1.2;
-      color: #111827;
-    }
-    /* H1 страницы: живёт в конце страницы как SEO-описание, стилистически крупнее h2 */
-    .seo-h1 {
-      margin: 0 0 16px;
-      font-size: 1.5rem;
       font-weight: 700;
       line-height: 1.2;
       color: #111827;
