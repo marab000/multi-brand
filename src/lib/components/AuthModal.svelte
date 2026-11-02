@@ -14,6 +14,24 @@
   let email = '';
   let phone = '';
   let password = '';
+  let forgot = false;
+  let forgotEmail = '';
+  let forgotSent = false;
+  let forgotLoading = false;
+  async function sendForgot() {
+    if (!forgotEmail.includes('@') || forgotLoading) return;
+    forgotLoading = true;
+    try {
+      await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail })
+      });
+      forgotSent = true;
+    } finally {
+      forgotLoading = false;
+    }
+  }
   let fullName = '';
   let loading = false;
 
@@ -100,7 +118,7 @@
   <div class="auth-overlay" on:click={close}>
     <div class="auth-modal" on:click|stopPropagation>
       <button class="auth-close" type="button" on:click={close}>×</button>
-      <h2>{mode === 'login' ? 'Вход' : 'Регистрация'}</h2>
+      <h2>{forgot ? 'Восстановление пароля' : mode === 'login' ? 'Вход' : 'Регистрация'}</h2>
       {#if mode === 'register'}
         <input class="input primary" placeholder="Имя" bind:value={fullName} autocomplete="name" />
         <div class="with-prefix">
@@ -115,26 +133,45 @@
           />
         </div>
         <input class="input primary" placeholder="Email" bind:value={email} autocomplete="email" />
-      {:else}
+      {:else if !forgot}
         <input class="input primary" placeholder="Email" bind:value={login} autocomplete="email" />
+        <input
+          class="input primary"
+          type="password"
+          placeholder="Пароль"
+          bind:value={password}
+          autocomplete="current-password"
+          on:keydown={(e) => e.key === 'Enter' && handleAuth()}
+        />
+        <button class="btn primary" type="button" disabled={loading} on:click={handleAuth}
+          >{loading ? '...' : 'Войти'}</button
+        >
       {/if}
-      <input
-        class="input primary"
-        type="password"
-        placeholder="Пароль"
-        bind:value={password}
-        autocomplete={mode === 'login' ? 'current-password' : 'new-password'}
-        on:keydown={(e) => e.key === 'Enter' && handleAuth()}
-      />
-      <button class="btn primary" type="button" disabled={loading} on:click={handleAuth}
-        >{loading ? '...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}</button
-      >
-      {#if mode === 'login'}
+      {#if mode === 'login' && !forgot}
         <button
           class="btn secondary-with-border"
           type="button"
           on:click={() => switchMode('register')}>Нет аккаунта? Зарегистрироваться</button
         >
+        <button class="forgot-link" type="button" on:click={() => (forgot = true)}
+          >Забыли пароль?</button
+        >
+      {:else if forgot && !forgotSent}
+        <p class="forgot-hint">Введи почту, на которую регистрировался — пришлём ссылку для сброса.</p>
+        <input
+          class="input primary"
+          placeholder="Email"
+          bind:value={forgotEmail}
+          autocomplete="email"
+          on:keydown={(e) => e.key === 'Enter' && sendForgot()}
+        />
+        <button class="btn primary" type="button" disabled={forgotLoading} on:click={sendForgot}
+          >{forgotLoading ? 'Отправляем…' : 'Отправить ссылку'}</button
+        >
+        <button class="forgot-link" type="button" on:click={() => (forgot = false)}>Вернуться ко входу</button>
+      {:else if forgot}
+        <p class="forgot-hint">Письмо отправлено на {forgotEmail.toLowerCase()}. Проверь почту — ссылка действует 1 час.</p>
+        <button class="forgot-link" type="button" on:click={() => { forgot = false; forgotSent = false; }}>Вернуться ко входу</button>
       {:else}
         <button class="btn secondary-with-border" type="button" on:click={() => switchMode('login')}
           >Уже есть аккаунт? Войти</button
@@ -183,5 +220,25 @@
     font-size: 26px;
     line-height: 1;
     cursor: pointer;
+  }
+  .forgot-link {
+    border: 0;
+    background: none;
+    padding: 0;
+    color: #6b7280;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    &:hover {
+      color: $green;
+    }
+  }
+  .forgot-hint {
+    margin: 0;
+    color: #374151;
+    font-size: 0.8125rem;
+    line-height: 1.5;
   }
 </style>

@@ -286,3 +286,42 @@ export async function sendLeadEmail(lead: { name: string; phone: string; message
   if (res.error) throw res.error;
   return res;
 }
+
+/** Письмо со ссылкой на сброс пароля. Ссылка одноразовая, живёт 1 час. */
+export async function sendPasswordResetEmail(email: string, url: string) {
+	const contacts = await getContacts();
+	await resend.emails.send({
+		from: RESEND_FROM_EMAIL,
+		to: email,
+		subject: `Восстановление пароля ${SITE_NAME}`,
+		html: `
+      <!doctype html>
+      <html lang="ru">
+        <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>Восстановление пароля</title></head>
+        <body style="margin:0;padding:0;background:#f5f6f7;font-family:Arial,Helvetica,sans-serif;color:#202020;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f6f7;padding:28px 14px;">
+            <tr><td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #eeeeee;">
+                <tr><td style="padding:28px 30px 8px;">
+                  <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:800;color:#202020;">Восстановление пароля</h1>
+                </td></tr>
+                <tr><td style="padding:8px 30px 4px;">
+                  <p style="margin:0;font-size:15px;line-height:1.6;color:#374151;">
+                    Вы запросили сброс пароля на ${SITE_URL_NAME}. Нажмите кнопку — зададите новый пароль.
+                    Ссылка одноразовая и действует <b>1 час</b>. Если это были не вы — просто проигнорируйте письмо,
+                    ваш пароль не изменится.
+                  </p>
+                </td></tr>
+                <tr><td align="center" style="padding:20px 30px 8px;">
+                  <a href="${url}" target="_blank" style="display:inline-block;padding:14px 28px;border-radius:12px;background:#3e6f4f;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Задать новый пароль</a>
+                </td></tr>
+                <tr><td style="padding:8px 30px 24px;">
+                  <p style="margin:0;font-size:12px;line-height:1.5;color:#94a3b8;word-break:break-all;">Если кнопка не работает, скопируйте ссылку: ${url}</p>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+      </html>`
+	});
+}

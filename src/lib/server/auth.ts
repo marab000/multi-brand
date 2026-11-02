@@ -109,3 +109,44 @@ export async function validateSessionToken(token: string) {
 export async function deleteSessionByToken(token: string) {
   await sql`delete from user_sessions where token_hash = ${hashToken(token)}`;
 }
+
+// ─── Восстановление пароля ───
+
+const RESET_TTL_MIN = 60;
+
+/** Создаёт запрос сброса: одноразовый токен (в письме), в БД — sha256-хэш с TTL.
+ *  Возвращает токен или null, если юзера с такой почтой нет (наружу не отличаем). */
+export async function createPasswordReset(email: string) {
+	const normalized = email.trim().toLowerCase();
+	const rows =
+		await sql`select id from users where lower(email) = ${normalized} limit 1`;
+	if (!rows.length) return null;
+	const userId = rows[0].id as number;
+	const token = crypto.randomBytes(32).toString('base64url');
+	// старые запросы юзера гасим — живёт только последний
+	await sql`delete from password_resets where user_id = ${userId}`;
+	await sql`
+		insert into password_resets (user_id, token_hash, expires_at)
+		values (${userId}, ${hashToken(token)}, now() + make_interval(mins => ${RESET_TTL_MIN}))`;
+	return token;
+}
+
+/** Проверяет токен сброса (существует и не протух). Возвращает user_id или null. */
+export async function verifyPasswordReset(token: string): Promise<number | null> {
+	const rows = await sql`
+		select user_id from password_resets
+		where token_hash = ${hashToken(token)} and expires_at > now()
+		limit 1`;
+	return rows.length ? (rows[0].user_id as number) : null;
+}
+
+/** Применяет сброс: новый пароль + гасит токен и все сессии юзера. */
+export async function consumePasswordReset(token: string, newPassword: string) {
+	const userId = await verifyPasswordReset(token);
+	if (!userId) return false;
+	const password_hash = await hashPassword(newPassword);
+	await sql`update users set password_hash = ${password_hash} where id = ${userId}`;
+	await sql`delete from password_resets where user_id = ${userId}`;
+	await sql`delete from user_sessions where user_id = ${userId}`;
+	return true;
+}
