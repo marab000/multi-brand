@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ClipboardList, ChevronDown, ArrowRight } from 'lucide-svelte';
+  import { ChevronDown, ArrowRight } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
 
   // варианты — из блока «Какой комплект подойдёт вам?» ASKO-лендинга
@@ -43,15 +43,11 @@
 
 <div class="quiz">
   <div class="quiz__copy">
-    <div class="quiz__badge">
-      <ClipboardList size={13} strokeWidth={2.3} /><span>Начните с простого</span>
-    </div>
-    <h2>Какой комплект<br />подойдёт вам?</h2>
+    <h2>Больше времени<br />для жизни.<br /><span>Меньше — на быт.</span></h2>
     <p>
-      Расскажите о вашей задаче. Подготовим запрос на подбор с моделями, аксессуарами и перечнем
-      работ.
+      Подберём стиральную и сушильную машины ASKO под ваш дом. Организуем хранение до доставки,
+      установку и подключение.
     </p>
-    <p class="quiz__fine">Можно начать без точных размеров — уточним их перед заказом.</p>
   </div>
   <form class="quiz__fields" onsubmit={submit}>
     <label>
@@ -125,42 +121,29 @@
   .quiz__copy {
     display: flex;
     flex-direction: column;
-    gap: $sp-2;
-    @media (min-width: 1024px) {
-      gap: $sp-3;
-    }
+    gap: $sp-3;
     h2 {
       margin: 0;
       color: #171717;
-      font-size: 1.35rem;
-      line-height: 1.12;
+      font-size: 1.5rem;
+      line-height: 1.1;
       font-weight: 700;
       letter-spacing: -0.04em;
       @media (min-width: 1024px) {
-        font-size: 1.55rem;
+        font-size: 2rem;
+      }
+      // последняя строка — акцентом, как в ASKO-лендинге
+      span {
+        color: #{$green-light};
       }
     }
     p {
       margin: 0;
       max-width: 420px;
       color: #4b5563;
-      font-size: 0.875rem;
+      font-size: 0.9rem;
       line-height: 1.5;
     }
-  }
-  .quiz__badge {
-    display: inline-flex;
-    align-items: center;
-    gap: $sp-2;
-    width: fit-content;
-    min-height: 26px;
-    padding: 0 10px;
-    border: 1px solid rgba($green, 0.14);
-    border-radius: 999px;
-    background: rgba($green, 0.06);
-    color: $green;
-    font-size: 11.5px;
-    font-weight: 700;
   }
   .quiz__fine {
     color: #64748b;
