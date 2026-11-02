@@ -77,11 +77,17 @@
   };
 
   // Отзывы реальные (Яндекс/2ГИС) — размечаем честно, по одному на отзыв
+  // aggregateRating — общая оценка организации с Яндекс Карт (4,9; 23 отзыва на 31.10.2026)
   const reviewsSchema = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     '@id': 'https://multi-brand.online/#localbusiness',
     name: 'Мультибренд',
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: 23
+    },
     review: reviews.map((r) => ({
       '@type': 'Review',
       author: { '@type': 'Person', name: r.author },
