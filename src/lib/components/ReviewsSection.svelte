@@ -1,339 +1,254 @@
 <script lang="ts">
-  import { Star, MessageCircle } from 'lucide-svelte';
+  import { ArrowUpRight, MapPin } from 'lucide-svelte';
 
-  type Review = {
-    author: string;
-    date: string;
-    source: '2ГИС' | 'Яндекс';
-    url: string;
-    text: string;
-  };
-
-  const reviews: Review[] = [
-    {
-      author: 'Айнур Асатов',
-      date: '21 апреля 2026',
-      source: '2ГИС',
-      url: 'https://2gis.ru/reviews/70000001103891779/review/237493147',
-      text: 'Купили у MultiBrand кухонную технику марки Kuppersberg. Ребята всё сами привезли и установили. Всем им спасибо. Все отлично, рекомендую 👍'
-    },
-    {
-      author: 'Александр Макушкин',
-      date: '2 марта 2026',
-      source: 'Яндекс',
-      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=yzt619ttnmpr0m05x7uuqvee7r&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
-      text: 'Заказывали телевизор Samsung 75”. Всё чётко в срок, помогли с выбором и доставкой прямо до дверей, так как это был принципиальный вопрос из-за больших габаритов. Рекомендую!'
-    },
-    {
-      author: 'Ренат',
-      date: '24 января 2026',
-      source: '2ГИС',
-      url: 'https://2gis.ru/reviews/70000001103891779/review/214176851',
-      text: 'Впервые обратился в магазин Мультибренд, когда понадобилась новая стиральная машина. Консультант Александр спокойно объяснил различия между моделями и помог подобрать лучший вариант. Доставили быстро, впечатления только положительные.'
-    },
-    {
-      author: 'Дмитрий Альбертович',
-      date: '23 января 2026',
-      source: 'Яндекс',
-      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=0k9f1304yj71j6zt6ukag21n94&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
-      text: 'Заказывали большой холодильник и ни разу не пожалели. Было страшно покупать такую технику онлайн, но консультант подробно всё рассказал. Привезли аккуратно, всё проверили на месте.'
-    },
-    {
-      author: 'Денис Солянкин',
-      date: '25 января 2026',
-      source: '2ГИС',
-      url: 'https://2gis.ru/reviews/70000001103891779/review/214369071',
-      text: 'Хочу выразить огромную благодарность компании Мультибренд за отличную организацию покупки. Помогли подобрать технику под бюджет, всё привезли вовремя, аккуратно подняли и занесли. Очень достойный сервис.'
-    },
-    {
-      author: 'Альберт Хабреев',
-      date: '23 января 2026',
-      source: 'Яндекс',
-      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=c1jg4fxg5rdy94pbp33c9g70n4&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
-      text: 'Ребята настоящие профессионалы. Они помогают подобрать оптимальный вариант по цене и качеству, а не просто продают самое дорогое. Отличная компания и отличный сервис.'
-    },
-    {
-      author: 'Илья Буданов',
-      date: '24 января 2026',
-      source: '2ГИС',
-      url: 'https://2gis.ru/reviews/70000001103891779/review/214072505',
-      text: 'Нам посоветовали этот магазин. Менеджер Максим буквально за час помог собрать полный комплект техники для новой кухни. Учли все пожелания и бюджет. Получилось очень удобно и выгодно.'
-    },
-    {
-      author: 'Алмаз Милаев',
-      date: '23 января 2026',
-      source: 'Яндекс',
-      url: 'https://yandex.ru/maps/org/192917903315/reviews?reviews%5BpublicId%5D=503bfz5kzv77nn4hhkmhk7tbn8&si=0xmkztj7x8e76cb401ug55x0t8&utm_source=review',
-      text: 'Первый раз выбирал крупную бытовую технику и немного растерялся от количества моделей. Консультанты подробно всё объяснили, помогли определиться и подобрать именно то, что было нужно. Очень доволен покупкой.'
-    }
-  ];
-
-  let expandedReviews = new Set<number>();
-
-  const toggleReview = (index: number) => {
-    const next = new Set(expandedReviews);
-    next.has(index) ? next.delete(index) : next.add(index);
-    expandedReviews = next;
-  };
-
-  // Отзывы реальные (Яндекс/2ГИС) — размечаем честно, по одному на отзыв
-  // aggregateRating — общая оценка организации с Яндекс Карт (4,9; 23 отзыва на 31.10.2026)
-  const reviewsSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'LocalBusiness',
-    '@id': 'https://multi-brand.online/#localbusiness',
-    name: 'Мультибренд',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: 23
-    },
-    review: reviews.map((r) => ({
-      '@type': 'Review',
-      author: { '@type': 'Person', name: r.author },
-      url: r.url,
-      reviewBody: r.text,
-      reviewRating: { '@type': 'Rating', bestRating: 5, worstRating: 1, ratingValue: 5 }
-    }))
-  };
+  // Карточка организации на Яндекс Картах (та же, что была в старых отзывах)
+  const YANDEX_MAPS_URL = 'https://yandex.ru/maps/org/192917903315/';
+  // Карточка организации в 2ГИС (в Google Maps организации нет)
+  const GIS2_URL = 'https://2gis.ru/kazan/firm/70000001103891779';
 </script>
 
-<svelte:head>
-  {@html `<script type="application/ld+json">${JSON.stringify(reviewsSchema)}</script>`}
-</svelte:head>
-
-<section class="reviews-section mx-auto">
-  <div class="reviews-section__head">
-    <div>
-      <h2>Нас рекомендуют</h2>
-      <p>Более 100 покупателей уже поделились впечатлениями о работе нашего магазина.</p>
-    </div>
+<section class="reviews mx-auto">
+  <div class="reviews__head">
+    <h2>Отзывы, которые<br />можно проверить</h2>
+    <p>
+      Выбирайте с уверенностью. Читайте отзывы о магазине на независимых площадках или делитесь
+      своим опытом покупки.
+    </p>
   </div>
 
-  <div class="reviews-grid">
-    {#each reviews as review, index}
-      <article class="review-card">
-        <a
-          href={review.url}
-          target="_blank"
-          rel="noopener noreferrer nofollow"
-          class="review-card__link"
-          aria-label={`Отзыв ${review.author} — ${review.source}`}
-        >
-          <div class="review-card__top">
-            <div class="review-card__avatar">
-              {review.author.slice(0, 1)}
-            </div>
-
-            <div class="review-card__info">
-              <strong>{review.author}</strong>
-              <div class="review-card__meta">
-                <span>{review.date}</span>
-                <span class="review-source">{review.source}</span>
-              </div>
-            </div>
-          </div>
-        </a>
-
-        <div class="review-card__stars">
-          {#each Array(5) as _}
-            <Star size={15} fill="currentColor" strokeWidth={0} />
-          {/each}
+  <div class="reviews__grid">
+    <article class="platform">
+      <div class="platform__top">
+        <span class="platform__icon platform__icon--ya">
+          <MapPin size={26} strokeWidth={2.1} color="#fc3f1d" />
+        </span>
+        <div class="platform__name">
+          <strong>Яндекс Карты</strong>
+          <span>Независимая площадка</span>
         </div>
+        <ArrowUpRight class="platform__corner" size={20} strokeWidth={2} />
+      </div>
+      <h3>Впечатления клиентов.<br />Без лишних слов.</h3>
+      <p class="platform__desc">
+        Откройте карточку магазина, чтобы прочитать отзывы покупателей или рассказать о своём
+        заказе.
+      </p>
+      <a
+        class="platform__btn platform__btn--dark"
+        href={YANDEX_MAPS_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span>Читать отзывы на Яндекс Картах</span>
+        <ArrowUpRight size={18} strokeWidth={2.1} />
+      </a>
+    </article>
 
-        <p
-          class:review-card__text--collapsed={!expandedReviews.has(index) &&
-            review.text.length > 170}
-        >
-          {review.text}
-        </p>
-
-        {#if review.text.length > 170}
-          <button type="button" class="review-card__more" on:click={() => toggleReview(index)}>
-            {expandedReviews.has(index) ? 'Свернуть' : 'Читать полностью'}
-          </button>
-        {/if}
-      </article>
-    {/each}
+    <article class="platform">
+      <div class="platform__top">
+        <span class="platform__icon platform__icon--gis2">
+          <!-- официальный значок приложения 2ГИС -->
+          <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <path fill="#19AA1E" d="M0 0h18v18H0z" />
+            <path fill="#FFB919" fill-rule="evenodd" d="M0 0h18v5.906L0 3.094z" clip-rule="evenodd" />
+            <path fill="#82D714" fill-rule="evenodd" d="m0 16.03 18-2.812V18H0z" clip-rule="evenodd" />
+            <path
+              fill="#fff"
+              fill-rule="evenodd"
+              d="m0 2.738 6.283.982A5.05 5.05 0 0 1 9 2.953c1.39 0 2.64.52 3.55 1.435q.172.173.325.361L18 5.55v.712l-4.605-.72c.345.659.525 1.391.527 2.135 0 .964-.216 1.925-.662 2.89l-.013.03-.19.406h-.447c-.925 0-1.538.277-1.94.767-.314.384-.497.904-.558 1.47l-.002.017-.012.13-.008.077q-.035.38-.047.642L18 12.862v.712L0 16.387v-.712l7.966-1.245-.004-.16v-.044l-.002-.024v-.035a14 14 0 0 0-.054-.743l-.006-.057-.01-.099c-.056-.57-.236-1.095-.55-1.485-.397-.494-1.004-.774-1.922-.78h-.476l-.189-.406c-.455-.975-.675-1.946-.675-2.92 0-1.225.497-2.41 1.372-3.29l.076-.074L0 3.45z"
+              clip-rule="evenodd"
+            />
+            <path
+              fill="#0073FA"
+              fill-rule="evenodd"
+              d="M9 3.656c2.513 0 4.218 1.934 4.218 4.02 0 .838-.182 1.71-.609 2.624-2.472 0-3.082 1.77-3.198 2.885l-.008.074q-.058.597-.067.957l-.67.105v-.022q-.014-.532-.072-1.06l-.002-.02c-.107-1.113-.704-2.919-3.201-2.919-.427-.914-.61-1.786-.61-2.623C4.781 5.59 6.487 3.656 9 3.656"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </span>
+        <div class="platform__name">
+          <strong>2ГИС</strong>
+          <span>Независимая площадка</span>
+        </div>
+        <ArrowUpRight class="platform__corner" size={20} strokeWidth={2} />
+      </div>
+      <h3>Ваш опыт важен.<br />Поделитесь им.</h3>
+      <p class="platform__desc">
+        Посмотрите отзывы в 2ГИС. Если уже покупали у нас, будем рады вашему мнению.
+      </p>
+      <a
+        class="platform__btn platform__btn--light"
+        href={GIS2_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span>Читать отзывы в 2ГИС</span>
+        <ArrowUpRight size={18} strokeWidth={2.1} />
+      </a>
+    </article>
   </div>
 </section>
 
 <style lang="scss">
-  .reviews-section {
-    padding: 24px;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
-  }
-
-  .reviews-section__head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: $sp-4;
-    margin-bottom: 20px;
-
-    h2 {
-      margin: 8px 0 0;
-      font-size: 1.375rem;
-      font-weight: 700;
-      line-height: 1.15;
-      color: #111827;
-    }
-
-    p {
-      margin: 8px 0 0;
-      max-width: 620px;
-      font-size: 0.95rem;
-      color: #64748b;
-      line-height: 1.45;
+  .reviews {
+    padding: $sp-4;
+    border-radius: 24px;
+    background: #f1f3ef;
+    @media (min-width: 1024px) {
+      padding: $sp-8;
     }
   }
-
-  .reviews-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(280px, 86%);
-    gap: 16px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .review-card {
+  .reviews__head {
     display: flex;
     flex-direction: column;
-    min-height: 220px;
-    padding: 20px;
-    border: 1px solid rgba(15, 23, 42, 0.07);
-    border-radius: 16px;
-    background: #fff;
-    scroll-snap-align: start;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-    &:hover {
-      border-color: rgba($green, 0.4);
-      box-shadow: 0 8px 22px rgba($green, 0.08);
+    gap: $sp-3;
+    @media (min-width: 1024px) {
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: $sp-8;
     }
-
+    h2 {
+      margin: 0;
+      color: #171717;
+      font-size: 1.75rem;
+      line-height: 1.08;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      @media (min-width: 1024px) {
+        font-size: 2.75rem;
+      }
+    }
     p {
-      margin: 12px 0 0;
-      font-size: 0.9rem;
-      line-height: 1.45;
-      color: #334155;
+      margin: 0;
+      max-width: 440px;
+      color: #4b5563;
+      font-size: 0.9375rem;
+      line-height: 1.5;
     }
   }
-
-  .review-card__link {
-    text-decoration: none;
-    color: inherit;
+  .reviews__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $sp-3;
+    margin-top: $sp-4;
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+      gap: $sp-4;
+      margin-top: $sp-6;
+    }
   }
-
-  .review-card__top {
+  .platform {
     display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .review-card__info {
-    strong {
-      display: block;
-      font-size: 0.96rem;
-      font-weight: 700;
-      color: #111827;
+    flex-direction: column;
+    gap: $sp-3;
+    padding: $sp-4;
+    border-radius: 20px;
+    background: #fff;
+    @media (min-width: 1024px) {
+      padding: $sp-6;
     }
   }
-
-  .review-card__meta {
+  .platform__top {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-    flex-wrap: wrap;
-
-    span {
-      font-size: 0.76rem;
-      color: #64748b;
-      font-weight: 700;
-    }
+    gap: 14px;
   }
-
-  .review-source {
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: #f3f4f6;
-    color: #6b7280 !important;
-  }
-
-  .review-card__avatar {
+  .platform__icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 40px;
-    width: 40px;
-    height: 40px;
-    border-radius: 999px;
-    background: rgba($green, 0.08);
-    color: $green;
-    font-weight: 700;
-  }
-
-  .review-card__stars {
-    display: flex;
-    gap: 4px;
-    margin-top: 16px;
-    color: #ffb81c;
-  }
-
-  .review-card__text--collapsed {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-line-clamp: 4;
-    line-clamp: 4;
-    -webkit-box-orient: vertical;
-  }
-
-  .review-card__more {
-    margin-top: auto;
-    padding-top: 12px;
-    align-self: flex-start;
-    border: 0;
-    background: transparent;
-    color: $green;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  @media (max-width: 639px) {
-    .reviews-section {
-      padding: 16px;
-    }
-
-    .reviews-section__head {
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 14px;
+    background: #f8f9f7;
+    &--gis2 svg {
+      // цветной значок-квадрат 2ГИС: скругляем углы, как у иконки приложения
       display: block;
-
-      h2 {
-        font-size: 1.45rem;
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+    }
+  }
+  .platform__name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    strong {
+      color: #171717;
+      font-size: 1.075rem;
+      font-weight: 700;
+    }
+    span {
+      color: #6b7280;
+      font-size: 0.8125rem;
+    }
+  }
+  .platform__corner {
+    margin-left: auto;
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+  .platform h3 {
+    margin: $sp-2 0 0;
+    color: #171717;
+    font-size: 1.375rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    @media (max-width: 639px) {
+      font-size: 1.25rem;
+    }
+  }
+  .platform__desc {
+    margin: 0;
+    max-width: 460px;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .platform__btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $sp-2;
+    min-height: 52px;
+    margin-top: auto;
+    padding: 0 20px;
+    border-radius: 12px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      color 0.18s ease;
+    @media (max-width: 639px) {
+      padding: 0 14px;
+      // подпись в одну строку на узком экране
+      font-size: 0.8125rem;
+    }
+    span {
+      text-align: left;
+    }
+    &--dark {
+      // нейтральный чёрный как в макете (зелёных CTA на странице уже много)
+      background: #171717;
+      color: #fff;
+      &:hover {
+        background: #2d2d2d;
       }
     }
-  }
-
-  @media (min-width: 768px) {
-    .reviews-grid {
-      grid-auto-flow: initial;
-      grid-auto-columns: initial;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      overflow: visible;
-      padding-bottom: 0;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .reviews-grid {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+    &--light {
+      border: 1px solid #e2e5e2;
+      background: #fff;
+      color: #171717;
+      &:hover {
+        border-color: rgba($green, 0.5);
+        color: #{$green};
+      }
     }
   }
 </style>

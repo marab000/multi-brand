@@ -6,13 +6,15 @@
   <div class="ticker__track">
     {#each [0, 1] as copy (copy)}
       <div class="ticker__group">
-        <span class="ticker__item">Мы официальный партнёр брендов</span>
-        <span class="ticker__dot"></span>
-        <span class="ticker__item">Техника с гарантией производителя</span>
+        <span class="ticker__item">Техника с гарантией</span>
         <span class="ticker__dot"></span>
         <span class="ticker__item">Сервисная поддержка</span>
         <span class="ticker__dot"></span>
-        <span class="ticker__item">Бесплатная доставка в Казани</span>
+        <span class="ticker__item">Бесплатная доставка</span>
+        <span class="ticker__dot"></span>
+        <span class="ticker__item">Официальный партнер брендов</span>
+        <span class="ticker__dot"></span>
+        <span class="ticker__item">Бесплатное хранение</span>
         <span class="ticker__dot"></span>
       </div>
     {/each}
