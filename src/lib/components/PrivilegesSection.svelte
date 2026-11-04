@@ -693,7 +693,7 @@
       padding: 12px;
       border: 1px solid #eef0ee;
       border-radius: 14px;
-      box-shadow: 0 0 10px 0 #0000003b;
+      box-shadow: 0 0 15px 0 #00000010;
     }
 
     .pm-avatar {
