@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
+  let { data }: { data: { city?: string; meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   import { Truck, MapPin, PackageCheck, MessageCircleMore } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import deliveryBanner from '$lib/assets/delivery.webp';
@@ -34,8 +34,8 @@
       <div class="delivery-icon"><MapPin size={24} strokeWidth={2.1} /></div>
       <h2>Доставка по городу</h2>
       <p>
-        Доставка по городу Казань осуществляется бесплатно. После оформления заказа менеджер свяжется с
-        вами, подтвердит наличие товара, адрес и согласует удобное время.
+        Доставка по городу {data.city ?? 'Казань'} осуществляется бесплатно. После оформления заказа
+        менеджер свяжется с вами, подтвердит наличие товара, адрес и согласует удобное время.
       </p>
     </article>
     <article class="delivery-card p-5 lg:p-6">

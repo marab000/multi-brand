@@ -11,11 +11,13 @@
   import { toast } from 'svelte-sonner';
   import BonusIcon from '$lib/components/BonusIcon.svelte';
   import DeliveryToggle from '$lib/components/DeliveryToggle.svelte';
+  import { cityForms } from '$lib/cityForms';
   import { Menu, Phone } from 'lucide-svelte';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { getPhoneLocalDigits, isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   import { SITE_PHONE, SITE_PHONE_HREF } from '$lib/config/site';
   let { data } = $props<{ data: PageData }>();
+  const city = $derived(cityForms(data.city));
   let nameInput: HTMLInputElement;
   let phoneInput: HTMLInputElement;
   let streetInput: HTMLInputElement;
@@ -87,7 +89,7 @@
           items,
           message: [
             method === 'delivery'
-              ? `Доставка: по Казани (бесплатно), ${addressParts.join(', ')}`
+              ? `Доставка: по ${city.dat} (бесплатно), ${addressParts.join(', ')}`
               : 'Доставка: самовывоз, Казань, ул. Чистопольская, 66',
             `Оплата: ${payment === 'now' ? 'оплата сразу' : `рассрочка ${payment} мес. 0%`}`,
             email.trim() && `Email: ${email.trim()}`,
@@ -233,7 +235,7 @@
           <DeliveryToggle />
           {#if method === 'delivery'}
             <div class="fields">
-              <input class="input primary" value="Казань" aria-label="Город" disabled />
+              <input class="input primary" value={city.nom} aria-label="Город" disabled />
               <input
                 class="input primary"
                 placeholder="Улица и дом"

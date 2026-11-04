@@ -78,6 +78,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
   const brandTplDescription = applyMetaTemplate(tpl.brand_description, { бренд: brand.name });
   return {
     brand: brand.name,
+    city: locals.city,
     metaTitle: metaO?.title || brandTplTitle,
     h1Fallback: replaceCityPlaceholders(`${brand.name} — купить в {городе}`),
     ogTitle: replaceCityPlaceholders(`${brand.name} — купить в {городе} | MULTIBRAND`),

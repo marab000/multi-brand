@@ -22,5 +22,5 @@ export const load: PageServerLoad = async ({ locals }) => {
   } catch {
     // таблицы нет — дефолт
   }
-  return { user: locals.user, cartDiscountPercent, excludedBrands };
+  return { user: locals.user, cartDiscountPercent, excludedBrands, city: locals.city };
 };

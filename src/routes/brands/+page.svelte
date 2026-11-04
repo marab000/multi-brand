@@ -1,12 +1,17 @@
 <script lang="ts">
+  import { page } from '$app/stores';
+  import { cityForms } from '$lib/cityForms';
+
   let { data }: { data: { brands: { name: string; count: number; slug: string }[] } } = $props();
+
+  const city = $derived(cityForms($page.data.city as string | undefined));
 </script>
 
 <svelte:head>
-  <title>Бренды бытовой техники в магазине Мультибренд | Казань</title>
+  <title>Бренды бытовой техники в магазине Мультибренд | {city.nom}</title>
   <meta
     name="description"
-    content="Все бренды бытовой и встраиваемой техники в интернет-магазине «Мультибренд»: официальные поставки, гарантия производителя, рассрочка 0%, доставка по Казани и России."
+    content={`Все бренды бытовой и встраиваемой техники в интернет-магазине «Мультибренд»: официальные поставки, гарантия производителя, рассрочка 0%, доставка по ${city.dat} и России.`}
   />
   <link rel="canonical" href="https://multi-brand.online/brands" />
 </svelte:head>

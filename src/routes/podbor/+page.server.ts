@@ -4,6 +4,7 @@ import { fetchProducts } from '$lib/server/catalogApi';
 import { loadPodborConfig } from '$lib/server/bundlePicker';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 import { SLOT_TYPES } from '$lib/podborSlots';
+import { cityForms } from '$lib/cityForms';
 import sharp from 'sharp';
 
 // Фото-шаги для ВСЕХ слотов конструктора — типы берём из podborSlots (один источник)
@@ -127,13 +128,16 @@ export const load: PageServerLoad = async ({ locals }) => {
       heroImage,
       slotImages,
       brandSegments,
+      city: locals.city,
       meta: {
-        title: seoO?.title || 'Собери комплект техники — подбор за 1 минуту | Мультибренд Казань (MultiBrand)',
+        title:
+          seoO?.title ||
+          `Собери комплект техники — подбор за 1 минуту | Мультибренд ${cityForms(locals.city).nom} (MultiBrand)`,
         description: seoO?.description || undefined,
         canonical: seoO?.canonical ? safeCanonical(seoO.canonical, locals.siteOrigin) : safeCanonical('/podbor', locals.siteOrigin)
       }
     };
   } catch {
-    return { heroImage: null, slotImages: {}, brandSegments: null, meta: null };
+    return { heroImage: null, slotImages: {}, brandSegments: null, city: locals.city, meta: null };
   }
 };

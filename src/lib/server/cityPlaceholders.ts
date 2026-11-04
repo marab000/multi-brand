@@ -4,15 +4,12 @@
 // Поддомены (msk./ufa.) на этапе Phase 0 ещё не включены — currentCityFromHost уже
 // готова к ним, надо будет только включить в +layout.server.ts чтение хоста.
 
-export type CityForms = { nom: string; gen: string; dat: string; prep: string; acc: string };
+// формы города живут в клиент-безопасном $lib/cityForms.ts — один источник для
+// серверных плейсхолдеров и клиентских компонентов
+import { CITIES, DEFAULT_CITY, type CityForms } from '$lib/cityForms';
 
-export const CITIES: Record<string, CityForms> = {
-	Казань: { nom: 'Казань', gen: 'Казани', dat: 'Казани', prep: 'Казани', acc: 'Казань' },
-	Москва: { nom: 'Москва', gen: 'Москвы', dat: 'Москве', prep: 'Москве', acc: 'Москву' },
-	Уфа: { nom: 'Уфа', gen: 'Уфы', dat: 'Уфе', prep: 'Уфе', acc: 'Уфу' }
-};
-
-export const DEFAULT_CITY = 'Казань';
+export { CITIES, DEFAULT_CITY };
+export type { CityForms };
 
 // контекст текущего запроса: город поддомена. hooks.server.ts оборачивает resolve,
 // getSeoOverride читает город отсюда — вызовам по всему сайту город не пробрасывается

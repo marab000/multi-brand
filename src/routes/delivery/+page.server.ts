@@ -6,6 +6,7 @@ const DEFAULT_TITLE = 'Доставка — MULTIBRAND';
 export const load: PageServerLoad = async ({ locals }) => {
   const o = await getSeoOverride('delivery');
   return {
+    city: locals.city,
     meta: {
       title: o?.title || DEFAULT_TITLE,
       description: o?.description || undefined,

@@ -12,6 +12,7 @@
   import { favorites } from '$lib/stores/favorites';
   import { derived } from 'svelte/store';
   import { page } from '$app/stores';
+  import { cityForms, regionShort } from '$lib/cityForms';
   import { onMount } from 'svelte';
   import {
     Menu,
@@ -80,7 +81,7 @@
   const contacts = $derived(data?.contacts ?? null);
   // город для текстов шапки: по поддомену (msk → Москва), дефолт Казань
   const cityPrep = $derived(
-    data?.city === 'Москва' ? 'Москве' : data?.city === 'Уфа' ? 'Уфе' : 'Казани'
+    `${cityForms(data?.city).dat}${regionShort(data?.city)}`
   );
   const searchHints = $derived(data?.searchHints ?? []);
   const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
@@ -356,7 +357,7 @@
       <a class="nav__about flex gap-x-1.5" href="/delivery"
         ><Truck class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
           >Доставка</span
-        ><span class="hidden md:inline">Доставка по {cityPrep} и РТ</span></a
+        ><span class="hidden md:inline">Доставка по {cityPrep}</span></a
       >
       <button
         class="nav__about nav__about-button flex gap-x-1.5"

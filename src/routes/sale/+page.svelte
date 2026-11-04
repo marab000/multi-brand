@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { BadgePercent } from 'lucide-svelte';
+	import { page } from '$app/stores';
+	import { cityForms } from '$lib/cityForms';
 
 	type SalePromo = {
 		slug: string;
@@ -15,6 +17,7 @@
 
 	const promos = $derived(data.sale.promos ?? []);
 	const updatedAt = $derived(data.sale.updatedAt);
+	const cityPrep = $derived(cityForms($page.data.city as string | undefined).prep);
 
 	function fmtDate(iso: string | null) {
 		if (!iso) return '';
@@ -28,7 +31,7 @@
 
 <svelte:head>
 	<title>Акции — MULTIBRAND</title>
-	<meta name="description" content="Акции и специальные предложения по встраиваемой и крупной бытовой технике в Казани. Скидки брендов из наличия — MultiBrand." />
+	<meta name="description" content={`Акции и специальные предложения по встраиваемой и крупной бытовой технике в ${cityPrep}. Скидки брендов из наличия — MultiBrand.`} />
 </svelte:head>
 
 <div class="sale-page mx-auto">

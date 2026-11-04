@@ -1,12 +1,15 @@
 <script lang="ts">
   import { Truck, Store } from 'lucide-svelte';
   import { deliveryMethod } from '$lib/stores/deliveryMethod';
+  import { page } from '$app/stores';
+  import { cityForms } from '$lib/cityForms';
 
   let method = $state<'delivery' | 'pickup'>('delivery');
   $effect(() => {
     const unsub = deliveryMethod.subscribe((v) => (method = v));
     return unsub;
   });
+  const cityDat = $derived(cityForms($page.data.city as string | undefined).dat);
 </script>
 
 <div class="receive">
@@ -36,7 +39,7 @@
     {#if method === 'delivery'}
       <span class="receive__info-icon"><Truck size={18} strokeWidth={2.2} /></span>
       <div>
-        <p class="receive__info-title">Доставка по Казани</p>
+        <p class="receive__info-title">Доставка по {cityDat}</p>
         <p class="receive__info-text">Бесплатно · дату и интервал согласует менеджер по телефону</p>
       </div>
     {:else}

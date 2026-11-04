@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Phone, Mail, MapPin, ChevronDown } from 'lucide-svelte';
   import { page } from '$app/stores';
+  import { cityForms } from '$lib/cityForms';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
   import {
@@ -21,6 +22,10 @@
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
   // текущий путь для переключателя городов (см. footer__cities)
   const currentPath = $derived($page.url.pathname);
+  // город поддомена для текстов (адреса магазинов не городифицируем — они казанские)
+  const city = $derived(cityForms($page.data.city as string | undefined));
+  const cityIn = $derived(`в ${city.prep}`);
+  const cityPrep = $derived(city.prep);
   const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
 
   const year = new Date().getFullYear();
@@ -38,7 +43,7 @@
     <div class="footer__col footer__col--brand">
       <a class="footer__logo" href="/">{SITE_URL_NAME}</a>
       <p class="footer__about">
-        Интернет-магазин бытовой техники в Казани. Встраиваемая техника, крупная бытовая техника и
+        Интернет-магазин бытовой техники {cityIn}. Встраиваемая техника, крупная бытовая техника и
         аксессуары от официальных поставщиков.
       </p>
       <div class="footer__contacts">
@@ -131,11 +136,11 @@
   </div>
 
   <div class="footer__bottom mx-auto flex max-w-[1280px] flex-col gap-1.5 border-t border-white/10 px-4 py-3.5 pb-[calc(66px+env(safe-area-inset-bottom,0px))] text-center sm:px-6 md:pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:text-left">
-    <p>© {year} MULTIBRAND — интернет-магазин бытовой техники в Казани</p>
+    <p>© {year} MULTIBRAND — интернет-магазин бытовой техники {cityIn}</p>
     <p class="footer__requisites">ИНН 165123360719 · ОГРНИП 325169000035393</p>
     <!-- перелинковка региональных поддоменов (до включения DNS ссылки ведут на основной домен) -->
     <p class="footer__cities flex flex-wrap justify-center gap-x-4 gap-y-1 md:justify-start">
-      <span>Вы в Казани:</span>
+      <span>Вы в {cityPrep}:</span>
       <a href="https://multi-brand.online{currentPath}">Казань</a>
       <a href="https://msk.multi-brand.online{currentPath}">Москва</a>
       <a href="https://ufa.multi-brand.online{currentPath}">Уфа</a>

@@ -2,13 +2,15 @@
   import ProductList from '$lib/components/ProductList.svelte';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import { brandSlug } from '$lib/utils/slugify';
+  import { cityForms } from '$lib/cityForms';
 
   let { data }: { data: any } = $props();
   const brand = $derived(data.brand);
+  const cityPrep = $derived(cityForms(data.city).prep);
 </script>
 
 <svelte:head>
-  <title>{data.metaTitle || `${brand} — купить в Казани | цены в интернет-магазине MULTIBRAND`}</title>
+  <title>{data.metaTitle || `${brand} — купить в ${cityPrep} | цены в интернет-магазине MULTIBRAND`}</title>
   <meta
     name="description"
     content={data.metaDescription || data.descriptionFallback}

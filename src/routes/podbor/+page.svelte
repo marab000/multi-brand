@@ -6,11 +6,16 @@
   import { fireConfetti } from './confetti';
   import { slide, fly } from 'svelte/transition';
   import { SLOT_ORDER, SLOT_LABELS } from '$lib/podborSlots';
+  import { page } from '$app/stores';
+  import { cityForms, regionDat } from '$lib/cityForms';
   import { phoneMask } from '$lib/actions/phoneMask';
 
   let {
     data
-  }: { data: { heroImage?: string | null; slotImages?: Record<string, string | null>; brandSegments?: { budget: string[]; medium: string[]; premium: string[] } | null; meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
+  }: { data: { heroImage?: string | null; slotImages?: Record<string, string | null>; brandSegments?: { budget: string[]; medium: string[]; premium: string[] } | null; city?: string; meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
+
+  const city = $derived(cityForms(data?.city));
+  const cityRegion = $derived(regionDat(data?.city));
 
   const fmt = (v: number) =>
     new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(Math.round(v));
@@ -73,7 +78,7 @@
   let leadSent = $state(false);
   let leadOpen = $state(false);
   // FAQPage-разметка для поисковиков (rich results по вопросам конструктора)
-  const faq = [
+  const faq = $derived([
     {
       q: 'Как собрать комплект кухонной техники?',
       a: 'Ответьте на четыре вопроса конструктора: отметьте нужную технику (варочная панель, духовой шкаф, вытяжка, посудомоечная машина и ещё 8 категорий), выберите уровень бюджета, бренды и цвет. Подборщик соберёт комплект за минуту, а каждый товар можно заменить альтернативой из каталога.'
@@ -87,11 +92,11 @@
       a: 'Korting, Haier, GORENJE, BOSCH, NEFF, SIEMENS, LIEBHERR, SMEG, ASKO, Kuppersbusch и другие производители — от доступных моделей до премиум-сегмента. Список брендов расширяется, а оборудование поставляется официально и с гарантией.'
     },
     {
-      q: 'Вы доставляете комплекты по Казани?',
-      a: 'Да, доставляем по Казани и Республике Татарстан. Посмотреть технику вживую можно в офлайн-магазине Мультибренд на ул. Чистопольская, 66 — ежедневно с 9:00 до 21:00.'
+      q: `Вы доставляете комплекты по ${city.dat}?`,
+      a: `Да, доставляем по ${city.dat}${cityRegion}. Посмотреть технику вживую можно в офлайн-магазине Мультибренд на ул. Чистопольская, 66 — ежедневно с 9:00 до 21:00.`
     }
-  ];
-  const faqSchema = {
+  ]);
+  const faqSchema = $derived({
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     mainEntity: [
@@ -121,14 +126,14 @@
       },
       {
         '@type': 'Question',
-        name: 'Вы доставляете комплекты по Казани?',
+        name: `Вы доставляете комплекты по ${city.dat}?`,
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Да, доставляем по Казани и Республике Татарстан. Посмотреть технику вживую можно в офлайн-магазине Мультибренд на ул. Чистопольская, 66 — ежедневно с 9:00 до 21:00.'
+          text: `Да, доставляем по ${city.dat}${cityRegion}. Посмотреть технику вживую можно в офлайн-магазине Мультибренд на ул. Чистопольская, 66 — ежедневно с 9:00 до 21:00.`
         }
       }
     ]
-  };
+  });
   let selected = $state<Record<string, boolean>>(
     Object.fromEntries(SLOT_ORDER.map((k) => [k, ['hob_gas', 'oven', 'hood', 'dishwasher'].includes(k)]))
   );
@@ -350,7 +355,7 @@
 
 <svelte:head>
   {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
-  <title>{data?.meta?.title || 'Собери комплект техники — подбор за 1 минуту | Мультибренд Казань (MultiBrand)'}</title>
+  <title>{data?.meta?.title || `Собери комплект техники — подбор за 1 минуту | Мультибренд ${city.nom} (MultiBrand)`}</title>
   <meta
     name="description"
     content="Подберите комплект бытовой техники за минуту: варочная панель, духовой шкаф, вытяжка, посудомоечная машина и другое. Расчёт комплекта — бесплатно."
@@ -652,7 +657,7 @@
       Каждый товар комплекта можно заменить альтернативой в один клик — подберём похожую модель в том
       же ценовом сегменте. В конструкторе участвуют Haier, Korting, GORENJE, BOSCH, NEFF, SIEMENS,
       LIEBHERR, SMEG, ASKO, Kuppersbusch и другие бренды — от практичных моделей до премиума. Все
-      поставщики официальные, техника с гарантией, доставка по Казани и Республике Татарстан.
+      поставщики официальные, техника с гарантией, доставка по {city.dat}{cityRegion}.
       Загляните в наш офлайн-магазин на Чистопольской, 66 — комплект можно посмотреть вживую.
     </p>
 
