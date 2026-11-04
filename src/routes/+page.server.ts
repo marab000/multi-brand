@@ -17,33 +17,27 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       // настроек ещё нет — блок просто не покажется
     }
 
-    // Промо-блоки: случайное реальное фото товара нужного бренда и категории
-    const promoPick = async (brand: string, rootSlug: string): Promise<string | null> => {
-      try {
-        const rows = await sql`
-          select pi.url
-          from products p
-          join lateral (
-            select url from product_images
-            where product_id = p.id
-            order by position asc limit 1
-          ) pi on true
-          where p.brand->>'name' = ${brand}
-            and p.catalog_root_slug = ${rootSlug}
-            and p.price_rrc is not null
-          order by random()
-          limit 1`;
-        return rows[0]?.url ?? null;
-      } catch {
-        return null;
-      }
-    };
-    const [omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg, omoikiriIzmelchiteli] = await Promise.all([
-      promoPick('Omoikiri', 'kuhonnye-moyki'),
-      promoPick('Omoikiri', 'smesiteli'),
-      promoPick('Bone Crusher', 'izmelchiteli-pischevyh-othodov'),
-      promoPick('Omoikiri', 'izmelchiteli-pischevyh-othodov')
-    ]);
+    // фото промо-блока Omoikiri — статичные ассеты (omoikiri-*.webp), тут только счётчики
+    // моделей для бейджей «от N моделей»
+
+    let omoikiriCounts: { moiki: number; smesiteli: number; izmelchiteli: number } | null = null;
+    try {
+      const countRows = await sql`
+        select p.catalog_root_slug as slug, count(*)::int as c
+        from products p
+        where p.brand->>'name' = 'Omoikiri'
+          and p.catalog_root_slug in ('kuhonnye-moyki', 'smesiteli', 'izmelchiteli-pischevyh-othodov')
+          and p.price_rrc is not null
+        group by 1`;
+      const bySlug = Object.fromEntries(countRows.map((r) => [r.slug, r.c as number]));
+      omoikiriCounts = {
+        moiki: bySlug['kuhonnye-moyki'] ?? 0,
+        smesiteli: bySlug['smesiteli'] ?? 0,
+        izmelchiteli: bySlug['izmelchiteli-pischevyh-othodov'] ?? 0
+      };
+    } catch {
+      omoikiriCounts = null; // бейджи «от N моделей» просто не покажутся
+    }
 
     // Хиты продаж: только Asko (стирки/сушки), Liebherr (холодильники/морозилки)
     // и Franke (духовки/варки/вытяжки/свч). Десять на десктоп (2 ряда по 5),
@@ -100,7 +94,8 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       mobileSlides: data.mobile || [],
       hits,
       syncBrands,
-      promoImages: { omoikiriMoiki, omoikiriSmesiteli, boneCrusherImg, omoikiriIzmelchiteli },
+      omoikiriCounts,
+      city: locals.city,
       meta: {
         title: seoO?.title ||
           replaceCityPlaceholders(
@@ -121,7 +116,8 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       mobileSlides: [],
       hits: [],
       syncBrands: [],
-      promoImages: { omoikiriMoiki: null, omoikiriSmesiteli: null, boneCrusherImg: null, omoikiriIzmelchiteli: null }
+      omoikiriCounts: null,
+      city: locals.city
     };
   }
 };

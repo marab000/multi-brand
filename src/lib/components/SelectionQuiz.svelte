@@ -2,26 +2,27 @@
   import { ChevronDown, ArrowRight } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
 
-  // варианты — из блока «Какой комплект подойдёт вам?» ASKO-лендинга
-  const needs = [
-    'Стиральная + сушильная машины',
-    'Только стиральная машина',
-    'Только сушильная машина',
-    'Нужна помощь с выбором'
-  ];
-  const budgets = [
-    'До 180 000 ₽',
-    '180 000–230 000 ₽',
-    '230 000–300 000 ₽',
-    'Выше 300 000 ₽',
-    'Пока не определился'
-  ];
-  const places = ['Рядом', 'В колонну — нужна проверка', 'Пока не знаю'];
-  const timings = ['В ближайшее время', 'После завершения ремонта', 'Нужны подбор и хранение'];
+  // один компонент — несколько квизов на главной (ASKO, LIEBHERR), контент через пропс quiz
+  let {
+    quiz
+  }: {
+    quiz: {
+      headingLines: string[]; // заголовок построчно, последняя строка — акцентом
+      description: string;
+      needs: string[];
+      budgets: string[];
+      installLabel: string;
+      places: string[];
+      submitLabel: string;
+      leadTitle: string;
+    };
+  } = $props();
 
-  let need = $state(needs[0]);
-  let budget = $state(budgets[0]);
-  let place = $state(places[0]);
+  let need = $state(quiz.needs[0]);
+  let budget = $state(quiz.budgets[0]);
+  let place = $state(quiz.places[0]);
+  // «Когда нужна техника?» — одинаковый набор у всех квизов
+  const timings = ['В ближайшее время', 'После завершения ремонта', 'Нужны подбор и хранение'];
   let timing = $state(timings[0]);
 
   let requestOpen = $state(false);
@@ -31,7 +32,7 @@
   const submit = (e: SubmitEvent) => {
     e.preventDefault();
     prefill = [
-      'Запрос на подбор комплекта:',
+      quiz.leadTitle,
       `— Что подбираем: ${need}`,
       `— Бюджет: ${budget}`,
       `— Установка: ${place}`,
@@ -43,18 +44,18 @@
 
 <div class="quiz">
   <div class="quiz__copy">
-    <h2>Больше времени<br />для жизни.<br /><span>Меньше — на быт.</span></h2>
-    <p>
-      Подберём стиральную и сушильную машины ASKO под ваш дом. Организуем хранение до доставки,
-      установку и подключение.
-    </p>
+    <h2>
+      {#each quiz.headingLines as line, i}{#if i > 0}<br />{/if}{#if i === quiz.headingLines.length - 1
+          }<span>{line}</span>{:else}{line}{/if}{/each}
+    </h2>
+    <p>{quiz.description}</p>
   </div>
   <form class="quiz__fields" onsubmit={submit}>
     <label>
       Что подбираем?
       <span class="select-wrap">
         <select bind:value={need}>
-          {#each needs as n}<option>{n}</option>{/each}
+          {#each quiz.needs as n}<option>{n}</option>{/each}
         </select>
         <ChevronDown class="chev" size={16} strokeWidth={2.2} />
       </span>
@@ -63,16 +64,16 @@
       Бюджет на технику
       <span class="select-wrap">
         <select bind:value={budget}>
-          {#each budgets as b}<option>{b}</option>{/each}
+          {#each quiz.budgets as b}<option>{b}</option>{/each}
         </select>
         <ChevronDown class="chev" size={16} strokeWidth={2.2} />
       </span>
     </label>
     <label>
-      Как планируете установить?
+      {quiz.installLabel}
       <span class="select-wrap">
         <select bind:value={place}>
-          {#each places as p}<option>{p}</option>{/each}
+          {#each quiz.places as p}<option>{p}</option>{/each}
         </select>
         <ChevronDown class="chev" size={16} strokeWidth={2.2} />
       </span>
@@ -87,11 +88,11 @@
       </span>
     </label>
     <button type="submit" class="btn primary quiz__submit">
-      <span>Подобрать мой комплект</span>
+      <span>{quiz.submitLabel}</span>
       <ArrowRight size={17} strokeWidth={2.3} />
     </button>
     <span class="quiz__fine quiz__note"
-      >Без обязательства покупать. Наличие, итоговую стоимость и условия сервиса согласуем
+      >Без обязательства покупать. Итоговую цену, наличие и условия сервиса согласуем
       отдельно.</span
     >
   </form>

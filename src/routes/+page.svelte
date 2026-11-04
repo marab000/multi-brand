@@ -10,9 +10,11 @@
     Package,
     ShieldCheck,
     MapPin,
-    ChevronDown
+    ChevronDown,
+    ChevronRight
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
+  import { cityForms } from '$lib/cityForms';
   import { slide } from 'svelte/transition';
   import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
@@ -28,17 +30,26 @@
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   import SelectionQuiz from '$lib/components/SelectionQuiz.svelte';
-  import { imgUrl } from '$lib/s3Public';
-  import grandexLogo from '$lib/assets/brands/Grandex Aqua.webp';
-  import grandexMoiki from '$lib/assets/promo/grandex-moiki.webp';
-  import grandexSmesiteli from '$lib/assets/promo/grandex-smesiteli.webp';
-  import omoikiriLogo from '$lib/assets/brands/Omoikiri.webp';
-  import boneCrusherLogo from '$lib/assets/brands/Bone Crusher.webp';
+  import PromoOffer from '$lib/components/PromoOffer.svelte';
+  import omoikiriKitchen from '$lib/assets/promo/omoikiri-kitchen.webp';
+  import omoikiriFaucet from '$lib/assets/promo/omoikiri-faucet.webp';
+  import omoikiriDisposer from '$lib/assets/promo/omoikiri-disposer.webp';
   import acSplit from '$lib/assets/promo/ac-split.webp';
   import acInvertor from '$lib/assets/promo/ac-invertor.webp';
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
 
+  // «от 48 моделей» / «от 21 модель» / «от 11 моделей» — склонение слова «модель»
+  function pluralModels(n: number): string {
+    const mod100 = n % 100;
+    const mod10 = n % 10;
+    if (mod100 >= 11 && mod100 <= 14) return 'моделей';
+    if (mod10 === 1) return 'модель';
+    if (mod10 >= 2 && mod10 <= 4) return 'модели';
+    return 'моделей';
+  }
+
   let { data } = $props();
+  const city = $derived(cityForms(data?.city));
   const desktopImages = $derived(data.desktopSlides || []);
   const mobileImages = $derived(data.mobileSlides || []);
   const features = [
@@ -138,8 +149,81 @@
 
   // п.5: преимущества раскрываются по клику
   let openFeatures = $state<Set<string>>(new Set());
-  // табы промо-блока брендов: Grandex / Omoikiri / Bone Crusher
-  let promoBrand = $state<'grandex' | 'omoikiri' | 'bone'>('grandex');
+
+  // квизы главной: контент — из демо-лендингов брендов (ASKO, Liebherr)
+  const askoQuiz = {
+    headingLines: ['Больше времени', 'для жизни.', 'Меньше — на быт.'],
+    description:
+      'Подберём стиральную и сушильную машины ASKO под ваш дом. Организуем хранение до доставки, установку и подключение.',
+    needs: [
+      'Стиральная + сушильная машины',
+      'Только стиральная машина',
+      'Только сушильная машина',
+      'Нужна помощь с выбором'
+    ],
+    budgets: [
+      'До 180 000 ₽',
+      '180 000–230 000 ₽',
+      '230 000–300 000 ₽',
+      'Выше 300 000 ₽',
+      'Пока не определился'
+    ],
+    installLabel: 'Как планируете установить?',
+    places: ['Рядом', 'В колонну — нужна проверка', 'Пока не знаю'],
+    submitLabel: 'Подобрать мой комплект',
+    leadTitle: 'Запрос на подбор ASKO:'
+  };
+  const liebherrQuiz = {
+    headingLines: ['Хранение,', 'продуманное', 'до деталей.'],
+    description:
+      'Подберём холодильник или морозильную камеру Liebherr под размеры кухни, сценарий хранения и бюджет. Проверим нишу, открывание дверей, доставку и установку.',
+    needs: [
+      'Холодильник',
+      'Морозильная камера',
+      'Холодильник + морозильник',
+      'Встраиваемую технику',
+      'Нужна помощь с выбором'
+    ],
+    budgets: [
+      'До 100 000 ₽',
+      '100 000–180 000 ₽',
+      '180 000–300 000 ₽',
+      'Выше 300 000 ₽',
+      'Пока не определился'
+    ],
+    installLabel: 'Тип установки',
+    places: ['Отдельностоящая', 'Встраиваемая', 'Пока не знаю'],
+    submitLabel: 'Получить подбор',
+    leadTitle: 'Запрос на подбор Liebherr:'
+  };
+  // блок-акция Liebherr (из демо-лендинга) — после ASKO-квиза
+  const liebherrOffer = {
+    eyebrow: 'Акция при обращении за комплектом',
+    titleLines: ['Соберём решение', 'без лишних забот.'],
+    text: 'Оставьте заявку — проверим размеры, сравним подходящие варианты и отдельно рассчитаем доставку, хранение и монтаж.',
+    buttonLabel: 'Получить условия акции',
+    leadTitle:
+      'Запрос условий акции Liebherr: хранение до готовности кухни, проверка ниши, доставка и установка, персональный расчёт.',
+    note: 'Условия акции, период хранения и состав бесплатных или льготных работ подтверждаются магазином до оформления заказа.',
+    benefits: [
+      {
+        title: 'Хранение до готовности кухни',
+        text: 'Можно согласовать дату доставки после завершения ремонта. Срок и условия фиксируем в заказе.'
+      },
+      {
+        title: 'Проверка ниши',
+        text: 'Уточним габариты, вентиляционные зазоры, направление открывания и доступ к коммуникациям.'
+      },
+      {
+        title: 'Доставка и установка',
+        text: 'Рассчитаем работы по адресу. Подключение выполняется к подготовленным коммуникациям.'
+      },
+      {
+        title: 'Персональный расчёт',
+        text: 'Покажем состав стоимости: техника, доставка, подъём, установка и дополнительные работы.'
+      }
+    ]
+  };
   function toggleFeature(title: string) {
     const next = new Set(openFeatures);
     next.has(title) ? next.delete(title) : next.add(title);
@@ -150,13 +234,13 @@
 <svelte:head>
   <title
     >{data?.meta?.title ||
-      'Бытовая техника в Казани — интернет-магазин Мультибренд | Рассрочка, доставка'}</title
+      `Бытовая техника в ${city.prep} — интернет-магазин Мультибренд | Рассрочка, доставка`}</title
   >
   {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
   <meta
     name="description"
     content={data?.meta?.description ||
-      'Интернет-магазин «Мультибренд» в Казани: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка.'}
+      `Интернет-магазин «Мультибренд» в ${city.prep}: встраиваемая и кухонная бытовая техника, вытяжки, мойки и смесители. Помощь в подборе под ваш интерьер. Доставка.`}
   />
   {#if desktopImages[0]}
     <link
@@ -178,10 +262,10 @@
   {/if}
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="MULTIBRAND" />
-  <meta property="og:title" content="Бытовая техника в Казани — интернет-магазин Мультибренд" />
+  <meta property="og:title" content={`Бытовая техника в ${city.prep} — интернет-магазин Мультибренд`} />
   <meta
     property="og:description"
-    content="Встраиваемая и кухонная техника от официальных поставщиков. Рассрочка 0%, бесплатная доставка по Казани, склад до 12 месяцев."
+    content={`Встраиваемая и кухонная техника от официальных поставщиков. Рассрочка 0%, бесплатная доставка по ${city.dat}, склад до 12 месяцев.`}
   />
   <meta property="og:url" content="https://multi-brand.online/" />
   {#if desktopImages[0]}
@@ -193,7 +277,7 @@
 
 <!-- если все слайды скрыты — блока нет вовсе: aspect-ratio на секции держал бы пустое место -->
 {#if mobileImages.length || desktopImages.length}
-  <h1 class="sr-only">Бытовая техника в Казани — интернет-магазин «Мультибренд»</h1>
+  <h1 class="sr-only">Бытовая техника в {city.prep} — интернет-магазин «Мультибренд»</h1>
   <section class="hero-section mx-auto mt-0! overflow-hidden rounded-2xl">
     {#if mobileImages.length}
       <div class="block lg:hidden">
@@ -262,7 +346,11 @@
 </section>
 
 <section class="mx-auto">
-  <SelectionQuiz />
+  <SelectionQuiz quiz={askoQuiz} />
+</section>
+
+<section class="mx-auto">
+  <PromoOffer offer={liebherrOffer} />
 </section>
 
 <section class="mx-auto">
@@ -301,136 +389,59 @@
 </section>
 
 <section class="mx-auto">
-  <div class="promo-banner promo-banner--grandex">
-    {#snippet grandexBody()}
-      <div class="promo-banner__head">
-        <div class="promo-banner__icon">
-          <img src={grandexLogo} alt="Grandex Aqua" loading="lazy" />
-        </div>
-        <div class="promo-banner__text">
-          <strong>Grandex Aqua</strong>
-          <span
-            >Бренд кухонных моек и смесителей с корнями в мире каменных столешниц. Созданы, чтобы
-            служить рядом с камнем — эстетично, долго, безупречно.</span
-          >
-        </div>
-      </div>
-      <div class="promo-cards">
-        <a href="/catalog/kuhonnye-moyki?brand=Grandex+Aqua" class="promo-card">
-          <img class="promo-card__img" src={grandexMoiki} alt="Мойки Grandex Aqua" loading="lazy" />
-          <span class="promo-card__name">Мойки</span>
-        </a>
-        <a href="/catalog/smesiteli?brand=Grandex+Aqua" class="promo-card">
-          <img
-            class="promo-card__img"
-            src={grandexSmesiteli}
-            alt="Смесители Grandex Aqua"
-            loading="lazy"
-          />
-          <span class="promo-card__name">Смесители</span>
-        </a>
-      </div>
-    {/snippet}
-    {#snippet omoikiriBody()}
-      <div class="promo-banner__head">
-        <div class="promo-banner__icon">
-          <img src={omoikiriLogo} alt="Omoikiri" loading="lazy" />
-        </div>
-        <div class="promo-banner__text">
-          <strong>Omoikiri</strong>
-        </div>
-      </div>
-      <div class="promo-cards">
-        <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="promo-card">
-          <img
-            class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.omoikiriMoiki
-              ? imgUrl(data.promoImages.omoikiriMoiki, 480)
-              : grandexMoiki}
-            alt="Мойки Omoikiri"
-            loading="lazy"
-          />
-          <span class="promo-card__name">Мойки</span>
-        </a>
-        <a href="/catalog/smesiteli?brand=Omoikiri" class="promo-card">
-          <img
-            class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.omoikiriSmesiteli
-              ? imgUrl(data.promoImages.omoikiriSmesiteli, 480)
-              : grandexSmesiteli}
-            alt="Смесители Omoikiri"
-            loading="lazy"
-          />
-          <span class="promo-card__name">Смесители</span>
-        </a>
-        <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Omoikiri" class="promo-card">
-          <img
-            class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.omoikiriIzmelchiteli
-              ? imgUrl(data.promoImages.omoikiriIzmelchiteli, 480)
-              : grandexSmesiteli}
-            alt="Измельчители Omoikiri"
-            loading="lazy"
-          />
-          <span class="promo-card__name">Измельчители пищевых отходов</span>
-        </a>
-      </div>
-    {/snippet}
-    {#snippet boneBody()}
-      <div class="promo-banner__head">
-        <div class="promo-banner__icon">
-          <img src={boneCrusherLogo} alt="Bone Crusher" loading="lazy" />
-        </div>
-        <div class="promo-banner__text">
-          <strong>Bone Crusher</strong>
-        </div>
-      </div>
-      <div class="promo-cards">
-        <a href="/catalog/izmelchiteli-pischevyh-othodov?brand=Bone+Crusher" class="promo-card">
-          <img
-            class="promo-card__img promo-card__img--catalog"
-            src={data.promoImages?.boneCrusherImg
-              ? imgUrl(data.promoImages.boneCrusherImg, 480)
-              : grandexMoiki}
-            alt="Измельчители Bone Crusher"
-            loading="lazy"
-          />
-          <span class="promo-card__name">Измельчители пищевых отходов</span>
-        </a>
-      </div>
-    {/snippet}
-
-    <div class="promo-tabs" role="tablist" aria-label="Бренды">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={promoBrand === 'grandex'}
-        class:promo-tabs__active={promoBrand === 'grandex'}
-        onclick={() => (promoBrand = 'grandex')}>Grandex Aqua</button
-      >
-      <button
-        type="button"
-        role="tab"
-        aria-selected={promoBrand === 'omoikiri'}
-        class:promo-tabs__active={promoBrand === 'omoikiri'}
-        onclick={() => (promoBrand = 'omoikiri')}>Omoikiri</button
-      >
-      <button
-        type="button"
-        role="tab"
-        aria-selected={promoBrand === 'bone'}
-        class:promo-tabs__active={promoBrand === 'bone'}
-        onclick={() => (promoBrand = 'bone')}>Bone Crusher</button
-      >
+  <!-- блок Omoikiri по референсу: шапка-лого + 3 типа карточек (тёмная фото / светлая / зелёная) -->
+  <div class="omo">
+    <div class="omo__head">
+      <span class="omo__logo">OMOIKIRI</span>
+      <span class="omo__tagline">Премиальная японская сантехника и кухонные решения</span>
     </div>
 
-    {#if promoBrand === 'grandex'}
-      {@render grandexBody()}
-    {:else if promoBrand === 'omoikiri'}
-      {@render omoikiriBody()}
-    {:else}
-      {@render boneBody()}
-    {/if}
+    <div class="omo__cards">
+      <!-- тёмная фото-карточка: мойки (сгенерированная сцена кухни, заменит товарное фото) -->
+      <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="omo-card omo-card--photo">
+        <img class="omo-card__bg" src={omoikiriKitchen} alt="Мойки Omoikiri на кухне" loading="lazy" />
+        <span class="omo-card__shade"></span>
+        <span class="omo-badge omo-badge--gold">Японское качество</span>
+        {#if data.omoikiriCounts?.moiki}
+          <span class="omo-badge">от {data.omoikiriCounts.moiki}
+            {pluralModels(data.omoikiriCounts.moiki)}</span
+          >
+        {/if}
+        <span class="omo-card__name">Кухонные мойки</span>
+        <span class="omo-card__arrow"><ChevronRight size={18} strokeWidth={2.4} /></span>
+      </a>
+
+      <!-- светлая карточка: смесители (референс: светло, товар по центру) -->
+      <a href="/catalog/smesiteli?brand=Omoikiri" class="omo-card omo-card--light">
+        <img class="omo-card__img" src={omoikiriFaucet} alt="Смесители Omoikiri" loading="lazy" />
+        <span class="omo-badge omo-badge--gold">Японское качество</span>
+        {#if data.omoikiriCounts?.smesiteli}
+          <span class="omo-badge">от {data.omoikiriCounts.smesiteli}
+            {pluralModels(data.omoikiriCounts.smesiteli)}</span
+          >
+        {/if}
+        <span class="omo-card__name">Смесители</span>
+        <span class="omo-card__arrow omo-card__arrow--dark"
+          ><ChevronRight size={18} strokeWidth={2.4} /></span
+        >
+      </a>
+
+      <!-- зелёная карточка: измельчители -->
+      <a
+        href="/catalog/izmelchiteli-pischevyh-othodov?brand=Omoikiri"
+        class="omo-card omo-card--green"
+      >
+        <img class="omo-card__side" src={omoikiriDisposer} alt="Измельчитель Omoikiri Nagare" loading="lazy" />
+        <span class="omo-badge omo-badge--gold">Японское качество</span>
+        {#if data.omoikiriCounts?.izmelchiteli}
+          <span class="omo-badge">от {data.omoikiriCounts.izmelchiteli}
+            {pluralModels(data.omoikiriCounts.izmelchiteli)}</span
+          >
+        {/if}
+        <span class="omo-card__name">Измельчители отходов</span>
+        <span class="omo-card__cta">В каталог <ArrowRight size={17} strokeWidth={2.3} /></span>
+      </a>
+    </div>
   </div>
 </section>
 
@@ -480,6 +491,10 @@
     </div>
   </section>
 {/if}
+
+<section class="mx-auto">
+  <SelectionQuiz quiz={liebherrQuiz} />
+</section>
 
 <section class="mx-auto">
   <ReviewsSection />
@@ -538,7 +553,7 @@
   <div class="about-seo__inner">
     <p>
       Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации
-      кухни и дома современной бытовой техникой в Казани. Мы собрали в одном каталоге продукцию
+      кухни и дома современной бытовой техникой в {city.prep}. Мы собрали в одном каталоге продукцию
       ведущих мировых производителей, чтобы вы могли легко подобрать технику под любой интерьер,
       кухонный проект или готовый дизайн.
     </p>
@@ -1170,37 +1185,7 @@
       }
     }
   }
-  // ─── Promo banners (Grandex / AC) ───
-  .promo-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    button {
-      padding: 9px 18px;
-      border: 1px solid rgba(62, 111, 79, 0.25);
-      border-radius: 999px;
-      background: #fff;
-      color: #374151;
-      font-size: 0.875rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: 0.18s ease;
-      &:hover {
-        border-color: rgba(62, 111, 79, 0.6);
-        color: #111827;
-      }
-      // активный внутри button: специфичность выше базового, иначе белый фон побеждал
-      &.promo-tabs__active {
-        border-color: transparent;
-        background: $green;
-        color: #fff;
-        &:hover {
-          border-color: transparent;
-          color: #fff;
-        }
-      }
-    }
-  }
+  // ─── Promo banners (Omoikiri / AC) ───
   .promo-banner {
     display: flex;
     flex-direction: column;
@@ -1208,10 +1193,6 @@
     padding: 24px;
     border-radius: 16px;
     box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-  }
-  .promo-banner--grandex {
-    border: 1px solid rgba(62, 111, 79, 0.12);
-    background: linear-gradient(135deg, rgba(62, 111, 79, 0.06), rgba(62, 111, 79, 0.02));
   }
   .promo-banner--ac {
     border: 1px solid rgba(59, 130, 246, 0.12);
@@ -1244,9 +1225,6 @@
       order: 2;
       margin-left: auto;
     }
-  }
-  .promo-banner--grandex .promo-banner__icon {
-    background: rgba(62, 111, 79, 0.1);
   }
   .promo-banner--ac .promo-banner__icon {
     background: rgba(59, 130, 246, 0.1);
@@ -1297,9 +1275,6 @@
       }
     }
   }
-  .promo-banner--grandex .promo-card:hover {
-    border-color: rgba(62, 111, 79, 0.3);
-  }
   .promo-banner--ac .promo-card:hover {
     border-color: rgba(59, 130, 246, 0.3);
   }
@@ -1329,6 +1304,214 @@
     font-weight: 700;
     text-align: center;
     color: #111827;
+  }
+  // ─── Блок Omoikiri по референсу: шапка-лого + 3 типа карточек ───
+  .omo {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-4;
+    @media (min-width: 1024px) {
+      gap: $sp-6;
+    }
+  }
+  .omo__head {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-1;
+  }
+  .omo__logo {
+    color: #1c2b22;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    @media (min-width: 1024px) {
+      font-size: 2.5rem;
+    }
+  }
+  .omo__tagline {
+    color: #475569;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+  }
+  .omo__cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $sp-3;
+    @media (min-width: 768px) {
+      // сетка из ТЗ: "1fr 1fr / 1fr ." — измельчители во второй строке слева,
+      // правая ячейка пустая; 1fr на строки — все карточки одной высоты
+      grid-template-columns: repeat(2, 1fr);
+      grid-auto-rows: 1fr;
+      gap: $sp-4;
+      .omo-card {
+        // компактная высота на десктопе (мобилка — 230px из базы)
+        min-height: 168px;
+      }
+    }
+  }
+  .omo-card {
+    position: relative;
+    display: flex;
+    min-height: 230px;
+    overflow: hidden;
+    border-radius: 18px;
+    isolation: isolate;
+    text-decoration: none;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+    }
+    // бейджи поверх карточки: золотая пилюля + белая с количеством
+    .omo-badge {
+      position: absolute;
+      top: 14px;
+      z-index: 2;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: #1c2b22;
+      font-size: 0.75rem;
+      font-weight: 700;
+      &--gold {
+        left: 14px;
+        border: 1px solid rgba(146, 108, 22, 0.45);
+        // «металлик» без картинки: диагональный градиент со световыми бликами
+        background: linear-gradient(
+          105deg,
+          #f7e2a0 0%,
+          #eec86a 26%,
+          #d4a638 52%,
+          #f2d67e 76%,
+          #cfa236 100%
+        );
+        color: #4a3a10;
+      }
+    }
+    .omo-badge + .omo-badge {
+      left: auto;
+      right: 14px;
+    }
+    .omo-card__name {
+      position: absolute;
+      bottom: 18px;
+      left: 18px;
+      z-index: 2;
+      max-width: 70%;
+      color: #1c2b22;
+      font-size: 1.375rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .omo-card__arrow {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fff;
+      color: #1c2b22;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+      &--dark {
+        background: #1c2b22;
+        color: #fff;
+        box-shadow: none;
+      }
+    }
+  }
+  .omo-card--photo {
+    background: #20272a;
+    .omo-card__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    // затемнение снизу — чтобы белое название читалось поверх светлого фото
+    .omo-card__shade {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: linear-gradient(to top, rgba(10, 16, 14, 0.72) 0%, rgba(10, 16, 14, 0) 55%);
+    }
+    .omo-card__name {
+      color: #fff;
+    }
+  }
+  .omo-card--light {
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(15, 23, 42, 0.07);
+    background: #f6f7f5;
+    .omo-card__img {
+      // фикс. высота: иначе tall-фото раздувает строку сетки
+      height: 140px;
+      width: auto;
+      max-width: 80%;
+      object-fit: contain;
+      // фон фото прозрачный (PNG с альфой) — никакие бленды не нужны
+    }
+  }
+  .omo-card--green {
+    // референс: тёмный лес слева → светлый изумруд справа + свечение за диспоузером
+    background:
+      radial-gradient(ellipse 45% 75% at 72% 55%, rgba(14, 110, 66, 0.55), transparent 72%),
+      linear-gradient(100deg, #04301b 0%, #034828 100%);
+    min-height: 190px;
+    .omo-card__side {
+      // вырезанный товар (фон удалён, PNG с альфой) прямо на зелёной заливке.
+      // height обязателен явно: img — replaced-элемент, при width+% + height:auto
+      // браузер берёт высоту из аспекта файла и выносит бокс за карточку
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      height: calc(100% - 28px);
+      width: 34%;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.28));
+    }
+    .omo-card__name {
+      position: absolute;
+      top: 58px;
+      bottom: auto;
+      left: 18px;
+      max-width: 52%;
+      color: #fff;
+      font-size: 1.4rem;
+      line-height: 1.2;
+    }
+    .omo-card__cta {
+      position: absolute;
+      bottom: 18px;
+      left: 18px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: $sp-2;
+      color: #fff;
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }
+  }
+  @media (max-width: 639px) {
+    .omo-card .omo-card__name {
+      font-size: 1.15rem;
+      max-width: 60%;
+    }
+    .omo-card--green .omo-card__name {
+      font-size: 1.25rem;
+    }
   }
   section {
     margin-top: 12px;
