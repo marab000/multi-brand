@@ -15,6 +15,8 @@
       places: string[];
       submitLabel: string;
       leadTitle: string;
+      image?: string; // фото левой колонки (под текстом, с тёмным градиентом)
+      accentFrom?: number; // с какой строки красить акцентом (по умолчанию — последняя)
     };
   } = $props();
 
@@ -42,10 +44,10 @@
   };
 </script>
 
-<div class="quiz">
-  <div class="quiz__copy">
+<div class="quiz" class:has-photo={quiz.image}>
+  <div class="quiz__copy" class:has-photo={quiz.image} style:--photo={quiz.image ? `url("${quiz.image}")` : undefined}>
     <h2>
-      {#each quiz.headingLines as line, i}{#if i > 0}<br />{/if}{#if i === quiz.headingLines.length - 1
+      {#each quiz.headingLines as line, i}{#if i > 0}<br />{/if}{#if i >= (quiz.accentFrom ?? quiz.headingLines.length - 1)
           }<span>{line}</span>{:else}{line}{/if}{/each}
     </h2>
     <p>{quiz.description}</p>
@@ -112,11 +114,20 @@
       linear-gradient(135deg, rgba($green, 0.07), rgba($green, 0.02));
     color: #171717;
     box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06);
+    // фото-вариант: фото до края карточки (референс), паддинг переезжает в форму
+    &.has-photo {
+      gap: 0;
+      padding: 0;
+    }
     @media (min-width: 1024px) {
       grid-template-columns: 0.9fr 1.1fr;
       align-items: center;
       gap: $sp-8;
       padding: $sp-6;
+      &.has-photo {
+        grid-template-columns: 1fr 1fr;
+        align-items: stretch;
+      }
     }
   }
   .quiz__copy {
@@ -133,7 +144,7 @@
       @media (min-width: 1024px) {
         font-size: 2rem;
       }
-      // последняя строка — акцентом, как в ASKO-лендинге
+      // строка(ы) с акцентом: по умолчанию последняя, как в ASKO-лендинге
       span {
         color: #{$green-light};
       }
@@ -144,6 +155,47 @@
       color: #4b5563;
       font-size: 0.9rem;
       line-height: 1.5;
+    }
+    // фото под текстом: тёмный градиент слева, белый текст, бледно-зелёный акцент — по референсу
+    &.has-photo {
+      padding: $sp-6;
+      background:
+        linear-gradient(
+          96deg,
+          rgba(16, 21, 18, 0.92) 0%,
+          rgba(16, 21, 18, 0.68) 42%,
+          rgba(16, 21, 18, 0.26) 74%,
+          rgba(16, 21, 18, 0.12) 100%
+        ),
+        linear-gradient(to top, rgba(16, 21, 18, 0.55), rgba(16, 21, 18, 0) 45%),
+        var(--photo) center / cover no-repeat;
+      h2 {
+        color: #fff;
+        font-size: 1.75rem;
+        @media (min-width: 1024px) {
+          font-size: 2.5rem;
+        }
+        span {
+          color: #bde0b4;
+        }
+      }
+      p {
+        color: rgba(255, 255, 255, 0.92);
+      }
+    }
+    @media (min-width: 1024px) {
+      &.has-photo {
+        padding: $sp-8;
+        justify-content: center;
+      }
+    }
+  }
+  // в фото-варианте у карточки нет паддинга — форма отступает сама
+  .quiz.has-photo .quiz__fields {
+    padding: $sp-4;
+    @media (min-width: 1024px) {
+      padding: $sp-6 $sp-8;
+      align-self: center;
     }
   }
   .quiz__fine {

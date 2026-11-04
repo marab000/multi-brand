@@ -1,21 +1,12 @@
 <script lang="ts">
   import {
-    BadgePercent,
-    Warehouse,
-    ConciergeBell,
-    Sparkles,
     ArrowRight,
     Wind,
-    Clock3,
-    Package,
-    ShieldCheck,
     MapPin,
-    ChevronDown,
     ChevronRight
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import { cityForms } from '$lib/cityForms';
-  import { slide } from 'svelte/transition';
   import hob from '$lib/assets/links/hob.webp';
   import coffee from '$lib/assets/links/coffee.webp';
   import dw from '$lib/assets/links/dw.webp';
@@ -27,16 +18,21 @@
   import hood from '$lib/assets/links/hood.webp';
   import vm from '$lib/assets/links/vm.webp';
   import ProductCard from '$lib/components/ProductCard.svelte';
+  import PrivilegesSection from '$lib/components/PrivilegesSection.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
   import SelectionQuiz from '$lib/components/SelectionQuiz.svelte';
+  import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import PromoOffer from '$lib/components/PromoOffer.svelte';
   import omoikiriKitchen from '$lib/assets/promo/omoikiri-kitchen.webp';
   import omoikiriFaucet from '$lib/assets/promo/omoikiri-faucet.webp';
   import omoikiriDisposer from '$lib/assets/promo/omoikiri-disposer.webp';
+  import omoikiriKit from '$lib/assets/promo/omoikiri-kit.webp';
   import acSplit from '$lib/assets/promo/ac-split.webp';
   import acInvertor from '$lib/assets/promo/ac-invertor.webp';
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
+  import askoQuizPhoto from '$lib/assets/promo/asko-quiz.webp';
+  import liebherrQuizPhoto from '$lib/assets/promo/liebherr-quiz.webp';
 
   // «от 48 моделей» / «от 21 модель» / «от 11 моделей» — склонение слова «модель»
   function pluralModels(n: number): string {
@@ -52,45 +48,16 @@
   const city = $derived(cityForms(data?.city));
   const desktopImages = $derived(data.desktopSlides || []);
   const mobileImages = $derived(data.mobileSlides || []);
-  const features = [
-    {
-      title: 'Рассрочка 0% на 12 месяцев без переплат',
-      pointsTitle: 'Как это работает?',
-      points: [
-        'Техника сразу: забираете оборудование сейчас, а первый платеж — только через месяц.',
-        'Без переплат: общая сумма просто делится на 12 равных частей.',
-        'Все онлайн: никуда ехать не нужно, оформление происходит удаленно.'
-      ],
-      icon: BadgePercent
-    },
-    {
-      title: 'Ваш персональный менеджер 24/7',
-      pointsTitle: 'Почему это удобно для вас',
-      points: [
-        'Экономия времени: вам не нужно часами искать модели на разных сайтах — мы всё сделаем сами.',
-        'Строго в бюджет: подбираем технику под ваши финансовые рамки без переплат.',
-        'Точно в срок: учитываем даты поставки, чтобы ваш проект запустился вовремя.',
-        'Любые бренды: соберём комплект из оборудования разных марок в одном месте.',
-        'Один контакт: вы общаетесь только с одним человеком, который решает все вопросы.'
-      ],
-      icon: ConciergeBell
-    },
-    {
-      title: 'Бесплатное хранение на складе во время ремонта',
-      text: 'Закажите оборудование сейчас по выгодной цене, а мы бесплатно сохраним его на нашем охраняемом складе площадью 1600 м². Привезем технику на объект ровно к тому моменту, когда она вам понадобится.',
-      pointsTitle: 'Почему это выгодно и удобно',
-      points: [
-        'Защита от задержек: ремонт затягивается — техника бесплатно ждет вас на складе.',
-        'Фиксация цены: покупайте выгодно сегодня, не боясь подорожания к концу ремонта.',
-        'Свободное место: вам не придется захламлять квартиру или объект коробками.',
-        'Безопасность: гарантируем полную сохранность оборудования на охраняемом складе.',
-        'Доставка вовремя: привезем весь заказ в один день по первому вашему звонку.'
-      ],
-      icon: Warehouse
-    }
-  ];
   // Кондиционеры: сезонный блок, вернём через полгода (true = показать)
   const AC_ENABLED = false;
+
+  // карточка-комплект Omoikiri открывает форму заявки с предзаполненным сообщением
+  let bundleOpen = $state(false);
+  const bundlePrefill = [
+    'Запрос на расчёт комплекта Omoikiri:',
+    '— Мойка, смеситель и измельчитель в едином цвете',
+    '— Выгода при покупке комплектом до 15%'
+  ].join('\n');
 
   const categories = [
     {
@@ -147,9 +114,6 @@
     }
   ];
 
-  // п.5: преимущества раскрываются по клику
-  let openFeatures = $state<Set<string>>(new Set());
-
   // квизы главной: контент — из демо-лендингов брендов (ASKO, Liebherr)
   const askoQuiz = {
     headingLines: ['Больше времени', 'для жизни.', 'Меньше — на быт.'],
@@ -171,7 +135,8 @@
     installLabel: 'Как планируете установить?',
     places: ['Рядом', 'В колонну — нужна проверка', 'Пока не знаю'],
     submitLabel: 'Подобрать мой комплект',
-    leadTitle: 'Запрос на подбор ASKO:'
+    leadTitle: 'Запрос на подбор ASKO:',
+    image: askoQuizPhoto
   };
   const liebherrQuiz = {
     headingLines: ['Хранение,', 'продуманное', 'до деталей.'],
@@ -194,7 +159,9 @@
     installLabel: 'Тип установки',
     places: ['Отдельностоящая', 'Встраиваемая', 'Пока не знаю'],
     submitLabel: 'Получить подбор',
-    leadTitle: 'Запрос на подбор Liebherr:'
+    leadTitle: 'Запрос на подбор Liebherr:',
+    image: liebherrQuizPhoto,
+    accentFrom: 1 // в референсе акцентом покрашены 2-я и 3-я строки («продуманное до деталей.»)
   };
   // блок-акция Liebherr (из демо-лендинга) — после ASKO-квиза
   const liebherrOffer = {
@@ -203,7 +170,7 @@
     text: 'Оставьте заявку — проверим размеры, сравним подходящие варианты и отдельно рассчитаем доставку, хранение и монтаж.',
     buttonLabel: 'Получить условия акции',
     leadTitle:
-      'Запрос условий акции Liebherr: хранение до готовности кухни, проверка ниши, доставка и установка, персональный расчёт.',
+      'Запрос условий акции: хранение до готовности кухни, проверка ниши, доставка и установка, персональный расчёт.',
     note: 'Условия акции, период хранения и состав бесплатных или льготных работ подтверждаются магазином до оформления заказа.',
     benefits: [
       {
@@ -224,11 +191,6 @@
       }
     ]
   };
-  function toggleFeature(title: string) {
-    const next = new Set(openFeatures);
-    next.has(title) ? next.delete(title) : next.add(title);
-    openFeatures = next;
-  }
 </script>
 
 <svelte:head>
@@ -346,46 +308,15 @@
 </section>
 
 <section class="mx-auto">
+  <PrivilegesSection />
+</section>
+
+<section class="mx-auto">
   <SelectionQuiz quiz={askoQuiz} />
 </section>
 
 <section class="mx-auto">
   <PromoOffer offer={liebherrOffer} />
-</section>
-
-<section class="mx-auto">
-  <h2 class="section-title">Преимущества</h2>
-  <div class="features-grid">
-    {#each features as f}
-      <div class="feature-card" class:feature-card--open={openFeatures.has(f.title)}>
-        <button
-          type="button"
-          class="feature-card__toggle"
-          onclick={() => toggleFeature(f.title)}
-          aria-expanded={openFeatures.has(f.title)}
-        >
-          <div class="feature-card__icon">
-            <f.icon size={22} strokeWidth={2} />
-          </div>
-          <h3>{f.title}</h3>
-          <ChevronDown class="feature-card__chev" size={18} strokeWidth={2.2} />
-        </button>
-        {#if openFeatures.has(f.title)}
-          <div class="feature-card__content" transition:slide={{ duration: 220 }}>
-            {#if f.text}<p>{f.text}</p>{/if}
-            {#if f.points}
-              {#if f.pointsTitle}<h4>{f.pointsTitle}</h4>{/if}
-              <ul>
-                {#each f.points as point}
-                  <li>{point}</li>
-                {/each}
-              </ul>
-            {/if}
-          </div>
-        {/if}
-      </div>
-    {/each}
-  </div>
 </section>
 
 <section class="mx-auto">
@@ -441,9 +372,33 @@
         <span class="omo-card__name">Измельчители отходов</span>
         <span class="omo-card__cta">В каталог <ArrowRight size={17} strokeWidth={2.3} /></span>
       </a>
+
+      <!-- зелёная карточка-комплект: открывает форму заявки на расчёт комплекта -->
+      <button
+        type="button"
+        class="omo-card omo-card--green omo-card--bundle"
+        onclick={() => (bundleOpen = true)}
+      >
+        <img
+          class="omo-card__side"
+          src={omoikiriKit}
+          alt="Комплект Omoikiri: мойка и смеситель в едином цвете"
+          loading="lazy"
+        />
+        <span class="omo-badge omo-badge--gold">Выгода комплектом</span>
+        <span class="omo-badge">до 15%</span>
+        <span class="omo-card__stack">
+          <span class="omo-card__sub">Мойка • смеситель • измельчитель в едином цвете</span>
+          <span class="omo-card__name">Собери комплект для кухни с выгодой до 15%</span>
+        </span>
+        <span class="omo-card__arrow omo-card__arrow--gold"
+          ><ChevronRight size={18} strokeWidth={2.4} /></span
+        >
+      </button>
     </div>
   </div>
 </section>
+<LeadRequestModal bind:open={bundleOpen} prefill={bundlePrefill} />
 
 {#if AC_ENABLED}
   <section class="mx-auto">
@@ -798,33 +753,6 @@
       grid-template-columns: 1fr;
     }
   }
-  .feature-card__toggle {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 0;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-    font: inherit;
-    h3 {
-      flex: 1;
-      margin: 0;
-      font-size: 1.02rem;
-      font-weight: 700;
-      color: #111827;
-    }
-  }
-  .feature-card__chev {
-    flex-shrink: 0;
-    color: #94a3b8;
-    transition: transform 0.2s;
-  }
-  .feature-card--open .feature-card__chev {
-    transform: rotate(180deg);
-  }
   .store-info {
     padding: 0 20px 20px;
     display: grid;
@@ -963,73 +891,6 @@
       -webkit-line-clamp: 2;
       line-clamp: 2;
       -webkit-box-orient: vertical;
-    }
-  }
-  .features-grid {
-    display: grid;
-    gap: $sp-4;
-    /* карточки естественной высоты: раскрытая растёт, закрытые не тянутся за ней */
-    align-items: start;
-    .feature-card {
-      display: flex;
-      /* раскрытие всегда вниз: шапка-кнопка, под ней контент */
-      flex-direction: column;
-      padding: 20px;
-      border: 1px solid rgba($green, 0.1);
-      border-radius: 16px;
-      background: #fff;
-      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
-      .feature-card__icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 42px;
-        width: 42px;
-        height: 42px;
-        border-radius: 13px;
-        background: rgba($yellow, 0.16);
-        color: $green;
-      }
-      .feature-card__content {
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid #f1f5f9;
-        p {
-          margin: 8px 0 0;
-          font-size: 0.92rem;
-          line-height: 1.45;
-          color: #475569;
-        }
-        h4 {
-          margin: 12px 0 8px;
-          font-size: 0.9rem;
-          font-weight: 700;
-          color: $green;
-        }
-        ul {
-          margin: 12px 0 0;
-          padding: 0;
-          list-style: none;
-          li {
-            position: relative;
-            padding-left: 20px;
-            margin-bottom: 8px;
-            font-size: 0.88rem;
-            line-height: 1.4;
-            color: #475569;
-            &::before {
-              content: '';
-              position: absolute;
-              top: 7px;
-              left: 0;
-              width: 6px;
-              height: 6px;
-              border-radius: 50%;
-              background: $green;
-            }
-          }
-        }
-      }
     }
   }
   .categories-grid {
@@ -1334,13 +1195,15 @@
     font-size: 0.9375rem;
     line-height: 1.4;
   }
+  // «металлик» золота без картинки: диагональный градиент со световыми бликами
+  $omo-gold: linear-gradient(105deg, #f7e2a0 0%, #eec86a 26%, #d4a638 52%, #f2d67e 76%, #cfa236 100%);
   .omo__cards {
     display: grid;
     grid-template-columns: 1fr;
     gap: $sp-3;
     @media (min-width: 768px) {
-      // сетка из ТЗ: "1fr 1fr / 1fr ." — измельчители во второй строке слева,
-      // правая ячейка пустая; 1fr на строки — все карточки одной высоты
+      // 2×2: четвёртая карточка (комплект на /podbor) добирает вторую строку;
+      // 1fr на строки — все карточки одной высоты
       grid-template-columns: repeat(2, 1fr);
       grid-auto-rows: 1fr;
       gap: $sp-4;
@@ -1379,15 +1242,7 @@
       &--gold {
         left: 14px;
         border: 1px solid rgba(146, 108, 22, 0.45);
-        // «металлик» без картинки: диагональный градиент со световыми бликами
-        background: linear-gradient(
-          105deg,
-          #f7e2a0 0%,
-          #eec86a 26%,
-          #d4a638 52%,
-          #f2d67e 76%,
-          #cfa236 100%
-        );
+        background: $omo-gold;
         color: #4a3a10;
       }
     }
@@ -1424,6 +1279,11 @@
       &--dark {
         background: #1c2b22;
         color: #fff;
+        box-shadow: none;
+      }
+      &--gold {
+        background: $omo-gold;
+        color: #4a3a10;
         box-shadow: none;
       }
     }
@@ -1503,6 +1363,42 @@
       font-size: 0.9375rem;
       font-weight: 700;
     }
+    // карточка-комплект (референс): заголовок + золотой подзаголовок стеком, мойка справа.
+    // это <button> (открывает форму заявки) — сбрасываем кнопочные дефолты под карточку
+    &.omo-card--bundle {
+      appearance: none;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+      .omo-card__side {
+        width: 40%;
+        pointer-events: none;
+      }
+      .omo-card__stack {
+        position: absolute;
+        bottom: 18px;
+        left: 18px;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: $sp-3;
+        max-width: 55%;
+        .omo-card__name {
+          position: static;
+          max-width: none;
+          font-size: 1.1rem;
+        }
+        .omo-card__sub {
+          color: #b0aa7d;
+          font-size: 0.75rem;
+          font-weight: 600;
+          line-height: 1.35;
+        }
+      }
+    }
   }
   @media (max-width: 639px) {
     .omo-card .omo-card__name {
@@ -1511,6 +1407,14 @@
     }
     .omo-card--green .omo-card__name {
       font-size: 1.25rem;
+    }
+    // на мобилке карточка 230px — стек шире, шрифт заголовка меньше
+    // (специфичность — как у базовых правил стека, чтобы переиграть их)
+    .omo-card--green.omo-card--bundle .omo-card__stack {
+      max-width: 60%;
+      .omo-card__name {
+        font-size: 1.05rem;
+      }
     }
   }
   section {
@@ -1578,12 +1482,6 @@
       width: 118px;
       height: 118px;
     }
-    .features-grid {
-      gap: 12px;
-    }
-    .feature-card {
-      padding: 16px;
-    }
     .kit-card {
       min-height: 330px;
     }
@@ -1593,9 +1491,6 @@
     }
   }
   @media (min-width: 1024px) {
-    .features-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
     .categories-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
