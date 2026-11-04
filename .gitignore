@@ -49,3 +49,4 @@ scripts/recompress-s3-images/*.log
 scripts/recompress-s3-images/failed.json
 AGENTS.md
 fetch.log
+/build-asko

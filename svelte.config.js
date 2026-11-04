@@ -1,5 +1,12 @@
 import preprocess from 'svelte-preprocess';
 import adapter from '@sveltejs/adapter-node';
+import adapterStatic from '@sveltejs/adapter-static';
+
+// Второй сайт (ASKO-витрина) собирается из этого же проекта отдельной командой:
+// SITE=asko vite build → adapter-static в build-asko (статика для nginx на своём домене).
+// Без SITE — обычный adapter-node для основного магазина. /asko в основном билде отдаёт 404
+// (страж в src/routes/asko/+layout.server.ts), изоляция сайтов сохраняется.
+const isAsko = process.env.SITE === 'asko';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -22,14 +29,20 @@ const config = {
 	},
 	preprocess: preprocess({
 		scss: {
-			prependData: `@use 'src/lib/styles/variables.scss' as *;`
+			// тема токенов: asko-сборка получает палитру витрины, основной — фирменную
+			prependData: `@use 'src/lib/styles/variables${isAsko ? '.asko' : ''}.scss' as *;`
 		},
 		postcss: true
 	}),
 	kit: {
-		adapter: adapter({
-			out: 'build',
-		}),
+		adapter: isAsko
+			? adapterStatic({ pages: 'build-asko', assets: 'build-asko', strict: false })
+			: adapter({
+					out: 'build',
+				}),
+		// пререндерим только аско-маршруты: entries ['/'] в asko-сборке рендерил бы
+		// главную основного сайта (с походами в БД) — не нужно
+		prerender: isAsko ? { entries: ['/asko'] } : undefined
 	}
 };
 

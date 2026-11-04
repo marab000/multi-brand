@@ -4,7 +4,12 @@
   import { apiFetch } from '$lib/api';
   import { phoneMask } from '$lib/actions/phoneMask';
   import { isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
-  let { open = $bindable(false), prefill = '' } = $props<{ open?: boolean; prefill?: string }>();
+  let {
+    open = $bindable(false),
+    prefill = '',
+    // метка источника заявки: 'asko' для витрины, не задана — основной сайт
+    source = ''
+  } = $props<{ open?: boolean; prefill?: string; source?: string }>();
   let name = $state('');
   let phone = $state('');
   let message = $state('');
@@ -39,7 +44,8 @@
         body: JSON.stringify({
           name: name.trim(),
           phone: normalizeRuPhone(phone),
-          message: message.trim()
+          message: message.trim(),
+          ...(source ? { source } : {})
         }),
         headers: { 'Content-Type': 'application/json' }
       });

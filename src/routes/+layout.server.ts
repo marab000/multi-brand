@@ -1,10 +1,17 @@
 import type { LayoutServerLoad } from './$types';
+import { env } from '$env/dynamic/private';
 import { sql } from '$lib/db';
 import { filterCatalogRootsByAvailability, getCatalogRoots } from '$lib/server/categories';
 import { getContacts } from '$lib/server/contacts';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
-  const [availabilityRows, contacts, searchHintRows, countRows] = await Promise.all([
+	// ASKO-сборка (SITE=asko): рут-лейаут витрины — голый каркас. Данные основного
+	// сайта (меню каталога, контакты, подсказки) не нужны и БД на сборке не трогаем.
+	// Для основного сайта SITE не задан — поведение не меняется.
+	if (env.SITE === 'asko') {
+		return { site: 'asko' };
+	}
+	const [availabilityRows, contacts, searchHintRows, countRows] = await Promise.all([
     sql`
       SELECT DISTINCT
         catalog_root_slug AS root_slug,
@@ -36,14 +43,15 @@ export const load: LayoutServerLoad = async ({ locals }) => {
     rootCounts[row.root_slug] = row.count;
   }
 
-  return {
-    catalogRoots: filteredRoots,
-    rootCounts,
-    contacts,
-    searchHints: searchHintRows.map((r) => r.name),
-    user: locals.user,
-    // город поддомена и origin для канониклов (msk./ufa. каноникалят сами на себя)
-    city: locals.city,
-    siteOrigin: locals.siteOrigin
-  };
+	return {
+		site: 'main',
+		catalogRoots: filteredRoots,
+		rootCounts,
+		contacts,
+		searchHints: searchHintRows.map((r) => r.name),
+		user: locals.user,
+		// город поддомена и origin для канониклов (msk./ufa. каноникалят сами на себя)
+		city: locals.city,
+		siteOrigin: locals.siteOrigin
+	};
 };

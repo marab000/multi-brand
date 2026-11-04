@@ -1,7 +1,9 @@
-$green: #0f3d1f;
-$green-light: #3e6f4f;
+// Брендовые цвета через !default: их переопределяет тема asko-сборки
+// (@forward ... with в variables.asko.scss). Без темы значения те же.
+$green: #0f3d1f !default;
+$green-light: #3e6f4f !default;
 $green-soft: rgba($green, 0.75);
-$yellow: #e6a73c;
+$yellow: #e6a73c !default;
 
 $success: #008000;
 $error: #ff0000;

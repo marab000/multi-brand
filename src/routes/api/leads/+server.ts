@@ -7,9 +7,11 @@ export const POST: RequestHandler = async ({ request }) => {
   const name = String(body?.name ?? '').trim();
   const phone = String(body?.phone ?? '').trim();
   const message = String(body?.message ?? '').trim();
+  // источник заявки: сейчас только витрина ASKO ('asko'); отсутствие — основной сайт
+  const source = String(body?.source ?? '').trim();
   if (!name || !phone) return json({ message: 'Некорректные данные заявки' }, { status: 400 });
   try {
-    await sendLeadEmail({ name, phone, message });
+    await sendLeadEmail({ name, phone, message, source });
   } catch (e) {
     console.error('Lead email error:', e);
     return json({ message: 'Не удалось отправить заявку' }, { status: 500 });
