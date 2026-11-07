@@ -1,9 +1,14 @@
 <script lang="ts">
   import {
     ArrowRight,
+    ArrowUpRight,
+    ChevronDown,
     Wind,
-    MapPin,
-    ChevronRight
+    ChevronRight,
+    Headset,
+    MessageCircle,
+    ShieldCheck,
+    Wrench
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import { cityForms } from '$lib/cityForms';
@@ -33,6 +38,9 @@
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
   import askoQuizPhoto from '$lib/assets/promo/asko-quiz.webp';
   import liebherrQuizPhoto from '$lib/assets/promo/liebherr-quiz.webp';
+  import storeShowroom from '$lib/assets/promo/store-showroom.webp';
+  import storeManager from '$lib/assets/promo/store-manager.webp';
+  import storeWarehouse from '$lib/assets/promo/store-warehouse.webp';
 
   // «от 48 моделей» / «от 21 модель» / «от 11 моделей» — склонение слова «модель»
   function pluralModels(n: number): string {
@@ -44,8 +52,21 @@
     return 'моделей';
   }
 
+  // +79276707817 → +7 927 670-78-17 (в БД телефон хранится слитно)
+  function formatPhone(raw: string): string {
+    const d = raw.replace(/\D/g, '');
+    if (d.length !== 11) return raw;
+    return `+7 ${d.slice(1, 4)} ${d.slice(4, 7)}-${d.slice(7, 9)}-${d.slice(9)}`;
+  }
+
   let { data } = $props();
   const city = $derived(cityForms(data?.city));
+  // блок «Официальная гарантия и сервис» (референс заказчика): 3 зелёные карточки
+  const guaranteeCards = [
+    { icon: ShieldCheck, title: 'Гарантия от бренда', text: 'Срок гарантии зависит от производителя техники' },
+    { icon: Wrench, title: 'Сервис', text: 'Сертифицированные сервисные центры' },
+    { icon: Headset, title: 'Техподдержка', text: 'Оперативная помощь специалистов' }
+  ];
   const desktopImages = $derived(data.desktopSlides || []);
   const mobileImages = $derived(data.mobileSlides || []);
   // Кондиционеры: сезонный блок, вернём через полгода (true = показать)
@@ -58,6 +79,13 @@
     '— Мойка, смеситель и измельчитель в едином цвете',
     '— Выгода при покупке комплектом до 15%'
   ].join('\n');
+
+  // кнопка «Записаться на визит в салон» — простая форма заявки (LeadRequestModal)
+  let storeVisitOpen = $state(false);
+  const storeVisitPrefill = 'Запись на визит в салон (ул. Чистопольская, д. 66)';
+
+  // «Хиты продаж» на мобилке: сначала 4 карточки, «Смотреть ещё» раскрывает список
+  let hitsExpanded = $state(false);
 
   const categories = [
     {
@@ -167,7 +195,7 @@
   const liebherrOffer = {
     eyebrow: 'Акция при обращении за комплектом',
     titleLines: ['Соберём решение', 'без лишних забот.'],
-    text: 'Оставьте заявку — проверим размеры, сравним подходящие варианты и отдельно рассчитаем доставку, хранение и монтаж.',
+    text: 'Оставьте заявку — подберём решения, которые подойдут по размерам, цене и характеристикам.',
     buttonLabel: 'Получить условия акции',
     leadTitle:
       'Запрос условий акции: хранение до готовности кухни, проверка ниши, доставка и установка, персональный расчёт.',
@@ -187,7 +215,7 @@
       },
       {
         title: 'Персональный расчёт',
-        text: 'Покажем состав стоимости: техника, доставка, подъём, установка и дополнительные работы.'
+        text: 'Рассчитаем полную стоимость комплекта: техника, бесплатная доставка, подъём, установка и дополнительные работы — без скрытых расходов.'
       }
     ]
   };
@@ -257,11 +285,12 @@
 <section class="mx-auto">
   <a class="podbor-cta" href="/podbor">
     <div class="podbor-cta__main">
-      <h2>
-        Собери комплект техники
-        <em>с помощью ИИ <span class="hidden md:inline"> за 1 минуту</span></em>
-      </h2>
+      <h2>Подберём технику под вашу кухню и бюджет</h2>
       <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет</p>
+      <p>
+        Проверим размеры и совместимость, подготовим расчёт комплекта и согласуем бесплатную
+        доставку к готовности кухни.
+      </p>
       <span class="podbor-cta__btn"
         >Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span
       >
@@ -298,13 +327,19 @@
   </section>
 {/if}
 
-<section class="mx-auto">
+<section class="mx-auto hits-section">
   <h2 class="section-title">Хиты продаж</h2>
-  <div class="hits-grid">
+  <div class="hits-grid" class:hits-grid--expanded={hitsExpanded}>
     {#each data.hits as hit (hit.id)}
       <ProductCard product={hit} />
     {/each}
   </div>
+  {#if !hitsExpanded}
+    <button type="button" class="hits-more" onclick={() => (hitsExpanded = true)}>
+      Смотреть ещё
+      <ChevronDown size={16} strokeWidth={2.2} />
+    </button>
+  {/if}
 </section>
 
 <section class="mx-auto">
@@ -399,6 +434,7 @@
   </div>
 </section>
 <LeadRequestModal bind:open={bundleOpen} prefill={bundlePrefill} />
+<LeadRequestModal bind:open={storeVisitOpen} prefill={storeVisitPrefill} source="store-visit" />
 
 {#if AC_ENABLED}
   <section class="mx-auto">
@@ -458,94 +494,96 @@
 <section class="mx-auto">
   <div class="promo-banner promo-banner--store">
     <div class="promo-banner__head">
-      <div class="promo-banner__icon">
-        <MapPin size={26} strokeWidth={2} color="#e6a73c" />
-      </div>
       <div class="promo-banner__text">
-        <strong>Приглашаем в наш офлайн-магазин кухонной техники</strong>
+        <h2>Приглашаем в наш офлайн-магазин кухонной техники</h2>
         <span>
           Здесь вы сможете увидеть модели вживую, сравнить бренды, проконсультироваться со
           специалистом и подобрать технику под ваши задачи.
         </span>
       </div>
     </div>
-    <div class="store-info">
-      <p>
-        <b>Адрес:</b>
+    <div class="store-cards">
+      <article class="store-card">
+        <h3 class="store-card__name">Шоурум</h3>
+        <div class="store-card__photo">
+          <img src={storeShowroom} alt="Шоурум: кухни с встроенной техникой" loading="lazy" />
+        </div>
+        <div class="store-card__body">
+          <p class="store-card__line">г. Казань, ул. Чистопольская, д. 66</p>
+          <p class="store-card__line">Ежедневно с 9:00 до 18:00</p>
+        </div>
         <a
+          class="store-card__btn"
           href="https://yandex.ru/maps/?text=Казань, улица Чистопольская 66"
           target="_blank"
           rel="noopener"
-          class="store-info__map-link"
         >
-          Республика Татарстан, г. Казань, Ново-Савиновский район, ул. Чистопольская, д. 66 ↗
+          Построить маршрут
+          <ArrowUpRight size={14} strokeWidth={2.2} />
         </a>
-      </p>
-      <p><b>Часы работы:</b> ежедневно с 9:00 до 18:00</p>
-      <p>
-        <b>Личный менеджер:</b>
-        <a href="tel:{data.contacts?.pavelPhoneHref ?? ''}" class="store-info__map-link"
-          >{data.contacts?.pavelPhone ?? '+7 927 670-78-17'}</a
-        >
-        {data.contacts?.pavelName ?? 'Павел'}
-      </p>
-      <p>
-        <b>Склад:</b>
+      </article>
+      <article class="store-card">
+        <h3 class="store-card__name">Менеджер</h3>
+        <div class="store-card__photo store-card__photo--top">
+          <img src={storeManager} alt="Личный менеджер Павел" loading="lazy" />
+        </div>
+        <div class="store-card__body">
+          <p class="store-card__line">Личный менеджер {data.contacts?.pavelName ?? 'Павел'}</p>
+          <p class="store-card__line">
+            {formatPhone(data.contacts?.pavelPhone ?? '+79276707817')}
+          </p>
+        </div>
+        <a class="store-card__btn" href={data.contacts?.maxLink ?? ''} target="_blank" rel="noopener">
+          <MessageCircle size={14} strokeWidth={2.2} />
+          Написать в Макс
+        </a>
+      </article>
+      <article class="store-card">
+        <h3 class="store-card__name">Склад</h3>
+        <div class="store-card__photo">
+          <img src={storeWarehouse} alt="Собственный склад хранения" loading="lazy" />
+        </div>
+        <div class="store-card__body">
+          <p class="store-card__line">Собственный склад хранения</p>
+          <p class="store-card__line">Индустриальный парк М-7</p>
+        </div>
         <a
+          class="store-card__btn"
           href="https://yandex.ru/maps/?text=Казань, Индустриальный парк M-7"
           target="_blank"
           rel="noopener"
-          class="store-info__map-link"
         >
-          Промышленная площадка, Индустриальный парк M-7 ↗
+          Хранение до конца ремонта
         </a>
-      </p>
+      </article>
     </div>
+    <button type="button" class="store-visit" onclick={() => (storeVisitOpen = true)}>
+      Записаться на визит в салон
+      <ArrowRight size={15} strokeWidth={2.2} />
+    </button>
   </div>
 </section>
 
-<section class="about-seo mx-auto">
-  <div class="about-seo__inner">
-    <p>
-      Добро пожаловать в интернет-магазин «Мультибренд» — ваше готовое решение для комплектации
-      кухни и дома современной бытовой техникой в {city.prep}. Мы собрали в одном каталоге продукцию
-      ведущих мировых производителей, чтобы вы могли легко подобрать технику под любой интерьер,
-      кухонный проект или готовый дизайн.
-    </p>
-    <p>
-      В нашем ассортименте представлена как крупная, так и мелкая бытовая техника, встраиваемые
-      духовые шкафы и варочные панели, современные кухонные вытяжки и климатические системы для
-      создания идеального микроклимата.
-    </p>
-    <p>
-      Мы уделяем особое внимание деталям, поэтому у нас вы найдете большой выбор кухонных моек,
-      смесителей, измельчителей пищевых отходов (диспоузеров) и оригинальных запчастей к ним. Также
-      мы поставляем профессиональную технику для бизнеса.
-    </p>
 
-    <h3>Почему выбирают «Мультибренд»?</h3>
-    <ul>
-      <li>
-        <strong>Индивидуальный подбор:</strong> Поможем подобрать технику под ваши задачи. Подскажем по
-        точным размерам, брендам, цветам, совместимости и комплектации.
-      </li>
-      <li>
-        <strong>Шоурум в Казани:</strong> Вы можете оформить быструю доставку на сайте или посетить наш
-        офлайн-магазин в Казани, чтобы вживую оценить качество товаров.
-      </li>
-      <li>
-        <strong>Официальная гарантия:</strong> Работаем только с проверенными брендами и гарантируем высокое
-        качество каждого прибора.
-      </li>
-    </ul>
-    <p>
-      Оставьте заявку на сайте или свяжитесь с нами в Макс — эксперты «Мультибренд» помогут сделать
-      вашу кухню функциональной, стильной и уютной!
-    </p>
+<section class="guarantee mx-auto">
+  <div class="guarantee__head">
+    <h2 class="guarantee__title">Официальная гарантия и сервис</h2>
+    <p class="guarantee__subtitle">Спокойствие и уверенность на каждом этапе</p>
+  </div>
+  <div class="guarantee__grid">
+    {#each guaranteeCards as c (c.title)}
+      <article class="guarantee__card">
+        <span class="guarantee__icon"><c.icon size={26} strokeWidth={1.7} /></span>
+        <h3 class="guarantee__name">{c.title}</h3>
+        <p class="guarantee__text">{c.text}</p>
+      </article>
+    {/each}
   </div>
 </section>
 
 <style lang="scss">
+  @use 'sass:color';
+
   // референс: белая карточка, слева текст + жёлтая кнопка + 3 преимущества,
   // справа фото кухни (статичный ассет со стикером)
   .podbor-cta {
@@ -735,6 +773,12 @@
       }
     }
   }
+  // секция хитов: flex, чтобы кнопка «Смотреть ещё» получила зазор от родителя
+  .hits-section {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-4;
+  }
   .hits-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -742,35 +786,154 @@
     @media (min-width: 1280px) {
       grid-template-columns: repeat(5, 1fr);
     }
-    // на узких экранах показываем только 6 хитов, десятый десяток не нужен
+    // на мобилке сначала 4 хита, «Смотреть ещё» раскрывает весь список
     @media (max-width: 1024px) {
       grid-template-columns: repeat(2, 1fr);
-      > :global(:nth-child(n + 7)) {
+      > :global(:nth-child(n + 5)) {
         display: none;
+      }
+      &.hits-grid--expanded > :global(:nth-child(n + 5)) {
+        display: block;
       }
     }
     @media (max-width: 560px) {
       grid-template-columns: 1fr;
     }
   }
-  .store-info {
-    padding: 0 20px 20px;
+  .hits-more {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    gap: $sp-1;
+    width: 100%;
+    max-width: 420px;
+    height: 44px;
+    border: 1px solid rgba($green, 0.35);
+    border-radius: 999px;
+    background: #fff;
+    color: #111827;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease,
+      color 0.15s ease;
+    &:hover {
+      border-color: $green;
+      background: rgba($green, 0.06);
+      color: $green;
+    }
+    @media (max-width: 1024px) {
+      display: inline-flex;
+    }
+  }
+  // тёмные карточки магазина (референс заказчика): шоурум / менеджер / склад
+  .store-cards {
     display: grid;
+    gap: 12px;
+
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .store-card {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    p {
+    padding: 14px;
+    border-radius: 14px;
+    background: #3c403c;
+    color: #fff;
+    text-align: center;
+
+    &__name {
       margin: 0;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: #374151;
-      b {
-        color: #111827;
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    // фото-слот карточки: заливка с обрезкой, как на референсе
+    &__photo {
+      height: 150px;
+      border-radius: 12px;
+      overflow: hidden;
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      // у портрета менеджера лицо в верхней части кадра
+      &--top img {
+        object-position: top;
       }
     }
-    &__map-link {
-      color: $green;
+
+    // растёт и занимает свободную высоту карточки — кнопки по нижней кромке
+    &__body {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    &__line {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    &__btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      color: #fff;
+      font-size: 0.85rem;
       font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.5);
+      }
+    }
+
+  }
+
+  // кнопка записи на визит под карточками
+  .store-visit {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: $sp-1;
+    width: 100%;
+    max-width: 420px;
+    height: 44px;
+    border: 0;
+    border-radius: 12px;
+    background: $green;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: color.scale($green, $lightness: -10%);
     }
   }
   .hero-section {
@@ -1078,15 +1241,6 @@
       object-fit: contain;
     }
   }
-  .promo-banner--store .promo-banner__head {
-    /* текст слева, иконка справа (по просьбе — блок не должен центрироваться) */
-    justify-content: flex-start;
-    text-align: left;
-    .promo-banner__icon {
-      order: 2;
-      margin-left: auto;
-    }
-  }
   .promo-banner--ac .promo-banner__icon {
     background: rgba(59, 130, 246, 0.1);
     color: #3b82f6;
@@ -1095,7 +1249,9 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    strong {
+    strong,
+    h2 {
+      margin: 0;
       font-size: 1.125rem;
       font-weight: 700;
       line-height: 1.2;
@@ -1474,7 +1630,8 @@
     .promo-banner__text {
       align-items: center;
       text-align: center;
-      strong {
+      strong,
+      h2 {
         font-size: 1.2rem;
       }
     }
@@ -1498,54 +1655,100 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
-  .about-seo {
-    margin: 0 0 24px;
-    &__inner {
-      padding: 28px;
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 16px;
-      background: #fff;
+  // «Официальная гарантия и сервис» (референс заказчика): 3 зелёные карточки,
+  // круглые значки сидят на верхней кромке (наполовину снаружи) и светятся
+  .guarantee {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // 40px = выступ иконки над карточкой (32px) + 8px воздуха до подзаголовка:
+    // меньше — иконка ложится на текст (проверено замером)
+    gap: 40px;
+    text-align: center;
+
+    &__head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $sp-2;
     }
-    h2 {
-      margin: 0 0 16px;
-      font-size: 1.6rem;
+
+    &__title {
+      margin: 0;
+      font-size: 1.25rem;
       font-weight: 700;
-      line-height: 1.2;
+      line-height: 1.15;
       color: #111827;
     }
-    h3 {
-      margin: 24px 0 12px;
-      font-size: 1.125rem;
-      font-weight: 700;
-      color: #111827;
-    }
-    p {
-      margin: 0 0 12px;
-      font-size: 0.95rem;
-      line-height: 1.6;
+
+    &__subtitle {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.4;
       color: #475569;
     }
-    ul {
+
+    &__grid {
+      display: grid;
+      // в стопке иконка выступает над карточкой на 32px — даём ей чистый воздух
+      gap: 44px;
+      width: 100%;
+
+      @media (min-width: 1024px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+    }
+
+    &__card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $sp-1;
+      padding: 44px 16px 18px;
+      border-radius: 16px;
+      background: $green;
+      color: #fff;
+    }
+
+    &__icon {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 1px solid rgba($yellow, 0.6);
+      // сочно-зелёный фон, заметно светлее карточки — как на референсе
+      background: radial-gradient(circle at 50% 32%, #43b97e, #17814e);
+      color: #f2f7ef;
+      box-shadow:
+        0 0 18px rgba(67, 185, 126, 0.55),
+        0 0 44px rgba($green-light, 0.4);
+    }
+
+    &__name {
       margin: 0;
-      padding: 0;
-      list-style: none;
-      li {
-        position: relative;
-        padding-left: 24px;
-        margin-bottom: 12px;
-        font-size: 0.95rem;
-        line-height: 1.6;
-        color: #475569;
-        &::before {
-          content: '';
-          position: absolute;
-          top: 9px;
-          left: 0;
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: $green;
-        }
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    &__text {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    @media (max-width: 639px) {
+      &__title {
+        font-size: 1.45rem;
       }
     }
   }

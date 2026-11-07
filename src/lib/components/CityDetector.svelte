@@ -1,142 +1,60 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Селектор города в мобильной шапке. Архитектура: город определяется сервером
+  // по поддомену (msk. → Москва, ufa. → Уфа, основной домен → Казань, см.
+  // cityPlaceholders.currentCityFromHost). Поэтому «выбор города» = переход на
+  // поддомен с тем же путём. Никакого localStorage и ipapi-детекта: город живёт
+  // на сервере и приходит пропсом из layout-данных (+layout.server.ts).
   import { slide } from 'svelte/transition';
-  import { MapPin, X, Check, ChevronDown } from 'lucide-svelte';
+  import { MapPin, Check, ChevronDown } from 'lucide-svelte';
+  import { SITE_URL } from '$lib/config/site';
 
-  const STORAGE_KEY = 'user_city';
-  const POPULAR_CITIES = [
-    'Казань', 'Москва', 'Санкт-Петербург', 'Набережные Челны', 'Уфа', 'Нижнекамск',
-    'Елабуга', 'Чистополь', 'Бугульма', 'Лениногорск', 'Зеленодольск', 'Альметьевск',
-    'Нижний Новгород', 'Самара', 'Саратов', 'Тольятти', 'Пенза', 'Ульяновск',
-    'Чебоксары', 'Йошкар-Ола', 'Ижевск', 'Киров', 'Пермь', 'Екатеринбург',
-    'Челябинск', 'Тюмень', 'Омск', 'Новосибирск', 'Краснодар', 'Ростов-на-Дону',
-    'Волгоград', 'Воронеж', 'Тула', 'Ярославль', 'Тверь', 'Калуга'
+  let { city = 'Казань' } = $props<{ city?: string }>();
+
+  // поддомен → город (на основном домене поддомена нет)
+  const CITIES = [
+    { name: 'Казань', sub: '' },
+    { name: 'Уфа', sub: 'ufa.' },
+    { name: 'Москва', sub: 'msk.' }
   ];
 
-  let selectedCity = $state('');
-  let detectedCity = $state('');
-  let showModal = $state(false);
-  let showDropdown = $state(false);
-  let searchQuery = $state('');
+  let open = $state(false);
 
-  const emit = () => {
-    if (typeof window === 'undefined') return;
-    window.dispatchEvent(new CustomEvent('city:change', { detail: selectedCity }));
-  };
+  const currentCity = $derived(city || 'Казань');
 
-  const saveCity = (city: string) => {
-    selectedCity = city;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, city);
-    }
-    showModal = false;
-    showDropdown = false;
-    emit();
-  };
-
-  const filteredCities = $derived(
-    searchQuery.trim()
-      ? POPULAR_CITIES.filter((c) => c.toLowerCase().includes(searchQuery.toLowerCase()))
-      : POPULAR_CITIES
-  );
-
-  onMount(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      selectedCity = saved;
-      emit();
-      return;
-    }
-    // Определяем город через бесплатный API
-    fetch('https://ipapi.co/json/')
-      .then((r) => r.json())
-      .then((data) => {
-        detectedCity = data?.city || '';
-        if (detectedCity) {
-          showModal = true;
-        } else {
-          // Не смогли определить — показываем Казань по умолчанию
-          selectedCity = 'Казань';
-          saveCity('Казань');
-        }
-      })
-      .catch(() => {
-        selectedCity = 'Казань';
-        saveCity('Казань');
-      });
-  });
-
-  const confirmCity = () => saveCity(detectedCity || 'Казань');
-  const rejectCity = () => {
-    showModal = false;
-    showDropdown = true;
+  const hrefFor = (sub: string) => {
+    const base = sub ? `https://${sub}multi-brand.online` : SITE_URL;
+    if (typeof window === 'undefined') return base;
+    const { pathname, search } = window.location;
+    return `${base}${pathname}${search}`;
   };
 </script>
 
-<!-- Кнопка в шапке -->
+<!-- Кнопка в шапке: список раскрывается прилегающим под кнопкой -->
 <div class="city-selector">
-  <button type="button" class="city-btn" onclick={() => (showDropdown = !showDropdown)}>
+  <button type="button" class="city-btn" onclick={() => (open = !open)}>
     <MapPin size={16} strokeWidth={2.1} />
-    <span>{selectedCity || 'Казань'}</span>
+    <span>{currentCity}</span>
     <ChevronDown size={14} strokeWidth={2.2} />
   </button>
 
-  {#if showDropdown}
+  {#if open}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="city-backdrop" onclick={() => (showDropdown = false)}></div>
+    <div class="city-backdrop" onclick={() => (open = false)}></div>
     <div class="city-dropdown" transition:slide={{ duration: 180 }}>
-      <div class="city-search">
-        <input
-          type="text"
-          placeholder="Поиск города"
-          bind:value={searchQuery}
-        />
-      </div>
       <div class="city-list">
-        {#each filteredCities as city}
-          <button
-            type="button"
-            class="city-option"
-            class:city-option--active={city === selectedCity}
-            onclick={() => saveCity(city)}
-          >
-            <span>{city}</span>
-            {#if city === selectedCity}
+        {#each CITIES as city (city.name)}
+          <a class="city-option" href={hrefFor(city.sub)}>
+            <span>{city.name}</span>
+            {#if city.name === currentCity}
               <Check size={16} strokeWidth={2.4} />
             {/if}
-          </button>
-        {:else}
-          <p class="city-empty">Город не найден</p>
+          </a>
         {/each}
       </div>
     </div>
   {/if}
 </div>
-
-<!-- Модалка подтверждения города -->
-{#if showModal}
-  <div class="city-modal-overlay" transition:slide={{ duration: 200 }}>
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="city-modal" onclick={(e) => e.stopPropagation()}>
-      <button class="city-modal__close" onclick={() => (showModal = false)} aria-label="Закрыть">
-        <X size={18} strokeWidth={2.2} />
-      </button>
-      <div class="city-modal__icon">
-        <MapPin size={28} strokeWidth={2} />
-      </div>
-      <h3>Ваш город — {detectedCity || 'Казань'}?</h3>
-      <div class="city-modal__actions">
-        <button class="city-modal__yes" onclick={confirmCity}>
-          <Check size={16} strokeWidth={2.4} />
-          Да, верно
-        </button>
-        <button class="city-modal__no" onclick={rejectCity}>Выбрать другой</button>
-      </div>
-    </div>
-  </div>
-{/if}
 
 <style lang="scss">
   .city-selector {
@@ -171,10 +89,11 @@
     inset: 0;
     z-index: 40;
   }
+  // прилегающий список: строго под кнопкой (top 100% + 8px), влево от кнопки
   .city-dropdown {
     position: absolute;
     top: calc(100% + 8px);
-    right: 0;
+    left: 0;
     z-index: 50;
     width: 240px;
     border-radius: 12px;
@@ -183,25 +102,7 @@
     border: 1px solid #eee;
     overflow: hidden;
   }
-  .city-search {
-    padding: 10px;
-    border-bottom: 1px solid #f1f1f1;
-    input {
-      width: 100%;
-      height: 36px;
-      padding: 0 10px;
-      border: 1px solid #e4e7ec;
-      border-radius: 8px;
-      font-size: 0.8125rem;
-      outline: none;
-      &:focus {
-        border-color: $green;
-      }
-    }
-  }
   .city-list {
-    max-height: 220px;
-    overflow-y: auto;
     padding: 4px;
   }
   .city-option {
@@ -209,15 +110,13 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 9px 10px;
-    border: none;
+    padding: 10px 12px;
     border-radius: 8px;
-    background: transparent;
     color: #1d2939;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 600;
     text-align: left;
-    cursor: pointer;
+    text-decoration: none;
     transition: background 0.12s ease;
     :global(svg) {
       color: $green;
@@ -227,108 +126,6 @@
     }
     &--active {
       color: $green;
-    }
-  }
-  .city-empty {
-    padding: 14px 10px;
-    color: #94a3b8;
-    font-size: 0.8125rem;
-    text-align: center;
-    margin: 0;
-  }
-  .city-modal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 20px;
-  }
-  .city-modal {
-    position: relative;
-    width: 100%;
-    max-width: 380px;
-    padding: 32px 28px 28px;
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-    text-align: center;
-  }
-  .city-modal__close {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 50%;
-    background: #f5f5f5;
-    color: #64748b;
-    cursor: pointer;
-    transition: 0.15s ease;
-    &:hover {
-      background: #e8e8e8;
-      color: #333;
-    }
-  }
-  .city-modal__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 18px;
-    border-radius: 50%;
-    background: rgba($green, 0.1);
-    color: $green;
-  }
-  .city-modal h3 {
-    margin: 0 0 24px;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1.3;
-  }
-  .city-modal__actions {
-    display: flex;
-    flex-direction: column;
-    gap: $sp-2;
-  }
-  .city-modal__yes {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    height: 46px;
-    border: none;
-    border-radius: 12px;
-    background: $green;
-    color: #fff;
-    font-size: 0.9375rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: filter 0.15s ease;
-    &:hover {
-      filter: brightness(0.9);
-    }
-  }
-  .city-modal__no {
-    height: 42px;
-    border: 1px solid #e4e7ec;
-    border-radius: 12px;
-    background: #fff;
-    color: #475569;
-    font-size: 0.875rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.15s ease;
-    &:hover {
-      background: #f8f8f8;
     }
   }
 </style>

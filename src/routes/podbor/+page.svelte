@@ -543,7 +543,7 @@
     <header class="wizard__head wizard__head--party">
       <p class="wizard__eyebrow">🎉 Поздравляем!</p>
       <h1>Ваш комплект собран</h1>
-      <p class="wizard__sub">Менеджер проконсультирует и отправит персональную подборку с ценами в мессенджер</p>
+      <p class="wizard__sub">Пришлем подборку с фото и стоимостью</p>
     </header>
 
     <div class="wizard__items">

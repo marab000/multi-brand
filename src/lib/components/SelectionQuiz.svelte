@@ -30,9 +30,18 @@
   let requestOpen = $state(false);
   let prefill = $state('');
 
+  // на мобилке селекты спрятаны: первый клик по CTA раскрывает список, второй — шлёт заявку
+  let fieldsOpen = $state(false);
+  const isMobileViewport = () =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches;
+
   // ответы квиза уходят в стандартную форму заявки предзаполненным сообщением
   const submit = (e: SubmitEvent) => {
     e.preventDefault();
+    if (isMobileViewport() && !fieldsOpen) {
+      fieldsOpen = true;
+      return;
+    }
     prefill = [
       quiz.leadTitle,
       `— Что подбираем: ${need}`,
@@ -52,7 +61,7 @@
     </h2>
     <p>{quiz.description}</p>
   </div>
-  <form class="quiz__fields" onsubmit={submit}>
+  <form class="quiz__fields" class:quiz__fields--open={fieldsOpen} onsubmit={submit}>
     <label>
       Что подбираем?
       <span class="select-wrap">
@@ -262,6 +271,17 @@
     }
     .quiz__note {
       grid-column: 1 / -1;
+    }
+
+    // на мобилке селекты спрятаны, CTA стоит выше них: первый клик раскрывает список
+    @media (max-width: 640px) {
+      .quiz__submit {
+        order: -1;
+      }
+
+      &:not(.quiz__fields--open) label {
+        display: none;
+      }
     }
   }
 </style>

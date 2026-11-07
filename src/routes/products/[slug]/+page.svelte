@@ -65,7 +65,7 @@
   const stockLabel = $derived(
     p.stock !== null && p.stock > 0
       ? { text: 'В наличии — доставка от 7 дней', tone: 'in' }
-      : { text: 'На удалённом складе', tone: 'order' }
+      : { text: 'Доступно к заказу со склада', tone: 'order' }
   );
   const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
   const keySpecs = $derived(getKeySpecs(p));

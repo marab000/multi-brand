@@ -3,6 +3,7 @@
   import AuthModal from '$lib/components/AuthModal.svelte';
   import { openAuthModal } from '$lib/stores/authModal.svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
+  import CityDetector from '$lib/components/CityDetector.svelte';
   import Drawer from '$lib/components/Drawer.svelte';
   import { backHref } from '$lib/stores/backHref';
   import logo1 from '$lib/assets/logo1.png';
@@ -86,6 +87,11 @@
   const searchHints = $derived(data?.searchHints ?? []);
   const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
   const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
+  // на мобиле в пилюле показываем только «8 800», полный номер — в tel:
+  const phoneShort = $derived.by(() => {
+    const d = phoneNumber.replace(/\D/g, '');
+    return d.length >= 4 ? `${d[0]} ${d.slice(1, 4)}` : phoneNumber;
+  });
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
   const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
   let open = $state(false);
@@ -326,6 +332,13 @@
   </div>
 {/snippet}
 
+<!-- мобильная полоса города: самый верх (референс заказчика) -->
+<div class="city-strip md:hidden">
+  <div class="container mx-auto px-3 sm:px-4">
+    <CityDetector city={data?.city} />
+  </div>
+</div>
+
 <div class="nav container mx-auto px-3 sm:px-4">
   <div
     class="nav__top flex min-h-15 flex-col gap-1.5 border-b border-black/5 py-2 md:min-h-11 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0"
@@ -335,20 +348,17 @@
         ><img class="object-contain" src={logo1} alt="logo" /></a
       >
       <div class="nav__contact">
+        <a
+          class="nav__phone-pill whitespace-nowrap"
+          href={'tel:' + phoneHref}
+          aria-label={`Позвонить ${phoneNumber}`}
+          ><Phone size={16} strokeWidth={2.1} /><span>{phoneShort}</span></a
+        >
         <div class="nav__social">
-          <a href={tgLink} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
-            ><img src={tgIcon} alt="Telegram" width="22" height="22" /></a
-          >
           <a href={maxLink} target="_blank" rel="noopener noreferrer" aria-label="Макс"
             ><img src={maxIcon} alt="Макс" width="22" height="22" /></a
           >
         </div>
-        <a
-          class="nav__phone whitespace-nowrap"
-          href={'tel:' + phoneHref}
-          aria-label={`Позвонить ${phoneNumber}`}
-          ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
-        >
       </div>
     </div>
     <div
@@ -610,6 +620,30 @@
         font-size: 1.05rem;
         font-weight: 700;
       }
+    }
+    // мобильная пилюля «8 800»: рамка + звонок по клику (референс заказчика)
+    &__phone-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid rgba($green, 0.4);
+      border-radius: 999px;
+      background: #eef6f1;
+      color: #{$green};
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+      :global(svg) {
+        color: $green;
+        flex: 0 0 auto;
+      }
+    }
+    &__contact {
+      align-items: center;
     }
     &__inner {
       display: flex;
@@ -1052,5 +1086,21 @@
   }
   .sticky-bar--raised .sticky-bar__box {
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+  // мобильная полоса города: тёмная, на самом верху (референс заказчика).
+  // z-index 875 — выше sticky-шапки (870), чтобы прилегающий список городов
+  // открывался поверх строки «Каталог + поиск», а не под ней
+  .city-strip {
+    position: relative;
+    z-index: 875;
+    background: #12181f;
+    padding: 7px 0;
+    // кнопка города — белым на тёмном (city-btn из другого компонента — через :global)
+    :global(.city-btn) {
+      color: #e5e9e7;
+      &:hover {
+        color: #fff;
+      }
+    }
   }
 </style>

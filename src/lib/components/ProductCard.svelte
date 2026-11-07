@@ -44,11 +44,11 @@
   const stockLabel = $derived.by(() => {
     // stock из Тетриса — это остаток в штуках на складе Доскино (срок 7 дней),
     // а не статус. Пусто/0 — на основном складе неизвестно, считаем
-    // «На удалённом складе»: их сайт показывает удалёнку там, где обмен пуст.
+    // «Доступно к заказу со склада»: их сайт показывает удалёнку там, где обмен пуст.
     const s = product.stock;
     return s !== null && s > 0
       ? { text: 'В наличии — от 7 дней', tone: 'in' }
-      : { text: 'На удалённом складе', tone: 'order' };
+      : { text: 'Доступно к заказу со склада', tone: 'order' };
   });
   const isProtected = isDiscountExcludedBrand(product.brand);
   const isFavorite = $derived($favorites.some((item) => item.id === product.id));

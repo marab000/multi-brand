@@ -77,7 +77,7 @@
         Посмотрите отзывы в 2ГИС. Если уже покупали у нас, будем рады вашему мнению.
       </p>
       <a
-        class="platform__btn platform__btn--light"
+        class="platform__btn platform__btn--dark"
         href={GIS2_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -239,15 +239,6 @@
       color: #fff;
       &:hover {
         background: #2d2d2d;
-      }
-    }
-    &--light {
-      border: 1px solid #e2e5e2;
-      background: #fff;
-      color: #171717;
-      &:hover {
-        border-color: rgba($green, 0.5);
-        color: #{$green};
       }
     }
   }
