@@ -39,13 +39,20 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       omoikiriCounts = null; // бейджи «от N моделей» просто не покажутся
     }
 
-    // Хиты продаж: только Asko (стирки/сушки), Liebherr (холодильники/морозилки)
-    // и Franke (духовки/варки/вытяжки/свч). Десять на десктоп (2 ряда по 5),
-    // на мобилке лишние прячет CSS. Бакеты по брендам с чередованием — чтобы
-    // все три бренда гарантированно были в секции, внутри бакета случайный выбор.
+    // Хиты продаж: состав согласован заказчиком (07.11.2026) — ASKO и SMEG
+    // (стирки/сушки), LIEBHERR (холодильники/морозильники), KORTING, Kuppersberg
+    // и Franke (варочные — только индукция и газ, вытяжки, СВЧ, посудомойки,
+    // холодильники/морозильники). Десять на десктопе (2 ряда по 5), на мобилке
+    // лишние прячет CSS. Бакеты по брендам с чередованием — чтобы все шесть
+    // брендов гарантированно были в секции, внутри бакета случайный выбор.
     const HIT_COLUMNS = 5; // колонок на десктопе
     const HITS_TOTAL = HIT_COLUMNS * 2;
-    const pickHits = (brand: string, groups: string[], limit: number) => sql`
+    const pickHits = (
+      brand: string,
+      groups: string[],
+      limit: number,
+      types?: string[]
+    ) => sql`
       SELECT p.id, p.name, p.product_type, p.price_rrc, p.price_ric, p.specs,
              p.brand,
              COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
@@ -56,25 +63,41 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
         AND p.product_type NOT ILIKE 'комплект%'
         AND p.brand->>'name' = ${brand}
         AND p.catalog_group_slug IN ${sql(groups)}
+        ${types ? sql`AND p.product_type IN ${sql(types)}` : sql``}
       GROUP BY p.id
       ORDER BY random()
       LIMIT ${limit}
     `;
     let hits: any[] = [];
     try {
-      const [asko, liebherr, franke] = await Promise.all([
-        pickHits('ASKO', ['stiralnye-i-sushilnye-mashiny'], 6),
+      const hobInductionGas = ['Индукционная поверхность', 'Газовая поверхность'];
+      // стирки и сушки: сушильные ШКАФЫ (другой прибор) в хиты не попадают
+      const laundryTypes = [
+        'Стиральная машина с фронтальной загрузкой',
+        'Стиральная машина с вертикальной загрузкой',
+        'Стиральная машина встраиваемая',
+        'Сушильная машина встраиваемая',
+        'Стирально-сушильная машина отдельностоящая',
+        'Стирально-сушильная машина встраиваемая'
+      ];
+      const kitchenGroups = [
+        'varochnye-poverhnosti',
+        'vytyazhki-vstraivaemye',
+        'vytyazhki-otdelnostoyaschie',
+        'mikrovolnovye-pechi',
+        'posudomoechnye-mashiny',
+        'holodilniki-i-morozilniki'
+      ];
+      const buckets = await Promise.all([
+        pickHits('ASKO', ['stiralnye-i-sushilnye-mashiny'], 6, laundryTypes),
         pickHits('LIEBHERR', ['holodilniki-i-morozilniki'], 6),
-        pickHits('Franke', [
-          'duhovye-shkafy',
-          'varochnye-poverhnosti',
-          'vytyazhki-vstraivaemye',
-          'vytyazhki-otdelnostoyaschie',
-          'mikrovolnovye-pechi'
-        ], 6)
+        pickHits('SMEG', ['stiralnye-i-sushilnye-mashiny'], 6, laundryTypes),
+        pickHits('KORTING', kitchenGroups, 6, hobInductionGas),
+        pickHits('Kuppersberg', kitchenGroups, 6, hobInductionGas),
+        pickHits('Franke', kitchenGroups, 6, hobInductionGas)
       ]);
-      // чередуем бакеты: Asko, Liebherr, Franke, Asko, ...
-      const pools = [asko, liebherr, franke].map((p) => [...p]);
+      // чередуем бакеты: Asko, Liebherr, Smeg, Korting, Kuppersberg, Franke, Asko, ...
+      const pools = buckets.map((p) => [...p]);
       const seen = new Set<string>();
       for (let round = 0; hits.length < HITS_TOTAL && pools.some((p) => p.length); round++) {
         const pool = pools[round % pools.length];
@@ -89,12 +112,43 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
     }
 
   const seoO = await getSeoOverride('home');
+
+    // агрегат для комплектных блоков главной: минимальная цена (в тысячах) и число
+    // моделей по слагам категорий — один GROUP BY по таблице товаров
+    let kitAggregates: Record<string, { min: number; models: number }> = {};
+    try {
+      const kitRows = await sql`
+        SELECT slug, MIN(price) AS min_price, COUNT(*) AS models
+        FROM (
+          SELECT catalog_leaf_slug AS slug, price_rrc AS price
+          FROM products WHERE price_rrc IS NOT NULL
+          UNION ALL
+          SELECT catalog_group_slug AS slug, price_rrc
+          FROM products WHERE price_rrc IS NOT NULL
+          UNION ALL
+          SELECT catalog_root_slug AS slug, price_rrc
+          FROM products WHERE price_rrc IS NOT NULL
+        ) t
+        GROUP BY slug
+      `;
+      for (const r of kitRows as unknown as Array<{
+        slug: string;
+        min_price: string | number;
+        models: string | number;
+      }>) {
+        kitAggregates[r.slug] = { min: Number(r.min_price), models: Number(r.models) };
+      }
+    } catch {
+      kitAggregates = {};
+    }
+
     return {
       desktopSlides: data.desktop || [],
       mobileSlides: data.mobile || [],
       hits,
       syncBrands,
       omoikiriCounts,
+      kitAggregates,
       city: locals.city,
       meta: {
         title: seoO?.title ||
@@ -117,6 +171,7 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       hits: [],
       syncBrands: [],
       omoikiriCounts: null,
+      kitAggregates: {} as Record<string, { min: number; models: number }>,
       city: locals.city
     };
   }

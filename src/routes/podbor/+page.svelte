@@ -367,9 +367,14 @@
   {#if step <= steps.length}
     <header class="wizard__head">
       <p class="wizard__eyebrow">Конструктор кухни</p>
-      <h1>Собери комплект техники за минуту</h1>
+      <h1>Создадим идеальный комплект техники для вашей кухни</h1>
       <p class="wizard__sub">
-        Шаг {step} из {steps.length} — {steps[step - 1]}. Ответьте на вопросы — подберём комплект под ваш бюджет.
+        Ответьте на 4 вопроса — мы подберём технику, которая гармонично впишется в интерьер,
+        подойдёт по размерам и уложится в ваш бюджет.
+      </p>
+      <p class="wizard__note">
+        Сравним лучшие варианты, рассчитаем стоимость комплекта и организуем бесплатную доставку
+        к моменту готовности кухни.
       </p>
       <div class="wizard__progress">
         <div class="wizard__progress-track">
@@ -744,6 +749,13 @@
       font-size: 14px;
       line-height: 1.5;
       color: #6b7280;
+    }
+    &__note {
+      margin: 8px auto 0;
+      max-width: 420px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #9ca3af;
     }
     &__progress {
       margin: 20px 0 4px;
