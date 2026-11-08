@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getRoleLabel } from '$lib/constants/roleLabels';
   export let data: any;
 
   const u = data.user;
@@ -11,12 +12,6 @@
   // Цены в БД хранятся в тыс. руб.
   const fmtPrice = (v: number | null) =>
     v == null ? '—' : Math.round(v * 1000).toLocaleString('ru-RU') + ' ₽';
-
-  const roleLabel: Record<string, string> = {
-    designer: 'дизайнер',
-    sales: 'продажник',
-    admin: 'админ'
-  };
 </script>
 
 <a class="back" href="/admin/users">← Все пользователи</a>
@@ -28,7 +23,7 @@
   <div>
     <span class="label">Роли</span>
     {#if u.roles.length}
-      {u.roles.map((r: string) => roleLabel[r] ?? r).join(', ')}
+      {u.roles.map((r: string) => getRoleLabel(r)).join(', ')}
     {:else}
       —
     {/if}

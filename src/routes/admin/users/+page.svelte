@@ -1,13 +1,10 @@
 <script lang="ts">
+  import { getRoleLabel } from '$lib/constants/roleLabels';
   export let data: any;
 
   function formatDate(d: string | number | Date) {
     return new Date(d).toLocaleDateString('ru-RU');
   }
-  const roleLabel: Record<string, string> = {
-    admin: 'админ',
-    designer: 'дизайнер'
-  };
 </script>
 
 <h1>Пользователи</h1>
@@ -31,7 +28,7 @@
         <div class="cell roles">
           {#if u.roles.length}
             {#each u.roles as role}
-              <span class="role">{roleLabel[role] ?? role}</span>
+              <span class="role">{getRoleLabel(role)}</span>
             {/each}
           {:else}
             <span class="role role--none">—</span>
