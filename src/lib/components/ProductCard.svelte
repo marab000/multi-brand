@@ -36,6 +36,16 @@
     ? imgUrl(cardImages[0].url, 480)
     : '/images/no_image.png';
   const slug = slugify(product.name);
+  // рейтинг-бейдж карточки ведёт на отзывы магазина на Яндекс Картах:
+  // новая вкладка, а если popup заблокирован — переход в текущей.
+  // Без 'noopener' в features: с ним window.open всегда возвращает null
+  // (по спецификации), и fallback ложно решает, что попап заблокирован
+  const YANDEX_MAPS_URL = 'https://yandex.ru/maps/org/192917903315/';
+  const openStoreReviews = (e: Event) => {
+    e.preventDefault();
+    const w = window.open(YANDEX_MAPS_URL, '_blank');
+    if (!w) window.location.href = YANDEX_MAPS_URL;
+  };
   const price = getProductPrice(product);
   const oldPrice = getBaseProductPrice(product);
   const hasDiscount = hasProductDiscount(product) && oldPrice !== null && oldPrice > price;
@@ -189,7 +199,21 @@
       {:else}
         <img src={image} alt={product.name} loading="lazy" />
       {/if}
-      <div class="rating-badge">
+      <!-- рейтинг-бейдж ведёт на отзывы магазина на Яндекс Картах; preventDefault
+           гасит переход карточки на товар. Старый синтаксис on:click — весь файл
+           на нём, смешивать нельзя -->
+      <div
+        class="rating-badge"
+        role="link"
+        tabindex="0"
+        on:click|stopPropagation={openStoreReviews}
+        on:keydown={(e) => {
+          if (e.key === 'Enter') {
+            e.stopPropagation();
+            openStoreReviews(e);
+          }
+        }}
+      >
         <Star size={13} fill="currentColor" strokeWidth={0} />
         <span>{ratingData.rating}</span>
       </div>
@@ -453,6 +477,7 @@
       top: 8px;
       right: 8px;
       z-index: 3;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 4px;

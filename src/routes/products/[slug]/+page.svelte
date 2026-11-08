@@ -13,7 +13,6 @@
   } from '$lib/utils/pricing';
   import Installment from '$lib/components/Installment.svelte';
   import CartButton from '$lib/components/CartButton.svelte';
-  import { getProductRating } from '$lib/utils/productRating';
   import { cart } from '$lib/stores/cart';
   import type { Product, ProductKitItem, ProductKitLink } from '$lib/types/product';
   import { onMount } from 'svelte';
@@ -67,7 +66,6 @@
       ? { text: 'В наличии — доставка от 7 дней', tone: 'in' }
       : { text: 'Доступно к заказу со склада', tone: 'order' }
   );
-  const ratingData = $derived(getProductRating(p.external_id || p.id || p.name));
   const keySpecs = $derived(getKeySpecs(p));
   // подзаголовок под h1: цвет · тип товара (как на референсе)
   const subline = $derived([p.specs?.['Цвет'], p.product_type].filter(Boolean).join(' · '));
@@ -218,19 +216,21 @@
       {#if subline}
         <p class="product-head__subline">{subline}</p>
       {/if}
-      <div class="product-head__rating">
+      <!-- рейтинг магазина (не товара) — клик ведёт на отзывы на Яндекс Картах -->
+      <a
+        class="product-head__rating"
+        href="https://yandex.ru/maps/org/192917903315/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Рейтинг магазина на Яндекс Картах — открыть отзывы"
+      >
         <span class="stars" aria-hidden="true">
           {#each Array(5) as _, i}
-            <Star
-              size={15}
-              strokeWidth={0}
-              fill="currentColor"
-              class={i >= Math.round(Number(ratingData.rating)) ? 'dim' : ''}
-            />
+            <Star size={15} strokeWidth={0} fill="currentColor" class={i >= 5 ? 'dim' : ''} />
           {/each}
         </span>
-        <b>{ratingData.rating}</b>
-      </div>
+        <b>4,9</b>
+      </a>
     </div>
     <div class="mb-3 grid w-full gap-4 lg:gap-6 lg:grid-cols-2">
       <div class="flex w-full max-w-xl min-w-0 flex-col gap-3 lg:gap-4">
@@ -601,10 +601,18 @@
       line-height: 1.35;
     }
     &__rating {
+      // рейтинг магазина на Яндекс Картах: та же геометрия, что была у
+      // рейтинга товара, плюс ссылочное поведение (без подчёркивания)
       display: flex;
       align-items: center;
       gap: $sp-2;
+      width: fit-content;
       margin: 0;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+      &:hover {
+        opacity: 0.75;
+      }
       .stars {
         display: inline-flex;
         gap: $sp-1;
