@@ -90,7 +90,7 @@
           message: [
             method === 'delivery'
               ? `Доставка: по ${city.dat} (бесплатно), ${addressParts.join(', ')}`
-              : 'Доставка: самовывоз, Казань, ул. Чистопольская, 66',
+              : 'Доставка: самовывоз',
             `Оплата: ${payment === 'now' ? 'оплата сразу' : `рассрочка ${payment} мес. 0%`}`,
             email.trim() && `Email: ${email.trim()}`,
             comment.trim() && `Комментарий: ${comment.trim()}`,
