@@ -4,13 +4,15 @@
   import { cityForms } from '$lib/cityForms';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
+  import waIcon from '$lib/assets/social/whatsapp.svg';
   import {
     SITE_PHONE,
     SITE_PHONE_HREF,
     SITE_EMAIL,
     SITE_URL_NAME,
     LINK_TG,
-    LINK_MAX
+    LINK_MAX,
+    LINK_WHATSAPP
   } from '$lib/config/site';
   import type { Contacts } from '$lib/server/contacts';
 
@@ -82,6 +84,9 @@
         <a href={LINK_MAX} target="_blank" rel="noopener noreferrer" aria-label="MAX">
           <img src={maxIcon} alt="MAX" />
         </a>
+        <a href={LINK_WHATSAPP} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+          <img src={waIcon} alt="WhatsApp" />
+        </a>
       </div>
     </div>
 
@@ -114,7 +119,7 @@
       <ul class="footer__links" class:collapsed={!openBuyers}>
         <li><a href="/sale">Акции</a></li>
         <li><a href="/delivery">Доставка</a></li>
-        <li><a href="/podbor">Собери комплект техники 🔥</a></li>
+        <li><a href="/podbor">Собери комплект техники</a></li>
         <li><a href="/cart">Корзина</a></li>
         <li><a href="/favorites">Избранное</a></li>
         <li><a href="/user/info">Личный кабинет</a></li>

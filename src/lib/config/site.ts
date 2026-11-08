@@ -21,5 +21,7 @@ export const SITE_PHONE = `${DEFAULT_CONTACTS.phoneDigits.slice(0, 1)}(${DEFAULT
 export const SITE_EMAIL = DEFAULT_CONTACTS.email;
 export const LINK_TG = DEFAULT_CONTACTS.tgLink;
 export const LINK_MAX = DEFAULT_CONTACTS.maxLink;
+// WhatsApp менеджера Павла (wa.me — номер без плюса и разделителей)
+export const LINK_WHATSAPP = `https://wa.me/${DEFAULT_CONTACTS.pavelPhone.replace(/\D/g, '')}`;
 export const SITE_LOGO_URL = `${SITE_URL}/images/logo-email.png`;
 export const ORDER_NOTIFY_EMAIL = 'mebeliyer@gmail.com';
