@@ -8,12 +8,14 @@
     Headset,
     MessageCircle,
     ShieldCheck,
+    Tag,
+    Truck,
     Wrench
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import { cityForms } from '$lib/cityForms';
+  import { formatPrice } from '$lib/utils/formatPrice';
   import hob from '$lib/assets/links/hob.webp';
-  import coffee from '$lib/assets/links/coffee.webp';
   import dw from '$lib/assets/links/dw.webp';
   import oven from '$lib/assets/links/oven.webp';
   import freeze from '$lib/assets/links/freeze.webp';
@@ -21,7 +23,8 @@
   import mw from '$lib/assets/links/mw.webp';
   import wm from '$lib/assets/links/wm.webp';
   import hood from '$lib/assets/links/hood.webp';
-  import vm from '$lib/assets/links/vm.webp';
+  import kitWine from '$lib/assets/promo/kit-vinnye-shkafy.webp';
+  import kitDry from '$lib/assets/promo/kit-sushilnye-shkafy.webp';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import PrivilegesSection from '$lib/components/PrivilegesSection.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
@@ -38,6 +41,8 @@
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
   import askoQuizPhoto from '$lib/assets/promo/asko-quiz.webp';
   import liebherrQuizPhoto from '$lib/assets/promo/liebherr-quiz.webp';
+  import askoLogo from '$lib/assets/brands/ASKO.webp';
+  import liebherrLogo from '$lib/assets/brands/LIEBHERR.webp';
   import storeShowroom from '$lib/assets/promo/store-showroom.webp';
   import storeManager from '$lib/assets/promo/store-manager.webp';
   import storeWarehouse from '$lib/assets/promo/store-warehouse.webp';
@@ -87,60 +92,165 @@
   // «Хиты продаж» на мобилке: сначала 4 карточки, «Смотреть ещё» раскрывает список
   let hitsExpanded = $state(false);
 
-  const categories = [
+  // кнопки комплектных блоков открывают форму заявки с prefill по блоку
+  let kitLeadOpen = $state(false);
+  let kitLeadPrefill = $state('');
+  let kitLeadSource = $state('');
+  const openKitLead = (block: (typeof kitBlocks)[number]) => {
+    kitLeadPrefill = `Запрос комплекта: ${block.title}`;
+    kitLeadSource = block.leadSource;
+    kitLeadOpen = true;
+  };
+
+  // Комплектные блоки (референсы заказчика) вместо «Популярных категорий».
+  // Карточки ведут в свои категории каталога, кнопки блоков — на форму заявки.
+  // Цены и «от N моделей» — живые из БД (kitAggregates: мин.цена в тысячах и
+  // число моделей по слагу категории); если по слагу данных нет — статичный
+  // fallback из мокапа.
+  // части зелёной плашки: accent-фрагмент подсвечивается жёлтым (референс «−20%»)
+  const kitBlocks: {
+    title: string;
+    subtitle: string;
+    bannerIcon: 'shield' | 'tag' | 'truck';
+    bannerParts: { t: string; accent?: boolean }[];
+    cta: string;
+    leadSource: string;
+    showModels: boolean;
+    mobileCols: 1 | 2;
+    desktopCols?: 3 | 4;
+    cards: {
+      title: string;
+      slug: string;
+      href: string;
+      img: string;
+      badge?: string;
+      fallback?: string;
+    }[];
+  }[] = [
     {
-      title: 'Варочные поверхности',
-      link: '/catalog/vstraivaemaya-tehnika/varochnye-poverhnosti',
-      img: hob
+      title: 'Свежесть продуктов и посуды: идеальный микроклимат кухни',
+      subtitle:
+        'Холодильники, морозильные камеры, винные шкафы и посудомоечные машины от ведущих брендов',
+      bannerIcon: 'shield',
+      bannerParts: [{ t: 'Хранение на тёплом складе до конца ремонта' }],
+      cta: 'Собрать комплект со скидкой',
+      leadSource: 'kit-fresh',
+      showModels: false,
+      mobileCols: 2,
+      cards: [
+        {
+          title: 'Холодильники',
+          slug: 'holodilniki-i-morozilniki',
+          href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
+          img: freeze
+        },
+        {
+          title: 'Морозильные камеры',
+          slug: 'morozilnye-kamery',
+          href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery',
+          img: freeze
+        },
+        {
+          title: 'Винные шкафы',
+          slug: 'vinnye-shkafy',
+          href: '/catalog/vstraivaemaya-tehnika/vinnye-shkafy',
+          img: kitWine
+        },
+        {
+          title: 'Посудомоечные машины',
+          slug: 'posudomoechnye-mashiny',
+          href: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
+          img: dw
+        }
+      ]
     },
     {
-      title: 'Кофемашины',
-      link: '/catalog/vstraivaemaya-tehnika/kofemashiny',
-      img: coffee
+      title: 'Комплект приготовления: единый стиль вашей кухни',
+      subtitle:
+        'Духовые шкафы, индукционные варочные панели, вытяжки и микроволновые печи от ведущих брендов',
+      bannerIcon: 'tag',
+      bannerParts: [
+        { t: 'Скидка до ' },
+        { t: '−20%', accent: true },
+        { t: ' при покупке комплекта из 3 приборов' }
+      ],
+      cta: 'Подобрать комплект в едином стиле',
+      leadSource: 'kit-cook',
+      showModels: true,
+      mobileCols: 1,
+      cards: [
+        {
+          title: 'Духовые шкафы',
+          slug: 'duhovye-shkafy',
+          href: '/catalog/vstraivaemaya-tehnika/duhovye-shkafy',
+          img: oven
+        },
+        {
+          title: 'Варочные панели',
+          slug: 'varochnye-poverhnosti',
+          href: '/catalog/vstraivaemaya-tehnika/varochnye-poverhnosti',
+          img: hob
+        },
+        {
+          title: 'Кухонные вытяжки',
+          slug: 'vytyazhki',
+          href: '/catalog/vytyazhki',
+          img: hood,
+          badge: 'от 42 моделей',
+          fallback: 'от 2 490 ₽'
+        },
+        {
+          title: 'Микроволновые печи',
+          slug: 'mikrovolnovye-pechi',
+          href: '/catalog/mikrovolnovye-pechi',
+          img: mw
+        }
+      ]
     },
     {
-      title: 'Посудомоечные машины',
-      link: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
-      img: dw
-    },
-    {
-      title: 'Духовые шкафы',
-      link: '/catalog/vstraivaemaya-tehnika/duhovye-shkafy',
-      img: oven
-    },
-    {
-      title: 'Стиральные машины',
-      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/frontalnye-stiralnye-mashiny',
-      img: wm
-    },
-    {
-      title: 'Холодильники',
-      link: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
-      img: freeze
-    },
-    {
-      title: 'Микроволновые печи',
-      link: '/catalog/mikrovolnovye-pechi',
-      img: mw
-    },
-    {
-      title: 'Сушильные машины',
-      link: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/stiralno-sushilnye-mashiny',
-      img: dm
-    },
-    {
-      title: 'Вытяжки',
-      link: '/catalog/vytyazhki',
-      img: hood
-    },
-    // винные шкафы добирают чётность сетки на мобилке (2×5); на десктопе 9 = ровно 3×3
-    {
-      title: 'Винные шкафы',
-      link: '/catalog/krupnaya-bytovaya-tehnika/vinnye-shkafy',
-      img: vm,
-      mobileOnly: true
+      title: 'Уход за бельем: безупречная забота о тканях',
+      subtitle:
+        'Стиральные и сушильные машины, сушильные шкафы и прачечные колонны от ведущих брендов',
+      bannerIcon: 'truck',
+      bannerParts: [{ t: 'Бесплатная доставка и монтаж в колонну при покупке комплекта' }],
+      cta: 'Рассчитать выгоду на комплект',
+      leadSource: 'kit-care',
+      showModels: false,
+      mobileCols: 1,
+      desktopCols: 3,
+      cards: [
+        {
+          title: 'Стиральные машины',
+          slug: 'frontalnye-stiralnye-mashiny',
+          href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/frontalnye-stiralnye-mashiny',
+          img: wm,
+          badge: 'BOSCH'
+        },
+        {
+          title: 'Сушильные машины',
+          slug: 'sushilnye-mashiny',
+          href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny',
+          img: dm,
+          badge: 'MIELE',
+          fallback: 'от 41 490 ₽'
+        },
+        {
+          title: 'Сушильные шкафы',
+          slug: 'sushilnye-shkafy',
+          href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-shkafy',
+          img: kitDry,
+          badge: 'BOSCH'
+        }
+      ]
     }
   ];
+
+  const kitModels = (slug: string) => data.kitAggregates?.[slug]?.models ?? 0;
+  const kitPrice = (card: { slug: string; fallback?: string }) => {
+    const agg = data.kitAggregates?.[card.slug];
+    if (agg?.min) return `от ${formatPrice(agg.min)} ₽`;
+    return card.fallback ?? '';
+  };
 
   // квизы главной: контент — из демо-лендингов брендов (ASKO, Liebherr)
   const askoQuiz = {
@@ -164,7 +274,8 @@
     places: ['Рядом', 'В колонну — нужна проверка', 'Пока не знаю'],
     submitLabel: 'Подобрать мой комплект',
     leadTitle: 'Запрос на подбор ASKO:',
-    image: askoQuizPhoto
+    image: askoQuizPhoto,
+    logo: askoLogo
   };
   const liebherrQuiz = {
     headingLines: ['Хранение,', 'продуманное', 'до деталей.'],
@@ -189,6 +300,7 @@
     submitLabel: 'Получить подбор',
     leadTitle: 'Запрос на подбор Liebherr:',
     image: liebherrQuizPhoto,
+    logo: liebherrLogo,
     accentFrom: 1 // в референсе акцентом покрашены 2-я и 3-я строки («продуманное до деталей.»)
   };
   // блок-акция Liebherr (из демо-лендинга) — после ASKO-квиза
@@ -291,30 +403,73 @@
         Проверим размеры и совместимость, подготовим расчёт комплекта и согласуем бесплатную
         доставку к готовности кухни.
       </p>
-      <span class="podbor-cta__btn"
+      <span class="btn secondary-light podbor-cta__btn"
         >Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span
       >
     </div>
     <img
       class="podbor-cta__photo"
-      src="/images/podbor-kitchen.png"
+      src="/images/podbor-kitchen.webp"
       alt="Кухня с встраиваемой техникой"
       loading="lazy"
     />
   </a>
 </section>
 
-<section class="mx-auto">
-  <h2 class="section-title">Популярные категории</h2>
-  <div class="categories-grid">
-    {#each categories as c}
-      <a href={c.link} class="category-card flex-col lg:flex-row" class:category-card--mobile-only={c.mobileOnly}>
-        <span>{c.title}</span>
-        <img src={c.img} alt="" loading="lazy" decoding="async" width="480" height="240" />
-      </a>
-    {/each}
-  </div>
-</section>
+{#each kitBlocks as block (block.title)}
+  <section class="kit mx-auto">
+    <h2 class="kit__title">{block.title}</h2>
+    <p class="kit__subtitle">{block.subtitle}</p>
+    <div class="kit__banner">
+      {#if block.bannerIcon === 'shield'}
+        <ShieldCheck size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
+      {:else if block.bannerIcon === 'tag'}
+        <Tag size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
+      {:else}
+        <Truck size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
+      {/if}
+      <span class="kit__banner-divider" aria-hidden="true"></span>
+      <span class="kit__banner-text">
+        {#each block.bannerParts as part}
+          {#if part.accent}<em class="kit__banner-accent">{part.t}</em>{:else}{part.t}{/if}
+        {/each}
+      </span>
+    </div>
+    <div
+      class="kit__grid"
+      class:kit__grid--single={block.mobileCols === 1}
+      class:kit__grid--d3={block.desktopCols === 3}
+    >
+      {#each block.cards as card (card.title)}
+        <a class="kit-card" href={card.href}>
+          <span class="kit-card__name">{card.title}</span>
+          <img class="kit-card__img" src={card.img} alt={card.title} loading="lazy" />
+          <span class="kit-card__foot">
+            <span class="kit-card__meta">
+              {#if block.showModels && kitModels(card.slug)}
+                <i class="kit-card__badge">от {kitModels(card.slug)} {pluralModels(kitModels(card.slug))}</i>
+              {:else if card.badge}
+                <i class="kit-card__badge">{card.badge}</i>
+              {/if}
+              {#if kitPrice(card)}
+                <b class="kit-card__price">{kitPrice(card)}</b>
+              {/if}
+            </span>
+            <ArrowRight size={16} strokeWidth={2.2} />
+          </span>
+        </a>
+      {/each}
+    </div>
+    <button
+      type="button"
+      class="kit__cta"
+      onclick={() => openKitLead(block)}
+    >
+      {block.cta}
+      <ArrowRight size={16} strokeWidth={2.3} />
+    </button>
+  </section>
+{/each}
 
 {#if data.syncBrands?.length}
   <section class="mx-auto">
@@ -435,6 +590,7 @@
 </section>
 <LeadRequestModal bind:open={bundleOpen} prefill={bundlePrefill} />
 <LeadRequestModal bind:open={storeVisitOpen} prefill={storeVisitPrefill} source="store-visit" />
+<LeadRequestModal bind:open={kitLeadOpen} prefill={kitLeadPrefill} source={kitLeadSource} />
 
 {#if AC_ENABLED}
   <section class="mx-auto">
@@ -514,7 +670,7 @@
         </div>
         <a
           class="store-card__btn"
-          href="https://yandex.ru/maps/?text=Казань, улица Чистопольская 66"
+          href="https://yandex.ru/maps/org/192917903315/"
           target="_blank"
           rel="noopener"
         >
@@ -645,13 +801,13 @@
     }
 
     &__btn {
+      // цвет — от btn.secondary-light (общая жёлтая «с тёмным текстом»);
+      // локально только отличия от базового .btn: капсула, свой паддинг и тень
       display: inline-flex;
       align-items: center;
       gap: 8px;
       padding: 12px 24px;
       border-radius: 999px;
-      background: #f0c64b;
-      color: #2e3d2f;
       font-size: 0.875rem;
       font-weight: 700;
       box-shadow: 0 4px 10px rgba(240, 198, 75, 0.45);
@@ -1056,157 +1212,171 @@
       -webkit-box-orient: vertical;
     }
   }
-  .categories-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-  @media (max-width: 640px) {
-    // на узких экранах названия («Посудомоечные машины») в 3 колонки не влезают
-    // даже мелким шрифтом — на мобилке 2 колонки, 3 остаются от 640px
-    .categories-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  .category-card {
+  // ─── Комплектные блоки (референсы заказчика) ───
+  .kit {
     display: flex;
-    // направление (колонка → ряд от lg) задаётся tailwind-классами flex-col lg:flex-row
-    align-items: stretch;
-    gap: 8px;
-    padding: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 16px;
-    background: #fff;
-    color: #111827;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
-    transition:
-      transform 0.2s ease,
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-    // мобильная категория добирает чётность сетки, на десктопе не показывается
-    &--mobile-only {
-      @media (min-width: 641px) {
-        display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: $sp-2;
+    text-align: center;
+
+    &__title {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: #111827;
+    }
+    &__subtitle {
+      margin: 0;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      color: #475569;
+    }
+    // Плашка-строка по мокапу Марата (стиль «вторая»): контурная жёлтая иконка,
+    // вертикальный разделитель и текст. Фона нет — не читается кнопкой.
+    // Иконки по смыслу блока: щит (хранение), ценник (скидка), фура (доставка)
+    &__banner {
+      // inline-поток, а не flex-колонка: при переносе текста иконка и разделитель
+      // остаются при начале строки — иконка не висит отдельно от текста
+      display: block;
+      max-width: 100%;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #{$green};
+
+      // иконка lucide без scope-класса компонента — ловим через :global
+      // (как svg.chev в ProductCard), иначе побеждает preflight svg{display:block}
+      :global(.kit__banner-icon) {
+        display: inline-flex;
+        vertical-align: middle;
+        margin-right: $sp-2;
+        color: #ffcf00;
+      }
+      &-divider {
+        display: inline-block;
+        vertical-align: middle;
+        width: 1px;
+        height: 18px;
+        margin-right: $sp-2;
+        background: rgba($green, 0.25);
       }
     }
-    span {
-      order: 2;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      line-height: 1.25;
+    &__banner-accent {
+      background: #ffcf00;
+      border-radius: 6px;
+      padding: 0 6px;
+      color: #{$green};
+      font-style: normal;
+      font-weight: 800;
     }
-    img {
-      order: 1;
+    &__grid {
+      display: grid;
+      // мобилка: блок 1 — 2 колонки, блоки 2/3 — одна (по референсам)
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
       width: 100%;
-      height: auto;
-      aspect-ratio: 480 / 240;
-      object-fit: cover;
-      border-radius: 8px;
+
+      &--single {
+        grid-template-columns: 1fr;
+      }
+
+      @media (min-width: 1024px) {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      // блок с тремя карточками: на десктопе ровно 3 колонки, без дыры в четвёртой
+      &--d3 {
+        @media (min-width: 1024px) {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
     }
-    &:hover {
-      transform: translateY(-2px);
-      border-color: rgba($green, 0.22);
-      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
+    &__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 42px;
+      padding: 0 22px;
+      border-radius: 999px;
+      background: $green;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s ease;
+      &:hover {
+        background: color.scale($green, $lightness: -10%);
+      }
+    }
+    @media (max-width: 639px) {
+      &__title {
+        font-size: 1.35rem;
+      }
     }
   }
   .kit-card {
-    position: relative;
     display: flex;
     flex-direction: column;
-    min-height: 360px;
-    overflow: hidden;
-    border: 1px solid rgba(62, 111, 79, 0.12);
-    border-radius: 16px;
-    background: #fff;
-    color: #111827;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-    transition:
-      transform 0.22s ease,
-      border-color 0.22s ease,
-      box-shadow 0.22s ease;
-    &:hover {
-      transform: translateY(-4px);
-      border-color: rgba(62, 111, 79, 0.26);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
-      .kit-card__image img {
-        transform: scale(1.04);
-      }
-      .kit-card__content em svg {
-        transform: translateX(3px);
-      }
-    }
-  }
-  .kit-card__badge {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    background: var(--kit-color);
+    gap: 8px;
+    padding: 12px;
+    border-radius: 14px;
+    background: #3c403c;
     color: #fff;
-    font-size: 1rem;
-    font-weight: 700;
-    box-shadow: 0 10px 20px rgba(62, 111, 79, 0.22);
-  }
-  .kit-card__image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 188px;
-    padding: 28px 20px 12px;
-    background: radial-gradient(circle at 50% 66%, rgba(62, 111, 79, 0.1), transparent 38%), #fff;
-    img {
-      width: 100%;
-      max-width: 225px;
-      height: 100%;
-      object-fit: contain;
-      filter: drop-shadow(0 14px 18px rgba(15, 23, 42, 0.14));
-      transition: transform 0.22s ease;
+    text-decoration: none;
+    text-align: left;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
     }
-  }
-  .kit-card__content {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: 0 20px 20px;
-    text-align: center;
-    strong {
-      max-width: 96%;
-      margin: 0 auto;
-      font-size: 1rem;
-      font-weight: 700;
-      line-height: 1.22;
-      color: #111827;
-    }
-    span {
-      max-width: 92%;
-      margin: 12px auto 0;
-      font-size: 0.88rem;
-      line-height: 1.38;
-      color: #64748b;
-    }
-    em {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      height: 52px;
-      margin: auto -20px -20px;
-      background: var(--kit-color);
+
+    &__name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      line-height: 1.25;
       color: #fff;
-      font-size: 0.88rem;
-      font-style: normal;
+    }
+    &__img {
+      width: 100%;
+      height: 96px;
+      object-fit: contain;
+      // фото с белым фоном (вытяжки и т.п.): multiply прячет белый на тёмной карточке
+      mix-blend-mode: multiply;
+      // тёмные силуэты (чёрные шкафы) читаются за счёт светлого ореола
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.14));
+    }
+    &__foot {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    &__meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    &__badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #fff;
+      color: #111827;
+      font-size: 0.66rem;
       font-weight: 700;
-      svg {
-        flex: 0 0 auto;
-        transition: transform 0.2s ease;
-      }
+      font-style: normal;
+      white-space: nowrap;
+    }
+    &__price {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #fff;
     }
   }
   // ─── Promo banners (Omoikiri / AC) ───
@@ -1248,7 +1418,7 @@
   .promo-banner__text {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: $sp-2;
     strong,
     h2 {
       margin: 0;
@@ -1582,32 +1752,8 @@
     margin-top: 0;
   }
   @media (min-width: 640px) {
-    .categories-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
     .promo-cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-  // горизонтальная карточка только от lg (tailwind lg:flex-row): 640–1024 остаются колонкой и не режутся
-  @media (min-width: 1024px) {
-    .category-card {
-      align-items: center;
-      gap: 0;
-      min-height: 108px;
-      // слева 0: картинка прижата к краю карточки
-      padding: 16px 16px 16px 0;
-      span {
-        order: 2;
-        font-size: 1.02rem;
-      }
-      img {
-        flex: 0 0 104px;
-        width: 104px;
-        height: 78px;
-        object-fit: contain;
-        border-radius: 0;
-      }
     }
   }
   @media (max-width: 639px) {
@@ -1639,18 +1785,8 @@
       width: 118px;
       height: 118px;
     }
-    .kit-card {
-      min-height: 330px;
-    }
-    .kit-card__image {
-      height: 170px;
-      padding-top: 24px;
-    }
   }
   @media (min-width: 1024px) {
-    .categories-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
     .promo-banner--ac .promo-cards {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }

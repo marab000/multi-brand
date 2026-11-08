@@ -32,7 +32,7 @@
       {#each offer.titleLines as line, i}{#if i > 0}<br />{/if}{line}{/each}
     </h2>
     <p class="offer__text">{offer.text}</p>
-    <button type="button" class="offer__btn" onclick={submit}>
+    <button type="button" class="btn secondary-light offer__btn" onclick={submit}>
       <span>{offer.buttonLabel}</span>
       <ArrowRight size={18} strokeWidth={2.3} />
     </button>
@@ -51,6 +51,8 @@
 <LeadRequestModal bind:open={requestOpen} {prefill} />
 
 <style lang="scss">
+  @use 'sass:color';
+
   .offer {
     display: grid;
     gap: $sp-6;
@@ -97,24 +99,22 @@
     line-height: 1.55;
   }
   .offer__btn {
+    // цвет — от btn.secondary-light (жёлтая с тёмным текстом, как «Подобрать
+    // комплект»); здесь только геометрия под тёмный блок-акцию.
+    // height явно: перебивает height: 44px базового .btn
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: $sp-2;
-    min-height: 52px;
+    height: 52px;
     margin-top: $sp-2;
     padding: 0 22px;
     border: 0;
     border-radius: 12px;
-    background: #fff;
-    color: #{$green};
     font-size: 0.9375rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.18s ease;
-    &:hover {
-      background: #e8f0ea;
-    }
     span {
       text-align: left;
     }

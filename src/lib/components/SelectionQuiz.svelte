@@ -16,6 +16,7 @@
       submitLabel: string;
       leadTitle: string;
       image?: string; // фото левой колонки (под текстом, с тёмным градиентом)
+      logo?: string; // лого бренда — на белой плашке в правом верхнем углу фото
       accentFrom?: number; // с какой строки красить акцентом (по умолчанию — последняя)
     };
   } = $props();
@@ -55,6 +56,9 @@
 
 <div class="quiz" class:has-photo={quiz.image}>
   <div class="quiz__copy" class:has-photo={quiz.image} style:--photo={quiz.image ? `url("${quiz.image}")` : undefined}>
+    {#if quiz.logo}
+      <img class="quiz__logo" src={quiz.logo} alt="" loading="lazy" />
+    {/if}
     <h2>
       {#each quiz.headingLines as line, i}{#if i > 0}<br />{/if}{#if i >= (quiz.accentFrom ?? quiz.headingLines.length - 1)
           }<span>{line}</span>{:else}{line}{/if}{/each}
@@ -98,7 +102,7 @@
         <ChevronDown class="chev" size={16} strokeWidth={2.2} />
       </span>
     </label>
-    <button type="submit" class="btn primary quiz__submit">
+    <button type="submit" class="btn secondary-light quiz__submit">
       <span>{quiz.submitLabel}</span>
       <ArrowRight size={17} strokeWidth={2.3} />
     </button>
@@ -167,6 +171,7 @@
     }
     // фото под текстом: тёмный градиент слева, белый текст, бледно-зелёный акцент — по референсу
     &.has-photo {
+      position: relative;
       padding: $sp-6;
       background:
         linear-gradient(
@@ -178,6 +183,22 @@
         ),
         linear-gradient(to top, rgba(16, 21, 18, 0.55), rgba(16, 21, 18, 0) 45%),
         var(--photo) center / cover no-repeat;
+      // лого бренда поверх фото: тёмный логотип не читается на тёмном градиенте,
+      // поэтому на белой полупрозрачной плашке
+      .quiz__logo {
+        position: absolute;
+        top: $sp-4;
+        right: $sp-4;
+        height: 32px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.92);
+        // на мобиле прижимаем в самый угол фото — иначе лого пересекается с заголовком
+        @media (max-width: 640px) {
+          top: 0;
+          right: 0;
+        }
+      }
       h2 {
         color: #fff;
         font-size: 1.75rem;

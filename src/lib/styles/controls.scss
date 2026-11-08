@@ -138,6 +138,15 @@ input[type='radio'] {
       border-color: $yellow;
     }
   }
+  // светло-жёлтая вторичка с тёмным текстом — как кнопка «Подобрать комплект»
+  // в блоке подбора на главной (#f0c64b / #2e3d2f)
+  &.secondary-light {
+    background-color: #f0c64b;
+    color: #2e3d2f;
+    &:hover:not(.disabled):not(:disabled) {
+      background-color: color.scale(#f0c64b, $lightness: -10%);
+    }
+  }
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
