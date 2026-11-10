@@ -336,3 +336,44 @@ export async function sendPasswordResetEmail(email: string, url: string) {
       </html>`
 	});
 }
+
+// Уведомление менеджеру о новом диалоге в чате сайта.
+// to берём из настроек чата (chat_config.notifyEmail).
+export async function sendChatNotifyEmail(
+	to: string,
+	lead: { text: string; threadId: string }
+) {
+	const contacts = await getContacts();
+	const res = await resend.emails.send({
+		from: RESEND_FROM_EMAIL,
+		to,
+		subject: 'Новый диалог в чате сайта',
+		html: `
+      <!doctype html>
+      <html lang="ru">
+        <head><meta charset="utf-8" /><title>Новый диалог в чате</title></head>
+        <body style="margin:0;padding:0;background:#f5f6f7;font-family:Arial,Helvetica,sans-serif;color:#202020;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f6f7;padding:28px 14px;">
+            <tr><td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #eeeeee;">
+                <tr><td style="padding:24px 30px 8px;">
+                  <h1 style="margin:0;font-size:24px;line-height:1.2;font-weight:800;color:#202020;">Новый диалог в чате сайта</h1>
+                  <p style="margin:10px 0 0;font-size:15px;line-height:1.6;color:#374151;">Клиент написал в чат на multi-brand.online. Ответ — в админке: <b>/admin/chats</b>.</p>
+                </td></tr>
+                <tr><td style="padding:8px 30px 28px;">
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8f8f8;border-radius:14px;">
+                    <tr><td style="padding:16px 18px;font-size:15px;line-height:1.6;color:#333333;">
+                      <div><b>Сообщение клиента:</b><br />${escapeHtml(lead.text)}</div>
+                      <div style="margin-top:10px;"><b>Диалог:</b> #${escapeHtml(lead.threadId.slice(0, 8))}</div>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </td></tr>
+          </table>
+        </body>
+      </html>`
+	});
+	if (res.error) throw res.error;
+	return res;
+}

@@ -6,7 +6,8 @@
   import Header from '$lib/components/Header.svelte';
   import BottomNav from '$lib/components/BottomNav.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import FloatingMessengers from '$lib/components/FloatingMessengers.svelte';
+  // FloatingMessengers заменён чатом (ChatWidget): TG/MAX переехали в панель чата
+  import ChatWidget from '$lib/components/ChatWidget.svelte';
   import CookieBanner from '$lib/components/CookieBanner.svelte';
   import StoragePopup from '$lib/components/StoragePopup.svelte';
   import PaymentMethods from '$lib/components/PaymentMethods.svelte';
@@ -53,7 +54,7 @@ import Ticker from '$lib/components/Ticker.svelte';
         '@id': 'https://multi-brand.online/#localbusiness',
         name: 'Мультибренд — интернет-магазин бытовой техники',
         priceRange: '₽₽',
-        image: 'https://multi-brand.online/images/podbor-kitchen.png',
+        image: 'https://multi-brand.online/images/podbor-kitchen-og.jpg',
         telephone: contacts?.phoneHref ?? SITE_PHONE_HREF,
         email: contacts?.email ?? 'Multibrend2005@yandex.ru',
         address: {
@@ -117,7 +118,7 @@ import Ticker from '$lib/components/Ticker.svelte';
 
   <Footer {data} />
 
-  <FloatingMessengers contacts={data.contacts} />
+  <ChatWidget />
   <BottomNav />
   <CookieBanner />
   <StoragePopup />
