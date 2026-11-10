@@ -287,7 +287,7 @@
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
-    max-width: 290px;
+    max-width: 300px;
     padding: 10px 12px;
     border: 1px solid rgba($green, 0.25);
     border-radius: 14px;
