@@ -1,15 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { sql } from '$lib/db';
 import { getContacts } from '$lib/server/contacts';
-
-// Тип товара витрины. Используется и компонентами витрины (type-only import).
-export type AskoProduct = {
-	name: string; // наименование из базы
-	price: number; // РРЦ в тысячах (конвенция ×1000 при показе)
-	stock: number | null;
-	group: string; // витринная группа фильтра
-	img: string | null; // первая картинка (S3 url, src строит imgUrl)
-};
+import type { AskoProduct } from '$lib/types/asko';
 
 // Каталожные имена → группы фильтров витрины. Сушильные машины приходят
 // из выгрузки без листа/группы — ловим по наименованию.
@@ -55,7 +47,15 @@ export const load: PageServerLoad = async () => {
 			ORDER BY (p.stock > 0) DESC NULLS LAST, p.price_rrc ASC, p.name
 		`
 	]);
-	const toProduct = (r): AskoProduct => ({
+	// строка запроса прачечного списка: имя, РРЦ, склад, флаг стиралки, картинка
+	type LaundryRow = {
+		name: string;
+		price_rrc: number;
+		stock: number | null;
+		is_washer: boolean;
+		img: string | null;
+	};
+	const toProduct = (r: LaundryRow): AskoProduct => ({
 		name: r.name,
 		price: Number(r.price_rrc),
 		stock: r.stock === null ? null : Number(r.stock),
@@ -69,7 +69,9 @@ export const load: PageServerLoad = async () => {
 		group: groupLabel(r.catalog_group_name, r.catalog_root_name, r.name),
 		img: r.img
 	}));
-	const washers: AskoProduct[] = laundry.filter((r) => r.is_washer).map(toProduct);
-	const dryers: AskoProduct[] = laundry.filter((r) => !r.is_washer).map(toProduct);
+	// строки postgres-js приходят нетипизированным Row — приводим к форме запроса
+	const laundryRows = laundry as unknown as LaundryRow[];
+	const washers: AskoProduct[] = laundryRows.filter((r) => r.is_washer).map(toProduct);
+	const dryers: AskoProduct[] = laundryRows.filter((r) => !r.is_washer).map(toProduct);
 	return { products, contacts, washers, dryers };
 };

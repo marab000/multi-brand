@@ -1,6 +1,6 @@
 <script lang="ts">
 	import AskoCard from './AskoCard.svelte';
-	import type { AskoProduct } from '../../routes/asko/+page.server';
+	import type { AskoProduct } from '$lib/types/asko';
 
 	// Каталог витрины: данные запечены при сборке, фильтры работают на клиенте.
 	let {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { imgUrl } from '$lib/s3Public';
 	import { formatPrice } from '$lib/utils/formatPrice';
-	import type { AskoProduct } from '../../routes/asko/+page.server';
+	import type { AskoProduct } from '$lib/types/asko';
 
 	// Карточка товара витрины: лёгкий аналог карточки основного сайта.
 	// Магазинной логики (корзина, избранное) нет — только запрос на покупку.
