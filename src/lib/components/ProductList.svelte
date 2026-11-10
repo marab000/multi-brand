@@ -27,7 +27,12 @@
   <p>Товары не найдены</p>
 {:else}
   {#if showFiltersButton || showSort}
-    <div class="topbar" class:topbar--right={!showFiltersButton}>
+    <!-- весь topbar мобильный (пустой на десктопе не должен давать отступ) -->
+    <div
+      class="topbar"
+      class:topbar--right={!showFiltersButton}
+      class:topbar--mobile={showFiltersButton && (!showSort || sortSlotMobileOnly)}
+    >
       {#if showFiltersButton}
         <button class="filters-trigger lg:hidden" type="button" onclick={openFilters}>Фильтры</button>
       {/if}
@@ -57,6 +62,12 @@
     margin-bottom: $sp-2;
     &.topbar--right {
       justify-content: flex-end;
+    }
+    // содержимое целиком lg:hidden — сам topbar тоже не занимает место
+    &.topbar--mobile {
+      @media (min-width: 1024px) {
+        display: none;
+      }
     }
     @media (min-width: 1024px) {
       justify-content: flex-end;
