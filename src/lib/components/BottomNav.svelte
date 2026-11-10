@@ -13,7 +13,20 @@
   // скролл вниз — панель уезжает, вверх — возвращается (классика e-commerce).
   // Состояние общее с шапкой (scrollDirection) — прячутся и показываются синхронно
   let navHidden = $derived(scrollUi.bottomNavHidden);
-  onMount(() => initScrollDirection());
+
+  // автопроверка писем для админа — «Кабинет» краснеет при поломке (как профиль в шапке)
+  let healthBad = $state(false);
+  onMount(() => {
+    initScrollDirection();
+    if (page.data.user?.roles?.includes('admin')) {
+      fetch('/api/health')
+        .then((r: Response) => (r.ok ? r.json() : null))
+        .then((d: { ok?: boolean } | null) => {
+          if (d && d.ok === false) healthBad = true;
+        })
+        .catch(() => {});
+    }
+  });
 
   // «Каталог» на мобиле не уводит на страницу — открывает боковой каталог в Header
   const openCatalog = (e: MouseEvent) => {
@@ -45,7 +58,9 @@
   <a
     class="bottom-nav__item"
     class:bottom-nav__item--active={pathname.startsWith('/user')}
+    class:bottom-nav__item--bad={healthBad}
     href="/user/info"
+    title={healthBad ? 'ПРОБЛЕМА: письма с сайта не отправляются' : undefined}
   >
     <span class="bottom-nav__icon"><User size={21} strokeWidth={2} /></span>
     <span class="bottom-nav__label">Кабинет</span>
@@ -111,6 +126,12 @@
 
     &:hover {
       color: #fff;
+    }
+
+    // поломка автопроверки писем: «Кабинет» краснеет для админа
+    &--bad {
+      color: $accent-red;
+      font-weight: 700;
     }
   }
   .bottom-nav__icon {

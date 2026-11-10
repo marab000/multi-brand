@@ -9,6 +9,8 @@
   import logo1 from '$lib/assets/logo1.png';
   import tgIcon from '$lib/assets/social/tg.svg';
   import maxIcon from '$lib/assets/social/max.svg';
+  import maxDarkIcon from '$lib/assets/social/max-dark.svg';
+  import waIcon from '$lib/assets/social/whatsapp.svg';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
   import { derived } from 'svelte/store';
@@ -26,6 +28,7 @@
     Phone,
     Truck,
     MessageCircleMore,
+    ShieldCheck,
     Building2,
     Sparkles,
     BadgePercent,
@@ -37,7 +40,7 @@
   import { slide } from 'svelte/transition';
   import { toast } from 'svelte-sonner';
   import { scrollUi, initScrollDirection } from '$lib/utils/scrollDirection.svelte';
-  import { SITE_PHONE, SITE_PHONE_HREF, LINK_TG, LINK_MAX } from '$lib/config/site';
+  import { SITE_PHONE, SITE_PHONE_HREF, LINK_TG, LINK_MAX, LINK_WHATSAPP } from '$lib/config/site';
   import type { Contacts } from '$lib/server/contacts';
   type CatalogLeaf = { slug: string; name: string; productTypes: string[] };
   type CatalogGroup = {
@@ -54,6 +57,7 @@
     phone: string | null;
     full_name: string;
     email_verified: boolean;
+    roles?: string[];
   };
   type CatalogMenuRoot = {
     slug: string;
@@ -94,6 +98,30 @@
   });
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
   const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
+
+  // непрочитанные чата для оператора — бейдж на профиле
+  let isOperator = $state(false);
+  let chatUnread = $state(0);
+  const loadChatUnread = async () => {
+    try {
+      const r = await fetch('/api/chat/unread');
+      if (!r.ok) return;
+      chatUnread = (await r.json()).unread ?? 0;
+    } catch {
+      // сеть моргнула — следующий тик догонит
+    }
+  };
+  // автопроверка писем для админа — красный профиль, когда заявки не уходят
+  let healthBad = $state(false);
+  const loadHealth = async () => {
+    try {
+      const r = await fetch('/api/health');
+      if (!r.ok) return;
+      healthBad = !((await r.json()).ok ?? true);
+    } catch {
+      // сеть моргнула — не красим
+    }
+  };
   let open = $state(false);
   let menuOpen = $state(false);
   let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -241,7 +269,16 @@
   onMount(() => {
     syncMobile();
     window.addEventListener('resize', syncMobile);
-    return () => window.removeEventListener('resize', syncMobile);
+    // админ — один запрос статуса писем на загрузку страницы
+    // (до ветки оператора: у админа бывает и роль operator, а её блок делает return)
+    if (data.user?.roles?.includes('admin')) void loadHealth();
+    // непрочитанные чата для оператора — бейдж на профиле
+    isOperator = !!data.user?.roles?.includes('operator');
+    if (isOperator) {
+      void loadChatUnread();
+      const chatTimer = setInterval(() => void loadChatUnread(), 5000);
+      return () => clearInterval(chatTimer);
+    }
   });
   // ВАЖНО: открытая категория (openRootSlug) нигде не сбрасывается —
   // меню «помнит» место: закрыл и снова открыл — ты там же, где был (вариант C)
@@ -405,6 +442,11 @@
   </div>
   <Drawer side="right" open={menuOpen} title="Меню" onclose={closeMenuDrawer}>
     <nav class="drawer-links">
+      {#if user?.roles?.includes('admin')}
+        <a href="/admin" onclick={closeMenuDrawer}
+          ><ShieldCheck size={16} strokeWidth={2.1} /><span>Админ-панель</span></a
+        >
+      {/if}
       <a href="/user/info" onclick={closeMenuDrawer}
         ><User size={16} strokeWidth={2.1} /><span>Личный кабинет</span></a
       >
@@ -431,7 +473,10 @@
         ><Send size={16} strokeWidth={2.1} /><span>Telegram</span></a
       >
       <a href={LINK_MAX} target="_blank" rel="noopener noreferrer"
-        ><Send size={16} strokeWidth={2.1} /><span>MAX</span></a
+        ><img src={maxDarkIcon} alt="" width={16} height={16} /><span>MAX</span></a
+      >
+      <a href={LINK_WHATSAPP} target="_blank" rel="noopener noreferrer"
+        ><img src={waIcon} alt="" width={16} height={16} /><span>WhatsApp</span></a
       >
       <a href={'tel:' + phoneHref} onclick={closeMenuDrawer}
         ><Phone size={16} strokeWidth={2.1} /><span>{phoneNumber}</span></a
@@ -513,12 +558,20 @@
     <div class="nav__actions ml-auto lg:ml-0">
       <div class="user-menu-wrap">
         <button
-          title={user ? user.full_name : 'Войти'}
+          title={healthBad
+            ? 'ПРОБЛЕМА: письма с сайта не отправляются — подробнее в /admin/health'
+            : user
+              ? user.full_name
+              : 'Войти'}
           type="button"
           onclick={handleUserClick}
-          class="flex items-center gap-2"
+          class="relative flex items-center gap-2"
+          class:health-bad={healthBad}
         >
           {#if user}<CircleUserRound size="18" />{:else}<User size="18" />{/if}
+          {#if isOperator && chatUnread > 0}
+            <span class="badge">{chatUnread}</span>
+          {/if}
           <span class="absolute -bottom-4 text-[11px]"
             >{#if user}Профиль{:else}Войти{/if}</span
           >
@@ -921,6 +974,16 @@
   }
   .user-menu-wrap {
     position: relative;
+    // поломка автопроверки писем: профиль администратора краснеет —
+    // красный = «сломано», а не «есть сообщение»; детали — в админке
+    button.health-bad {
+      padding: 4px 6px;
+      border-radius: 10px;
+      background: $accent-red;
+      :global(svg) {
+        color: #fff;
+      }
+    }
   }
   .user-menu {
     position: absolute;
@@ -1054,6 +1117,10 @@
       &:hover {
         background: #f8fafc;
       }
+      // брендовые svg в меню — чёрно-белые, в тон lucide-иконкам пунктов
+      :global(img) {
+        filter: grayscale(1) brightness(0.35);
+      }
       span {
         flex: 1;
         text-align: left;
@@ -1074,7 +1141,7 @@
   .sticky-bar {
     position: sticky;
     top: 0;
-    z-index: 870;
+    z-index: 876;
     transition: transform 0.28s ease;
   }
   .sticky-bar--hidden {
