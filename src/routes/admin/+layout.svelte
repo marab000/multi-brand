@@ -2,19 +2,38 @@
   import { page } from '$app/stores';
   import { derived } from 'svelte/store';
   import { onMount } from 'svelte';
-  import { ChevronLeft, ChevronRight, Menu, ShieldCheck, X } from 'lucide-svelte';
-  let { data }: { data: any } = $props();
+  import type { Snippet } from 'svelte';
+  import {
+    Boxes,
+    ChevronLeft,
+    ChevronRight,
+    ClipboardList,
+    Globe,
+    HeartPulse,
+    Images,
+    LogOut,
+    Menu,
+    MessageCircle,
+    Newspaper,
+    PackageSearch,
+    Percent,
+    Users,
+    X
+  } from 'lucide-svelte';
+  import Drawer from '$lib/components/Drawer.svelte';
+  let { data, children }: { data: any; children: Snippet } = $props();
 
   const activePath = derived(page, ($page) => $page.url.pathname);
 
   // сайдбар: ≥1024 — тогл «свернуть/развернуть» (толкает контент);
-  // <1024 — гамбургер: панель fixed поверх контента
+  // <1024 — гамбургер: меню в Drawer поверх контента, outclick закрывает
   let collapsed = $state(false);
   let mobileOpen = $state(false);
   let isMobile = $state(false);
   const syncViewport = () => {
     isMobile = window.matchMedia('(max-width: 1023px)').matches;
     if (isMobile) collapsed = false;
+    else mobileOpen = false;
   };
 
   // бейдж непрочитанных чатов: polling только для admin/operator
@@ -80,6 +99,63 @@
 </svelte:head>
 
 
+{#snippet navLinks()}
+  {#if data.user.role === 'seo'}
+    <a href="/admin/seo" class={$activePath.startsWith('/admin/seo') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <Globe size={16} strokeWidth={2} /> SEO-страницы
+    </a>
+  {:else if data.user.role === 'operator'}
+    <a
+      href="/admin/chats"
+      class={$activePath.startsWith('/admin/chats') || $activePath.startsWith('/admin/chat-settings') ? 'active' : ''}
+      onclick={() => (mobileOpen = false)}
+    >
+      <MessageCircle size={16} strokeWidth={2} /> Чат / Настройки {#if chatUnread > 0}<span class="chat-badge">{chatUnread}</span>{/if}
+    </a>
+  {:else}
+    {#if data.healthBad}
+      <a href="/admin/health" class="nav-health" onclick={() => (mobileOpen = false)}>
+        <HeartPulse size={16} strokeWidth={2} /> Здоровье системы
+      </a>
+    {/if}
+    <a
+      href="/admin/chats"
+      class={$activePath.startsWith('/admin/chats') || $activePath.startsWith('/admin/chat-settings') ? 'active' : ''}
+      onclick={() => (mobileOpen = false)}
+    >
+      <MessageCircle size={16} strokeWidth={2} /> Чат / Настройки {#if chatUnread > 0}<span class="chat-badge">{chatUnread}</span>{/if}
+    </a>
+    <a
+      href="/admin/orders"
+      class={$activePath.startsWith('/admin/orders') || $activePath.startsWith('/admin/cart-exports') ? 'active' : ''}
+      onclick={() => (mobileOpen = false)}
+    >
+      <ClipboardList size={16} strokeWidth={2} /> Заказы / КП
+    </a>
+    <a href="/admin/users" class={$activePath.startsWith('/admin/users') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <Users size={16} strokeWidth={2} /> Пользователи
+    </a>
+    <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <Images size={16} strokeWidth={2} /> Слайдер
+    </a>
+    <a href="/admin/articles" class={$activePath.startsWith('/admin/articles') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <Newspaper size={16} strokeWidth={2} /> Статьи
+    </a>
+    <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <PackageSearch size={16} strokeWidth={2} /> Собери комплект ии
+    </a>
+    <a href="/admin/tetris" class={$activePath.startsWith('/admin/tetris') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <Boxes size={16} strokeWidth={2} /> Тетрис
+    </a>
+    <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
+      <Percent size={16} strokeWidth={2} /> Скидка
+    </a>
+  {/if}
+  <a class="logout" href="/admin/logout" onclick={() => (mobileOpen = false)}>
+    <LogOut size={16} strokeWidth={2} /> Выйти
+  </a>
+{/snippet}
+
 {#if data.user}
   <div class="admin" class:admin--collapsed={collapsed && !isMobile}>
     <button
@@ -102,63 +178,68 @@
       {:else if collapsed}<ChevronRight size={18} strokeWidth={2.2} />
       {:else}<ChevronLeft size={18} strokeWidth={2.2} />{/if}
     </button>
-    <aside
-      class="sidebar"
-      class:sidebar--collapsed={collapsed && !isMobile}
-      class:sidebar--mobile-open={isMobile && mobileOpen}
-    >
-      <div class="logo mb-4">Админ. панель</div>
-      {#if data.user?.name}
-        <div class="who mb-4">Вы вошли как:<br /><b>{data.user.name}</b></div>
-      {/if}
-      <nav>
-        {#if data.user.role === 'seo'}
-          <a href="/admin/seo" class={$activePath.startsWith('/admin/seo') ? 'active' : ''} onclick={() => (mobileOpen = false)}>SEO-страницы</a>
-        {:else if data.user.role === 'operator'}
-          <a href="/admin/chats" class={$activePath.startsWith('/admin/chats') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
-            Чат {#if chatUnread > 0}<span class="chat-badge">{chatUnread}</span>{/if}
-          </a>
-          <a href="/admin/chat-settings" class={$activePath.startsWith('/admin/chat-settings') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Настройки чата</a>
-        {:else}
-          {#if data.healthBad}
-            <a href="/admin/health" class="nav-health" onclick={() => (mobileOpen = false)}>Здоровье системы</a>
+
+    <!-- <1024: мобильное меню в Drawer слева, оверлей закрывает по клику мимо -->
+    {#if isMobile}
+      <Drawer
+        side="left"
+        open={mobileOpen}
+        width="min(300px, 86vw)"
+        navReserve={false}
+        onclose={() => (mobileOpen = false)}
+      >
+        <div class="drawer-inner">
+          <div class="logo">Админ. панель</div>
+          {#if data.user?.name}
+            <div class="who">Вы вошли как:<br /><b>{data.user.name}</b></div>
           {/if}
-          <a href="/admin/chats" class={$activePath.startsWith('/admin/chats') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
-            Чат {#if chatUnread > 0}<span class="chat-badge">{chatUnread}</span>{/if}
-          </a>
-          <a href="/admin/orders" class={$activePath === '/admin/orders' ? 'active' : ''} onclick={() => (mobileOpen = false)}>Заказы</a>
-          <a href="/admin/cart-exports" class={$activePath.startsWith('/admin/cart-exports') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Корзины PDF (КП)</a>
-          <a href="/admin/users" class={$activePath.startsWith('/admin/users') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Пользователи</a>
-          <a href="/admin/slides" class={$activePath.startsWith('/admin/slides') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Слайдер</a>
-          <a href="/admin/articles" class={$activePath.startsWith('/admin/articles') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Статьи</a>
-          <a href="/admin/podbor" class={$activePath.startsWith('/admin/podbor') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Собери комплект техники</a>
-          <a href="/admin/tetris" class={$activePath.startsWith('/admin/tetris') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Тетрис</a>
-          <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''} onclick={() => (mobileOpen = false)}>Скидка</a>
-        {/if}
-        <a class="logout" href="/admin/logout" onclick={() => (mobileOpen = false)}>Выйти</a>
-      </nav>
+          <nav>{@render navLinks()}</nav>
+        </div>
+      </Drawer>
+    {/if}
+
+    <!-- ≥1024: статичная колонка слева от контента -->
+    <aside class="sidebar" class:sidebar--collapsed={collapsed && !isMobile}>
+      <div class="logo">Админ. панель</div>
+      {#if data.user?.name}
+        <div class="who">Вы вошли как:<br /><b>{data.user.name}</b></div>
+      {/if}
+      <nav>{@render navLinks()}</nav>
     </aside>
+
     <main class="content">
-      <slot />
+      {@render children()}
     </main>
   </div>
 {:else}
-  <slot />
+  {@render children()}
 {/if}
 
 <style lang="scss">
   .admin {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: $sp-3;
     min-height: 100vh;
     background: #fafafa;
   }
+  // десктопная колонка меню; <1024 aside скрыт — меню живёт в Drawer
   .sidebar {
-    width: 100%;
+    width: 205px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    padding: $sp-3;
-    border-bottom: 1px solid #e9ece8;
+    gap: $sp-3;
+    @media (max-width: 1023px) {
+      display: none;
+    }
+  }
+  // контейнер содержимого Drawer-меню: просвет сверху под тогл-крестик
+  .drawer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: $sp-3;
+    padding: 56px $sp-3 0;
   }
   .logo {
     font-size: 15px;
@@ -180,14 +261,12 @@
     display: flex;
     flex-direction: column;
     gap: $sp-2;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
   }
   a {
+    display: flex;
+    align-items: center;
+    gap: $sp-1;
     text-decoration: none;
-    white-space: nowrap;
-    flex-shrink: 0;
     padding: $sp-2 $sp-3;
     border-radius: 10px;
     color: #333;
@@ -201,11 +280,10 @@
   a.active {
     background: $yellow;
     color: #000;
-    font-weight: 600;
     border-color: $yellow;
   }
   a.logout {
-    margin-left: auto;
+    margin-top: $sp-4;
     color: $error;
     border: 1px solid rgba($error, 0.3);
     &:hover {
@@ -219,7 +297,6 @@
     /* flex-элемент должен уметь сжиматься — иначе внутренние блоки
        фиксированной ширины выталкивают его за край экрана */
     min-width: 0;
-    padding: $sp-3;
     overflow-y: visible;
   }
   .sidebar-toggle {
@@ -247,8 +324,6 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    vertical-align: middle;
-    margin-left: 6px;
     min-width: 20px;
     height: 20px;
     padding: 0 5px;
@@ -275,64 +350,5 @@
   }
   .admin--collapsed .sidebar-toggle {
     background: #f0f5f1;
-  }
-  /* десктоп: сайдбар слева, меню колонкой */
-  @media (min-width: 768px) {
-    .admin {
-      flex-direction: row;
-    }
-    .sidebar {
-      width: 200px;
-      padding: 40px $sp-2 $sp-2;
-      border-bottom: none;
-    }
-    nav {
-      flex-direction: column;
-      gap: $sp-2;
-      overflow-x: visible;
-      padding-bottom: 0;
-    }
-    a {
-      white-space: normal;
-      padding: $sp-2 $sp-3;
-    }
-    a.logout {
-      margin-left: 0;
-      margin-top: $sp-4;
-    }
-    .content {
-      padding: 25px;
-    }
-    .sidebar-toggle {
-      top: 12px;
-    }
-  }
-  /* <1024: сайдбар — fixed шторка поверх контента, гамбургер-кнопка её тоглает */
-  @media (max-width: 1023px) {
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      width: min(300px, 86vw);
-      z-index: 1200;
-      padding: 56px $sp-3 $sp-3;
-      background: #fff;
-      border-bottom: none;
-      transform: translateX(-100%);
-      transition: transform 0.25s ease;
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
-      overflow-y: auto;
-    }
-    .sidebar--mobile-open {
-      transform: translateX(0);
-    }
-    .sidebar nav {
-      flex-direction: column;
-      overflow-x: visible;
-    }
-    .sidebar a {
-      white-space: normal;
-    }
   }
 </style>

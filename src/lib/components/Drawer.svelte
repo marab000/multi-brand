@@ -10,6 +10,8 @@
     open = false,
     title = '',
     width = 'min(320px, 86vw)',
+    // резерв снизу под нижнее меню витрины; в админке его нет — выключать
+    navReserve = true,
     onclose,
     children
   }: {
@@ -17,6 +19,7 @@
     open?: boolean;
     title?: string;
     width?: string;
+    navReserve?: boolean;
     onclose: () => void;
     children: Snippet;
   } = $props();
@@ -28,6 +31,7 @@
 <div
   class="drawer drawer--{side}"
   class:drawer--open={open}
+  class:drawer--nonav={!navReserve}
   style:width
   inert={!open}
 >
@@ -68,6 +72,10 @@
     padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     background: #fff;
     transition: transform 0.24s ease;
+    // без нижнего меню витрины (админка): обычный хвост
+    &--nonav {
+      padding-bottom: 24px;
+    }
 
     &--right {
       right: 0;

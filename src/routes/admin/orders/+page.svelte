@@ -2,7 +2,13 @@
   import { Pencil, Check, X, Truck, BadgeRussianRuble, PackagePlus, ChevronDown } from 'lucide-svelte';
   import { slide } from 'svelte/transition';
   import Pagination from '$lib/components/Pagination.svelte';
+  import SegmentedNav from '$lib/components/SegmentedNav.svelte';
   export let data: any;
+
+  const orderTabs = [
+    { href: '/admin/orders', label: 'Заказы' },
+    { href: '/admin/cart-exports', label: 'КП' }
+  ];
 
   function formatDateParts(d: string | number | Date) {
     const [date, time] = new Date(d).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }).split(', ');
@@ -64,7 +70,10 @@
   $: orders = data.orders;
 </script>
 
-<h1>Заказы</h1>
+<div class="page-head">
+  <h1>Заказы</h1>
+  <SegmentedNav items={orderTabs} />
+</div>
 {#if !orders.length}
   <p class="empty">Нет заказов</p>
 {:else}
@@ -162,8 +171,16 @@
 {/if}
 
 <style lang="scss">
-  h1 {
+  .page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
     margin-bottom: 16px;
+  }
+  h1 {
+    margin: 0;
   }
   .empty {
     color: #888;
