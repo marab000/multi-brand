@@ -91,11 +91,11 @@
 
 <style lang="scss">
   .reviews {
-    padding: $sp-4;
+    padding: $sp-3;
     border-radius: 24px;
     background: #f1f3ef;
     @media (min-width: 1024px) {
-      padding: $sp-8;
+      padding: $sp-4;
     }
   }
   .reviews__head {
@@ -103,19 +103,18 @@
     flex-direction: column;
     gap: $sp-3;
     h2 {
-      // масштаб section-title — единый с остальными секциями главной
+      // размер/вес — из глобального h2; margin: 0 — зазор ведёт gap шапки
       margin: 0;
-      color: #111827;
-      font-size: 1.25rem;
-      line-height: 1.15;
-      font-weight: 700;
+      text-align: center;
     }
     p {
-      margin: 0;
+      // max-width + auto-марджины: блок по центру колонки, текст по центру
+      margin: 0 auto;
       max-width: 440px;
       color: #4b5563;
       font-size: 0.9375rem;
       line-height: 1.5;
+      text-align: center;
     }
   }
   .reviews__grid {

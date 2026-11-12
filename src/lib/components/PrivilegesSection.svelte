@@ -215,9 +215,9 @@
         <h3 class="privs__name">{p.title}</h3>
         <p class="privs__text">{p.text}</p>
         {#if p.action === 'installment'}
-          <!-- «Рассчитать платёж» ведёт в банк, не на форму — чёрная, выделена среди лид-кнопок -->
+          <!-- «Рассчитать платёж» ведёт в банк — жёлтая, в один тон с остальными CTA -->
           <a
-            class="privs__btn privs__btn--dark"
+            class="privs__btn privs__btn--lead"
             href={OTP_INSTALLMENT_URL}
             target="_blank"
             rel="noopener noreferrer"
@@ -398,13 +398,9 @@
   @use 'sass:color';
 
   .privs {
+    // размер/вес/отступ — из глобального h2 (typography.scss)
     &__title {
-      margin: 0 0 12px;
-      font-size: 1.25rem;
-      font-weight: 700;
-      line-height: 1.15;
-      color: #111827;
-      text-align: left;
+      text-align: center;
     }
 
     &__grid {
@@ -556,25 +552,7 @@
       }
     }
 
-    // «Рассчитать платёж» — чёрная: ведёт в банк, а не на форму заявки
-    &__btn--dark {
-      border-color: transparent;
-      background: #171717;
-      color: #fff;
-
-      &:hover:not(:disabled) {
-        border-color: transparent;
-        background: #000;
-        color: #fff;
-      }
-    }
-
     @media (max-width: 639px) {
-      &__title {
-        margin-bottom: $sp-3;
-        font-size: 1.45rem;
-      }
-
       &__card {
         padding: 12px 14px;
       }

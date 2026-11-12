@@ -54,7 +54,7 @@ import Ticker from '$lib/components/Ticker.svelte';
         priceRange: '₽₽',
         image: 'https://multi-brand.online/images/podbor-kitchen-og.jpg',
         telephone: contacts?.phoneHref ?? SITE_PHONE_HREF,
-        email: contacts?.email ?? 'Multibrend2005@yandex.ru',
+        email: contacts?.email ?? SITE_EMAIL,
         address: {
           '@type': 'PostalAddress',
           addressLocality: 'Казань',

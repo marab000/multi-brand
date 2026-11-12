@@ -11,7 +11,7 @@ export const DEFAULT_CONTACTS = {
 	maxLink: 'https://max.ru/u/f9LHodD0cOJd3pqJtE3zs9SRYVMfnhHoWJKEYKq253D7DVbb1oMkXOZxb5g',
 	pavelName: 'Павел',
 	pavelPhone: '+79276707817',
-	email: 'Multibrend2005@yandex.ru'
+	email: 'mebeliyer@gmail.com'
 };
 
 // Единый источник номера (с восьмёркой, без плюса): из него выводятся

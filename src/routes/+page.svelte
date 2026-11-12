@@ -361,10 +361,12 @@
 
 {#each kitBlocks as block (block.title)}
   <KitBlock {block} oncta={() => openKitLead(block)} />
+  <div class="kit-divider" aria-hidden="true"></div>
 {/each}
 
 {#if marqueeBrands.length}
-  <section>
+  <!-- mb-3: внутренний -mb-3 компенсации marquee съедает штатный gap до следующей секции -->
+  <section class="mb-3">
     <h2 class="section-title">Бренды — которым доверяют</h2>
     <!-- у marquee свой padding 12px (иначе тень плиток режется); отрицательными марджинами
          компенсируем его и штатные 12px секции, чтобы итоговый зазор был 12px, а не 24+ -->
@@ -405,7 +407,7 @@
   <!-- блок Omoikiri по референсу: шапка-лого + 3 типа карточек (тёмная фото / светлая / зелёная) -->
   <div class="omo">
     <div class="omo__head">
-      <span class="omo__logo">OMOIKIRI</span>
+      <h2 class="omo__logo">OMOIKIRI</h2>
       <span class="omo__tagline">Премиальная японская сантехника и кухонные решения</span>
     </div>
 
@@ -497,7 +499,7 @@
           <Wind size={26} strokeWidth={2} />
         </div>
         <div class="promo-banner__text">
-          <strong>Кондиционеры</strong>
+          <h2>Кондиционеры</h2>
           <span
             >Сплит-системы, инверторные и мобильные кондиционеры от проверенных брендов —
             Electrolux, Ballu, Toshiba и другие.</span
@@ -607,10 +609,6 @@
         </a>
       </article>
     </div>
-    <button type="button" class="store-visit" onclick={() => (storeVisitOpen = true)}>
-      Записаться на визит в салон
-      <ChevronRight size={15} strokeWidth={2.2} />
-    </button>
   </div>
 </section>
 
@@ -632,10 +630,21 @@
 </section>
 
 <style lang="scss">
-  @use 'sass:color';
+  // разделитель между kit-блоками: вместо width 80% — градиент на всю ширину,
+  // края растворяются в прозрачность, середина в полный цвет (тон плейсхолдер)
+  .kit-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #00000017, transparent);
+  }
   .hits-section {
     display: flex;
     flex-direction: column;
+    // зазоры шапка↔сетка↔«Смотреть ещё» — один источник: gap секции
+    // (глобальный хвостовой margin h2 внутри гасим, иначе задвоится)
+    gap: $sp-3;
+    .section-title {
+      margin-bottom: 0;
+    }
   }
   .hits-grid {
     display: grid;
@@ -771,31 +780,6 @@
 
   }
 
-  // кнопка записи на визит под карточками
-  // CTA на форму заявки — жёлтая, как квиз-кнопки (secondary-light #f0c64b)
-  .store-visit {
-    align-self: center;
-    display: inline-flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $sp-1;
-    width: 100%;
-    max-width: 420px;
-    height: 44px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: 12px;
-    background: #f0c64b;
-    color: #2e3d2f;
-    font-size: 0.9rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s ease;
-
-    &:hover {
-      background: color.scale(#f0c64b, $lightness: -10%);
-    }
-  }
   .hero-section {
     margin-top: 0;
 
@@ -815,12 +799,9 @@
       height: 100%;
     }
   }
+  // размер/вес/цвет — из глобального h2 (typography.scss), здесь только выравнивание
   .section-title {
-    margin: 0 0 10px;
-    font-size: 1.25rem;
-    font-weight: 700;
-    line-height: 1.15;
-    color: #111827;
+    text-align: center;
   }
   .articles-home__head {
     display: flex;
@@ -956,19 +937,19 @@
     display: flex;
     flex-direction: column;
     gap: $sp-2;
-    strong,
+    // размер/вес h2 — глобальные (typography.scss); margin: 0 — зазор ведёт gap
     h2 {
       margin: 0;
-      font-size: 1.125rem;
-      font-weight: 700;
-      line-height: 1.2;
-      color: #111827;
     }
     span {
       font-size: 0.92rem;
       line-height: 1.4;
       color: #475569;
     }
+  }
+  // только store-баннер: заголовок и подзаголовок по центру (вариант --ac не трогаем)
+  .promo-banner--store .promo-banner__text {
+    text-align: center;
   }
   // ─── Promo cards ───
   .promo-cards {
@@ -1043,18 +1024,16 @@
     flex-direction: column;
     gap: $sp-1;
   }
-  // шапка блока в масштабе section-title (1.25rem), как у остальных секций главной
+  // размер/вес — из глобального h2; margin: 0 — зазор в шапке ведёт gap контейнера
   .omo__logo {
-    color: #111827;
-    font-size: 1.25rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    line-height: 1.15;
+    margin: 0;
+    text-align: center;
   }
   .omo__tagline {
     color: #475569;
     font-size: 0.9375rem;
     line-height: 1.4;
+    text-align: center;
   }
   // «металлик» золота без картинки — общий градиент $gold-gradient (variables.scss)
   .omo__cards {
@@ -1284,10 +1263,6 @@
     }
   }
   @media (max-width: 639px) {
-    .section-title {
-      margin-bottom: 16px;
-      font-size: 1.45rem;
-    }
     .promo-banner {
       padding: 20px;
       border-radius: 16px;
@@ -1303,10 +1278,6 @@
     .promo-banner__text {
       align-items: center;
       text-align: center;
-      strong,
-      h2 {
-        font-size: 1.2rem;
-      }
     }
     .promo-card__img {
       width: 118px;
@@ -1336,12 +1307,9 @@
       gap: $sp-2;
     }
 
+    // размер/вес — из глобального h2 (typography.scss); margin: 0 — зазор ведёт gap шапки
     &__title {
       margin: 0;
-      font-size: 1.25rem;
-      font-weight: 700;
-      line-height: 1.15;
-      color: #111827;
     }
 
     &__subtitle {
@@ -1407,12 +1375,6 @@
       font-size: 0.85rem;
       line-height: 1.4;
       color: rgba(255, 255, 255, 0.75);
-    }
-
-    @media (max-width: 639px) {
-      &__title {
-        font-size: 1.45rem;
-      }
     }
   }
 </style>

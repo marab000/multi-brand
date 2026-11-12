@@ -46,15 +46,13 @@
 
   const isSelected = (label: string) => selected.includes(label);
   const toggleTile = (label: string) => {
-    selected = isSelected(label)
-      ? selected.filter((l) => l !== label)
-      : [...selected, label];
+    selected = isSelected(label) ? selected.filter((l) => l !== label) : [...selected, label];
   };
 
-  // остаток акции: дн / ч / мин, тикаем каждую секунду — счётчик «живой»
-  let leftDays = $state('00');
+  // остаток акции: ч / мин / сек, тикаем каждую секунду — счётчик «живой»
   let leftHours = $state('00');
   let leftMins = $state('00');
+  let leftSecs = $state('00');
 
   const pad2 = (n: number) => String(Math.max(0, n)).padStart(2, '0');
 
@@ -66,13 +64,13 @@
   const tick = () => {
     const ms = deadline - Date.now();
     if (deadline && ms <= 0) {
-      leftDays = leftHours = leftMins = '00';
+      leftHours = leftMins = leftSecs = '00';
       return;
     }
-    const mins = Math.floor(ms / 60000);
-    leftDays = pad2(Math.floor(mins / 1440));
-    leftHours = pad2(Math.floor((mins % 1440) / 60));
-    leftMins = pad2(mins % 60);
+    const secs = Math.floor(ms / 1000);
+    leftHours = pad2(Math.floor(secs / 3600));
+    leftMins = pad2(Math.floor((secs % 3600) / 60));
+    leftSecs = pad2(secs % 60);
   };
 
   onMount(() => {
@@ -116,19 +114,16 @@
 </script>
 
 <section class="kitoffer">
-  <div class="kitoffer__top">
-    <span class="kitoffer__brand">MULTI-BRAND</span>
-    <span class="kitoffer__top-divider" aria-hidden="true"></span>
-    <span class="kitoffer__top-note">Встраиваемая техника<br />для вашего дома</span>
+  <div class="kitoffer__top flex flex-col gap-3">
+    <h2>Соберите комплект техники <em> и увеличьте выгоду</em></h2>
+    <p class="kitoffer__storage">
+      <Warehouse size={20} strokeWidth={1.8} />
+      <span>Бесплатное хранение на складе М-7 в Казани <i> до конца ремонта</i></span>
+    </p>
   </div>
 
   <div class="kitoffer__grid">
     <div class="kitoffer__main">
-      <h2>Соберите комплект техники<br /><em>и увеличьте выгоду</em></h2>
-      <p class="kitoffer__storage">
-        <Warehouse size={20} strokeWidth={1.8} />
-        <span>Бесплатное хранение на складе М-7 в Казани<br /><i>до конца ремонта</i></span>
-      </p>
       <div class="kitoffer__tiles">
         {#each tiles as t (t.label)}
           <button
@@ -149,7 +144,7 @@
     <div class="kitoffer__side">
       <div class="kitoffer__saving">
         <div class="kitoffer__saving-head">
-          <span>Ваша выгода<br />за комплект:</span>
+          <span>Ваша выгода за комплект:</span>
           <i>15%</i>
         </div>
       </div>
@@ -159,14 +154,20 @@
           <span>До конца акции осталось:</span>
         </div>
         <div class="kitoffer__timer-cells">
-          <span>{leftDays} <i>дн.</i></span>
           <span>{leftHours} <i>ч.</i></span>
           <span>{leftMins} <i>мин.</i></span>
+          <span>{leftSecs} <i>сек.</i></span>
         </div>
       </div>
     </div>
 
-    <form class="kitoffer__form" onsubmit={(e) => { e.preventDefault(); submit(); }}>
+    <form
+      class="kitoffer__form"
+      onsubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
       <div class="kitoffer__phone">
         <span class="kitoffer__phone-prefix">+7</span>
         <input
@@ -174,13 +175,14 @@
           placeholder="999 123 45 67"
           autocomplete="tel"
           inputmode="numeric"
-          bind:value={phone}
+          // без bind:value — он воюет с IMask и перетирает ввод; значение живёт в маске,
+          // состояние обновляет onAccept (паттерн эталонного инпута в PrivilegesSection)
           use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
           disabled={loading}
         />
       </div>
       <button type="submit" class="btn-gold kitoffer__submit" disabled={loading}>
-        {loading ? 'Отправляем...' : 'Зафиксировать скидку и расчет'}
+        {loading ? 'Отправляем...' : 'Зафиксировать скидку'}
         <ChevronRight size={18} strokeWidth={2.3} />
       </button>
     </form>
@@ -198,14 +200,25 @@
 </section>
 
 {#if successOpen}
-  <button class="kitoffer__overlay" type="button" aria-label="Закрыть" onclick={() => (successOpen = false)}></button>
+  <button
+    class="kitoffer__overlay"
+    type="button"
+    aria-label="Закрыть"
+    onclick={() => (successOpen = false)}
+  ></button>
   <div class="kitoffer__success" role="dialog" aria-modal="true" aria-label="Выгода зафиксирована">
     <span class="kitoffer__success-check"><Check size={30} strokeWidth={3} /></span>
     <h3>Выгода<br />зафиксирована!</h3>
-    <p>Эксперт Павел уже формирует спецификацию с учётом бесплатных схем встройки под ваш проект.</p>
+    <p>
+      Эксперт Павел уже формирует спецификацию с учётом бесплатных схем встройки под ваш проект.
+    </p>
     <div class="kitoffer__success-box">
-      <span><Check size={14} strokeWidth={2.6} /> Бронь спецификации закреплена за вашим номером</span>
-      <span><Check size={14} strokeWidth={2.6} /> Бесплатное хранение на складе М-7 активировано</span>
+      <span
+        ><Check size={14} strokeWidth={2.6} /> Бронь спецификации закреплена за вашим номером</span
+      >
+      <span
+        ><Check size={14} strokeWidth={2.6} /> Бесплатное хранение на складе М-7 активировано</span
+      >
     </div>
     <button type="button" class="kitoffer__success-btn" onclick={() => (successOpen = false)}
       >Отлично, понятно</button
@@ -248,19 +261,6 @@
     &__top {
       position: relative;
       z-index: 1;
-      display: flex;
-      align-items: center;
-      gap: $sp-3;
-    }
-    &__brand {
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: 0.22em;
-    }
-    &__top-divider {
-      width: 1px;
-      height: 26px;
-      background: rgba(255, 255, 255, 0.25);
     }
     &__top-note {
       color: rgba(255, 255, 255, 0.8);
@@ -277,7 +277,7 @@
       margin-top: $sp-4;
       @media (min-width: 1024px) {
         grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
-        gap: $sp-6;
+        gap: $sp-4;
       }
     }
 
@@ -381,43 +381,63 @@
     &__side {
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
       gap: $sp-3;
+      // таймер тянется (flex: 1 у __timer) — правая колонка всегда по высоте левой
     }
 
     &__saving {
-      padding: $sp-3 $sp-4;
+      padding: $sp-2 $sp-3;
+      border: 2px solid #000;
       border-radius: 14px;
-      background: #f5c623;
-      color: #201a05;
+      background: #171717b8;
+      color: #fff;
       &-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: $sp-2;
-        font-size: 0.72rem;
+        font-size: 0.875rem;
         font-weight: 600;
         line-height: 1.25;
         text-transform: uppercase;
+        // заголовок всегда одной строкой
+        white-space: nowrap;
+        // бейдж 15%: идеальный круг, из него расходятся лёгкие кольца («круги на воде»)
         i {
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
           width: 34px;
-          height: 30px;
-          border-radius: 999px;
-          background: #1e2413;
-          color: #f5c623;
+          height: 34px;
+          border-radius: 50%;
+          background: #f5c623;
+          color: #201a05;
           font-size: 0.8rem;
           font-style: normal;
           white-space: nowrap;
+          &::before,
+          &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid rgba(245, 198, 35, 0.55);
+            animation: kitoffer-ripple 5.4s ease-out infinite;
+            pointer-events: none;
+          }
+          &::after {
+            animation-delay: 2.7s;
+          }
         }
       }
     }
 
     &__timer {
-      padding: $sp-3 $sp-4;
+      // тянется до низа колонки: блоки справа всегда одной высоты с левыми
+      flex: 1;
+      padding: $sp-2 $sp-3;
       border: 1px solid rgba(255, 255, 255, 0.16);
       border-radius: 14px;
       background: rgba(3, 18, 11, 0.55);
@@ -435,13 +455,13 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
-        margin-top: 10px;
+        margin-top: 8px;
         span {
           display: flex;
           align-items: baseline;
           justify-content: center;
           gap: 4px;
-          padding: 8px 4px;
+          padding: 6px 4px;
           border-radius: 10px;
           background: rgba(255, 255, 255, 0.07);
           font-size: 1.35rem;
@@ -463,7 +483,8 @@
       grid-template-columns: minmax(0, 1fr);
       gap: 12px;
       @media (min-width: 640px) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        // поле тянется, кнопка — по контенту (auto)
+        grid-template-columns: minmax(0, 1fr) auto;
       }
     }
     &__phone {
@@ -499,10 +520,10 @@
     }
     &__submit {
       // форма/капсула — общие (.btn-gold); паддинг обязателен: btn-gold сам его не задаёт.
-      // шеврон всегда у правого края (кнопка на всю ширину формы)
+      // ширина по контенту: на мобилке не растягивается на всю строку
+      justify-self: start;
       height: 52px;
       padding: 0 24px;
-      justify-content: space-between;
       font-size: 0.95rem;
     }
 
@@ -616,6 +637,18 @@
       &:hover {
         border-color: rgba(255, 255, 255, 0.6);
       }
+    }
+  }
+
+  // кольца-мерцание от бейджа 15%: расширяются и растворяются, второй — с задержкой
+  @keyframes kitoffer-ripple {
+    0% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(2.1);
+      opacity: 0;
     }
   }
 </style>

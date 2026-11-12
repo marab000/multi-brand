@@ -71,12 +71,9 @@
     gap: $sp-2;
     text-align: center;
 
+    // размер/вес — из глобального h2 (typography.scss); margin: 0 — зазор ведёт gap секции
     &__title {
       margin: 0;
-      font-size: 1.25rem;
-      font-weight: 700;
-      line-height: 1.15;
-      color: #111827;
     }
     // Плашка-строка по мокапу Марата (стиль «вторая»): контурная жёлтая иконка,
     // вертикальный разделитель и текст. Фона нет — не читается кнопкой.
@@ -142,11 +139,6 @@
       font-size: 0.9rem;
       justify-content: space-between;
     }
-    @media (max-width: 639px) {
-      &__title {
-        font-size: 1.35rem;
-      }
-    }
   }
   .kit-card {
     display: flex;
@@ -171,6 +163,7 @@
       font-weight: 600;
       line-height: 1.25;
       color: #fff;
+      text-align: center;
     }
     &__img {
       width: 100%;
