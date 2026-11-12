@@ -7,7 +7,7 @@
   let {
     open = $bindable(false),
     prefill = '',
-    // метка источника заявки: 'asko' для витрины, не задана — основной сайт
+    // метка источника заявки (kit-fix, quiz и т.п.), не задана — общий лид
     source = ''
   } = $props<{ open?: boolean; prefill?: string; source?: string }>();
   let name = $state('');

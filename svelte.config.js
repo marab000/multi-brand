@@ -1,11 +1,6 @@
 import preprocess from 'svelte-preprocess';
 import adapter from '@sveltejs/adapter-node';
 
-// ASKO-витрина (SITE=asko → adapter-static) временно отключена до оплаты проекта:
-// безусловный import adapter-static валил основной билд на VPS, где пакета нет.
-// Вернуть по коммит-логу aa5c27b (import adapterStatic, isAsko-ветки адаптера
-// и prerender, prependData variables.asko.scss).
-
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	compilerOptions: {

@@ -240,8 +240,7 @@ export async function sendLeadEmail(lead: {
   const res = await resend.emails.send({
     from: RESEND_FROM_EMAIL,
     to: QUIZ_LEAD_EMAIL,
-    subject:
-      lead.source === 'asko' ? 'Новая заявка с витрины ASKO' : 'Новая заявка на подбор техники',
+    subject: 'Новая заявка на подбор техники',
     ...(lead.attachment ? { attachments: [lead.attachment] } : {}),
     html: `
       <!doctype html>
@@ -278,7 +277,6 @@ export async function sendLeadEmail(lead: {
                           <td style="padding:16px 18px;font-size:15px;line-height:1.6;color:#333333;">
                             <div><b>Имя:</b> ${escapeHtml(lead.name)}</div>
                             <div><b>Телефон:</b> <a href="tel:${escapeHtml(lead.phone)}" style="color:#202020;text-decoration:none;">${escapeHtml(lead.phone)}</a></div>
-                            ${lead.source === 'asko' ? `<div><b>Источник:</b> витрина ASKO</div>` : ''}
                             ${lead.attachment ? `<div><b>Вложение:</b> ${escapeHtml(lead.attachment.filename)}</div>` : ''}
                             ${lead.message ? `<div style="margin-top:10px;"><b>Комментарий:</b><br />${messageLinesHtml(lead.message)}</div>` : ''}
                           </td>

@@ -39,7 +39,7 @@ export const POST: RequestHandler = async ({ request }) => {
     name = String(body?.name ?? '').trim();
     phone = String(body?.phone ?? '').trim();
     message = String(body?.message ?? '').trim();
-    // источник заявки: сейчас только витрина ASKO ('asko'); отсутствие — основной сайт
+    // источник заявки (kit-fix, quiz и т.д.); отсутствие — основной сайт
     source = String(body?.source ?? '').trim();
   }
 

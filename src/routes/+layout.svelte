@@ -21,8 +21,6 @@ import Ticker from '$lib/components/Ticker.svelte';
 
   let { data, children } = $props<{
     data: {
-      // 'asko' — сборка витрины (SITE=asko): голый каркас без шапки/подвала основного сайта
-      site?: 'main' | 'asko';
       typeGroups: { group: string; items: string[] }[];
       catalogRoots?: any[];
       contacts?: Contacts | null;
@@ -85,44 +83,36 @@ import Ticker from '$lib/components/Ticker.svelte';
 </script>
 
 <svelte:head>
-  {#if data.site !== 'asko'}
-    <!-- страницы со своим canonical рендерят его сами, иначе было бы два каноникла -->
-    {#if !$page.data?.canonical}<link rel="canonical" href={canonicalUrl} />{/if}
-    <meta property="og:locale" content="ru_RU" />
-    <meta property="og:site_name" content="MULTIBRAND" />
-    {@html `<script type="application/ld+json">${JSON.stringify(orgSchema)}</script>`}
-  {/if}
+  <!-- страницы со своим canonical рендерят его сами, иначе было бы два каноникла -->
+  {#if !$page.data?.canonical}<link rel="canonical" href={canonicalUrl} />{/if}
+  <meta property="og:locale" content="ru_RU" />
+  <meta property="og:site_name" content="MULTIBRAND" />
+  {@html `<script type="application/ld+json">${JSON.stringify(orgSchema)}</script>`}
 </svelte:head>
 
 {#if $navigating}
   <div class="route-loader"></div>
 {/if}
 
-{#if data.site === 'asko'}
-  <!-- ASKO-витрина: своя оболочка, изоляция от основного сайта (без шапки, подвала и попапов).
-       Тостер рендерит сама страница — внутри своей обёртки с темой. -->
-  {@render children()}
-{:else}
-  <Header {data} />
+<Header {data} />
 
-  {#if $page.url.pathname === '/'}
-    <Ticker />
-  {/if}
-
-  <main
-    class="container mx-auto mb-5 min-h-screen rounded-2xl border border-[#00000015] bg-gray-50 p-3 pb-0! lg:p-4"
-  >
-    {@render children()}
-    <Toaster position="top-center" />
-  </main>
-
-  <Footer {data} />
-
-  <ChatWidget />
-  <BottomNav />
-  <CookieBanner />
-  <StoragePopup />
+{#if $page.url.pathname === '/'}
+  <Ticker />
 {/if}
+
+<main
+  class="container mx-auto mb-5 min-h-screen rounded-2xl border border-[#00000015] bg-gray-50 p-3 pb-0! lg:p-4"
+>
+  {@render children()}
+  <Toaster position="top-center" />
+</main>
+
+<Footer {data} />
+
+<ChatWidget />
+<BottomNav />
+<CookieBanner />
+<StoragePopup />
 
 <style lang="scss">
   :global(.container) {
