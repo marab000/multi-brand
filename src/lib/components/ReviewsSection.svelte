@@ -103,15 +103,12 @@
     flex-direction: column;
     gap: $sp-3;
     h2 {
+      // масштаб section-title — единый с остальными секциями главной
       margin: 0;
-      color: #171717;
-      font-size: 1.75rem;
-      line-height: 1.08;
+      color: #111827;
+      font-size: 1.25rem;
+      line-height: 1.15;
       font-weight: 700;
-      letter-spacing: -0.04em;
-      @media (min-width: 1024px) {
-        font-size: 2.75rem;
-      }
     }
     p {
       margin: 0;

@@ -26,6 +26,7 @@
   import kitWine from '$lib/assets/promo/kit-vinnye-shkafy.webp';
   import kitDry from '$lib/assets/promo/kit-sushilnye-shkafy.webp';
   import ProductCard from '$lib/components/ProductCard.svelte';
+  import KitOfferForm from '$lib/components/KitOfferForm.svelte';
   import PrivilegesSection from '$lib/components/PrivilegesSection.svelte';
   import ReviewsSection from '$lib/components/ReviewsSection.svelte';
   import BrandsGrid from '$lib/components/BrandsGrid.svelte';
@@ -41,8 +42,6 @@
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
   import askoQuizPhoto from '$lib/assets/promo/asko-quiz.webp';
   import liebherrQuizPhoto from '$lib/assets/promo/liebherr-quiz.webp';
-  import askoLogo from '$lib/assets/brands/ASKO.webp';
-  import liebherrLogo from '$lib/assets/brands/LIEBHERR.webp';
   import storeShowroom from '$lib/assets/promo/store-showroom.webp';
   import storeManager from '$lib/assets/promo/store-manager.webp';
   import storeWarehouse from '$lib/assets/promo/store-warehouse.webp';
@@ -274,13 +273,12 @@
     places: ['Рядом', 'В колонну — нужна проверка', 'Пока не знаю'],
     submitLabel: 'Подобрать мой комплект',
     leadTitle: 'Запрос на подбор ASKO:',
-    image: askoQuizPhoto,
-    logo: askoLogo
+    image: askoQuizPhoto
   };
   const liebherrQuiz = {
     headingLines: ['Хранение,', 'продуманное', 'до деталей.'],
     description:
-      'Подберём холодильник или морозильную камеру Liebherr под размеры кухни, сценарий хранения и бюджет. Проверим нишу, открывание дверей, доставку и установку.',
+      'Подберём холодильник или морозильную камеру Liebherr под размеры кухни, сценарий хранения и бюджет.',
     needs: [
       'Холодильник',
       'Морозильная камера',
@@ -300,7 +298,6 @@
     submitLabel: 'Получить подбор',
     leadTitle: 'Запрос на подбор Liebherr:',
     image: liebherrQuizPhoto,
-    logo: liebherrLogo,
     accentFrom: 1 // в референсе акцентом покрашены 2-я и 3-я строки («продуманное до деталей.»)
   };
   // блок-акция Liebherr (из демо-лендинга) — после ASKO-квиза
@@ -394,27 +391,9 @@
   </section>
 {/if}
 
-<section class="mx-auto">
-  <a class="podbor-cta" href="/podbor">
-    <div class="podbor-cta__main">
-      <h2>Подберём технику под вашу кухню и бюджет</h2>
-      <p>Ответьте на 4 вопроса — подберём комплект встраиваемой техники под ваш бюджет</p>
-      <p>
-        Проверим размеры и совместимость, подготовим расчёт комплекта и согласуем бесплатную
-        доставку к готовности кухни.
-      </p>
-      <span class="btn secondary-light podbor-cta__btn"
-        >Подобрать комплект <ArrowRight size={16} strokeWidth={2.3} /></span
-      >
-    </div>
-    <img
-      class="podbor-cta__photo"
-      src="/images/podbor-kitchen.webp"
-      alt="Кухня с встраиваемой техникой"
-      loading="lazy"
-    />
-  </a>
-</section>
+<!-- блок с формой «Зафиксировать выгоду за комплект» по референсу заказчика
+     (секция своя, внутри компонента, без обёртки); ИИ-помощник (/podbor) остаётся — ссылка в шапке -->
+<KitOfferForm />
 
 {#each kitBlocks as block (block.title)}
   <section class="kit mx-auto">
@@ -462,18 +441,18 @@
     </div>
     <button
       type="button"
-      class="kit__cta"
+      class="btn-gold kit__cta"
       onclick={() => openKitLead(block)}
     >
       {block.cta}
-      <ArrowRight size={16} strokeWidth={2.3} />
+      <ChevronRight size={16} strokeWidth={2.3} />
     </button>
   </section>
 {/each}
 
 {#if data.syncBrands?.length}
   <section class="mx-auto">
-    <h2 class="section-title">Бренды</h2>
+    <h2 class="section-title">Бренды — которым доверяют</h2>
     <!-- у marquee свой padding 12px (иначе тень плиток режется); отрицательными марджинами
          компенсируем его и штатные 12px секции, чтобы итоговый зазор был 12px, а не 24+ -->
     <div class="-mt-3! -mb-3!">
@@ -483,7 +462,7 @@
 {/if}
 
 <section class="mx-auto hits-section">
-  <h2 class="section-title">Хиты продаж</h2>
+  <h2 class="section-title">Хиты продаж — всегда доступные к заказу</h2>
   <div class="hits-grid" class:hits-grid--expanded={hitsExpanded}>
     {#each data.hits as hit (hit.id)}
       <ProductCard product={hit} />
@@ -715,7 +694,7 @@
     </div>
     <button type="button" class="store-visit" onclick={() => (storeVisitOpen = true)}>
       Записаться на визит в салон
-      <ArrowRight size={15} strokeWidth={2.2} />
+      <ChevronRight size={15} strokeWidth={2.2} />
     </button>
   </div>
 </section>
@@ -739,201 +718,9 @@
 
 <style lang="scss">
   @use 'sass:color';
-
-  // референс: белая карточка, слева текст + жёлтая кнопка + 3 преимущества,
-  // справа фото кухни (статичный ассет со стикером)
-  .podbor-cta {
-    position: relative;
-    display: flex;
-    align-items: stretch;
-    padding: 16px 36% 16px 24px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-    color: #2e3d2f;
-    text-decoration: none;
-    transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-      .podbor-cta__btn :global(svg) {
-        transform: translateX(3px);
-      }
-    }
-
-    &__main {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    &__main h2 {
-      margin: 8px 0 0;
-      font-size: clamp(20px, 1.9vw, 26px);
-      font-weight: 700;
-      color: #2e3d2f;
-      line-height: 1.15;
-
-      em {
-        // inline-block: «с помощью ИИ» переносится только целиком,
-        // предлог «с» не отрывается от фразы
-        display: inline-block;
-        font-style: normal;
-        color: #2f6b3a;
-        // жёлтый маркер-подчёркивание как в референсе
-        background: linear-gradient(transparent 68%, rgba(240, 198, 75, 0.7) 68%);
-        padding: 0 4px;
-      }
-    }
-
-    &__main p {
-      margin: 8px 0 12px;
-      max-width: 480px;
-      font-size: 0.8125rem;
-      line-height: 1.45;
-      color: #7d8a7e;
-    }
-
-    &__btn {
-      // цвет — от btn.secondary-light (общая жёлтая «с тёмным текстом»);
-      // локально только отличия от базового .btn: капсула, свой паддинг и тень
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 999px;
-      font-size: 0.875rem;
-      font-weight: 700;
-      box-shadow: 0 4px 10px rgba(240, 198, 75, 0.45);
-      :global(svg) {
-        transition: transform 0.15s ease;
-      }
-    }
-
-    &__features {
-      list-style: none;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 20px;
-      margin: 12px 0 0;
-      padding: 0;
-
-      li {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        :global(svg) {
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          background: #e4eee4;
-          color: #2f6b3a;
-          padding: 8px;
-          box-sizing: border-box;
-        }
-        span {
-          display: flex;
-          flex-direction: column;
-          line-height: 1.25;
-        }
-        b {
-          font-size: 0.8125rem;
-          font-weight: 700;
-          color: #2e3d2f;
-        }
-        i {
-          font-style: normal;
-          font-size: 0.8125rem;
-          color: #8a978b;
-        }
-      }
-    }
-
-    // фото кухни справа: вплотную к верхнему/правому/нижнему краю карточки,
-    // левый edge плавно растворяется в белом фоне
-    &__photo {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      height: 100%;
-      width: 40%;
-      max-width: 480px;
-      object-fit: cover;
-      border-radius: 0 16px 16px 0;
-      mask-image: linear-gradient(to right, transparent 0, #000 110px);
-      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 110px);
-
-      @media (max-width: 860px) {
-        // фото не прячем — сжимаем и усиливаем левый фейд, чтобы текст читался
-        display: block;
-        width: 46%;
-        mask-image: linear-gradient(to right, transparent 0, #000 55px);
-        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 55px);
-      }
-    }
-
-    @media (max-width: 860px) {
-      padding: 16px 44% 16px 16px;
-      &__main {
-        align-items: flex-start;
-        text-align: left;
-      }
-      &__main p {
-        max-width: none;
-      }
-      &__features {
-        justify-content: flex-start;
-        gap: $sp-1 14px;
-        li {
-          flex-direction: row;
-          text-align: left;
-          :global(svg) {
-            width: 28px;
-            height: 28px;
-            padding: 6px;
-          }
-        }
-      }
-      &__btn {
-        padding: 10px 18px;
-        font-size: 0.8125rem;
-      }
-    }
-
-    @media (max-width: 640px) {
-      // на 350px фото заходит ПОД текст с длинным левым фейдом:
-      // блок не растёт по высоте, текст читается поверх растворённой части
-      padding: 16px 12% 16px 16px;
-
-      &__main {
-        position: relative;
-        z-index: 1;
-      }
-
-      &__photo {
-        width: 52%;
-        mask-image: linear-gradient(to right, transparent 0, #000 70%);
-        -webkit-mask-image: linear-gradient(to right, transparent 0, #000 70%);
-      }
-    }
-  }
-  // секция хитов: flex, чтобы кнопка «Смотреть ещё» получила зазор от родителя
   .hits-section {
     display: flex;
     flex-direction: column;
-    gap: $sp-4;
   }
   .hits-grid {
     display: grid;
@@ -1070,6 +857,7 @@
   }
 
   // кнопка записи на визит под карточками
+  // CTA на форму заявки — жёлтая, как квиз-кнопки (secondary-light #f0c64b)
   .store-visit {
     align-self: center;
     display: inline-flex;
@@ -1081,15 +869,15 @@
     height: 44px;
     border: 0;
     border-radius: 12px;
-    background: $green;
-    color: #fff;
+    background: #f0c64b;
+    color: #2e3d2f;
     font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s ease;
 
     &:hover {
-      background: color.scale($green, $lightness: -10%);
+      background: color.scale(#f0c64b, $lightness: -10%);
     }
   }
   .hero-section {
@@ -1294,22 +1082,11 @@
         }
       }
     }
+    // CTA ведёт на форму заявки: цвет/капсула — общие (.btn-gold), здесь только геометрия
     &__cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
       height: 42px;
       padding: 0 22px;
-      border-radius: 999px;
-      background: $green;
-      color: #fff;
       font-size: 0.9rem;
-      font-weight: 700;
-      text-decoration: none;
-      transition: background 0.15s ease;
-      &:hover {
-        background: color.scale($green, $lightness: -10%);
-      }
     }
     @media (max-width: 639px) {
       &__title {
@@ -1506,23 +1283,20 @@
     flex-direction: column;
     gap: $sp-1;
   }
+  // шапка блока в масштабе section-title (1.25rem), как у остальных секций главной
   .omo__logo {
-    color: #1c2b22;
-    font-size: 1.75rem;
-    font-weight: 800;
+    color: #111827;
+    font-size: 1.25rem;
+    font-weight: 700;
     letter-spacing: 0.06em;
-    line-height: 1;
-    @media (min-width: 1024px) {
-      font-size: 2.5rem;
-    }
+    line-height: 1.15;
   }
   .omo__tagline {
     color: #475569;
     font-size: 0.9375rem;
     line-height: 1.4;
   }
-  // «металлик» золота без картинки: диагональный градиент со световыми бликами
-  $omo-gold: linear-gradient(105deg, #f7e2a0 0%, #eec86a 26%, #d4a638 52%, #f2d67e 76%, #cfa236 100%);
+  // «металлик» золота без картинки — общий градиент $gold-gradient (variables.scss)
   .omo__cards {
     display: grid;
     grid-template-columns: 1fr;
@@ -1568,7 +1342,7 @@
       &--gold {
         left: 14px;
         border: 1px solid rgba(146, 108, 22, 0.45);
-        background: $omo-gold;
+        background: $gold-gradient;
         color: #4a3a10;
       }
     }
@@ -1608,7 +1382,7 @@
         box-shadow: none;
       }
       &--gold {
-        background: $omo-gold;
+        background: $gold-gradient;
         color: #4a3a10;
         box-shadow: none;
       }

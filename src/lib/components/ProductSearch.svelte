@@ -5,9 +5,7 @@
   import { Search, X, Folder } from 'lucide-svelte';
   import { imgUrl } from '$lib/s3Public';
 
-  // Печатающийся плейсхолдер: медленно набираем название товара, держим, стираем,
-  // переходим к следующему. Останавливается, когда пользователь вводит свой запрос.
-  let { placeholder = 'Поиск...', hints = [] }: { placeholder?: string; hints?: string[] } = $props();
+  let { placeholder = 'Поиск...' }: { placeholder?: string } = $props();
 
   type SearchSuggestion = {
     type: 'category' | 'brand';
@@ -21,12 +19,6 @@
   // Обычные let здесь не реактивны: дропдаун подсказок просто не рисуется
   // (проявилось после перехода на Svelte 5; варнинг non_reactive_update был подавлен).
   let query = $state('');
-  let searchFocused = $state(false);
-  let inputEl: HTMLInputElement | null | undefined;
-
-  function setInputPlaceholder(text: string) {
-    inputEl?.setAttribute('placeholder', text);
-  }
   let results: any[] = $state([]);
   let open = $state(false);
   let selected = $state(-1);
@@ -130,38 +122,6 @@
     onMount(() => {
       document.addEventListener('click', handleClickOutside);
       onDestroy(() => document.removeEventListener('click', handleClickOutside));
-
-      // анимация печати плейсхолдера (прямой setAttribute — без реактвности)
-      if (!hints.length) return;
-      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-      (async () => {
-        let index = 0;
-        while (true) {
-          if (query.trim() || searchFocused) {
-            await sleep(400);
-            continue;
-          }
-          const hint = hints[index % hints.length];
-          let text = '';
-          for (let n = 1; n <= hint.length; n++) {
-            if (query.trim() || searchFocused) break;
-            text = hint.slice(0, n);
-            setInputPlaceholder(text);
-            await sleep(50 + Math.random() * 60);
-          }
-          if (query.trim() || searchFocused) {
-            await sleep(400);
-            continue;
-          }
-          await sleep(2200);
-          while (text.length && !query.trim() && !searchFocused) {
-            text = text.slice(0, -1);
-            setInputPlaceholder(text);
-            await sleep(20);
-          }
-          index++;
-        }
-      })();
     });
   }
 </script>
@@ -172,12 +132,9 @@
       class="input primary"
       type="text"
       placeholder={placeholder}
-      bind:this={inputEl}
       bind:value={query}
       on:input={handleInput}
       on:keydown={handleKey}
-      on:focus={() => (searchFocused = true)}
-      on:blur={() => (searchFocused = false)}
     />
     {#if query}
       <button class="clear" on:click={clearInput}><X size={18} /></button>

@@ -153,6 +153,30 @@ input[type='radio'] {
   }
 }
 
+// Жёлтая капсула CTA — общий стиль кнопок главной, ведущих на форму заявки
+// («Подобрать комплект», «Собрать комплект со скидкой» и т.д.). Цвет — тот же
+// secondary-light (#f0c64b) с тёмно-зелёным текстом; высота/паддинг/шрифт —
+// локально у каждой кнопки (они разных размеров).
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: #f0c64b;
+  color: #2e3d2f;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  &:hover {
+    background: color.scale(#f0c64b, $lightness: -10%);
+  }
+  svg {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+}
+
 // Счётчик количества в корзине (− qty +): один на весь сайт — карточка каталога,
 // страница товара, корзина. Стили повторяют outline-кнопку «В корзину»:
 // та же высота 34px, обводка 2px, ховер — лёгкая зелёная заливка.

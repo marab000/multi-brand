@@ -1,7 +1,7 @@
 <script lang="ts">
   import {
-    ArrowRight,
     CalendarDays,
+    ChevronRight,
     ClipboardList,
     HandCoins,
     MessageCircle,
@@ -215,25 +215,27 @@
         <h3 class="privs__name">{p.title}</h3>
         <p class="privs__text">{p.text}</p>
         {#if p.action === 'installment'}
+          <!-- «Рассчитать платёж» ведёт в банк, не на форму — чёрная, выделена среди лид-кнопок -->
           <a
-            class="privs__btn"
+            class="privs__btn privs__btn--dark"
             href={OTP_INSTALLMENT_URL}
             target="_blank"
             rel="noopener noreferrer"
             data-privilege={p.action}
           >
             {p.cta}
-            <ArrowRight size={15} strokeWidth={2.2} />
+            <ChevronRight size={15} strokeWidth={2.2} />
           </a>
         {:else}
+          <!-- лид-кнопки (эксперт, хранение) — жёлтые, как остальные CTA на форму -->
           <button
             type="button"
-            class="privs__btn"
+            class="privs__btn privs__btn--lead"
             data-privilege={p.action}
             onclick={() => (p.action === 'expert' ? (expertOpen = true) : (storageOpen = true))}
           >
             {p.cta}
-            <ArrowRight size={15} strokeWidth={2.2} />
+            <ChevronRight size={15} strokeWidth={2.2} />
           </button>
         {/if}
       </article>
@@ -537,6 +539,33 @@
         border-color: $green;
         background: rgba($green, 0.06);
         color: $green;
+      }
+    }
+
+    // кнопки, открывающие форму заявки (эксперт, хранение): жёлтая заливка
+    // в тон квиз-кнопок (secondary-light), текст тёмно-зелёный
+    &__btn--lead {
+      border-color: transparent;
+      background: #f0c64b;
+      color: #2e3d2f;
+
+      &:hover:not(:disabled) {
+        border-color: transparent;
+        background: color.scale(#f0c64b, $lightness: -10%);
+        color: #2e3d2f;
+      }
+    }
+
+    // «Рассчитать платёж» — чёрная: ведёт в банк, а не на форму заявки
+    &__btn--dark {
+      border-color: transparent;
+      background: #171717;
+      color: #fff;
+
+      &:hover:not(:disabled) {
+        border-color: transparent;
+        background: #000;
+        color: #fff;
       }
     }
 

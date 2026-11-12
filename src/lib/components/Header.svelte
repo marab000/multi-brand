@@ -79,7 +79,6 @@
       rootCounts?: Record<string, number>;
       user?: AuthUser | null;
       contacts?: Contacts | null;
-      searchHints?: string[];
       city?: string;
     };
   }>();
@@ -88,7 +87,6 @@
   const cityPrep = $derived(
     `${cityForms(data?.city).dat}${regionShort(data?.city)}`
   );
-  const searchHints = $derived(data?.searchHints ?? []);
   const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
   const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
   // на мобиле в пилюле показываем только «8 800», полный номер — в tel:
@@ -547,13 +545,13 @@
         </div>
       {/if}
     </div>
-    <div class="hidden flex-1 lg:block"><ProductSearch hints={searchHints} /></div>
+    <div class="hidden flex-1 lg:block"><ProductSearch /></div>
     <div
       class="block flex-1 lg:hidden"
       onfocusin={() => (searchExpanded = true)}
       onfocusout={() => (searchExpanded = false)}
     >
-      <ProductSearch hints={searchHints} />
+      <ProductSearch />
     </div>
     <div class="nav__actions ml-auto lg:ml-0">
       <div class="user-menu-wrap">

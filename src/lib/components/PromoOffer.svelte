@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ArrowRight } from 'lucide-svelte';
+  import { ChevronRight } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
 
   // тёмно-зелёный блок-акция (из демо-лендингов брендов), контент через пропс offer
@@ -34,7 +34,7 @@
     <p class="offer__text">{offer.text}</p>
     <button type="button" class="btn secondary-light offer__btn" onclick={submit}>
       <span>{offer.buttonLabel}</span>
-      <ArrowRight size={18} strokeWidth={2.3} />
+      <ChevronRight size={18} strokeWidth={2.3} />
     </button>
     <p class="offer__note">{offer.note}</p>
   </div>
