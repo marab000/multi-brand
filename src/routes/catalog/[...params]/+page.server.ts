@@ -14,6 +14,7 @@ import { DEFAULT_CART_DISCOUNT_PERCENT, DEFAULT_EXCLUDED_BRANDS } from '$lib/uti
 import { toDbPrice } from '$lib/utils/formatPrice';
 import { buildCategorySeo, buildCategoryDescription } from '$lib/server/seoText';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
+import { looksLikeHtml, sanitizeSectionHtml } from '$lib/server/sanitizeSectionHtml';
 import { applyMetaTemplate, getMetaTemplates } from '$lib/server/metaTemplates';
 
 function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | undefined {
@@ -174,7 +175,12 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
     }
   }
   // SEO-текст категории: только для чистых URL категории (без фильтров/поиска)
-  let seo: { heading: string; paragraphs: string[] } | null = null;
+  let seo: {
+    heading: string;
+    paragraphs: string[];
+    /** sanitized HTML GEO-текста сеошника (если section_text размечен) */
+    sectionHtml?: string;
+  } | null = null;
   let autoDescription: string | null = null;
   if (!isSearchPage && !hasAppliedFilters && total > 0 && currentRoot) {
     try {
@@ -241,11 +247,18 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
       }
     }
     if (sectionText) {
-      const paragraphs = sectionText
-        .split(/\n\s*\n/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (paragraphs.length) seo = { ...seo, paragraphs };
+      // GEO-тексты сеошника приходят с HTML-разметкой (h2/h3/списки/перелинковка) —
+      // отдаём sanitized html; исторические плоские тексты — как раньше, абзацами
+      if (looksLikeHtml(sectionText)) {
+        const html = sanitizeSectionHtml(sectionText);
+        if (html.trim()) seo = { ...seo, sectionHtml: html };
+      } else {
+        const paragraphs = sectionText
+          .split(/\n\s*\n/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (paragraphs.length) seo = { ...seo, paragraphs };
+      }
     }
   }
 

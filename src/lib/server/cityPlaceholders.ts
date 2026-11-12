@@ -49,6 +49,7 @@ const TOKENS: Record<string, TokenRef> = (() => {
 	// алиасы из ТЗ сеошника ({city_in} = «в Москве» с предлогом, см. case в replace)
 	t['city'] = 'nom';
 	t['city_gen'] = 'gen';
+	t['city_dat'] = 'dat';
 	t['city_in'] = 'prep';
 	t['city_to'] = 'acc';
 	return t;
