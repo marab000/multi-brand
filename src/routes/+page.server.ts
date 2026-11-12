@@ -113,42 +113,12 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 
   const seoO = await getSeoOverride('home');
 
-    // агрегат для комплектных блоков главной: минимальная цена (в тысячах) и число
-    // моделей по слагам категорий — один GROUP BY по таблице товаров
-    let kitAggregates: Record<string, { min: number; models: number }> = {};
-    try {
-      const kitRows = await sql`
-        SELECT slug, MIN(price) AS min_price, COUNT(*) AS models
-        FROM (
-          SELECT catalog_leaf_slug AS slug, price_rrc AS price
-          FROM products WHERE price_rrc IS NOT NULL
-          UNION ALL
-          SELECT catalog_group_slug AS slug, price_rrc
-          FROM products WHERE price_rrc IS NOT NULL
-          UNION ALL
-          SELECT catalog_root_slug AS slug, price_rrc
-          FROM products WHERE price_rrc IS NOT NULL
-        ) t
-        GROUP BY slug
-      `;
-      for (const r of kitRows as unknown as Array<{
-        slug: string;
-        min_price: string | number;
-        models: string | number;
-      }>) {
-        kitAggregates[r.slug] = { min: Number(r.min_price), models: Number(r.models) };
-      }
-    } catch {
-      kitAggregates = {};
-    }
-
     return {
       desktopSlides: data.desktop || [],
       mobileSlides: data.mobile || [],
       hits,
       syncBrands,
       omoikiriCounts,
-      kitAggregates,
       city: locals.city,
       meta: {
         title: seoO?.title ||
@@ -171,7 +141,6 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       hits: [],
       syncBrands: [],
       omoikiriCounts: null,
-      kitAggregates: {} as Record<string, { min: number; models: number }>,
       city: locals.city
     };
   }

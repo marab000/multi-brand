@@ -515,7 +515,7 @@
     &__btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
       gap: $sp-1;
       width: 100%;
       max-width: 200px;

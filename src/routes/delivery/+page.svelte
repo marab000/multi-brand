@@ -1,5 +1,12 @@
 <script lang="ts">
-  let { data }: { data: { city?: string; meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
+  let {
+    data
+  }: {
+    data: {
+      city?: string;
+      meta?: { title?: string; description?: string; canonical?: string } | null;
+    };
+  } = $props();
   import { Truck, MapPin, PackageCheck, MessageCircleMore } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import deliveryBanner from '$lib/assets/delivery.webp';
@@ -9,53 +16,60 @@
 <svelte:head>
   {#if data?.meta?.canonical}<link rel="canonical" href={data.meta.canonical} />{/if}
   <title>{data?.meta?.title ?? 'Доставка — MULTIBRAND'}</title>
-  {#if data?.meta?.description}<meta name="description" content={data.meta.description} />{:else}<meta name="description" content="Страница «Доставка» интернет-магазина MULTIBRAND." />{/if}
+  {#if data?.meta?.description}<meta
+      name="description"
+      content={data.meta.description}
+    />{:else}<meta
+      name="description"
+      content="Страница «Доставка» интернет-магазина MULTIBRAND."
+    />{/if}
 </svelte:head>
 
-<div class="mx-auto grid gap-4 pb-4 lg:gap-6 lg:pb-6">
-  <section class="delivery-hero-card relative overflow-hidden p-5 lg:p-6">
-    <div class="delivery-banner">
-      <img src={deliveryBanner} alt="Доставка Мультибренд" />
-    </div>
-    <div class="delivery-hero-content">
-      <div class="delivery-eyebrow"><Truck size={18} strokeWidth={2.3} /><span>Доставка</span></div>
-      <h1>Доставим технику удобным для вас способом</h1>
-      <p>
-        Организуем доставку по городу и поможем подобрать подходящий вариант отправки в другие регионы
-        России.
-      </p>
-      <button class="btn primary gap-2 mt-4 lg:mt-5" type="button" onclick={() => (requestOpen = true)}
-        ><MessageCircleMore size={19} strokeWidth={2.2} /><span>Оставить заявку</span></button
-      >
-    </div>
-  </section>
-  <section class="grid gap-3 sm:grid-cols-3 lg:gap-5">
-    <article class="delivery-card p-5 lg:p-6">
-      <div class="delivery-icon"><MapPin size={24} strokeWidth={2.1} /></div>
-      <h2>Доставка по городу</h2>
-      <p>
-        Доставка по городу {data.city ?? 'Казань'} осуществляется бесплатно. После оформления заказа
-        менеджер свяжется с вами, подтвердит наличие товара, адрес и согласует удобное время.
-      </p>
-    </article>
-    <article class="delivery-card p-5 lg:p-6">
-      <div class="delivery-icon"><Truck size={24} strokeWidth={2.1} /></div>
-      <h2>Доставка по России</h2>
-      <p>
-        Доставка в другие регионы России рассчитывается индивидуально. Стоимость, сроки и доступные
-        варианты необходимо уточнить у менеджера при оформлении заказа.
-      </p>
-    </article>
-    <article class="delivery-card lg:p]-6 p-5">
-      <div class="delivery-icon"><PackageCheck size={24} strokeWidth={2.1} /></div>
-      <h2>Согласование заказа</h2>
-      <p>
-        Перед доставкой мы дополнительно проверяем заказ и связываемся с вами. Если есть пожелания
-        по времени, адресу или способу получения, сообщите об этом заранее.
-      </p>
-    </article>
-  </section>
-</div>
+<section class="delivery-hero-card relative overflow-hidden p-5 lg:p-6">
+  <div class="delivery-banner">
+    <img src={deliveryBanner} alt="Доставка Мультибренд" />
+  </div>
+  <div class="delivery-hero-content">
+    <div class="delivery-eyebrow"><Truck size={18} strokeWidth={2.3} /><span>Доставка</span></div>
+    <h1>Доставим технику удобным для вас способом</h1>
+    <p>
+      Организуем доставку по городу и поможем подобрать подходящий вариант отправки в другие регионы
+      России.
+    </p>
+    <button
+      class="btn primary mt-4 gap-2 lg:mt-5"
+      type="button"
+      onclick={() => (requestOpen = true)}
+      ><MessageCircleMore size={19} strokeWidth={2.2} /><span>Оставить заявку</span></button
+    >
+  </div>
+</section>
+<section class="grid gap-3 sm:grid-cols-3 lg:gap-5">
+  <article class="delivery-card p-5 lg:p-6">
+    <div class="delivery-icon"><MapPin size={24} strokeWidth={2.1} /></div>
+    <h2>Доставка по городу</h2>
+    <p>
+      Доставка по городу {data.city ?? 'Казань'} осуществляется бесплатно. После оформления заказа менеджер
+      свяжется с вами, подтвердит наличие товара, адрес и согласует удобное время.
+    </p>
+  </article>
+  <article class="delivery-card p-5 lg:p-6">
+    <div class="delivery-icon"><Truck size={24} strokeWidth={2.1} /></div>
+    <h2>Доставка по России</h2>
+    <p>
+      Доставка в другие регионы России рассчитывается индивидуально. Стоимость, сроки и доступные
+      варианты необходимо уточнить у менеджера при оформлении заказа.
+    </p>
+  </article>
+  <article class="delivery-card p-5 lg:p-6">
+    <div class="delivery-icon"><PackageCheck size={24} strokeWidth={2.1} /></div>
+    <h2>Согласование заказа</h2>
+    <p>
+      Перед доставкой мы дополнительно проверяем заказ и связываемся с вами. Если есть пожелания по
+      времени, адресу или способу получения, сообщите об этом заранее.
+    </p>
+  </article>
+</section>
 
 <LeadRequestModal bind:open={requestOpen} />
 

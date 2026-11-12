@@ -115,7 +115,7 @@
   };
 </script>
 
-<section class="kitoffer mx-auto">
+<section class="kitoffer">
   <div class="kitoffer__top">
     <span class="kitoffer__brand">MULTI-BRAND</span>
     <span class="kitoffer__top-divider" aria-hidden="true"></span>
@@ -150,11 +150,7 @@
       <div class="kitoffer__saving">
         <div class="kitoffer__saving-head">
           <span>Ваша выгода<br />за комплект:</span>
-          <i>13</i>
-        </div>
-        <div class="kitoffer__saving-sum">
-          <span>Экономия</span>
-          <b>38 400 ₽</b>
+          <i>15%</i>
         </div>
       </div>
       <div class="kitoffer__timer">
@@ -219,15 +215,39 @@
 
 <style lang="scss">
   .kitoffer {
-    // секция = одна карточка; зелёное «стекло» светлее референса не делаем —
-    // референс светлее чёрного: средне-тёмный зелёный с диагональным светом
+    // секция = одна карточка. Текстура из референса: размытое фото кухни под
+    // зелёным тоном («стекло с подложкой») — два псевдоэлемента, без вложенных рамок.
+    position: relative;
+    overflow: hidden;
     padding: clamp($sp-4, 3.5vw, $sp-8);
     border: 1px solid rgba(212, 166, 56, 0.4);
     border-radius: 24px;
-    background: linear-gradient(150deg, #2a6a47 0%, #1a4d31 48%, #103823 100%);
+    background: #103823;
     color: #fff;
 
+    // размытая подложка: фото больше секции (inset отрицательный), чтобы blur
+    // не оголял края; интенсивная фактура — формы фото различимы, световые
+    // пятна яркие, углы уходят в тень; поверх — зелёный тон
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -80px;
+      background: url('/images/podbor-kitchen.webp') center / cover no-repeat;
+      filter: blur(22px) saturate(1.05) brightness(1.05) contrast(1.2);
+    }
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(80% 110% at 14% 22%, rgba(74, 136, 98, 0.4), transparent 58%),
+        radial-gradient(70% 90% at 88% 96%, rgba(4, 16, 10, 0.55), transparent 64%),
+        linear-gradient(150deg, rgba(22, 62, 40, 0.52), rgba(10, 38, 24, 0.66));
+    }
+
     &__top {
+      position: relative;
+      z-index: 1;
       display: flex;
       align-items: center;
       gap: $sp-3;
@@ -249,6 +269,8 @@
     }
 
     &__grid {
+      position: relative;
+      z-index: 1;
       display: grid;
       grid-template-columns: minmax(0, 1fr);
       gap: $sp-4;
@@ -359,11 +381,8 @@
     &__side {
       display: flex;
       flex-direction: column;
+      justify-content: flex-end;
       gap: $sp-3;
-      // колонка на всю высоту строки: выгода и таймер делят её поровну
-      > * {
-        flex: 1;
-      }
     }
 
     &__saving {
@@ -385,29 +404,14 @@
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          width: 30px;
+          width: 34px;
           height: 30px;
-          border-radius: 50%;
+          border-radius: 999px;
           background: #1e2413;
           color: #f5c623;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-style: normal;
-        }
-      }
-      &-sum {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: $sp-2;
-        margin-top: $sp-2;
-        span {
-          font-size: 1rem;
-          font-weight: 700;
-        }
-        b {
-          font-size: clamp(1.6rem, 2.4vw, 2.1rem);
-          line-height: 1;
-          letter-spacing: -0.02em;
+          white-space: nowrap;
         }
       }
     }
@@ -494,10 +498,11 @@
       }
     }
     &__submit {
-      // форма/капсула — общие (.btn-gold); паддинг обязателен: btn-gold сам его не задаёт
+      // форма/капсула — общие (.btn-gold); паддинг обязателен: btn-gold сам его не задаёт.
+      // шеврон всегда у правого края (кнопка на всю ширину формы)
       height: 52px;
       padding: 0 24px;
-      justify-content: center;
+      justify-content: space-between;
       font-size: 0.95rem;
     }
 

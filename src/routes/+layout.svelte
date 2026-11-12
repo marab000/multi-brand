@@ -100,8 +100,10 @@ import Ticker from '$lib/components/Ticker.svelte';
   <Ticker />
 {/if}
 
+<!-- flex-col + gap: вертикальные отступы между блоками всех страниц задаются
+     здесь одной строчкой (gap 12/16 = p-3/lg:p-4) -->
 <main
-  class="container mx-auto mb-5 min-h-screen rounded-2xl border border-[#00000015] bg-gray-50 p-3 pb-0! lg:p-4"
+  class="container mx-auto mb-5 flex min-h-screen flex-col gap-3 rounded-2xl border border-[#00000015] bg-gray-50 p-3 pb-0! lg:gap-4 lg:p-4"
 >
   {@render children()}
   <Toaster position="top-center" />

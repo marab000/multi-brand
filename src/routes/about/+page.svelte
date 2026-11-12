@@ -49,7 +49,7 @@
   />
 </svelte:head>
 
-<div class="about pb-3 lg:pb-4">
+<div class="about">
   <Breadcrumbs items={[{ name: 'Главная', href: '/' }, { name: 'О компании' }]} />
   <!-- Шапка: текст + фото кухни -->
   <section class="about__hero">
