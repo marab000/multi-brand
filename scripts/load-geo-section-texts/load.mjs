@@ -9,11 +9,54 @@ import path from 'path';
 
 const DEFAULT_DIR = '/Users/maratnugmanov/Downloads/Multi_Brand_GEO_HTML_November_2026';
 
-// Маппинг «файл сеошника → page_key категории». Продолжается по мере сверки
-// с таблицей сеошника (файл называет слаг целевой категории).
+// Маппинг «файл сеошника → page_key категории».
+// Развилки решены по дереву каталога и числу товаров (2026-11-12):
+//   06 винные — vstraivaemaya-ветка: 111 встраиваемых vs 55 отдельностоящих
+//   08 автоматы — «Приготовление кофе» мелкой БТ (автоматы живут в melkaya root)
+//   15 45см — krupnaya/kompaktnye: 13 товара vs 2 в vstraivaemaya/kompaktnye
+//   16 60см — vstraivaemaya/polnorazmernye: 379 vs 63
 const MAP = {
+  '01_holodilniki.html': 'category:krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
   '02_dvuhkamernye-holodilniki.html':
-    'category:krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/dvuhkamernye-holodilniki'
+    'category:krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/dvuhkamernye-holodilniki',
+  '03_vstraivaemye-holodilniki.html': 'category:vstraivaemaya-tehnika/holodilniki-i-morozilniki',
+  '04_morozilnye-kamery.html':
+    'category:krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery',
+  '05_morozilnye-lari.html':
+    'category:krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-lari',
+  '06_vinnye-shkafy.html': 'category:vstraivaemaya-tehnika/vinnye-shkafy',
+  '07_kofemashiny.html': 'category:vstraivaemaya-tehnika/kofemashiny',
+  '08_avtomaticheskie-kofemashiny.html': 'category:melkaya-bytovaya-tehnika/prigotovlenie-kofe',
+  '09_vstraivaemye-kofemashiny.html': 'category:vstraivaemaya-tehnika/kofemashiny/vstraivaemye-kofemashiny',
+  '10_gazovye-plity.html': 'category:krupnaya-bytovaya-tehnika/plity/gazovye-plity',
+  '11_elektricheskie-plity.html': 'category:krupnaya-bytovaya-tehnika/plity/elektricheskie-plity',
+  '12_kombinirovannye-plity.html': 'category:krupnaya-bytovaya-tehnika/plity/kombinirovannye-plity',
+  '13_otdelnostoyashchie-posudomoechnye-mashiny.html':
+    'category:krupnaya-bytovaya-tehnika/posudomoechnye-mashiny',
+  '14_vstraivaemye-posudomoechnye-mashiny.html':
+    'category:vstraivaemaya-tehnika/posudomoechnye-mashiny',
+  '15_posudomoechnye-mashiny-45-sm.html':
+    'category:krupnaya-bytovaya-tehnika/posudomoechnye-mashiny/kompaktnye',
+  '16_posudomoechnye-mashiny-60-sm.html':
+    'category:vstraivaemaya-tehnika/posudomoechnye-mashiny/polnorazmernye',
+  '17_stiralnye-mashiny.html': 'category:krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny',
+  '18_frontalnye-stiralnye-mashiny.html':
+    'category:krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/frontalnye-stiralnye-mashiny',
+  '19_vertikalnye-stiralnye-mashiny.html':
+    'category:krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/vertikalnye-stiralnye-mashiny',
+  '20_stiralno-sushilnye-mashiny.html':
+    'category:krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/stiralno-sushilnye-mashiny',
+  '21_sushilnye-mashiny.html':
+    'category:krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
+  '22_sushilnye-shkafy.html':
+    'category:krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-shkafy',
+  '23_duhovye-shkafy.html': 'category:vstraivaemaya-tehnika/duhovye-shkafy',
+  '24_varochnye-paneli.html': 'category:vstraivaemaya-tehnika/varochnye-poverhnosti',
+  '25_kuhonnye-vytyazhki.html': 'category:kuhonnye-vytyazhki',
+  '26_kuhonnye-moyki.html': 'category:kuhonnye-moyki',
+  '27_kuhonnye-smesiteli.html': 'category:smesiteli',
+  '28_izmelchiteli-pishchevyh-othodov.html': 'category:izmelchiteli-pischevyh-othodov',
+  '29_melkaya-bytovaya-tehnika.html': 'category:melkaya-bytovaya-tehnika'
 };
 
 const args = process.argv.slice(2);
@@ -51,7 +94,9 @@ const existing = await sql`
   WHERE page_key IN ${sql(keys)}
 `;
 if (existing.length) {
-  const backupPath = path.join('scripts/load-geo-section-texts', `backup-${new Date().toISOString().slice(0, 10)}.json`);
+  // уникальное имя: повторный запуск не перетирает бэкап первого
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  const backupPath = path.join('scripts/load-geo-section-texts', `backup-${stamp}.json`);
   fs.writeFileSync(backupPath, JSON.stringify(existing, null, 2));
   console.log(`бэкап ${existing.length} существующих строк → ${backupPath}`);
 }
