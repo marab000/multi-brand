@@ -115,6 +115,11 @@
     font-weight: 700;
     cursor: pointer;
     transition: background 0.18s ease;
+    // на мобилке (стек до 1024px) кнопка по центру, на десктопе — слева колонки
+    align-self: center;
+    @media (min-width: 1024px) {
+      align-self: flex-start;
+    }
     span {
       text-align: left;
     }

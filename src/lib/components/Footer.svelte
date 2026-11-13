@@ -8,7 +8,7 @@
   import {
     SITE_PHONE,
     SITE_PHONE_HREF,
-    SITE_EMAIL,
+    FOOTER_EMAIL,
     SITE_URL_NAME,
     LINK_TG,
     LINK_MAX,
@@ -20,7 +20,9 @@
   const contacts = $derived(data?.contacts ?? null);
   const phone = $derived(contacts?.phone ?? SITE_PHONE);
   const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
-  const email = $derived(contacts?.email ?? SITE_EMAIL);
+  // почта в футере — отдельный ящик из конфига (FOOTER_EMAIL), НЕ ящик заявок:
+  // контакты из админки (contacts.email) на футер не влияют
+  const email = FOOTER_EMAIL;
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
   // текущий путь для переключателя городов (см. footer__cities)
   const currentPath = $derived($page.url.pathname);

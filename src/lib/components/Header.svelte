@@ -8,7 +8,6 @@
   import { backHref } from '$lib/stores/backHref';
   import logo1 from '$lib/assets/logo1.png';
   import tgIcon from '$lib/assets/social/tg.svg';
-  import maxIcon from '$lib/assets/social/max.svg';
   import maxDarkIcon from '$lib/assets/social/max-dark.svg';
   import waIcon from '$lib/assets/social/whatsapp.svg';
   import { cart } from '$lib/stores/cart';
@@ -95,7 +94,6 @@
     return d.length >= 4 ? `${d[0]} ${d.slice(1, 4)}` : phoneNumber;
   });
   const tgLink = $derived(contacts?.tgLink ?? LINK_TG);
-  const maxLink = $derived(contacts?.maxLink ?? LINK_MAX);
 
   // непрочитанные чата для оператора — бейдж на профиле
   let isOperator = $state(false);
@@ -389,11 +387,6 @@
           aria-label={`Позвонить ${phoneNumber}`}
           ><Phone size={16} strokeWidth={2.1} /><span>{phoneShort}</span></a
         >
-        <div class="nav__social">
-          <a href={maxLink} target="_blank" rel="noopener noreferrer" aria-label="Макс"
-            ><img src={maxIcon} alt="Макс" width="22" height="22" /></a
-          >
-        </div>
       </div>
     </div>
     <div
@@ -424,9 +417,6 @@
         <div class="nav__social">
           <a href={tgLink} target="_blank" rel="noopener noreferrer" aria-label="Telegram"
             ><img src={tgIcon} alt="Telegram" width="20" height="20" /></a
-          >
-          <a href={maxLink} target="_blank" rel="noopener noreferrer" aria-label="Макс"
-            ><img src={maxIcon} alt="Макс" width="20" height="20" /></a
           >
         </div>
         <a

@@ -1,6 +1,5 @@
 <script lang="ts">
   import {
-    ArrowRight,
     ArrowUpRight,
     ChevronDown,
     Wind,
@@ -96,35 +95,6 @@
   // части зелёной плашки: accent-фрагмент подсвечивается жёлтым (референс «−20%»)
   const kitBlocks: (KitBlockData & { leadSource: string })[] = [
     {
-      title: 'Свежесть продуктов и посуды: идеальный микроклимат кухни',
-      bannerIcon: 'shield',
-      bannerParts: [{ t: 'Хранение на тёплом складе до конца ремонта' }],
-      cta: 'Собрать комплект со скидкой',
-      leadSource: 'kit-fresh',
-      cards: [
-        {
-          title: 'Холодильники',
-          href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
-          img: freeze
-        },
-        {
-          title: 'Морозильные камеры',
-          href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery',
-          img: freeze
-        },
-        {
-          title: 'Винные шкафы',
-          href: '/catalog/vstraivaemaya-tehnika/vinnye-shkafy',
-          img: kitWine
-        },
-        {
-          title: 'Посудомоечные машины',
-          href: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
-          img: dw
-        }
-      ]
-    },
-    {
       title: 'Комплект приготовления: единый стиль вашей кухни',
       bannerIcon: 'tag',
       bannerParts: [
@@ -154,6 +124,35 @@
           title: 'Микроволновые печи',
           href: '/catalog/mikrovolnovye-pechi',
           img: mw
+        }
+      ]
+    },
+    {
+      title: 'Свежесть продуктов и посуды: идеальный микроклимат кухни',
+      bannerIcon: 'shield',
+      bannerParts: [{ t: 'Хранение на тёплом складе до конца ремонта' }],
+      cta: 'Собрать комплект со скидкой',
+      leadSource: 'kit-fresh',
+      cards: [
+        {
+          title: 'Холодильники',
+          href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
+          img: freeze
+        },
+        {
+          title: 'Морозильные камеры',
+          href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery',
+          img: freeze
+        },
+        {
+          title: 'Винные шкафы',
+          href: '/catalog/vstraivaemaya-tehnika/vinnye-shkafy',
+          img: kitWine
+        },
+        {
+          title: 'Посудомоечные машины',
+          href: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
+          img: dw
         }
       ]
     },
@@ -456,7 +455,6 @@
           >
         {/if}
         <span class="omo-card__name">Измельчители отходов</span>
-        <span class="omo-card__cta">В каталог <ArrowRight size={17} strokeWidth={2.3} /></span>
         <span class="omo-card__arrow omo-card__arrow--gold"
           ><ChevronRight size={18} strokeWidth={2.4} /></span
         >
@@ -1181,26 +1179,12 @@
       filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.28));
     }
     .omo-card__name {
-      position: absolute;
-      top: 58px;
-      bottom: auto;
+      // низ карточки — как у карточек 1–2 (bottom: 18px базового .omo-card__name)
       left: 18px;
       max-width: 52%;
       color: #fff;
       font-size: 1.4rem;
       line-height: 1.2;
-    }
-    .omo-card__cta {
-      position: absolute;
-      bottom: 18px;
-      left: 18px;
-      z-index: 2;
-      display: inline-flex;
-      align-items: center;
-      gap: $sp-2;
-      color: #fff;
-      font-size: 0.9375rem;
-      font-weight: 700;
     }
     // карточка-комплект (референс): заголовок + золотой подзаголовок стеком, мойка справа.
     // это <button> (открывает форму заявки) — сбрасываем кнопочные дефолты под карточку

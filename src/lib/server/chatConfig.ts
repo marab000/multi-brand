@@ -1,6 +1,7 @@
 // Настройки чата: единый источник правды — settings.chat_config (JSON).
 // Дефолты здесь; админка /admin/chat-settings редактирует через saveChatConfig.
 import { sql } from '$lib/db';
+import { COMPANY_EMAIL } from '$lib/config/site';
 
 export type ChatChip = { label: string; text: string };
 
@@ -42,7 +43,7 @@ export const DEFAULT_CHAT_CONFIG: ChatConfig = {
   teaserEnabled: true,
   teaserDelaySec: 8,
   teaserPhrase: 'Помочь проверить размеры ниши или собрать комплект со скидкой?',
-  notifyEmail: 'Multibrend2005@yandex.ru',
+  notifyEmail: COMPANY_EMAIL,
   maxLen: 2000,
   autoCloseHours: 24
 };

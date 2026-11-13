@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { COMPANY_EMAIL } from '$lib/config/site';
   let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   const sections: { title: string; items?: string[]; text?: string }[] = [
     {
@@ -42,7 +43,7 @@
     },
     {
       title: '7. Как связаться с нами',
-      text: 'По всем вопросам обработки персональных данных: телефон 8 (937) 577-77-51, e-mail Multibrend2005@yandex.ru, г. Казань.'
+      text: `По всем вопросам обработки персональных данных: телефон 8 (937) 577-77-51, e-mail ${COMPANY_EMAIL}, г. Казань.`
     }
   ];
 </script>

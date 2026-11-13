@@ -31,10 +31,10 @@
   ];
 
   const perks = [
-    { icon: ShieldCheck, text: 'Официальная гарантия\nот производителя' },
-    { icon: Truck, text: 'Быстрая доставка\nи установка' },
-    { icon: Gem, text: 'Премиальные бренды\nв одном комплекте' },
-    { icon: Percent, text: 'Выгодные условия\nдля вашего ремонта' }
+    { icon: ShieldCheck, text: 'Официальная гарантия' },
+    { icon: Truck, text: 'Быстрая доставка' },
+    { icon: Gem, text: 'Премиальные бренды' },
+    { icon: Percent, text: 'Выгодные условия' }
   ];
 
   let phone = $state('');
@@ -386,15 +386,20 @@
     }
 
     &__saving {
-      padding: $sp-2 $sp-3;
+      // высота = бейджу 15% (50px): бейдж сидит заподлицо, ничего не выступает
+      display: flex;
+      align-items: center;
+      height: 50px;
+      padding: 0 $sp-3;
       border: 2px solid #000;
       border-radius: 14px;
       background: #171717b8;
       color: #fff;
       &-head {
+        position: relative;
+        flex: 1;
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: $sp-2;
         font-size: 0.875rem;
         font-weight: 600;
@@ -402,21 +407,24 @@
         text-transform: uppercase;
         // заголовок всегда одной строкой
         white-space: nowrap;
-        // бейдж 15%: идеальный круг, из него расходятся лёгкие кольца («круги на воде»)
+        // бейдж 15%: идеальный круг, из него расходятся лёгкие кольца («круги на воде»);
+        // абсолютен в правом углу строки (родитель relative), текст строки его не двигает
         i {
-          position: relative;
+          position: absolute;
+          top: 50%;
+          right: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
-          width: 34px;
-          height: 34px;
+          width: 50px;
+          height: 50px;
           border-radius: 50%;
           background: #f5c623;
           color: #201a05;
-          font-size: 0.8rem;
+          font-size: 1rem;
           font-style: normal;
           white-space: nowrap;
+          transform: translateY(-50%);
           &::before,
           &::after {
             content: '';
@@ -520,11 +528,15 @@
     }
     &__submit {
       // форма/капсула — общие (.btn-gold); паддинг обязателен: btn-gold сам его не задаёт.
-      // ширина по контенту: на мобилке не растягивается на всю строку
-      justify-self: start;
+      // ширина по контенту: на мобилке не растягивается на всю строку;
+      // на мобилке кнопка по центру, с 640px (строка «поле + кнопка») — слева
+      justify-self: center;
       height: 52px;
       padding: 0 24px;
       font-size: 0.95rem;
+      @media (min-width: 640px) {
+        justify-self: start;
+      }
     }
 
     &__perks {

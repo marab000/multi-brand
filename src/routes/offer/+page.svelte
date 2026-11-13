@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { COMPANY_EMAIL } from '$lib/config/site';
   let { data }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } = $props();
   const sections: { title: string; items?: string[]; text?: string }[] = [
     {
@@ -39,7 +40,7 @@
     },
     {
       title: '8. Реквизиты',
-      text: 'ИП Мультибренд, ИНН 165123360719, ОГРНИП 325169000035393, г. Казань. Телефон: 8 (937) 577-77-51, e-mail: Multibrend2005@yandex.ru.'
+      text: `ИП Мультибренд, ИНН 165123360719, ОГРНИП 325169000035393, г. Казань. Телефон: 8 (937) 577-77-51, e-mail: ${COMPANY_EMAIL}.`
     }
   ];
 </script>

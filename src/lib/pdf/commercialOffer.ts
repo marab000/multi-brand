@@ -2,7 +2,7 @@
 // Используется из корзины (CartPdfExport) и из списка КП (/user/offers).
 import { formatPrice } from '$lib/utils/formatPrice';
 import { DISCOUNT_PERCENT } from '$lib/utils/pricing';
-import { SITE_PHONE, SITE_URL, SITE_URL_NAME } from '$lib/config/site';
+import { SITE_PHONE, SITE_URL, SITE_URL_NAME, COMPANY_EMAIL } from '$lib/config/site';
 import { toast } from 'svelte-sonner';
 import logoUrl from '$lib/assets/logo1.png';
 import notoRegularUrl from '$lib/assets/fonts/NotoSans-Regular.ttf';
@@ -135,7 +135,7 @@ const drawHeader = (doc: any, logoDataUrl: string | null, pageWidth: number) => 
   doc.text('Сайт', contactX, 78);
   doc.setFont('NotoSans', 'normal');
   doc.text(SITE_PHONE, contactX + 48, 38);
-  doc.text('Multibrend2005@yandex.ru', contactX + 48, 58);
+  doc.text(COMPANY_EMAIL, contactX + 48, 58);
   doc.setTextColor(29, 78, 216);
   doc.textWithLink(SITE_URL_NAME, contactX + 48, 78, { url: SITE_URL });
   const siteWidth = doc.getTextWidth(SITE_URL_NAME);
