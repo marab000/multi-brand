@@ -45,7 +45,13 @@
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     el.focus();
   }
-  let payment = $state<'now' | '6' | '12'>('now');
+  // выбор способа оплаты уходит в сообщение заявки («Оплата: ...»)
+  const paymentLabels: Record<string, string> = {
+    now: 'оплата сразу',
+    '6': 'рассрочка 6 мес. 0%',
+    '12': 'рассрочка 12 мес. 0%'
+  };
+  let payment = $state<keyof typeof paymentLabels>('now');
   const submit = async () => {
     if (!name.trim()) {
       toast.error('Введите имя');
@@ -91,7 +97,7 @@
             method === 'delivery'
               ? `Доставка: по ${city.dat} (бесплатно), ${addressParts.join(', ')}`
               : 'Доставка: самовывоз',
-            `Оплата: ${payment === 'now' ? 'оплата сразу' : `рассрочка ${payment} мес. 0%`}`,
+            `Оплата: ${paymentLabels[payment]}`,
             email.trim() && `Email: ${email.trim()}`,
             comment.trim() && `Комментарий: ${comment.trim()}`,
             hasBonusWriteOff && `Бонусы: списано ${formatPrice(bonusWriteOff)} ₽ в счёт оплаты`,
@@ -198,7 +204,7 @@
 
         <section class="block">
           <div class="block__head">
-            <h2>Контакты получателя</h2>
+            <h2>Ваши контакты</h2>
           </div>
           <div class="fields">
             <input
@@ -219,12 +225,6 @@
                 use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
               />
             </div>
-            <input
-              class="input primary"
-              type="email"
-              placeholder="Электронная почта — необязательно"
-              bind:value={email}
-            />
           </div>
         </section>
 

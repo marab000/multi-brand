@@ -9,8 +9,11 @@
   } = $props();
   import { Truck, MapPin, PackageCheck, MessageCircleMore } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
+  import { cityForms } from '$lib/cityForms';
   import deliveryBanner from '$lib/assets/delivery.webp';
   let requestOpen = $state(false);
+  // заголовок и тексты с городом поддомена («по Казани» / «по Москве» / «по Уфе»)
+  const cityDat = $derived(cityForms(data.city).dat);
 </script>
 
 <svelte:head>
@@ -31,45 +34,47 @@
   </div>
   <div class="delivery-hero-content">
     <div class="delivery-eyebrow"><Truck size={18} strokeWidth={2.3} /><span>Доставка</span></div>
-    <h1>Доставим технику удобным для вас способом</h1>
-    <p>
-      Организуем доставку по городу и поможем подобрать подходящий вариант отправки в другие регионы
-      России.
-    </p>
+    <h1>Доставим по {cityDat}. Отправим по России.</h1>
+    <p>Согласуем способ получения, сроки и стоимость до оформления доставки.</p>
     <button
       class="btn primary mt-4 gap-2 lg:mt-5"
       type="button"
       onclick={() => (requestOpen = true)}
-      ><MessageCircleMore size={19} strokeWidth={2.2} /><span>Оставить заявку</span></button
+      ><MessageCircleMore size={19} strokeWidth={2.2} /><span>Узнать условия доставки</span></button
     >
   </div>
 </section>
 <section class="grid gap-3 sm:grid-cols-3 lg:gap-5">
   <article class="delivery-card p-5 lg:p-6">
     <div class="delivery-icon"><MapPin size={24} strokeWidth={2.1} /></div>
-    <h2>Доставка по городу</h2>
+    <h2>По {cityDat} — бесплатно</h2>
     <p>
-      Доставка по городу {data.city ?? 'Казань'} осуществляется бесплатно. После оформления заказа менеджер
-      свяжется с вами, подтвердит наличие товара, адрес и согласует удобное время.
+      После оформления заказа подтвердим наличие техники, уточним адрес и согласуем дату и
+      временной интервал доставки.
     </p>
   </article>
   <article class="delivery-card p-5 lg:p-6">
     <div class="delivery-icon"><Truck size={24} strokeWidth={2.1} /></div>
-    <h2>Доставка по России</h2>
+    <h2>По России — с индивидуальным расчётом</h2>
     <p>
-      Доставка в другие регионы России рассчитывается индивидуально. Стоимость, сроки и доступные
-      варианты необходимо уточнить у менеджера при оформлении заказа.
+      Подберём доступный вариант отправки в ваш регион. Стоимость и ориентировочные сроки сообщим
+      до оплаты доставки.
     </p>
   </article>
   <article class="delivery-card p-5 lg:p-6">
     <div class="delivery-icon"><PackageCheck size={24} strokeWidth={2.1} /></div>
-    <h2>Согласование заказа</h2>
+    <h2>Все детали — заранее</h2>
     <p>
-      Перед доставкой мы дополнительно проверяем заказ и связываемся с вами. Если есть пожелания по
-      времени, адресу или способу получения, сообщите об этом заранее.
+      Уточним состав заказа, адрес и условия получения. Если нужен подъём на этаж или есть
+      ограничения по подъезду, сообщите менеджеру — учтём это при расчёте.
     </p>
   </article>
 </section>
+
+<p class="delivery-note">
+  Бесплатная доставка действует в пределах {cityDat}. Подъём на этаж, занос и другие
+  дополнительные услуги рассчитываются отдельно.
+</p>
 
 <LeadRequestModal bind:open={requestOpen} />
 
@@ -168,6 +173,14 @@
       font-size: 0.9375rem;
       line-height: 1.6;
     }
+  }
+  // примечание под карточками («Бесплатная доставка действует в пределах...»)
+  .delivery-note {
+    max-width: 860px;
+    margin: 0;
+    color: #475467;
+    font-size: 0.875rem;
+    line-height: 1.55;
   }
   @media (max-width: 640px) {
     .delivery-hero-card {

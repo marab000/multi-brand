@@ -4,31 +4,56 @@
   }: { data: { meta?: { title?: string; description?: string; canonical?: string } | null } } =
     $props();
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import { BadgeCheck, Building2, Users, Handshake, Check, MapPin, Clock } from 'lucide-svelte';
+  import { ArrowUpRight } from 'lucide-svelte';
   import logo from '$lib/assets/logo2.webp';
 
+  // текст страницы — по ревью 17.11.2026 («Готовый текст страницы»)
   const advantages = [
     {
       icon: BadgeCheck,
-      title: 'Все бренды',
-      text: 'Более 30 брендов: Bosch, Haier, Korting, Asko и другие.'
+      title: 'Более 30 брендов',
+      text: 'Bosch, Haier, Korting, ASKO и другие. Подберём технику под задачи объекта, требования проекта и бюджет.'
     },
     {
       icon: Building2,
-      title: 'Склад 1600 м²',
-      text: 'Бесплатное хранение вашего заказа сколько потребуется.'
+      title: 'Склад площадью 1 600 м²',
+      text: 'Сохраним заказ до готовности объекта к приёмке. Срок бесплатного хранения и график отгрузки зафиксируем в договоре.'
     },
-    { icon: Users, title: 'Любая оплата', text: 'Наличные, безнал, эскроу, рассрочка.' },
-    { icon: Handshake, title: 'Личный менеджер', text: 'Ведет проект от подбора до отгрузки.' }
+    {
+      icon: Users,
+      title: 'Удобные способы оплаты',
+      text: 'Наличный и безналичный расчёт, рассрочка. Подходящий способ и условия оплаты согласуем до оформления заказа.'
+    },
+    {
+      icon: Handshake,
+      title: 'Личный менеджер',
+      text: 'Один специалист ведёт ваш заказ: уточняет требования, готовит предложение и координирует поставку.'
+    }
   ];
-  const objects = ['Апартаменты', 'Отели', 'Общежития', 'Квартиры «под ключ»'];
-  const partners = ['Дизайнеры', 'Девелоперы', 'Управляющие компании', 'Мебельные производства'];
+  const objects = ['Квартиры под ключ', 'Апартаменты', 'Отели', 'Общежития'];
+  const partners = [
+    'Дизайнеры и архитекторы',
+    'Девелоперы',
+    'Управляющие компании',
+    'Мебельные производства'
+  ];
   const reasons = [
-    'Один поставщик вместо десяти',
-    'Техника не забивает ваш объект — храним у себя',
-    'Работаем по всей РФ',
-    'Шоурум на Чистопольской, 66 — можно приехать и посмотреть'
+    'Один поставщик — проще согласовывать ассортимент, документы и сроки.',
+    'Хранение до поставки — не нужно заранее размещать технику на объекте.',
+    'Отгрузка по согласованному графику — целиком или частями.',
+    'Поставки по России — условия и стоимость доставки рассчитываем под объект.',
+    'Салон в Казани — можно посмотреть представленные модели и обсудить проект лично.'
   ];
+
+  // кнопки страницы открывают форму заявки с prefill по кнопке
+  let consultOpen = $state(false);
+  let consultPrefill = $state('');
+  const openConsult = (prefill: string) => {
+    consultPrefill = prefill;
+    consultOpen = true;
+  };
 </script>
 
 <svelte:head>
@@ -55,12 +80,12 @@
   <section class="about__hero">
     <div class="about__hero-text">
       <p class="about-eyebrow">MULTIBRAND</p>
-      <h1>О компании</h1>
+      <h1>Техника для дома. Комплектация для бизнеса.</h1>
       <p>
-        Комплексное оснащение объектов бытовой техникой с 2005 года. 20 лет на рынке — более 3000
-        реализованных объектов.
+        С 2005 года подбираем и поставляем бытовую технику для квартир, апартаментов, отелей и
+        других объектов. Помогаем согласовать модели, бюджет и сроки поставки — от первого запроса
+        до отгрузки.
       </p>
-      <p>Мы помогаем подобрать и поставить технику под ключ — от квартир до крупных объектов.</p>
       <div class="about__years">
         <span>более</span>
         <strong>20 лет</strong>
@@ -78,22 +103,28 @@
   </section>
 
   <!-- Преимущества -->
-  <section class="about__cards">
-    {#each advantages as a (a.title)}
-      <div class="about__card">
-        <span class="about__card-icon"><a.icon size={26} strokeWidth={2} /></span>
-        <h3>{a.title}</h3>
-        <p>{a.text}</p>
-      </div>
-    {/each}
+  <section>
+    <h2>Всё необходимое — у одного поставщика</h2>
+    <div class="about__cards">
+      {#each advantages as a (a.title)}
+        <div class="about__card">
+          <span class="about__card-icon"><a.icon size={26} strokeWidth={2} /></span>
+          <h3>{a.title}</h3>
+          <p>{a.text}</p>
+        </div>
+      {/each}
+    </div>
   </section>
 
-  <!-- Мы оснащаем / Работаем с -->
+  <!-- Комплектуем объекты / Сотрудничаем с профессионалами -->
   <section class="about__duo">
     <div class="about__duo-card">
       <div class="about__duo-body">
-        <h2>Мы оснащаем</h2>
-        <p>Полный цикл: подбор, закупка, хранение и отгрузка по графику вашего ремонта.</p>
+        <h2>Комплектуем объекты под ваши задачи</h2>
+        <p>
+          Подбираем технику, организуем закупку и хранение, согласуем отгрузку целиком или
+          поэтапно — с учётом готовности объекта.
+        </p>
         <ul class="about-list">
           {#each objects as o (o)}<li>{o}</li>{/each}
         </ul>
@@ -104,8 +135,8 @@
     </div>
     <div class="about__duo-card">
       <div class="about__duo-body">
-        <h2>Работаем с</h2>
-        <p>Строим долгие отношения, чтобы вы возвращались за следующими объектами.</p>
+        <h2>Сотрудничаем с профессионалами</h2>
+        <p>Помогаем включить технику в проект и согласовать поставку с другими этапами работ.</p>
         <ul class="about-list">
           {#each partners as p (p)}<li>{p}</li>{/each}
         </ul>
@@ -116,15 +147,22 @@
     </div>
   </section>
 
-  <!-- Почему выбирают нас -->
+  <!-- Почему с нами удобно -->
   <section class="about__why">
     <div class="about__why-list">
-      <h2>Почему выбирают нас</h2>
+      <h2>Почему с нами удобно</h2>
       <ul>
         {#each reasons as r (r)}
           <li><span class="about__check"><Check size={15} strokeWidth={3} /></span>{r}</li>
         {/each}
       </ul>
+      <button
+        type="button"
+        class="btn primary about__cta"
+        onclick={() => openConsult('Запрос: обсудить комплектацию объекта')}
+      >
+        Обсудить комплектацию объекта
+      </button>
     </div>
     <div class="about__why-photo">
       <img src="/images/about/delivery.webp" alt="Сотрудник на складе MULTIBRAND" loading="lazy" />
@@ -140,15 +178,34 @@
     </div>
   </section>
 
-  <!-- Где мы находимся -->
+  <!-- Приезжайте обсудить ваш проект -->
   <section class="about__where">
     <div class="about__where-info">
-      <h2>Где мы находимся</h2>
+      <h2>Приезжайте обсудить ваш проект</h2>
       <div class="about__where-row"><MapPin size={20} /> г. Казань, ул. Чистопольская, 66</div>
-      <div class="about__where-row"><Clock size={20} /> Ежедневно с 09:00 до 21:00</div>
+      <div class="about__where-row"><Clock size={20} /> Ежедневно с 09:00 до 18:00</div>
       <p class="about__where-hint">
-        Приезжайте посмотреть технику вживую — покажем всё и ответим на вопросы.
+        Посмотрите технику в экспозиции и обсудите подбор со специалистом. Возьмите план кухни
+        или спецификацию — начнём с ваших задач.
       </p>
+      <div class="about__where-actions">
+        <a
+          class="btn primary"
+          href="https://yandex.ru/maps/org/192917903315/"
+          target="_blank"
+          rel="noopener"
+        >
+          Построить маршрут
+          <ArrowUpRight size={16} strokeWidth={2.2} />
+        </a>
+        <button
+          type="button"
+          class="btn secondary"
+          onclick={() => openConsult('Запись на консультацию в салоне (ул. Чистопольская, 66)')}
+        >
+          Записаться на консультацию
+        </button>
+      </div>
     </div>
     <div class="about__where-photo">
       <img
@@ -168,10 +225,14 @@
     </div>
   </section>
 </div>
+<LeadRequestModal bind:open={consultOpen} prefill={consultPrefill} source="about-consult" />
 
 <style lang="scss">
   .about {
     display: grid;
+    // minmax(0,1fr): иначе неявная колонка растёт от min-content детей
+    // (список «Почему с нами удобно») и даёт +3px горизонтальный скролл на мобилке
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     h1 {
       margin: 0 0 14px;
@@ -314,6 +375,22 @@
     }
     @media (min-width: 1000px) {
       grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  // кнопка «Обсудить комплектацию объекта» под списком «Почему с нами удобно»
+  .about__cta {
+    margin-top: 18px;
+  }
+  // пара кнопок в блоке «Приезжайте обсудить ваш проект»
+  .about__where-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+    .btn {
+      height: 44px;
+      font-size: 0.875rem;
+      font-weight: 700;
     }
   }
   .about__card {

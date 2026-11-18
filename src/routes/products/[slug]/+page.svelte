@@ -82,9 +82,7 @@
   const includedInKits = $derived(p.includedInKits || []);
   const visibleIncludedInKits = $derived(includedInKits.slice(0, includedVisibleCount));
   const includedRemaining = $derived(includedInKits.length - visibleIncludedInKits.length);
-  const specs = $derived(
-    Object.entries(p.specs ?? {}).map(([name, value]) => ({ name, value }))
-  );
+  const specs = $derived(Object.entries(p.specs ?? {}).map(([name, value]) => ({ name, value })));
   const breadcrumbs = $derived([
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
@@ -127,10 +125,7 @@
     return item.child_product ? getProductPrice(item.child_product) : Number(item.price_rrc || 0);
   }
   function getKitItemImage(item: ProductKitItem) {
-    return imgUrl(
-      item.child_product?.images?.[0]?.url || item.image || item.preview_image,
-      160
-    );
+    return imgUrl(item.child_product?.images?.[0]?.url || item.image || item.preview_image, 160);
   }
   function getKitItemHref(item: ProductKitItem) {
     return item.child_slug ? `/products/${item.child_slug}` : null;
@@ -161,10 +156,7 @@
 
 <svelte:head>
   <title>{p ? data.metaTitle : 'Товар не найден | MULTIBRAND'}</title>
-  <meta
-    name="description"
-    content={p ? data.metaDescription : 'Товар не найден.'}
-  />
+  <meta name="description" content={p ? data.metaDescription : 'Товар не найден.'} />
   {#if p}
     {@html `<script type="application/ld+json">${JSON.stringify({
       '@context': 'https://schema.org',
@@ -173,7 +165,9 @@
         '@type': 'ListItem',
         position: i + 1,
         name: b.name,
-        ...(b.href ? { item: 'https://multi-brand.online' + b.href } : { item: 'https://multi-brand.online/products/' + slug })
+        ...(b.href
+          ? { item: 'https://multi-brand.online' + b.href }
+          : { item: 'https://multi-brand.online/products/' + slug })
       }))
     })}</script>`}
     <meta property="og:type" content="product" />
@@ -192,7 +186,10 @@
       '@type': 'Product',
       name: p.name,
       description: (p.description ?? p.name).slice(0, 300),
-      image: images.filter(Boolean).slice(0, 3).map((im: any) => im.url),
+      image: images
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((im: any) => im.url),
       sku: p.article ?? p.external_id ?? p.id,
       brand: p.brand?.name ? { '@type': 'Brand', name: p.brand.name } : undefined,
       category: p.product_type ?? undefined,
@@ -209,7 +206,7 @@
 </svelte:head>
 
 {#if p}
-  <div class="mx-auto flex flex-col items-start">
+  <div class="mx-auto flex w-full flex-col items-start">
     <Breadcrumbs items={breadcrumbs} product={shortName} />
     <div class="product-head my-3 lg:my-4">
       <h1>{p.name}</h1>
@@ -232,39 +229,36 @@
         <b>4,9</b>
       </a>
     </div>
-    <div class="mb-3 grid w-full gap-4 lg:gap-6 lg:grid-cols-2">
+    <div class="mb-3 grid w-full gap-4 lg:grid-cols-2 lg:gap-6">
       <div class="flex w-full max-w-xl min-w-0 flex-col gap-3 lg:gap-4">
         <div class="relative w-full">
-        <swiper-container
-          bind:this={mainSwiper}
-          class="aspect-square w-full rounded-lg bg-white"
-        >
-          {#if images.length}
-            {#each images as img, i}
+          <swiper-container bind:this={mainSwiper} class="aspect-square w-full rounded-lg bg-white">
+            {#if images.length}
+              {#each images as img, i}
+                <swiper-slide>
+                  <button class="gallery-image" type="button" onclick={() => openZoom(i)}>
+                    <img
+                      src={imgUrl(img.url, 1200)}
+                      alt={i === 0 ? p.name : ''}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      fetchpriority={i === 0 ? 'high' : 'auto'}
+                      class="h-full w-full object-contain p-4 select-none"
+                    />
+                  </button>
+                </swiper-slide>
+              {/each}
+            {:else}
               <swiper-slide>
-                <button class="gallery-image" type="button" onclick={() => openZoom(i)}>
+                <div class="gallery-image no-image">
                   <img
-                    src={imgUrl(img.url, 1200)}
-                    alt={i === 0 ? p.name : ''}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    fetchpriority={i === 0 ? 'high' : 'auto'}
+                    src="/images/no_image.png"
+                    alt={p.name}
                     class="h-full w-full object-contain p-4 select-none"
                   />
-                </button>
+                </div>
               </swiper-slide>
-            {/each}
-          {:else}
-            <swiper-slide>
-              <div class="gallery-image no-image">
-                <img
-                  src="/images/no_image.png"
-                  alt={p.name}
-                  class="h-full w-full object-contain p-4 select-none"
-                />
-              </div>
-            </swiper-slide>
-          {/if}
-        </swiper-container>
+            {/if}
+          </swiper-container>
         </div>
         {#if images.length > 1}
           <div class="relative">
@@ -321,10 +315,12 @@
           </div>
         </div>
         {#if stockLabel}
-          <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>{stockLabel.text}</p>
+          <p class="product-stock" class:product-stock--in={stockLabel.tone === 'in'}>
+            {stockLabel.text}
+          </p>
         {/if}
         <div class="product-benefits">
-          <Installment price={price} />
+          <Installment {price} />
           {#if saving > 0}
             <div class="product-saving">
               <PiggyBank size={18} strokeWidth={2.2} /><span>Экономия</span><b
@@ -409,10 +405,7 @@
                 >Показать ещё {Math.min(8, includedRemaining)} (осталось {includedRemaining})</button
               >
             {:else if includedInKits.length > 8}
-              <button
-                class="kit-show-more"
-                type="button"
-                onclick={() => (includedVisibleCount = 8)}
+              <button class="kit-show-more" type="button" onclick={() => (includedVisibleCount = 8)}
                 >Свернуть</button
               >
             {/if}
@@ -430,11 +423,7 @@
               <ChevronDown size={18} strokeWidth={2.2} />
             </button>
             {#if openAcc.desc}
-              <div
-                class="accordion-body"
-                transition:slide={{ duration: 200 }}
-                id="accordion-desc"
-              >
+              <div class="accordion-body" transition:slide={{ duration: 200 }} id="accordion-desc">
                 {#if p.description}
                   <p class="accordion-text">{p.description}</p>
                 {/if}
@@ -443,9 +432,9 @@
                   <div class="space-y-2 text-sm">
                     {#each specs as s}
                       <div class="flex items-baseline gap-2">
-                        <span class="min-w-0 max-w-45 break-words text-gray-500">{s.name}</span>
+                        <span class="max-w-45 min-w-0 break-words text-gray-500">{s.name}</span>
                         <span class="flex-1 border-b border-dashed border-gray-300"></span>
-                        <span class="min-w-0 max-w-50 break-words text-right">{s.value}</span>
+                        <span class="max-w-50 min-w-0 text-right break-words">{s.value}</span>
                       </div>
                     {/each}
                   </div>
@@ -470,8 +459,12 @@
                 id="accordion-delivery"
               >
                 <p class="accordion-text">
-                  Доставка по {data.city === 'Москва' ? 'Москве' : data.city === 'Уфа' ? 'Уфе' : 'Казани'} — бесплатно. После оформления заказа менеджер свяжется с вами,
-                  подтвердит наличие товара, адрес и согласует удобное время.
+                  Доставка по {data.city === 'Москва'
+                    ? 'Москве'
+                    : data.city === 'Уфа'
+                      ? 'Уфе'
+                      : 'Казани'} — бесплатно. После оформления заказа менеджер свяжется с вами, подтвердит
+                  наличие товара, адрес и согласует удобное время.
                 </p>
                 <p class="accordion-text">
                   Доставка в другие регионы России рассчитывается индивидуально — стоимость, сроки и
@@ -499,8 +492,8 @@
                 id="accordion-warranty"
               >
                 <p class="accordion-text">
-                  Продаём только оригинальную технику — на неё действует гарантия производителя: от 1
-                  года до 3 лет (срок зависит от категории товара и бренда, указан в гарантийном
+                  Продаём только оригинальную технику — на неё действует гарантия производителя: от
+                  1 года до 3 лет (срок зависит от категории товара и бренда, указан в гарантийном
                   талоне).
                 </p>
                 <ul class="accordion-list">
@@ -553,7 +546,7 @@
 {/if}
 
 {#if p && data.alsoBought?.length}
-  <section class="also-bought mx-auto w-full mt-4 lg:mt-6 mb-4 lg:mb-6">
+  <section class="also-bought mx-auto mt-4 mb-4 w-full lg:mt-6 lg:mb-6">
     <h2 class="also-bought__title">С этим товаром покупают</h2>
     <div class="also-bought__grid">
       {#each data.alsoBought as item (item.id)}
