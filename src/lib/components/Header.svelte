@@ -14,7 +14,6 @@
   import { favorites } from '$lib/stores/favorites';
   import { derived } from 'svelte/store';
   import { page } from '$app/stores';
-  import { cityForms, regionShort } from '$lib/cityForms';
   import { onMount } from 'svelte';
   import {
     Menu,
@@ -82,10 +81,6 @@
     };
   }>();
   const contacts = $derived(data?.contacts ?? null);
-  // город для текстов шапки: по поддомену (msk → Москва), дефолт Казань
-  const cityPrep = $derived(
-    `${cityForms(data?.city).dat}${regionShort(data?.city)}`
-  );
   const phoneNumber = $derived(contacts?.phone ?? SITE_PHONE);
   const phoneHref = $derived(contacts?.phoneHref ?? SITE_PHONE_HREF);
   // на мобиле в пилюле показываем только «8 800», полный номер — в tel:
@@ -395,15 +390,15 @@
       <a class="nav__about flex gap-x-1.5" href="/delivery"
         ><Truck class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
           >Доставка</span
-        ><span class="hidden md:inline">Доставка по {cityPrep}</span></a
+        ><span class="hidden md:inline">Доставка и оплата</span></a
       >
       <button
         class="nav__about nav__about-button flex gap-x-1.5"
         type="button"
         onclick={openRequestModal}
         ><MessageCircleMore class="hidden md:block" size={16} strokeWidth={2.1} /><span
-          class="md:hidden">Связаться</span
-        ><span class="hidden md:inline">Связаться с нами</span></button
+          class="md:hidden">Контакты</span
+        ><span class="hidden md:inline">Контакты</span></button
       >
       <a class="nav__about flex gap-x-1.5" href="/about"
         ><Building2 class="hidden md:block" size={16} strokeWidth={2.1} /><span class="md:hidden"
@@ -411,7 +406,9 @@
         ><span class="hidden md:inline">О компании</span></a
       >
       <a class="nav__about flex gap-x-1.5" href="/podbor"
-        ><Sparkles class="hidden md:block" size={16} strokeWidth={2.1} /><span>ИИ подбор</span></a
+        ><Sparkles class="hidden md:block" size={16} strokeWidth={2.1} /><span
+          >Подобрать комплект</span
+        ></a
       >
       <div class="nav__contact !hidden md:!flex">
         <div class="nav__social">
@@ -561,7 +558,7 @@
             <span class="badge">{chatUnread}</span>
           {/if}
           <span class="absolute -bottom-4 text-[11px]"
-            >{#if user}Профиль{:else}Войти{/if}</span
+            >{#if user}Кабинет{:else}Войти{/if}</span
           >
         </button>
         {#if user && userMenuOpen}

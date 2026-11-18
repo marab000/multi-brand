@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ChevronDown, MapPin, ShieldCheck } from 'lucide-svelte';
+  import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
   import { page } from '$app/stores';
   import { cityForms } from '$lib/cityForms';
   import tgIcon from '$lib/assets/social/tg.svg';
@@ -41,7 +42,8 @@
     { name: 'Кухонные вытяжки', href: '/catalog/vytyazhki' },
     { name: 'Микроволновые печи', href: '/catalog/mikrovolnovye-pechi' },
     { name: 'Стиральные машины', href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/frontalnye-stiralnye-mashiny' },
-    { name: 'Сушильные машины', href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny' },
+    // лист «Сушильные машины» вместо общей категории стиральных и сушильных (ревью 17.11.2026)
+    { name: 'Сушильные машины', href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny' },
     { name: 'Сушильные шкафы', href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-shkafy' },
     { name: 'Холодильники', href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki' },
     { name: 'Морозильные камеры', href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery' },
@@ -52,23 +54,24 @@
   // «Бренды» по референсу: слаг = имя в нижнем регистре (страницы брендов)
   const footerBrands = ['Asko', 'Liebherr', 'Korting', 'Kuppersberg', 'Franke', 'Smeg', 'Miele', 'Teka', 'Elica'];
 
+  // «Покупателям» — только условия покупки (ревью 17.11.2026): личные функции
+  // (корзина, избранное, кабинет) и информация о компании убраны из колонки.
+  // «Хранение до конца ремонта» ведёт в форму вопроса менеджеру — страницы
+  // условий хранения пока нет (проверено: в routes только упоминания на about/privacy)
   const buyerLinks: { name: string; href: string; external?: boolean }[] = [
     { name: 'Подбор комплекта', href: '/podbor' },
-    { name: 'Хранение на складе M-7', href: '/podbor' },
+    { name: 'Оплата и рассрочка', href: OTP_INSTALLMENT_URL, external: true },
     { name: 'Доставка', href: '/delivery' },
-    { name: 'Рассрочка 0%', href: OTP_INSTALLMENT_URL, external: true },
-    { name: 'Акции', href: '/sale' },
-    { name: 'Корзина', href: '/cart' },
-    { name: 'Избранное', href: '/favorites' },
-    { name: 'Личный кабинет', href: '/user/info' },
-    { name: 'Статьи', href: '/articles' },
-    { name: 'О компании', href: '/about' }
+    { name: 'Акции', href: '/sale' }
   ];
 
   // аккордеоны колонок: на мобильных список свёрнут, на десктопе (≥640px) раскрыт всегда через CSS
   let openCategories = $state(false);
   let openBrands = $state(false);
   let openBuyers = $state(false);
+
+  // «Хранение до конца ремонта» — форма вопроса менеджеру (страницы условий нет)
+  let storageOpen = $state(false);
 
   const cities = [
     { name: 'Казань', href: (p: string) => `https://multi-brand.online${p}` },
@@ -87,7 +90,9 @@
         Встраиваемая техника, крупная бытовая техника и аксессуары от официальных поставщиков.
       </p>
       <a class="footer__phone" href="tel:{phoneHref}">{phone}</a>
-      <p class="footer__phone-note">Бесплатно по РФ, 9:00-21:00</p>
+      <p class="footer__phone-note">
+        Звонок по России бесплатный<br />Принимаем звонки ежедневно: 9:00–21:00
+      </p>
       <a class="footer__email" href="mailto:{email}">{email}</a>
 
       <div class="footer__addresses">
@@ -165,6 +170,12 @@
             >{link.name}</a>
           </li>
         {/each}
+        <li>
+          <!-- страницы условий хранения пока нет — ведём в форму вопроса менеджеру -->
+          <button type="button" class="footer__storage-btn" onclick={() => (storageOpen = true)}>
+            Хранение до конца ремонта
+          </button>
+        </li>
       </ul>
     </div>
   </div>
@@ -172,15 +183,15 @@
   <div class="footer__bottom mx-auto max-w-[1280px] px-4 pb-[calc(66px+env(safe-area-inset-bottom,0px))] sm:px-6 md:pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
     <!-- дисклеймер + юр-ссылки одной строкой, справа линия-заполнитель (референс) -->
     <p class="footer__disclaimer">
-      Вся представленная на сайте информация носит информационный характер и не является публичной
-      офертой. Точную информацию о товарах уточняйте у наших специалистов.
+      Наличие, комплектацию, стоимость техники и сроки доставки уточняйте при оформлении заказа.
+      Условия покупки указаны в договоре оферты.
     </p>
     <div class="footer__legal">
       <a href="/privacy">Политика обработки персональных данных</a>
-      <span class="footer__legal-sep" aria-hidden="true">|</span>
+      <span class="footer__legal-sep" aria-hidden="true">·</span>
       <a href="/offer">Договор оферты</a>
-      <span class="footer__legal-sep" aria-hidden="true">|</span>
-      <a href="/garantiya">Гарантия</a>
+      <span class="footer__legal-sep" aria-hidden="true">·</span>
+      <a href="/garantiya">Гарантия и сервис</a>
       <i class="footer__legal-line" aria-hidden="true"></i>
     </div>
 
@@ -205,11 +216,17 @@
       </div>
       <div class="footer__badge">
         <ShieldCheck size={20} strokeWidth={1.8} />
-        <span>Официальная<br />гарантия до 5 лет</span>
+        <span>Гарантия и поддержка<br />после покупки</span>
       </div>
     </div>
   </div>
 </footer>
+
+<LeadRequestModal
+  bind:open={storageOpen}
+  prefill="Запрос условий хранения заказа на складе М-7"
+  source="footer-storage"
+/>
 
 <style lang="scss">
   .footer {
@@ -421,7 +438,8 @@
       flex-direction: column;
       gap: $sp-2;
 
-      a {
+      a,
+      & .footer__storage-btn {
         font-size: 0.875rem;
         color: #b3c6ba;
         text-decoration: none;
@@ -430,6 +448,17 @@
         &:hover {
           color: #fff;
         }
+      }
+
+      // «Хранение до конца ремонта»: кнопка в списке — текстовый стиль как у ссылок
+      .footer__storage-btn {
+        display: inline;
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
       }
     }
 
