@@ -2,8 +2,8 @@ import { json } from '@sveltejs/kit';
 import { sendLeadEmail } from '$lib/server/email';
 import type { RequestHandler } from './$types';
 
-// Лимит вложения: больше 10 МБ письмо не утащит — отдаём 400 клиенту
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+// Лимит вложения: NotiSend принимает до 5 МБ на все вложения письма — отдаём 400 клиенту
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
 // Белый список расширений плана кухни / дизайн-проекта
 const FILE_RE = /\.(pdf|docx?|png|jpe?g|webp)$/i;
 
@@ -26,7 +26,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const file = form.get('file');
     if (file && typeof file === 'object' && 'arrayBuffer' in file && file.size > 0) {
       if (file.size > MAX_FILE_BYTES) {
-        return json({ message: 'Файл больше 10 МБ — пришлите его в мессенджер' }, { status: 400 });
+        return json({ message: 'Файл больше 5 МБ — пришлите его в мессенджер' }, { status: 400 });
       }
       if (!FILE_RE.test(file.name)) {
         return json({ message: 'Поддерживаются PDF, DOC, PNG, JPG, WEBP' }, { status: 400 });

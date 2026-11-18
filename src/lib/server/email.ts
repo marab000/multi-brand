@@ -1,4 +1,4 @@
-import { RESEND_API_KEY, RESEND_FROM_EMAIL } from '$env/static/private';
+import { NOTISEND_API_KEY, NOTISEND_FROM_EMAIL } from '$env/static/private';
 // Куда падают заявки из квиза «Собери комплект техники» — боевая почта заказов
 const QUIZ_LEAD_EMAIL = ORDER_NOTIFY_EMAIL;
 import { getContacts } from '$lib/server/contacts';
@@ -12,11 +12,77 @@ import {
   SITE_URL_NAME
 } from '$lib/config/site';
 import { formatPrice } from '$lib/utils/formatPrice';
-import { Resend } from 'resend';
-
-const resend = new Resend(RESEND_API_KEY);
 
 const money = (value: number | null | undefined) => `${formatPrice(value)} ₽`;
+
+// NotiSend заменил Resend: api.resend.com (Cloudflare) недостижим с reg.ru
+// (ТСПУ режет TLS, письма молча умирали с 14.11.2026), api.notisend.ru —
+// российский хостинг, достижимость с VPS проверена.
+const NOTISEND_API = 'https://api.notisend.ru/v1';
+
+// «MultiBrand <noreply@multi-brand.online>» → { email, name }
+function parseFrom(from: string) {
+  const m = from.match(/^\s*(.*?)\s*<([^>]+)>\s*$/);
+  return m
+    ? { name: m[1].trim().replace(/^"|"$/g, ''), email: m[2].trim() }
+    : { name: '', email: from.trim() };
+}
+
+type NotisendSendParams = {
+  to: string;
+  subject: string;
+  html: string;
+  // вложение (план кухни и т.п.): filename + base64-контент.
+  // NotiSend принимает вложения только multipart/form-data, суммарно до 5 МБ.
+  attachment?: { filename: string; content: string };
+};
+
+async function notisendSend(params: NotisendSendParams) {
+  const from = parseFrom(NOTISEND_FROM_EMAIL);
+  let res: Response;
+  if (params.attachment) {
+    const form = new FormData();
+    form.append('from_email', from.email);
+    if (from.name) form.append('from_name', from.name);
+    form.append('to', params.to);
+    form.append('subject', params.subject);
+    form.append('html', params.html);
+    // payment не задаём — дефолт subscriber_priority (см. JSON-ветку ниже)
+    form.append(
+      'attachments[]',
+      new Blob([Buffer.from(params.attachment.content, 'base64')]),
+      params.attachment.filename
+    );
+    res = await fetch(`${NOTISEND_API}/email/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${NOTISEND_API_KEY}` },
+      body: form
+    });
+  } else {
+    res = await fetch(`${NOTISEND_API}/email/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${NOTISEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from_email: from.email,
+        ...(from.name ? { from_name: from.name } : {}),
+        to: params.to,
+        subject: params.subject,
+        html: params.html
+        // payment не задаём → дефолт subscriber_priority: списывает слоты
+        // подписчиков бесплатного тарифа (200 шт). Купите пакет писем —
+        // верните payment: 'credit', чтобы платить за письма, а не слоты.
+      })
+    });
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`NotiSend: HTTP ${res.status} ${body.slice(0, 300)}`);
+  }
+  return res.json();
+}
 
 function escapeHtml(value: string) {
   return value
@@ -42,8 +108,7 @@ function messageLinesHtml(message: string) {
 
 export async function sendVerificationEmail(email: string, url: string) {
   const contacts = await getContacts();
-  const res = await resend.emails.send({
-    from: RESEND_FROM_EMAIL,
+  const res = await notisendSend({
     to: email,
     subject: `Подтверждение почты ${SITE_NAME}`,
     html: `
@@ -119,7 +184,6 @@ export async function sendVerificationEmail(email: string, url: string) {
       </html>
     `
   });
-  if (res.error) throw res.error;
   return res;
 }
 
@@ -144,8 +208,7 @@ export async function sendNewOrderEmail(order: {
       `
     )
     .join('');
-  const res = await resend.emails.send({
-    from: RESEND_FROM_EMAIL,
+  const res = await notisendSend({
     to: ORDER_NOTIFY_EMAIL,
     subject: `Новый заказ${order.id ? ` #${order.id}` : ''}`,
     html: `
@@ -224,7 +287,6 @@ export async function sendNewOrderEmail(order: {
       </html>
     `
   });
-  if (res.error) throw res.error;
   return res;
 }
 
@@ -237,11 +299,10 @@ export async function sendLeadEmail(lead: {
   attachment?: { filename: string; content: string };
 }) {
   const contacts = await getContacts();
-  const res = await resend.emails.send({
-    from: RESEND_FROM_EMAIL,
+  const res = await notisendSend({
     to: QUIZ_LEAD_EMAIL,
     subject: 'Новая заявка на подбор техники',
-    ...(lead.attachment ? { attachments: [lead.attachment] } : {}),
+    ...(lead.attachment ? { attachment: lead.attachment } : {}),
     html: `
       <!doctype html>
       <html lang="ru">
@@ -292,15 +353,13 @@ export async function sendLeadEmail(lead: {
       </html>
     `
   });
-  if (res.error) throw res.error;
   return res;
 }
 
 /** Письмо со ссылкой на сброс пароля. Ссылка одноразовая, живёт 1 час. */
 export async function sendPasswordResetEmail(email: string, url: string) {
 	const contacts = await getContacts();
-	await resend.emails.send({
-		from: RESEND_FROM_EMAIL,
+	await notisendSend({
 		to: email,
 		subject: `Восстановление пароля ${SITE_NAME}`,
 		html: `
@@ -342,8 +401,7 @@ export async function sendChatNotifyEmail(
 	lead: { text: string; threadId: string }
 ) {
 	const contacts = await getContacts();
-	const res = await resend.emails.send({
-		from: RESEND_FROM_EMAIL,
+	const res = await notisendSend({
 		to,
 		subject: 'Новый диалог в чате сайта',
 		html: `
@@ -372,6 +430,5 @@ export async function sendChatNotifyEmail(
         </body>
       </html>`
 	});
-	if (res.error) throw res.error;
 	return res;
 }
