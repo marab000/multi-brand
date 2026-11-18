@@ -1,21 +1,27 @@
 <script lang="ts">
-  // Бегущая строка поверх главной (рендерится в layout вне контейнера main)
+  import { page } from '$app/stores';
+  import { cityForms } from '$lib/cityForms';
+
+  // Бегущая строка поверх главной (рендерится в layout вне контейнера main).
+  // Текст по ревью заказчика; город — из поддомена («по Казани» / «по Москве» / «по Уфе»)
+  const cityDat = $derived(cityForms($page.data.city as string | undefined).dat);
+  const items = $derived([
+    'Гарантия на технику',
+    'Подбор под вашу кухню',
+    `Бесплатная доставка по ${cityDat}`,
+    'Хранение до конца ремонта',
+    'Поддержка после покупки'
+  ]);
 </script>
 
 <div class="ticker" aria-hidden="true">
   <div class="ticker__track">
     {#each [0, 1] as copy (copy)}
       <div class="ticker__group">
-        <span class="ticker__item">Техника с гарантией</span>
-        <span class="ticker__dot"></span>
-        <span class="ticker__item">Сервисная поддержка</span>
-        <span class="ticker__dot"></span>
-        <span class="ticker__item">Бесплатная доставка</span>
-        <span class="ticker__dot"></span>
-        <span class="ticker__item">Официальный партнер брендов</span>
-        <span class="ticker__dot"></span>
-        <span class="ticker__item">Бесплатное хранение</span>
-        <span class="ticker__dot"></span>
+        {#each items as item (item)}
+          <span class="ticker__item">{item}</span>
+          <span class="ticker__dot"></span>
+        {/each}
       </div>
     {/each}
   </div>

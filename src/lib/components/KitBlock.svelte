@@ -1,10 +1,12 @@
 <script lang="ts" module>
-  // тип данных одного комплектного блока (общий с главной — kitBlocks)
+  // тип данных одного комплектного блока (общий с главной — kitBlocks).
+  // Плашка и CTA опциональны: по ревью 17.11.2026 у блоков остались
+  // только заголовок и карточки
   export type KitBlockData = {
     title: string;
-    bannerIcon: 'shield' | 'tag' | 'truck';
-    bannerParts: { t: string; accent?: boolean }[];
-    cta: string;
+    bannerIcon?: 'shield' | 'tag' | 'truck';
+    bannerParts?: { t: string; accent?: boolean }[];
+    cta?: string;
     desktopCols?: 3 | 4;
     cards: {
       title: string;
@@ -16,31 +18,33 @@
 </script>
 
 <script lang="ts">
-  import { ShieldCheck, Tag, Truck, ChevronRight, ArrowRight } from 'lucide-svelte';
+  import { ShieldCheck, Tag, Truck, ChevronRight } from 'lucide-svelte';
 
-  // один комплектный блок главной (референсы заказчика): заголовок, жёлтая
-  // плашка, сетка карточек, CTA на форму заявки. Три блока различаются только
+  // один комплектный блок главной (референсы заказчика): заголовок, опциональные
+  // плашка и CTA на форму заявки, сетка карточек. Три блока различаются только
   // данными — вся вёрстка общая. Тип KitBlockData — из module-скрипта выше.
-  let { block, oncta }: { block: KitBlockData; oncta: () => void } = $props();
+  let { block, oncta }: { block: KitBlockData; oncta?: () => void } = $props();
 </script>
 
 <section class="kit">
   <h2 class="kit__title">{block.title}</h2>
-  <div class="kit__banner">
-    {#if block.bannerIcon === 'shield'}
-      <ShieldCheck size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
-    {:else if block.bannerIcon === 'tag'}
-      <Tag size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
-    {:else}
-      <Truck size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
-    {/if}
-    <span class="kit__banner-divider" aria-hidden="true"></span>
-    <span class="kit__banner-text">
-      {#each block.bannerParts as part}
-        {#if part.accent}<em class="kit__banner-accent">{part.t}</em>{:else}{part.t}{/if}
-      {/each}
-    </span>
-  </div>
+  {#if block.bannerParts?.length}
+    <div class="kit__banner">
+      {#if block.bannerIcon === 'shield'}
+        <ShieldCheck size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
+      {:else if block.bannerIcon === 'tag'}
+        <Tag size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
+      {:else if block.bannerIcon === 'truck'}
+        <Truck size={18} strokeWidth={2} class="kit__banner-icon" aria-hidden="true" />
+      {/if}
+      <span class="kit__banner-divider" aria-hidden="true"></span>
+      <span class="kit__banner-text">
+        {#each block.bannerParts as part}
+          {#if part.accent}<em class="kit__banner-accent">{part.t}</em>{:else}{part.t}{/if}
+        {/each}
+      </span>
+    </div>
+  {/if}
   <div class="kit__grid" class:kit__grid--d3={block.desktopCols === 3}>
     {#each block.cards as card (card.title)}
       <a class="kit-card" href={card.href}>
@@ -50,15 +54,20 @@
           {#if card.badge}
             <i class="kit-card__badge">{card.badge}</i>
           {/if}
-          <ArrowRight class="kit-card__arrow" size={16} strokeWidth={2.2} />
+          <!-- золотой круг со стрелкой — как у блока OMOIKIRI (ревью: «как у омойкири золотистые») -->
+          <span class="kit-card__arrow">
+            <ChevronRight size={18} strokeWidth={2.4} />
+          </span>
         </span>
       </a>
     {/each}
   </div>
-  <button type="button" class="btn-gold kit__cta" onclick={oncta}>
-    {block.cta}
-    <ChevronRight size={16} strokeWidth={2.3} />
-  </button>
+  {#if block.cta}
+    <button type="button" class="btn-gold kit__cta" onclick={oncta}>
+      {block.cta}
+      <ChevronRight size={16} strokeWidth={2.3} />
+    </button>
+  {/if}
 </section>
 
 <style lang="scss">
@@ -177,14 +186,21 @@
     &__foot {
       display: flex;
       align-items: flex-end;
-      justify-content: space-between;
+      // стрелка прибита к правому краю карточки (ревью: «прибиты в правой части»)
+      justify-content: flex-end;
       gap: 8px;
-      min-height: 24px;
+      min-height: 32px;
     }
-    // стрелка всегда прибита к правому краю, даже когда бейджа нет
-    // (svg lucide — корень дочернего компонента, scope-класса нет: ловим :global)
-    :global(.kit-card__arrow) {
-      margin-left: auto;
+    // золотой круг со стрелкой по центру карточки — стиль стрелок блока OMOIKIRI
+    &__arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: $gold-gradient;
+      color: #4a3a10;
     }
     &__badge {
       display: inline-block;

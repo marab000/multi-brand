@@ -24,33 +24,34 @@
   // этого компонента (уникальные макеты заказчика), заявки уходят в общий /api/leads.
   const OTP_INSTALLMENT_URL = 'https://ecom.otpbank.ru/smart-form?config=eb7b4194-469a-400f-8cf1-f482869b7e1e';
 
+  // тексты карточек — по ревью 17.11.2026 («Всё для удобной покупки»)
   const privileges = [
     {
       action: 'installment' as const,
       badgeValue: '0%',
       badgeLabel: 'переплат',
       icon: installmentIcon,
-      title: 'Честная рассрочка на 12 мес.',
-      text: 'Быстрое онлайн-одобрение за 2 минуты без первого взноса',
-      cta: 'Рассчитать платёж'
+      title: 'Рассрочка на 12 месяцев',
+      text: 'Без первого взноса. Ознакомьтесь с условиями и оформите заявку онлайн.',
+      cta: 'Узнать условия'
     },
     {
       action: 'expert' as const,
       badgeValue: '24/7',
       badgeLabel: 'на связи',
       icon: managerIcon,
-      title: 'Личный менеджер проекта',
-      text: 'Подбор под проект кухни и связь в мессенджере',
-      cta: 'Написать эксперту'
+      title: 'Ваш личный менеджер',
+      text: 'Подберём технику под размеры кухни, ваши задачи и бюджет. Ответим на вопросы в мессенджере.',
+      cta: 'Обсудить подбор техники'
     },
     {
       action: 'storage' as const,
       badgeValue: '0 ₽',
       badgeLabel: 'за хранение',
       icon: storageIcon,
-      title: 'Хранение до конца ремонта',
-      text: 'Сохраним заказ на тёплом охраняемом складе',
-      cta: 'Узнать условия'
+      title: 'Купите сейчас — заберите после ремонта',
+      text: 'Сохраним технику на тёплом охраняемом складе и согласуем доставку, когда кухня будет готова.',
+      cta: 'Уточнить условия хранения'
     }
   ];
 
@@ -201,7 +202,7 @@
 </script>
 
 <div class="privs">
-  <h2 class="privs__title">Привилегии и сервисы</h2>
+  <h2 class="privs__title">Всё для удобной покупки</h2>
   <div class="privs__grid">
     {#each privileges as p (p.action)}
       <article class="privs__card">
@@ -224,7 +225,7 @@
             data-privilege={p.action}
           >
             {p.cta}
-            <ChevronRight size={15} strokeWidth={2.2} />
+            <span class="privs__btn-arrow"><ChevronRight size={13} strokeWidth={2.4} /></span>
           </a>
         {:else}
           <!-- лид-кнопки (эксперт, хранение) — жёлтые, как остальные CTA на форму -->
@@ -235,7 +236,7 @@
             onclick={() => (p.action === 'expert' ? (expertOpen = true) : (storageOpen = true))}
           >
             {p.cta}
-            <ChevronRight size={15} strokeWidth={2.2} />
+            <span class="privs__btn-arrow"><ChevronRight size={13} strokeWidth={2.4} /></span>
           </button>
         {/if}
       </article>
@@ -512,11 +513,13 @@
       display: inline-flex;
       align-items: center;
       justify-content: space-between;
-      gap: $sp-1;
+      gap: $sp-2;
       width: 100%;
-      max-width: 200px;
-      height: 34px;
-      padding: 0 16px;
+      // 240px: с золотым кружком-шевроном длинные подписи («Обсудить подбор
+      // техники») вылезали за капсулу при 200px
+      max-width: 244px;
+      height: 36px;
+      padding: 0 8px 0 16px;
       border: 1px solid rgba($green, 0.35);
       border-radius: 999px;
       background: #fff;
@@ -550,6 +553,19 @@
         background: color.scale(#f0c64b, $lightness: -10%);
         color: #2e3d2f;
       }
+    }
+    // шеврон в золотом кружке — как стрелки карточек OMOIKIRI (ревью: «стрелки
+    // как у омойкири золотистые» = шевроны на кнопках)
+    &__btn-arrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: $gold-gradient;
+      color: #4a3a10;
+      flex: 0 0 auto;
     }
 
     @media (max-width: 639px) {

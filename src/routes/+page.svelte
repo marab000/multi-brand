@@ -20,6 +20,9 @@
   import hood from '$lib/assets/links/hood.webp';
   import kitWine from '$lib/assets/promo/kit-vinnye-shkafy.webp';
   import kitDry from '$lib/assets/promo/kit-sushilnye-shkafy.webp';
+  // стирально-сушильная машина Miele wash&dry — фото товара из БД (ревью:
+  // «добавить справа прачечные фото», товаров-интерьеров прачечной в БД нет)
+  import kitWashDry from '$lib/assets/promo/kit-washdry.webp';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import KitOfferForm from '$lib/components/KitOfferForm.svelte';
   import KitBlock, { type KitBlockData } from '$lib/components/KitBlock.svelte';
@@ -54,12 +57,28 @@
 
   let { data } = $props();
   const city = $derived(cityForms(data?.city));
-  // блок «Официальная гарантия и сервис» (референс заказчика): 3 зелёные карточки
+  // блок «Гарантия на технику. Поддержка от нас.» (ревью 17.11.2026): 3 зелёные карточки
   const guaranteeCards = [
-    { icon: ShieldCheck, title: 'Гарантия от бренда', text: 'Срок гарантии зависит от производителя техники' },
-    { icon: Wrench, title: 'Сервис', text: 'Сертифицированные сервисные центры' },
-    { icon: Headset, title: 'Техподдержка', text: 'Оперативная помощь специалистов' }
+    {
+      icon: ShieldCheck,
+      title: 'Гарантия на вашу модель',
+      text: 'Уточним срок и условия гарантии до покупки. Передадим необходимые документы вместе с техникой.'
+    },
+    {
+      icon: Wrench,
+      title: 'Сервисное обслуживание',
+      text: 'Подскажем, в какой сервисный центр обратиться и какие документы понадобятся.'
+    },
+    {
+      icon: Headset,
+      title: 'Помощь после покупки',
+      text: 'Ответим на вопросы по заказу и поможем с обращением по гарантии.'
+    }
   ];
+
+  // «Задать вопрос о гарантии» — форма заявки (LeadRequestModal)
+  let guaranteeAskOpen = $state(false);
+  const guaranteeAskPrefill = 'Вопрос о гарантии и сервисном обслуживании';
   const desktopImages = $derived(data.desktopSlides || []);
   const mobileImages = $derived(data.mobileSlides || []);
   // Кондиционеры: сезонный блок, вернём через полгода (true = показать)
@@ -77,33 +96,19 @@
   let storeVisitOpen = $state(false);
   const storeVisitPrefill = 'Запись на визит в салон (ул. Чистопольская, д. 66)';
 
+  // «Узнать условия хранения» — форма вопроса менеджеру (ревью: не вести условия на карту)
+  let storageAskOpen = $state(false);
+  const storageAskPrefill = 'Запрос условий хранения на складе М-7 (до конца ремонта)';
+
   // «Хиты продаж» на мобилке: сначала 4 карточки, «Смотреть ещё» раскрывает список
   let hitsExpanded = $state(false);
 
-  // кнопки комплектных блоков открывают форму заявки с prefill по блоку
-  let kitLeadOpen = $state(false);
-  let kitLeadPrefill = $state('');
-  let kitLeadSource = $state('');
-  const openKitLead = (block: (typeof kitBlocks)[number]) => {
-    kitLeadPrefill = `Запрос комплекта: ${block.title}`;
-    kitLeadSource = block.leadSource;
-    kitLeadOpen = true;
-  };
-
   // Комплектные блоки (референсы заказчика) вместо «Популярных категорий».
-  // Карточки ведут в свои категории каталога, кнопки блоков — на форму заявки.
-  // части зелёной плашки: accent-фрагмент подсвечивается жёлтым (референс «−20%»)
-  const kitBlocks: (KitBlockData & { leadSource: string })[] = [
+  // Карточки ведут в свои категории каталога. По ревью 17.11.2026: у блоков
+  // короткие заголовки, плашки и кнопки-CTA убраны.
+  const kitBlocks: KitBlockData[] = [
     {
-      title: 'Комплект приготовления: единый стиль вашей кухни',
-      bannerIcon: 'tag',
-      bannerParts: [
-        { t: 'Скидка до ' },
-        { t: '−20%', accent: true },
-        { t: ' при покупке комплекта из 3 приборов' }
-      ],
-      cta: 'Подобрать комплект в едином стиле',
-      leadSource: 'kit-cook',
+      title: 'Техника для готовки в едином стиле',
       cards: [
         {
           title: 'Духовые шкафы',
@@ -128,11 +133,7 @@
       ]
     },
     {
-      title: 'Свежесть продуктов и посуды: идеальный микроклимат кухни',
-      bannerIcon: 'shield',
-      bannerParts: [{ t: 'Хранение на тёплом складе до конца ремонта' }],
-      cta: 'Собрать комплект со скидкой',
-      leadSource: 'kit-fresh',
+      title: 'Для свежих продуктов и безупречно чистой посуды',
       cards: [
         {
           title: 'Холодильники',
@@ -157,12 +158,7 @@
       ]
     },
     {
-      title: 'Уход за бельем: безупречная забота о тканях',
-      bannerIcon: 'truck',
-      bannerParts: [{ t: 'Бесплатная доставка и монтаж в колонну при покупке комплекта' }],
-      cta: 'Рассчитать выгоду на комплект',
-      leadSource: 'kit-care',
-      desktopCols: 3,
+      title: 'Бережная стирка. Комфортная сушка.',
       cards: [
         {
           title: 'Стиральные машины',
@@ -171,39 +167,39 @@
         },
         {
           title: 'Сушильные машины',
-          href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny',
+          href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
           img: dm
         },
         {
           title: 'Сушильные шкафы',
           href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-shkafy',
           img: kitDry
+        },
+        {
+          title: 'Стирально-сушильные машины',
+          href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/stiralno-sushilnye-mashiny',
+          img: kitWashDry
         }
       ]
     }
   ];
 
-  // Лента брендов на главной: состав и порядок заданы заказчиком вручную,
-  // остальные бренды из синка в ленту не попадают. Сопоставление — по
-  // нормализованному имени (регистр, кавычки-апострофы, «ё»).
+  // Лента брендов на главной: состав и порядок заданы заказчиком вручную
+  // (ревью 17.11.2026 — ровно 12 брендов), остальные бренды из синка в ленту
+  // не попадают. Сопоставление — по нормализованному имени (регистр, апострофы, «ё»).
   const marqueeBrandKeys = [
-    'körting',
-    'kuppersberg',
-    'delonghi',
-    'bosch',
-    'aeg',
-    'franke',
-    'smeg',
     'asko',
     'liebherr',
+    'körting',
+    'kuppersberg',
+    'smeg',
+    'bosch',
+    'aeg',
+    'miele',
+    'franke',
     'elica',
     'teka',
-    'miele',
-    'neff',
-    'gaggenau',
-    'de dietrich',
-    'kuppersbusch',
-    'omoikiri'
+    'delonghi'
   ];
   const normBrand = (s: string) =>
     s.toLowerCase().replace(/[’'`]/g, '').replace(/ё/g, 'е').replace(/ö/g, 'o').trim();
@@ -214,11 +210,13 @@
       .filter((b): b is string => Boolean(b));
   });
 
-  // квизы главной: контент — из демо-лендингов брендов (ASKO, Liebherr)
+  // квизы главной: контент — из демо-лендингов брендов (ASKO, Liebherr),
+  // формулировки вопросов и подписи под кнопкой — по ревью 17.11.2026
+  const quizNote = 'Менеджер уточнит детали и предложит подходящие модели с расчётом стоимости.';
   const askoQuiz = {
-    headingLines: ['Больше времени', 'для жизни.', 'Меньше — на быт.'],
+    headingLines: ['Больше времени для себя.', 'Заботу о вещах — ASKO.'],
     description:
-      'Подберём стиральную и сушильную машины ASKO под ваш дом. Организуем хранение до доставки, установку и подключение.',
+      'Подберём стиральную и сушильную машины под ваши задачи и пространство дома. Сохраним до готовности к установке, доставим и подключим.',
     needs: [
       'Стиральная + сушильная машины',
       'Только стиральная машина',
@@ -232,16 +230,19 @@
       'Выше 300 000 ₽',
       'Пока не определился'
     ],
-    installLabel: 'Как планируете установить?',
+    installLabel: 'Как хотите разместить технику?',
     places: ['Рядом', 'В колонну — нужна проверка', 'Пока не знаю'],
-    submitLabel: 'Подобрать мой комплект',
+    submitLabel: 'Подобрать технику ASKO',
+    needLabel: 'Какую технику подбираем?',
+    timingLabel: 'Когда планируете получить технику?',
+    note: quizNote,
     leadTitle: 'Запрос на подбор ASKO:',
     image: askoQuizPhoto
   };
   const liebherrQuiz = {
-    headingLines: ['Хранение,', 'продуманное', 'до деталей.'],
+    headingLines: ['Свежесть продуктов.', 'Больше места для любимого.'],
     description:
-      'Подберём холодильник или морозильную камеру Liebherr под размеры кухни, сценарий хранения и бюджет.',
+      'Подберём холодильник или морозильную камеру Liebherr под размеры кухни, запас продуктов и ваш бюджет.',
     needs: [
       'Холодильник',
       'Морозильная камера',
@@ -256,38 +257,41 @@
       'Выше 300 000 ₽',
       'Пока не определился'
     ],
-    installLabel: 'Тип установки',
+    installLabel: 'Как хотите разместить технику?',
     places: ['Отдельностоящая', 'Встраиваемая', 'Пока не знаю'],
-    submitLabel: 'Получить подбор',
+    submitLabel: 'Получить подбор Liebherr',
+    needLabel: 'Какую технику подбираем?',
+    timingLabel: 'Когда планируете получить технику?',
+    note: quizNote,
     leadTitle: 'Запрос на подбор Liebherr:',
-    image: liebherrQuizPhoto,
-    accentFrom: 1 // в референсе акцентом покрашены 2-я и 3-я строки («продуманное до деталей.»)
+    image: liebherrQuizPhoto
   };
-  // блок-акция Liebherr (из демо-лендинга) — после ASKO-квиза
+  // блок-акция (после ASKO-квиза): тексты по ревью 17.11.2026 — «Специальные
+  // условия на комплект техники», кнопка ведёт на расчёт комплекта
   const liebherrOffer = {
-    eyebrow: 'Акция при обращении за комплектом',
-    titleLines: ['Соберём решение', 'без лишних забот.'],
-    text: 'Оставьте заявку — подберём решения, которые подойдут по размерам, цене и характеристикам.',
-    buttonLabel: 'Получить условия акции',
+    eyebrow: 'Специальные условия на комплект техники',
+    titleLines: ['От подбора техники', '— до готовой кухни.'],
+    text: 'Подберём комплект под размеры кухни, ваши задачи и бюджет. Заранее согласуем хранение, доставку и установку — и покажем, сколько всё будет стоить.',
+    buttonLabel: 'Получить расчёт комплекта',
     leadTitle:
-      'Запрос условий акции: хранение до готовности кухни, проверка ниши, доставка и установка, персональный расчёт.',
-    note: 'Условия акции, период хранения и состав бесплатных или льготных работ подтверждаются магазином до оформления заказа.',
+      'Запрос на расчёт комплекта: хранение до конца ремонта, проверка размеров и подключения, доставка и установка, понятная стоимость.',
+    note: 'Условия акции, срок хранения и стоимость услуг согласуем до оформления заказа и зафиксируем в нём.',
     benefits: [
       {
-        title: 'Хранение до готовности кухни',
-        text: 'Можно согласовать дату доставки после завершения ремонта. Срок и условия фиксируем в заказе.'
+        title: 'Хранение до конца ремонта',
+        text: 'Сохраним заказ до готовности кухни. Срок хранения и дату доставки согласуем заранее.'
       },
       {
-        title: 'Проверка ниши',
-        text: 'Уточним габариты, вентиляционные зазоры, направление открывания и доступ к коммуникациям.'
+        title: 'Проверка размеров и подключения',
+        text: 'Сверим размеры техники и ниш, необходимые зазоры, открывание дверей и расположение коммуникаций.'
       },
       {
         title: 'Доставка и установка',
-        text: 'Рассчитаем работы по адресу. Подключение выполняется к подготовленным коммуникациям.'
+        text: 'Согласуем доставку, подъём и установку по вашему адресу. Заранее уточним, что нужно подготовить для подключения.'
       },
       {
-        title: 'Персональный расчёт',
-        text: 'Рассчитаем полную стоимость комплекта: техника, бесплатная доставка, подъём, установка и дополнительные работы — без скрытых расходов.'
+        title: 'Понятная стоимость',
+        text: 'Подготовим подробный расчёт: техника, доставка, подъём, установка и дополнительные работы. Отдельно покажем скидки и бесплатные услуги.'
       }
     ]
   };
@@ -324,7 +328,10 @@
   {/if}
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="MULTIBRAND" />
-  <meta property="og:title" content={`Бытовая техника в ${city.prep} — интернет-магазин Мультибренд`} />
+  <meta
+    property="og:title"
+    content={`Бытовая техника в ${city.prep} — интернет-магазин Мультибренд`}
+  />
   <meta
     property="og:description"
     content={`Встраиваемая и кухонная техника от официальных поставщиков. Рассрочка 0%, бесплатная доставка по ${city.dat}, склад до 12 месяцев.`}
@@ -359,14 +366,14 @@
 <KitOfferForm />
 
 {#each kitBlocks as block (block.title)}
-  <KitBlock {block} oncta={() => openKitLead(block)} />
+  <KitBlock {block} />
   <div class="kit-divider" aria-hidden="true"></div>
 {/each}
 
 {#if marqueeBrands.length}
   <!-- mb-3: внутренний -mb-3 компенсации marquee съедает штатный gap до следующей секции -->
   <section class="mb-3">
-    <h2 class="section-title">Бренды — которым доверяют</h2>
+    <h2 class="section-title">Бренды, которым доверяют</h2>
     <!-- у marquee свой padding 12px (иначе тень плиток режется); отрицательными марджинами
          компенсируем его и штатные 12px секции, чтобы итоговый зазор был 12px, а не 24+ -->
     <div class="-mt-3! -mb-3!">
@@ -403,11 +410,16 @@
 </section>
 
 <section>
-  <!-- блок Omoikiri по референсу: шапка-лого + 3 типа карточек (тёмная фото / светлая / зелёная) -->
+  <!-- блок Omoikiri по референсу: шапка-лого + 3 типа карточек (тёмная фото / светлая / зелёная);
+       тексты и кнопки карточек — по ревью 17.11.2026 -->
   <div class="omo">
     <div class="omo__head">
       <h2 class="omo__logo">OMOIKIRI</h2>
-      <span class="omo__tagline">Премиальная японская сантехника и кухонные решения</span>
+      <span class="omo__tagline">Всё для вашей кухни — в едином стиле.</span>
+      <p class="omo__intro">
+        Подберём мойку и смеситель в сочетающихся оттенках, дополним комплект подходящим
+        измельчителем отходов.
+      </p>
     </div>
 
     <div class="omo__cards">
@@ -487,7 +499,7 @@
 </section>
 <LeadRequestModal bind:open={bundleOpen} prefill={bundlePrefill} />
 <LeadRequestModal bind:open={storeVisitOpen} prefill={storeVisitPrefill} source="store-visit" />
-<LeadRequestModal bind:open={kitLeadOpen} prefill={kitLeadPrefill} source={kitLeadSource} />
+<LeadRequestModal bind:open={storageAskOpen} prefill={storageAskPrefill} source="storage-ask" />
 
 {#if AC_ENABLED}
   <section>
@@ -548,21 +560,21 @@
   <div class="promo-banner promo-banner--store">
     <div class="promo-banner__head">
       <div class="promo-banner__text">
-        <h2>Приглашаем в наш офлайн-магазин кухонной техники</h2>
+        <h2>Познакомьтесь с техникой лично</h2>
         <span>
-          Здесь вы сможете увидеть модели вживую, сравнить бренды, проконсультироваться со
-          специалистом и подобрать технику под ваши задачи.
+          Приезжайте в наш салон: посмотрите представленные модели, сравните варианты и обсудите со
+          специалистом технику для вашей кухни.
         </span>
       </div>
     </div>
     <div class="store-cards">
       <article class="store-card">
-        <h3 class="store-card__name">Шоурум</h3>
+        <h3 class="store-card__name">Наш салон в Казани</h3>
         <div class="store-card__photo">
           <img src={storeShowroom} alt="Шоурум: кухни с встроенной техникой" loading="lazy" />
         </div>
         <div class="store-card__body">
-          <p class="store-card__line">г. Казань, ул. Чистопольская, д. 66</p>
+          <p class="store-card__line">ул. Чистопольская, 66</p>
           <p class="store-card__line">Ежедневно с 9:00 до 18:00</p>
         </div>
         <a
@@ -576,45 +588,57 @@
         </a>
       </article>
       <article class="store-card">
-        <h3 class="store-card__name">Менеджер</h3>
+        <h3 class="store-card__name">Персональная консультация</h3>
         <div class="store-card__photo store-card__photo--top">
           <img src={storeManager} alt="Личный менеджер" loading="lazy" />
         </div>
         <!-- без имени/телефона и «Написать в Макс» — сразу запись на визит -->
         <div class="store-card__body">
-          <p class="store-card__line">Личный менеджер</p>
+          <p class="store-card__line">
+            Обсудим ваш проект, поможем с выбором и ответим на вопросы. При записи расскажите, какую
+            технику хотите посмотреть.
+          </p>
         </div>
         <button type="button" class="store-card__btn" onclick={() => (storeVisitOpen = true)}>
-          Записаться на визит в салон
+          Записаться в салон
         </button>
       </article>
       <article class="store-card">
-        <h3 class="store-card__name">Склад</h3>
+        <h3 class="store-card__name">Хранение до готовности кухни</h3>
         <div class="store-card__photo">
           <img src={storeWarehouse} alt="Собственный склад хранения" loading="lazy" />
         </div>
         <div class="store-card__body">
-          <p class="store-card__line">Собственный склад хранения</p>
-          <p class="store-card__line">Индустриальный парк М-7</p>
+          <p class="store-card__line">
+            Сохраним заказ на складе в индустриальном парке М-7. Срок хранения и дату доставки
+            согласуем заранее.
+          </p>
         </div>
+        <!-- условия услуги — в чат с менеджером, карта — отдельной ссылкой «Склад на карте»
+             (ревью: ссылку про хранение не вести на местоположение) -->
+        <button type="button" class="store-card__btn" onclick={() => (storageAskOpen = true)}>
+          Узнать условия хранения
+        </button>
         <a
-          class="store-card__btn"
+          class="store-card__map-link"
           href="https://yandex.ru/maps/?text=Казань, Индустриальный парк M-7"
           target="_blank"
           rel="noopener"
         >
-          Хранение до конца ремонта
+          Склад на карте
+          <ArrowUpRight size={13} strokeWidth={2.2} />
         </a>
       </article>
     </div>
   </div>
 </section>
 
-
 <section class="guarantee">
   <div class="guarantee__head">
-    <h2 class="guarantee__title">Официальная гарантия и сервис</h2>
-    <p class="guarantee__subtitle">Спокойствие и уверенность на каждом этапе</p>
+    <h2 class="guarantee__title">Гарантия на технику. Поддержка от нас.</h2>
+    <p class="guarantee__subtitle">
+      Поможем разобраться в условиях гарантии и подскажем, куда обратиться при неисправности.
+    </p>
   </div>
   <div class="guarantee__grid">
     {#each guaranteeCards as c (c.title)}
@@ -625,7 +649,16 @@
       </article>
     {/each}
   </div>
+  <button type="button" class="btn-gold guarantee__cta" onclick={() => (guaranteeAskOpen = true)}>
+    Задать вопрос о гарантии
+    <ChevronRight size={16} strokeWidth={2.3} />
+  </button>
 </section>
+<LeadRequestModal
+  bind:open={guaranteeAskOpen}
+  prefill={guaranteeAskPrefill}
+  source="guarantee-ask"
+/>
 
 <style lang="scss">
   // разделитель между kit-блоками: вместо width 80% — градиент на всю ширину,
@@ -776,6 +809,21 @@
       }
     }
 
+    // вторичная ссылка под кнопкой («Склад на карте») — тише кнопки, но кликабельна
+    &__map-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.75rem;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      transition: color 0.15s ease;
+      &:hover {
+        color: #fff;
+      }
+    }
   }
 
   .hero-section {
@@ -1022,7 +1070,7 @@
     flex-direction: column;
     gap: $sp-1;
   }
-  // размер/вес — из глобального h2; margin: 0 — зазор в шапке ведёт gap контейнера
+  // размер/вес — из глобального h2; margin: 0 — зазор ведёт gap контейнера
   .omo__logo {
     margin: 0;
     text-align: center;
@@ -1031,6 +1079,15 @@
     color: #475569;
     font-size: 0.9375rem;
     line-height: 1.4;
+    text-align: center;
+  }
+  // вводный абзац под tagline (ревью: «Подберём мойку и смеситель...»)
+  .omo__intro {
+    margin: 0 auto;
+    max-width: 560px;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.5;
     text-align: center;
   }
   // «металлик» золота без картинки — общий градиент $gold-gradient (variables.scss)
@@ -1273,7 +1330,7 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
-  // «Официальная гарантия и сервис» (референс заказчика): 3 зелёные карточки,
+  // «Гарантия на технику. Поддержка от нас.» (ревью 17.11.2026): 3 зелёные карточки,
   // круглые значки сидят на верхней кромке (наполовину снаружи) и светятся
   .guarantee {
     display: flex;
@@ -1298,6 +1355,7 @@
 
     &__subtitle {
       margin: 0;
+      max-width: 560px;
       font-size: 0.92rem;
       line-height: 1.4;
       color: #475569;
@@ -1359,6 +1417,15 @@
       font-size: 0.85rem;
       line-height: 1.4;
       color: rgba(255, 255, 255, 0.75);
+    }
+
+    // золотая CTA «Задать вопрос о гарантии» под карточками (ревью)
+    &__cta {
+      height: 44px;
+      padding: 0 22px;
+      font-size: 0.9rem;
+      justify-content: center;
+      gap: $sp-1;
     }
   }
 </style>

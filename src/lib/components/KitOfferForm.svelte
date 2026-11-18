@@ -1,15 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import {
-    Check,
-    ChevronRight,
-    Flame,
-    Gem,
-    Percent,
-    ShieldCheck,
-    Truck,
-    Warehouse
-  } from 'lucide-svelte';
+  import { Check, ChevronRight, House, Percent, ShieldCheck, Truck } from 'lucide-svelte';
   import { toast } from 'svelte-sonner';
   import { apiFetch } from '$lib/api';
   import { phoneMask } from '$lib/actions/phoneMask';
@@ -23,18 +13,18 @@
   // карточка, чекбоксы комплекта, счётчик 24 часа, телефон + жёлтая CTA,
   // на мобилке — модалка успеха (второй референс).
 
+  // подписи плиток — винительный падеж после вопроса «Какую технику подбираем?»
   const tiles = [
     { img: oven, label: 'Духовой шкаф' },
-    { img: hob, label: 'Варочная панель' },
-    { img: dw, label: 'Посудомоечная машина' },
-    { img: hood, label: 'Вытяжка' }
+    { img: hob, label: 'Варочную панель' },
+    { img: dw, label: 'Посудомоечную машину' },
+    { img: hood, label: 'Вытяжку' }
   ];
 
   const perks = [
-    { icon: ShieldCheck, text: 'Официальная гарантия' },
-    { icon: Truck, text: 'Быстрая доставка' },
-    { icon: Gem, text: 'Премиальные бренды' },
-    { icon: Percent, text: 'Выгодные условия' }
+    { icon: ShieldCheck, text: 'Проверим размеры' },
+    { icon: Truck, text: 'Покажем полную стоимость' },
+    { icon: Percent, text: 'Согласуем доставку' }
   ];
 
   let phone = $state('');
@@ -49,39 +39,6 @@
     selected = isSelected(label) ? selected.filter((l) => l !== label) : [...selected, label];
   };
 
-  // остаток акции: ч / мин / сек, тикаем каждую секунду — счётчик «живой»
-  let leftHours = $state('00');
-  let leftMins = $state('00');
-  let leftSecs = $state('00');
-
-  const pad2 = (n: number) => String(Math.max(0, n)).padStart(2, '0');
-
-  // личный 24-часовой дедлайн визита: стартует с первого захода и живёт
-  // в localStorage — перезагрузки его не сбрасывают
-  const DEADLINE_KEY = 'kitoffer-deadline';
-  let deadline = 0;
-
-  const tick = () => {
-    const ms = deadline - Date.now();
-    if (deadline && ms <= 0) {
-      leftHours = leftMins = leftSecs = '00';
-      return;
-    }
-    const secs = Math.floor(ms / 1000);
-    leftHours = pad2(Math.floor(secs / 3600));
-    leftMins = pad2(Math.floor((secs % 3600) / 60));
-    leftSecs = pad2(secs % 60);
-  };
-
-  onMount(() => {
-    const saved = Number(localStorage.getItem(DEADLINE_KEY));
-    deadline = saved && saved > Date.now() ? saved : Date.now() + 24 * 60 * 60 * 1000;
-    localStorage.setItem(DEADLINE_KEY, String(deadline));
-    tick();
-    const t = setInterval(tick, 1000);
-    onDestroy(() => clearInterval(t));
-  });
-
   const submit = async () => {
     if (loading) return;
     if (!isValidRuPhone(phone)) {
@@ -93,11 +50,11 @@
       await apiFetch(fetch, '/api/leads', {
         method: 'POST',
         body: JSON.stringify({
-          name: 'Клиент (зафиксировать выгоду за комплект)',
+          name: 'Клиент (расчёт комплекта)',
           phone: normalizeRuPhone(phone),
-          message: `Зафиксировать скидку и расчёт комплекта. Выбрано: ${
+          message: `Расчёт комплекта. Выбрано: ${
             selected.length ? selected.join(', ') : 'ничего'
-          }. Бесплатное хранение на складе М-7, проверка ниши, доставка и установка.`,
+          }. Хранение на складе М-7, проверка размеров, доставка и установка.`,
           source: 'kit-fix'
         }),
         headers: { 'Content-Type': 'application/json' }
@@ -115,15 +72,16 @@
 
 <section class="kitoffer">
   <div class="kitoffer__top flex flex-col gap-3">
-    <h2>Соберите комплект техники <em> и увеличьте выгоду</em></h2>
+    <h2>Ваша кухня. <em>Техника в комплекте.</em></h2>
     <p class="kitoffer__storage">
-      <Warehouse size={20} strokeWidth={1.8} />
-      <span>Бесплатное хранение на складе М-7 в Казани <i> до конца ремонта</i></span>
+      Подберём технику под размеры кухни, ваши задачи и бюджет. Подготовим расчёт с моделями, ценами
+      и скидкой на комплект.
     </p>
   </div>
 
   <div class="kitoffer__grid">
     <div class="kitoffer__main">
+      <p class="kitoffer__tiles-label">Какую технику подбираем?</p>
       <div class="kitoffer__tiles">
         {#each tiles as t (t.label)}
           <button
@@ -148,16 +106,12 @@
           <i>15%</i>
         </div>
       </div>
-      <div class="kitoffer__timer">
-        <div class="kitoffer__timer-label">
-          <Flame size={16} strokeWidth={2} />
-          <span>До конца акции осталось:</span>
+      <div class="kitoffer__repair">
+        <div class="kitoffer__repair-label">
+          <House size={16} strokeWidth={2} />
+          <span>Ремонт ещё идёт?</span>
         </div>
-        <div class="kitoffer__timer-cells">
-          <span>{leftHours} <i>ч.</i></span>
-          <span>{leftMins} <i>мин.</i></span>
-          <span>{leftSecs} <i>сек.</i></span>
-        </div>
+        <p>Бесплатно сохраним заказ на складе М-7 в Казани до согласованной даты доставки.*</p>
       </div>
     </div>
 
@@ -168,30 +122,34 @@
         submit();
       }}
     >
-      <div class="kitoffer__phone">
-        <span class="kitoffer__phone-prefix">+7</span>
-        <input
-          type="tel"
-          placeholder="999 123 45 67"
-          autocomplete="tel"
-          inputmode="numeric"
-          // без bind:value — он воюет с IMask и перетирает ввод; значение живёт в маске,
-          // состояние обновляет onAccept (паттерн эталонного инпута в PrivilegesSection)
-          use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
-          disabled={loading}
-        />
+      <div class="kitoffer__form-row">
+        <div class="kitoffer__phone">
+          <span class="kitoffer__phone-prefix">+7</span>
+          <input
+            type="tel"
+            placeholder="999 123 45 67"
+            autocomplete="tel"
+            inputmode="numeric"
+            // без bind:value — он воюет с IMask и перетирает ввод; значение живёт в маске,
+            // состояние обновляет onAccept (паттерн эталонного инпута в PrivilegesSection)
+            use:phoneMask={{ value: phone, onAccept: (digits) => (phone = digits) }}
+            disabled={loading}
+          />
+        </div>
+        <button type="submit" class="btn-gold kitoffer__submit" disabled={loading}>
+          {loading ? 'Отправляем...' : 'Получить расчёт комплекта'}
+          <ChevronRight size={18} strokeWidth={2.3} />
+        </button>
       </div>
-      <button type="submit" class="btn-gold kitoffer__submit" disabled={loading}>
-        {loading ? 'Отправляем...' : 'Зафиксировать скидку'}
-        <ChevronRight size={18} strokeWidth={2.3} />
-      </button>
+      <p class="kitoffer__form-note">
+        Менеджер свяжется с вами, уточнит пожелания и подготовит предложение.
+      </p>
     </form>
 
     <div class="kitoffer__perks">
       {#each perks as p (p.text)}
         <div class="kitoffer__perk">
           <p.icon size={18} strokeWidth={1.8} />
-          <!-- текст с \n: строки референса, перенос без br в разметке -->
           <span>{p.text}</span>
         </div>
       {/each}
@@ -206,16 +164,15 @@
     aria-label="Закрыть"
     onclick={() => (successOpen = false)}
   ></button>
-  <div class="kitoffer__success" role="dialog" aria-modal="true" aria-label="Выгода зафиксирована">
+  <div class="kitoffer__success" role="dialog" aria-modal="true" aria-label="Заявка отправлена">
     <span class="kitoffer__success-check"><Check size={30} strokeWidth={3} /></span>
-    <h3>Выгода<br />зафиксирована!</h3>
+    <h3>Заявка<br />принята!</h3>
     <p>
-      Эксперт Павел уже формирует спецификацию с учётом бесплатных схем встройки под ваш проект.
+      Менеджер свяжется с вами, уточнит пожелания и подготовит расчёт с моделями, ценами и скидкой
+      на комплект.
     </p>
     <div class="kitoffer__success-box">
-      <span
-        ><Check size={14} strokeWidth={2.6} /> Бронь спецификации закреплена за вашим номером</span
-      >
+      <span><Check size={14} strokeWidth={2.6} /> Расчёт комплекта закреплён за вашим номером</span>
       <span
         ><Check size={14} strokeWidth={2.6} /> Бесплатное хранение на складе М-7 активировано</span
       >
@@ -303,20 +260,19 @@
     }
 
     &__storage {
-      display: flex;
-      align-items: center;
-      gap: $sp-2;
       margin: 0;
-      font-size: 0.875rem;
-      line-height: 1.35;
-      svg {
-        flex-shrink: 0;
-        color: #8fd6a2;
-      }
-      i {
-        font-style: normal;
-        color: rgba(255, 255, 255, 0.75);
-      }
+      max-width: 720px;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    // подпись над плитками выбора техники
+    &__tiles-label {
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      color: #fff;
     }
 
     &__tiles {
@@ -442,8 +398,8 @@
       }
     }
 
-    &__timer {
-      // тянется до низа колонки: блоки справа всегда одной высоты с левыми
+    // бокс «Ремонт ещё идёт?»: тот же стиль, что у бывшего таймера
+    &__repair {
       flex: 1;
       padding: $sp-2 $sp-3;
       border: 1px solid rgba(255, 255, 255, 0.16);
@@ -454,33 +410,18 @@
         align-items: center;
         gap: $sp-2;
         font-size: 0.8rem;
+        font-weight: 700;
         color: rgba(255, 255, 255, 0.95);
         svg {
-          color: #f5a623;
+          color: #8fd6a2;
+          flex-shrink: 0;
         }
       }
-      &-cells {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        margin-top: 8px;
-        span {
-          display: flex;
-          align-items: baseline;
-          justify-content: center;
-          gap: 4px;
-          padding: 6px 4px;
-          border-radius: 10px;
-          background: rgba(255, 255, 255, 0.07);
-          font-size: 1.35rem;
-          font-weight: 600;
-          i {
-            font-size: 0.7rem;
-            font-style: normal;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.75);
-          }
-        }
+      p {
+        margin: 8px 0 0;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.8);
       }
     }
 
@@ -488,11 +429,25 @@
     &__form {
       grid-column: 1 / -1;
       display: grid;
+      gap: 10px;
+    }
+    &__form-row {
+      display: grid;
       grid-template-columns: minmax(0, 1fr);
       gap: 12px;
       @media (min-width: 640px) {
         // поле тянется, кнопка — по контенту (auto)
         grid-template-columns: minmax(0, 1fr) auto;
+      }
+    }
+    &__form-note {
+      margin: 0;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      color: rgba(255, 255, 255, 0.75);
+      @media (min-width: 640px) {
+        // выравнивается с началом поля телефона (строка формы слева)
+        grid-column: 1 / -1;
       }
     }
     &__phone {
@@ -562,6 +517,15 @@
         flex-shrink: 0;
         color: #cfa236;
       }
+    }
+
+    // дисклеймеры с «*» — мелкой строкой внизу блока
+    &__disclaimer {
+      grid-column: 1 / -1;
+      margin: 0;
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.6);
     }
 
     // --- успех (мобильный референс): тёмная модалка со светящимся чеком ---

@@ -28,7 +28,7 @@
         </div>
         <ArrowUpRight class="platform__corner" size={20} strokeWidth={2} />
       </div>
-      <h3>Впечатления клиентов.<br />Без лишних слов.</h3>
+      <h3>Впечатления клиентов. Без лишних слов.</h3>
       <p class="platform__desc">
         Откройте карточку магазина, чтобы прочитать отзывы покупателей или рассказать о своём
         заказе.
@@ -72,7 +72,7 @@
         </div>
         <ArrowUpRight class="platform__corner" size={20} strokeWidth={2} />
       </div>
-      <h3>Ваш опыт важен.<br />Поделитесь им.</h3>
+      <h3>Ваш опыт важен. Поделитесь им.</h3>
       <p class="platform__desc">
         Посмотрите отзывы в 2ГИС. Если уже покупали у нас, будем рады вашему мнению.
       </p>
@@ -135,6 +135,8 @@
     padding: $sp-4;
     border-radius: 20px;
     background: #fff;
+    // контент карточки центрируется (ревью: «в ряд, отцентровать»)
+    text-align: center;
     @media (min-width: 1024px) {
       padding: $sp-6;
     }
@@ -142,6 +144,7 @@
   .platform__top {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 14px;
   }
   .platform__icon {
@@ -177,7 +180,7 @@
     }
   }
   .platform__corner {
-    margin-left: auto;
+    // в центре карточки стрелка живёт рядом с названием, а не прижата к краю
     color: #94a3b8;
     flex-shrink: 0;
   }
@@ -193,7 +196,7 @@
     }
   }
   .platform__desc {
-    margin: 0;
+    margin: 0 auto;
     max-width: 460px;
     color: #64748b;
     font-size: 0.9rem;

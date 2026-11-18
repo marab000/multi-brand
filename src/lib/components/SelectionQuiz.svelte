@@ -17,6 +17,9 @@
       leadTitle: string;
       image?: string; // фото левой колонки (под текстом, с тёмным градиентом)
       accentFrom?: number; // с какой строки красить акцентом (по умолчанию — последняя)
+      needLabel?: string; // подпись селекта «что подбираем»
+      timingLabel?: string; // подпись селекта «когда нужна техника»
+      note?: string; // подпись под кнопкой отправки
     };
   } = $props();
 
@@ -68,7 +71,7 @@
   </div>
   <form class="quiz__fields" class:quiz__fields--open={fieldsOpen} onsubmit={submit}>
     <label>
-      Что подбираем?
+      {quiz.needLabel ?? 'Что подбираем?'}
       <span class="select-wrap">
         <select bind:value={need}>
           {#each quiz.needs as n}<option>{n}</option>{/each}
@@ -95,7 +98,7 @@
       </span>
     </label>
     <label>
-      Когда нужна техника?
+      {quiz.timingLabel ?? 'Когда нужна техника?'}
       <span class="select-wrap">
         <select bind:value={timing}>
           {#each timings as t}<option>{t}</option>{/each}
@@ -107,6 +110,9 @@
       <span>{quiz.submitLabel}</span>
       <ChevronRight size={17} strokeWidth={2.3} />
     </button>
+    {#if quiz.note}
+      <p class="quiz__note">{quiz.note}</p>
+    {/if}
   </form>
 </div>
 <LeadRequestModal bind:open={requestOpen} {prefill} />
@@ -267,6 +273,15 @@
       justify-self: start;
       height: 48px;
       font-weight: 700;
+    }
+    // подпись под кнопкой отправки («Менеджер уточнит детали...»)
+    .quiz__note {
+      grid-column: 1 / -1;
+      margin: 0;
+      max-width: 420px;
+      color: #6b7280;
+      font-size: 0.8125rem;
+      line-height: 1.4;
     }
 
     // на мобилке селекты спрятаны, CTA стоит выше них: первый клик раскрывает список;
