@@ -133,7 +133,9 @@ export async function sendVerificationEmail(email: string, url: string) {
                               <img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" />
                             </a>
                           </td>
-                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
+                        </tr>
+                        <tr>
+                          <td align="left" style="padding-top:8px;font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
                         </tr>
                       </table>
                     </td>
@@ -233,7 +235,9 @@ export async function sendNewOrderEmail(order: {
                               <img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" />
                             </a>
                           </td>
-                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
+                        </tr>
+                        <tr>
+                          <td align="left" style="padding-top:8px;font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
                         </tr>
                       </table>
                     </td>
@@ -321,7 +325,9 @@ export async function sendLeadEmail(lead: {
                       <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                         <tr>
                           <td align="left"><a href="${SITE_URL}" target="_blank" style="text-decoration:none;"><img src="${SITE_LOGO_URL}" width="166" alt="${SITE_NAME}" style="display:block;width:166px;max-width:166px;height:auto;border:0;" /></a></td>
-                          <td align="right" style="font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
+                        </tr>
+                        <tr>
+                          <td align="left" style="padding-top:8px;font-size:15px;font-weight:700;color:#202020;white-space:nowrap;">${contacts.phone}</td>
                         </tr>
                       </table>
                     </td>
