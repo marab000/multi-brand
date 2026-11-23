@@ -103,79 +103,57 @@ input[type='radio'] {
   white-space: nowrap;
   transition: 0.2s;
   cursor: pointer;
+  // ─── Система кнопок (ревью 23.11): два цвета из палитры + производные.
+  // primary = $green, secondary = $yellow; у обоих outline-вариант; light —
+  // белая заливка для тёмных подложек. Локальных цветов в кнопках быть не должно.
   &.primary {
-    background-color: $green-light;
+    background-color: $green-cta;
     color: white;
     &:hover:not(.disabled):not(:disabled) {
-      background-color: color.scale($green-light, $lightness: -30%);
+      background-color: color.scale($green-cta, $lightness: -10%);
     }
   }
-  // зелёная outline-кнопка («В корзину» на сайте): ховер — лёгкая зелёная
-  // заливка + текст в цвет рамки, без полной заливки
-  &.outline {
-    border: 1px solid $green;
+  // outline-вариант primary: рамка и ховер — зелёные, заливки нет
+  &.outline-primary {
+    border: 1px solid $green-cta;
     background: transparent;
     color: #111827;
     transition: background 0.15s ease, color 0.15s ease;
     &:hover:not(:disabled) {
-      background: rgba($green, 0.1);
-      color: $green;
+      background: rgba($green-cta, 0.1);
+      color: $green-cta;
     }
   }
   &.secondary {
-    background-color: $yellow;
-    color: white;
+    background-color: $yellow-cta;
+    color: $green;
     &:hover:not(.disabled):not(:disabled) {
-      background-color: color.scale($yellow, $lightness: -30%);
+      background-color: color.scale($yellow-cta, $lightness: -10%);
     }
   }
-  &.secondary-with-border {
-    border: 1px solid rgba($yellow, 0.5);
-    background-color: rgba($yellow, 0.05);
-    color: color.scale($yellow, $lightness: -70%);
-    &:hover:not(.disabled):not(:disabled) {
-      background-color: rgba($yellow, 0.2);
-      border-color: $yellow;
+  // outline-вариант secondary: жёлтая рамка, тёмный текст (жёлтый текст
+  // на белом нечитаем — warning-dark из палитры тоже не про кнопки)
+  &.outline-secondary {
+    border: 1px solid rgba($yellow-cta, 0.55);
+    background: transparent;
+    color: #111827;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    &:hover:not(:disabled) {
+      background: rgba($yellow-cta, 0.12);
+      border-color: $yellow-cta;
     }
   }
-  // светло-жёлтая вторичка с тёмным текстом — как кнопка «Подобрать комплект»
-  // в блоке подбора на главной (#f0c64b / #2e3d2f)
-  &.secondary-light {
-    background-color: #f0c64b;
-    color: #2e3d2f;
+  // белая заливка для тёмно-зелёных подложек («Получить расчёт комплекта»)
+  &.light {
+    background: #fff;
+    color: #111827;
     &:hover:not(.disabled):not(:disabled) {
-      background-color: color.scale(#f0c64b, $lightness: -10%);
+      background: color.scale(#fff, $lightness: -6%);
     }
   }
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
-  }
-}
-
-// Жёлтая капсула CTA — общий стиль кнопок главной, ведущих на форму заявки
-// («Подобрать комплект», «Собрать комплект со скидкой» и т.д.). Цвет — тот же
-// secondary-light (#f0c64b) с тёмно-зелёным текстом; высота/шрифт — локально
-// у каждой кнопки (они разных размеров). Паддинг в базе: кнопка с space-between
-// (шеврон у правого края) без паддинга прилипает текстом к левой стенке.
-.btn-gold {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 22px;
-  border-radius: 999px;
-  background: #f0c64b;
-  color: #2e3d2f;
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.15s ease;
-  &:hover {
-    background: color.scale(#f0c64b, $lightness: -10%);
-  }
-  svg {
-    flex-shrink: 0;
-    transition: transform 0.15s ease;
   }
 }
 

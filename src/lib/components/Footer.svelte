@@ -588,7 +588,7 @@
       color: #cbd5e1;
 
       :global(svg) {
-        color: #8fd6a2;
+        color: $green-mint;
         flex-shrink: 0;
       }
     }

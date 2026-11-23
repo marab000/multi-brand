@@ -32,7 +32,7 @@
     </button>
   </div>
 {:else}
-  <button class="btn outline cart-btn" type="button" aria-label="Добавить в корзину" onclick={add}>
+  <button class="btn outline-primary cart-btn" type="button" aria-label="Добавить в корзину" onclick={add}>
     <ShoppingCart size={16} strokeWidth={2.2} />
     В корзину
   </button>

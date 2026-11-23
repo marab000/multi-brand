@@ -186,6 +186,7 @@
 </div>
 
 <style lang="scss">
+  @use 'sass:color';
   .search {
     position: relative;
     margin: auto;
@@ -205,7 +206,8 @@
         width: 38px;
         border-radius: 8px;
         border: none;
-        background: linear-gradient(135deg, $green-soft, $green-light);
+        // палитра: кнопочный зелёный ($green-cta), без градиентов (ревью 23.11)
+        background: $green-cta;
         color: #fff;
         display: flex;
         align-items: center;
@@ -213,7 +215,7 @@
         cursor: pointer;
         transition: 0.2s;
         &:hover {
-          background: linear-gradient(135deg, $green-light, $green);
+          background: color.scale($green-cta, $lightness: -10%);
         }
         &:disabled {
           cursor: wait;

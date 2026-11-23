@@ -37,6 +37,7 @@
 {/if}
 
 <style lang="scss">
+  @use 'sass:color';
   .spopup {
     position: fixed;
     inset: 0;
@@ -103,7 +104,7 @@
       font-weight: 700;
       cursor: pointer;
       &:hover {
-        background: #35994e;
+        background: color.scale($green, $lightness: -10%);
       }
     }
   }

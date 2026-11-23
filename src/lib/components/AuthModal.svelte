@@ -149,7 +149,7 @@
       {/if}
       {#if mode === 'login' && !forgot}
         <button
-          class="btn secondary-with-border"
+          class="btn outline-secondary"
           type="button"
           on:click={() => switchMode('register')}>Нет аккаунта? Зарегистрироваться</button
         >
@@ -173,7 +173,7 @@
         <p class="forgot-hint">Письмо отправлено на {forgotEmail.toLowerCase()}. Проверь почту — ссылка действует 1 час.</p>
         <button class="forgot-link" type="button" on:click={() => { forgot = false; forgotSent = false; }}>Вернуться ко входу</button>
       {:else}
-        <button class="btn secondary-with-border" type="button" on:click={() => switchMode('login')}
+        <button class="btn outline-secondary" type="button" on:click={() => switchMode('login')}
           >Уже есть аккаунт? Войти</button
         >
       {/if}

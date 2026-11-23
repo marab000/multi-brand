@@ -144,7 +144,7 @@
     font-size: 0.86rem;
     text-align: center;
     line-height: 1.2;
-    color: #393e38;
+    color: #111827;
   }
 
   /* ВНИМАНИЕ: сознательно НЕ отключаем прокрутку при prefers-reduced-motion —
