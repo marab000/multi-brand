@@ -608,6 +608,7 @@
 <AuthModal bind:open={authOpen} bind:mode={authMode} />
 
 <style lang="scss">
+  @use 'sass:color';
   .nav {
     background: #fff;
 
@@ -668,7 +669,7 @@
       padding: 0 14px;
       border: 1px solid rgba($green, 0.4);
       border-radius: 999px;
-      background: #eef6f1;
+      background: rgba($green, 0.06);
       color: #{$green};
       text-decoration: none;
       font-size: 0.95rem;
@@ -727,9 +728,13 @@
         padding: 0 $sp-4;
         border-radius: 12px;
         text-decoration: none;
+        // палитра: кнопочный зелёный ($green-cta), как у всех CTA (ревью 23.11)
         color: #fff;
-        background: rgba($green-light, 1);
+        background: $green-cta;
         transition: background 0.15s ease;
+        &:hover {
+          background: color.scale($green-cta, $lightness: -10%);
+        }
         &__left {
           display: inline-flex;
           align-items: center;
@@ -1127,24 +1132,29 @@
     position: sticky;
     top: 0;
     z-index: 876;
-    transition: transform 0.28s ease;
-  }
-  .sticky-bar--hidden {
-    transform: translateY(-100%);
-  }
-  .sticky-bar__box {
+    // фон и тень на самой полосе — она 100% ширины (ревью 23.11: «видно края
+    // шапки» — фон на container'е обрезался по max-width)
     background: #fff;
-    transition: box-shadow 0.28s ease;
-  }
-  .sticky-bar--raised .sticky-bar__box {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    transition:
+      transform 0.28s ease,
+      box-shadow 0.28s ease;
+    &--raised {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+    &--hidden {
+      transform: translateY(-100%);
+    }
+    // контейнер содержимого: только ограничение ширины, без собственного фона
+    &__box {
+      background: transparent;
+    }
   }
   // мобильная полоса города: тёмная, на самом верху (референс заказчика).
-  // z-index 875 — выше sticky-шапки (870), чтобы прилегающий список городов
+  // z-index 878 — выше sticky-шапки (876), чтобы прилегающий список городов
   // открывался поверх строки «Каталог + поиск», а не под ней
   .city-strip {
     position: relative;
-    z-index: 875;
+    z-index: 878;
     background: #12181f;
     padding: 7px 0;
     // кнопка города — белым на тёмном (city-btn из другого компонента — через :global)
