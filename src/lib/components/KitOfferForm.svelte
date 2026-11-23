@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, ChevronRight, House, Percent, ShieldCheck, Truck } from 'lucide-svelte';
+  import { Check, ChevronRight, House } from 'lucide-svelte';
   import { toast } from 'svelte-sonner';
   import { apiFetch } from '$lib/api';
   import { phoneMask } from '$lib/actions/phoneMask';
@@ -19,12 +19,6 @@
     { img: hob, label: 'Варочную панель' },
     { img: dw, label: 'Посудомоечную машину' },
     { img: hood, label: 'Вытяжку' }
-  ];
-
-  const perks = [
-    { icon: ShieldCheck, text: 'Проверим размеры' },
-    { icon: Truck, text: 'Покажем полную стоимость' },
-    { icon: Percent, text: 'Согласуем доставку' }
   ];
 
   let phone = $state('');
@@ -136,7 +130,7 @@
             disabled={loading}
           />
         </div>
-        <button type="submit" class="btn-gold kitoffer__submit" disabled={loading}>
+        <button type="submit" class="btn secondary kitoffer__submit" disabled={loading}>
           {loading ? 'Отправляем...' : 'Получить расчёт комплекта'}
           <ChevronRight size={18} strokeWidth={2.3} />
         </button>
@@ -145,15 +139,6 @@
         Менеджер свяжется с вами, уточнит пожелания и подготовит предложение.
       </p>
     </form>
-
-    <div class="kitoffer__perks">
-      {#each perks as p (p.text)}
-        <div class="kitoffer__perk">
-          <p.icon size={18} strokeWidth={1.8} />
-          <span>{p.text}</span>
-        </div>
-      {/each}
-    </div>
   </div>
 </section>
 
@@ -184,15 +169,16 @@
 {/if}
 
 <style lang="scss">
+  @use 'sass:color';
   .kitoffer {
     // секция = одна карточка. Текстура из референса: размытое фото кухни под
     // зелёным тоном («стекло с подложкой») — два псевдоэлемента, без вложенных рамок.
     position: relative;
     overflow: hidden;
     padding: clamp($sp-4, 3.5vw, $sp-8);
-    border: 1px solid rgba(212, 166, 56, 0.4);
+    border: 1px solid rgba($yellow, 0.4);
     border-radius: 24px;
-    background: #103823;
+    background: $green;
     color: #fff;
 
     // размытая подложка: фото больше секции (inset отрицательный), чтобы blur
@@ -290,7 +276,7 @@
       align-items: center;
       gap: 8px;
       padding: 12px 10px 10px;
-      border: 1px solid rgba(212, 166, 56, 0.3);
+      border: 1px solid rgba($yellow, 0.3);
       border-radius: 12px;
       background: rgba(3, 18, 11, 0.55);
       cursor: pointer;
@@ -305,7 +291,7 @@
       }
       // чекбокс выключен: гасим рамку, чек и подпись
       &--off {
-        border-color: rgba(212, 166, 56, 0.14);
+        border-color: rgba($yellow, 0.14);
         .kitoffer__check {
           opacity: 0;
         }
@@ -324,7 +310,7 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: #27b563;
+      background: $success;
       color: #fff;
       transition: opacity 0.15s ease;
     }
@@ -364,7 +350,8 @@
         // заголовок всегда одной строкой
         white-space: nowrap;
         // бейдж 15%: идеальный круг, из него расходятся лёгкие кольца («круги на воде»);
-        // абсолютен в правом углу строки (родитель relative), текст строки его не двигает
+        // абсолютен в правом углу строки (родитель relative), текст строки его не двигает.
+        // Жёлтый в цвет CTA (ревью 23.11: «из оранжевой сделать желтой»)
         i {
           position: absolute;
           top: 50%;
@@ -375,8 +362,8 @@
           width: 50px;
           height: 50px;
           border-radius: 50%;
-          background: #f5c623;
-          color: #201a05;
+          background: $yellow-cta;
+          color: $green;
           font-size: 1rem;
           font-style: normal;
           white-space: nowrap;
@@ -413,7 +400,7 @@
         font-weight: 700;
         color: rgba(255, 255, 255, 0.95);
         svg {
-          color: #8fd6a2;
+          color: $green-mint;
           flex-shrink: 0;
         }
       }
@@ -482,40 +469,15 @@
       }
     }
     &__submit {
-      // форма/капсула — общие (.btn-gold); паддинг обязателен: btn-gold сам его не задаёт.
-      // ширина по контенту: на мобилке не растягивается на всю строку;
-      // на мобилке кнопка по центру, с 640px (строка «поле + кнопка») — слева
+      // цвет/форма — общие (.btn.secondary); здесь только геометрия:
+      // ширина по контенту — на мобилке не растягивается на всю строку,
+      // кнопка по центру, с 640px (строка «поле + кнопка») — слева
       justify-self: center;
       height: 52px;
       padding: 0 24px;
       font-size: 0.95rem;
       @media (min-width: 640px) {
         justify-self: start;
-      }
-    }
-
-    &__perks {
-      grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px $sp-4;
-      padding-top: $sp-3;
-      border-top: 1px solid rgba(255, 255, 255, 0.14);
-      @media (min-width: 1024px) {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
-    }
-    &__perk {
-      display: flex;
-      align-items: center;
-      gap: $sp-2;
-      font-size: 0.75rem;
-      line-height: 1.3;
-      color: rgba(255, 255, 255, 0.95);
-      white-space: pre-line;
-      svg {
-        flex-shrink: 0;
-        color: #cfa236;
       }
     }
 
@@ -572,11 +534,11 @@
       width: 64px;
       height: 64px;
       border-radius: 50%;
-      background: radial-gradient(circle at 50% 40%, #34d073, #14904d);
+      background: radial-gradient(circle at 50% 40%, color.scale($green-light, $lightness: 15%), $green);
       color: #fff;
       box-shadow:
-        0 0 24px rgba(52, 208, 115, 0.55),
-        0 0 60px rgba(52, 208, 115, 0.25);
+        0 0 24px rgba($green-light, 0.55),
+        0 0 60px rgba($green-light, 0.25);
     }
     &__success-box {
       display: grid;
@@ -596,7 +558,7 @@
         svg {
           flex-shrink: 0;
           margin-top: 2px;
-          color: #4ade80;
+          color: $green-mint;
         }
       }
     }

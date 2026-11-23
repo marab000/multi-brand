@@ -106,7 +106,7 @@
         <ChevronDown class="chev" size={16} strokeWidth={2.2} />
       </span>
     </label>
-    <button type="submit" class="btn secondary-light quiz__submit">
+    <button type="submit" class="btn primary quiz__submit">
       <span>{quiz.submitLabel}</span>
       <ChevronRight size={17} strokeWidth={2.3} />
     </button>
@@ -118,6 +118,7 @@
 <LeadRequestModal bind:open={requestOpen} {prefill} />
 
 <style lang="scss">
+  @use 'sass:color';
   .quiz {
     display: grid;
     gap: $sp-4;
@@ -193,7 +194,7 @@
           font-size: 2.5rem;
         }
         span {
-          color: #bde0b4;
+          color: color.mix(#fff, $green-light, 60%);
         }
       }
       p {
@@ -269,7 +270,8 @@
     }
     .quiz__submit {
       grid-column: 1 / -1;
-      // ширина по контенту: не растягивается на всю строку (десктоп и мобилка)
+      // ширина по контенту: не растягивается на всю строку (десктоп и мобилка).
+      // Цвет/форма — общие (.btn.primary); шеврон наследует currentColor → белый
       justify-self: start;
       height: 48px;
       font-weight: 700;

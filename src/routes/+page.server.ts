@@ -17,27 +17,7 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       // настроек ещё нет — блок просто не покажется
     }
 
-    // фото промо-блока Omoikiri — статичные ассеты (omoikiri-*.webp), тут только счётчики
-    // моделей для бейджей «от N моделей»
-
-    let omoikiriCounts: { moiki: number; smesiteli: number; izmelchiteli: number } | null = null;
-    try {
-      const countRows = await sql`
-        select p.catalog_root_slug as slug, count(*)::int as c
-        from products p
-        where p.brand->>'name' = 'Omoikiri'
-          and p.catalog_root_slug in ('kuhonnye-moyki', 'smesiteli', 'izmelchiteli-pischevyh-othodov')
-          and p.price_rrc is not null
-        group by 1`;
-      const bySlug = Object.fromEntries(countRows.map((r) => [r.slug, r.c as number]));
-      omoikiriCounts = {
-        moiki: bySlug['kuhonnye-moyki'] ?? 0,
-        smesiteli: bySlug['smesiteli'] ?? 0,
-        izmelchiteli: bySlug['izmelchiteli-pischevyh-othodov'] ?? 0
-      };
-    } catch {
-      omoikiriCounts = null; // бейджи «от N моделей» просто не покажутся
-    }
+    // фото промо-блока Omoikiri — статичные ассеты (omoikiri-*.webp)
 
     // Хиты продаж: состав согласован заказчиком (07.11.2026) — ASKO и SMEG
     // (стирки/сушки), LIEBHERR (холодильники/морозильники), KORTING, Kuppersberg
@@ -118,7 +98,6 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       mobileSlides: data.mobile || [],
       hits,
       syncBrands,
-      omoikiriCounts,
       city: locals.city,
       meta: {
         title: seoO?.title ||
@@ -140,7 +119,6 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
       mobileSlides: [],
       hits: [],
       syncBrands: [],
-      omoikiriCounts: null,
       city: locals.city
     };
   }

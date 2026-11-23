@@ -541,17 +541,24 @@
       }
     }
 
-    // кнопки, открывающие форму заявки (эксперт, хранение): жёлтая заливка
-    // в тон квиз-кнопок (secondary-light), текст тёмно-зелёный
+    // кнопки, открывающие форму заявки (эксперт, хранение): брендовый зелёный
+    // с белым текстом — «жёлтые заменить на зелёные» (ревью 23.11)
     &__btn--lead {
       border-color: transparent;
-      background: #f0c64b;
-      color: #2e3d2f;
+      background: $green-cta;
+      color: #fff;
 
       &:hover:not(:disabled) {
         border-color: transparent;
-        background: color.scale(#f0c64b, $lightness: -10%);
-        color: #2e3d2f;
+        background: color.scale($green-cta, $lightness: -10%);
+        color: #fff;
+      }
+
+      // золотой кружок на зелёной заливке конфликтовал со схемой — белый
+      // круг, шеврон зелёный (как белые стрелки omo-плиток)
+      .privs__btn-arrow {
+        background: #fff;
+        color: $green;
       }
     }
     // шеврон в золотом кружке — как стрелки карточек OMOIKIRI (ревью: «стрелки
@@ -564,7 +571,7 @@
       height: 22px;
       border-radius: 50%;
       background: $gold-gradient;
-      color: #4a3a10;
+      color: $gold-ink;
       flex: 0 0 auto;
     }
 
@@ -668,7 +675,7 @@
       padding: 4px 10px;
       border: 1px solid rgba($green, 0.18);
       border-radius: 999px;
-      background: #f2f6f3;
+      background: rgba($green, 0.06);
       color: #334155;
       font-size: 0.72rem;
       font-weight: 600;
@@ -679,7 +686,7 @@
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: #2ea06e;
+      background: $green-light;
     }
 
     .pm-title-with-chip {
@@ -756,8 +763,8 @@
       justify-self: start;
       padding: 2px 8px;
       border-radius: 999px;
-      background: #e3f3ea;
-      color: #1c7a4e;
+      background: rgba($green-light, 0.15);
+      color: $green-light;
       font-size: 0.7rem;
       font-weight: 700;
 
@@ -765,7 +772,7 @@
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #2ea06e;
+        background: $green-light;
       }
     }
 

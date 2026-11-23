@@ -10,19 +10,19 @@
   } from 'lucide-svelte';
   import Slider from '$lib/components/Slider.svelte';
   import { cityForms } from '$lib/cityForms';
-  import hob from '$lib/assets/links/hob.webp';
-  import dw from '$lib/assets/links/dw.webp';
-  import oven from '$lib/assets/links/oven.webp';
-  import freeze from '$lib/assets/links/freeze.webp';
-  import dm from '$lib/assets/links/dm.webp';
-  import mw from '$lib/assets/links/mw.webp';
-  import wm from '$lib/assets/links/wm.webp';
-  import hood from '$lib/assets/links/hood.webp';
-  import kitWine from '$lib/assets/promo/kit-vinnye-shkafy.webp';
-  import kitDry from '$lib/assets/promo/kit-sushilnye-shkafy.webp';
-  // стирально-сушильная машина Miele wash&dry — фото товара из БД (ревью:
-  // «добавить справа прачечные фото», товаров-интерьеров прачечной в БД нет)
-  import kitWashDry from '$lib/assets/promo/kit-washdry.webp';
+  // фото плиток kit-блоков (ревью 23.11: фото из папки qweqwe123, V-ZUG/ASKO/Bosch/Liebherr)
+  import kitbOven from '$lib/assets/promo/kitb-oven-vzug.webp';
+  import kitbHob from '$lib/assets/promo/kitb-hob-asko.webp';
+  import kitbHood from '$lib/assets/promo/kitb-hood-asko.webp';
+  import kitbMw from '$lib/assets/promo/kitb-mw-bosch.webp';
+  import kitbFridge from '$lib/assets/promo/kitb-fridge-vzug.webp';
+  import kitbFreezer from '$lib/assets/promo/kitb-freezer-liebherr.webp';
+  import kitbWine from '$lib/assets/promo/kitb-wine-vzug.webp';
+  import kitbDw from '$lib/assets/promo/kitb-dw-asko.webp';
+  import kitbWm from '$lib/assets/promo/kitb-wm-asko.webp';
+  import kitbDm from '$lib/assets/promo/kitb-dm-asko.webp';
+  import kitbDryer from '$lib/assets/promo/kitb-dryer-asko.webp';
+  import kitbLaundry from '$lib/assets/promo/kitb-laundry-bosch.webp';
   import ProductCard from '$lib/components/ProductCard.svelte';
   import KitOfferForm from '$lib/components/KitOfferForm.svelte';
   import KitBlock, { type KitBlockData } from '$lib/components/KitBlock.svelte';
@@ -41,19 +41,7 @@
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
   import askoQuizPhoto from '$lib/assets/promo/asko-quiz.webp';
   import liebherrQuizPhoto from '$lib/assets/promo/liebherr-quiz.webp';
-  import storeShowroom from '$lib/assets/promo/store-showroom.webp';
-  import storeManager from '$lib/assets/promo/store-manager.webp';
-  import storeWarehouse from '$lib/assets/promo/store-warehouse.webp';
-
-  // «от 48 моделей» / «от 21 модель» / «от 11 моделей» — склонение слова «модель»
-  function pluralModels(n: number): string {
-    const mod100 = n % 100;
-    const mod10 = n % 10;
-    if (mod100 >= 11 && mod100 <= 14) return 'моделей';
-    if (mod10 === 1) return 'модель';
-    if (mod10 >= 2 && mod10 <= 4) return 'модели';
-    return 'моделей';
-  }
+  import storeConsult from '$lib/assets/promo/store-consult.webp';
 
   let { data } = $props();
   const city = $derived(cityForms(data?.city));
@@ -76,9 +64,6 @@
     }
   ];
 
-  // «Задать вопрос о гарантии» — форма заявки (LeadRequestModal)
-  let guaranteeAskOpen = $state(false);
-  const guaranteeAskPrefill = 'Вопрос о гарантии и сервисном обслуживании';
   const desktopImages = $derived(data.desktopSlides || []);
   const mobileImages = $derived(data.mobileSlides || []);
   // Кондиционеры: сезонный блок, вернём через полгода (true = показать)
@@ -96,10 +81,6 @@
   let storeVisitOpen = $state(false);
   const storeVisitPrefill = 'Запись на визит в салон (ул. Чистопольская, д. 66)';
 
-  // «Узнать условия хранения» — форма вопроса менеджеру (ревью: не вести условия на карту)
-  let storageAskOpen = $state(false);
-  const storageAskPrefill = 'Запрос условий хранения на складе М-7 (до конца ремонта)';
-
   // «Хиты продаж» на мобилке: сначала 4 карточки, «Смотреть ещё» раскрывает список
   let hitsExpanded = $state(false);
 
@@ -113,22 +94,22 @@
         {
           title: 'Духовые шкафы',
           href: '/catalog/vstraivaemaya-tehnika/duhovye-shkafy',
-          img: oven
+          img: kitbOven
         },
         {
           title: 'Варочные панели',
           href: '/catalog/vstraivaemaya-tehnika/varochnye-poverhnosti',
-          img: hob
+          img: kitbHob
         },
         {
           title: 'Кухонные вытяжки',
           href: '/catalog/vytyazhki',
-          img: hood
+          img: kitbHood
         },
         {
           title: 'Микроволновые печи',
           href: '/catalog/mikrovolnovye-pechi',
-          img: mw
+          img: kitbMw
         }
       ]
     },
@@ -138,22 +119,22 @@
         {
           title: 'Холодильники',
           href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki',
-          img: freeze
+          img: kitbFridge
         },
         {
           title: 'Морозильные камеры',
           href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery',
-          img: freeze
+          img: kitbFridge
         },
         {
           title: 'Винные шкафы',
           href: '/catalog/vstraivaemaya-tehnika/vinnye-shkafy',
-          img: kitWine
+          img: kitbWine
         },
         {
           title: 'Посудомоечные машины',
           href: '/catalog/vstraivaemaya-tehnika/posudomoechnye-mashiny',
-          img: dw
+          img: kitbDw
         }
       ]
     },
@@ -163,22 +144,22 @@
         {
           title: 'Стиральные машины',
           href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/frontalnye-stiralnye-mashiny',
-          img: wm
+          img: kitbWm
         },
         {
           title: 'Сушильные машины',
           href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-mashiny',
-          img: dm
+          img: kitbDm
         },
         {
           title: 'Сушильные шкафы',
           href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/sushilnye-shkafy',
-          img: kitDry
+          img: kitbDryer
         },
         {
-          title: 'Стирально-сушильные машины',
+          title: 'Прачечное оборудование',
           href: '/catalog/krupnaya-bytovaya-tehnika/stiralnye-i-sushilnye-mashiny/stiralno-sushilnye-mashiny',
-          img: kitWashDry
+          img: kitbLaundry
         }
       ]
     }
@@ -423,54 +404,9 @@
     </div>
 
     <div class="omo__cards">
-      <!-- тёмная фото-карточка: мойки (сгенерированная сцена кухни, заменит товарное фото) -->
-      <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="omo-card omo-card--photo">
-        <img class="omo-card__bg" src={omoikiriKitchen} alt="Мойки Omoikiri на кухне" loading="lazy" />
-        <span class="omo-card__shade"></span>
-        <span class="omo-badge omo-badge--gold">Японское качество</span>
-        {#if data.omoikiriCounts?.moiki}
-          <span class="omo-badge">от {data.omoikiriCounts.moiki}
-            {pluralModels(data.omoikiriCounts.moiki)}</span
-          >
-        {/if}
-        <span class="omo-card__name">Кухонные мойки</span>
-        <span class="omo-card__arrow omo-card__arrow--gold"
-          ><ChevronRight size={18} strokeWidth={2.4} /></span
-        >
-      </a>
-
-      <!-- светлая карточка: смесители (референс: светло, товар по центру) -->
-      <a href="/catalog/smesiteli?brand=Omoikiri" class="omo-card omo-card--light">
-        <img class="omo-card__img" src={omoikiriFaucet} alt="Смесители Omoikiri" loading="lazy" />
-        <span class="omo-badge omo-badge--gold">Японское качество</span>
-        {#if data.omoikiriCounts?.smesiteli}
-          <span class="omo-badge">от {data.omoikiriCounts.smesiteli}
-            {pluralModels(data.omoikiriCounts.smesiteli)}</span
-          >
-        {/if}
-        <span class="omo-card__name">Смесители</span>
-        <span class="omo-card__arrow omo-card__arrow--gold"
-          ><ChevronRight size={18} strokeWidth={2.4} /></span
-        >
-      </a>
-
-      <!-- зелёная карточка: измельчители -->
-      <a
-        href="/catalog/izmelchiteli-pischevyh-othodov?brand=Omoikiri"
-        class="omo-card omo-card--green"
-      >
-        <img class="omo-card__side" src={omoikiriDisposer} alt="Измельчитель Omoikiri Nagare" loading="lazy" />
-        <span class="omo-badge omo-badge--gold">Японское качество</span>
-        {#if data.omoikiriCounts?.izmelchiteli}
-          <span class="omo-badge">от {data.omoikiriCounts.izmelchiteli}
-            {pluralModels(data.omoikiriCounts.izmelchiteli)}</span
-          >
-        {/if}
-        <span class="omo-card__name">Измельчители отходов</span>
-        <span class="omo-card__arrow omo-card__arrow--gold"
-          ><ChevronRight size={18} strokeWidth={2.4} /></span
-        >
-      </a>
+      <!-- ревью 23.11: порядок 1–4 — комплект первым, дальше мойки/смесители/
+           измельчители; плашки «Японское качество» и счётчики моделей сняты,
+           стрелки белые (базовый кружок без gold-модификатора) -->
 
       <!-- зелёная карточка-комплект: открывает форму заявки на расчёт комплекта -->
       <button
@@ -484,22 +420,42 @@
           alt="Комплект Omoikiri: мойка и смеситель в едином цвете"
           loading="lazy"
         />
-        <span class="omo-badge omo-badge--gold">Выгода комплектом</span>
-        <span class="omo-badge">до 15%</span>
         <span class="omo-card__stack">
           <span class="omo-card__sub">Мойка • смеситель • измельчитель в едином цвете</span>
           <span class="omo-card__name">Собери комплект для кухни с выгодой до 15%</span>
         </span>
-        <span class="omo-card__arrow omo-card__arrow--gold"
-          ><ChevronRight size={18} strokeWidth={2.4} /></span
-        >
+        <span class="omo-card__arrow"><ChevronRight size={18} strokeWidth={2.4} /></span>
       </button>
+
+      <!-- тёмная фото-карточка: мойки (сгенерированная сцена кухни, заменит товарное фото) -->
+      <a href="/catalog/kuhonnye-moyki?brand=Omoikiri" class="omo-card omo-card--photo">
+        <img class="omo-card__bg" src={omoikiriKitchen} alt="Мойки Omoikiri на кухне" loading="lazy" />
+        <span class="omo-card__shade"></span>
+        <span class="omo-card__name">Кухонные мойки</span>
+        <span class="omo-card__arrow"><ChevronRight size={18} strokeWidth={2.4} /></span>
+      </a>
+
+      <!-- светлая карточка: смесители (референс: светло, товар по центру) -->
+      <a href="/catalog/smesiteli?brand=Omoikiri" class="omo-card omo-card--light">
+        <img class="omo-card__img" src={omoikiriFaucet} alt="Смесители Omoikiri" loading="lazy" />
+        <span class="omo-card__name">Смесители</span>
+        <span class="omo-card__arrow"><ChevronRight size={18} strokeWidth={2.4} /></span>
+      </a>
+
+      <!-- зелёная карточка: измельчители -->
+      <a
+        href="/catalog/izmelchiteli-pischevyh-othodov?brand=Omoikiri"
+        class="omo-card omo-card--green"
+      >
+        <img class="omo-card__side" src={omoikiriDisposer} alt="Измельчитель Omoikiri Nagare" loading="lazy" />
+        <span class="omo-card__name">Измельчители отходов</span>
+        <span class="omo-card__arrow"><ChevronRight size={18} strokeWidth={2.4} /></span>
+      </a>
     </div>
   </div>
 </section>
 <LeadRequestModal bind:open={bundleOpen} prefill={bundlePrefill} />
 <LeadRequestModal bind:open={storeVisitOpen} prefill={storeVisitPrefill} source="store-visit" />
-<LeadRequestModal bind:open={storageAskOpen} prefill={storageAskPrefill} source="storage-ask" />
 
 {#if AC_ENABLED}
   <section>
@@ -567,68 +523,34 @@
         </span>
       </div>
     </div>
-    <div class="store-cards">
-      <article class="store-card">
-        <h3 class="store-card__name">Наш салон в Казани</h3>
-        <div class="store-card__photo">
-          <img src={storeShowroom} alt="Шоурум: кухни с встроенной техникой" loading="lazy" />
+    <div class="store-visit">
+      <!-- ревью 23.11: вместо трёх тёмных карточек — одна карточка визита:
+           слева фото салона, справа текст и кнопки записи -->
+      <div class="store-visit__photo">
+        <img src={storeConsult} alt="Консультация в салоне: техника на кухне" loading="lazy" />
+      </div>
+      <div class="store-visit__body">
+        <h3 class="store-visit__name">Персональная консультация в Казани</h3>
+        <p class="store-visit__meta">ул. Чистопольская, 66 • Ежедневно с 9:00 до 18:00</p>
+        <p class="store-visit__text">
+          Обсудим ваш проект, поможем с выбором и ответим на вопросы. При записи расскажите, какую
+          технику хотите посмотреть, и мы подготовимся к вашему визиту.
+        </p>
+        <div class="store-visit__actions">
+          <button type="button" class="btn primary store-visit__btn" onclick={() => (storeVisitOpen = true)}>
+            Записаться в салон
+          </button>
+          <a
+            class="store-visit__route"
+            href="https://yandex.ru/maps/org/192917903315/"
+            target="_blank"
+            rel="noopener"
+          >
+            Построить маршрут
+            <ArrowUpRight size={14} strokeWidth={2.2} />
+          </a>
         </div>
-        <div class="store-card__body">
-          <p class="store-card__line">ул. Чистопольская, 66</p>
-          <p class="store-card__line">Ежедневно с 9:00 до 18:00</p>
-        </div>
-        <a
-          class="store-card__btn"
-          href="https://yandex.ru/maps/org/192917903315/"
-          target="_blank"
-          rel="noopener"
-        >
-          Построить маршрут
-          <ArrowUpRight size={14} strokeWidth={2.2} />
-        </a>
-      </article>
-      <article class="store-card">
-        <h3 class="store-card__name">Персональная консультация</h3>
-        <div class="store-card__photo store-card__photo--top">
-          <img src={storeManager} alt="Личный менеджер" loading="lazy" />
-        </div>
-        <!-- без имени/телефона и «Написать в Макс» — сразу запись на визит -->
-        <div class="store-card__body">
-          <p class="store-card__line">
-            Обсудим ваш проект, поможем с выбором и ответим на вопросы. При записи расскажите, какую
-            технику хотите посмотреть.
-          </p>
-        </div>
-        <button type="button" class="store-card__btn" onclick={() => (storeVisitOpen = true)}>
-          Записаться в салон
-        </button>
-      </article>
-      <article class="store-card">
-        <h3 class="store-card__name">Хранение до готовности кухни</h3>
-        <div class="store-card__photo">
-          <img src={storeWarehouse} alt="Собственный склад хранения" loading="lazy" />
-        </div>
-        <div class="store-card__body">
-          <p class="store-card__line">
-            Сохраним заказ на складе в индустриальном парке М-7. Срок хранения и дату доставки
-            согласуем заранее.
-          </p>
-        </div>
-        <!-- условия услуги — в чат с менеджером, карта — отдельной ссылкой «Склад на карте»
-             (ревью: ссылку про хранение не вести на местоположение) -->
-        <button type="button" class="store-card__btn" onclick={() => (storageAskOpen = true)}>
-          Узнать условия хранения
-        </button>
-        <a
-          class="store-card__map-link"
-          href="https://yandex.ru/maps/?text=Казань, Индустриальный парк M-7"
-          target="_blank"
-          rel="noopener"
-        >
-          Склад на карте
-          <ArrowUpRight size={13} strokeWidth={2.2} />
-        </a>
-      </article>
+      </div>
     </div>
   </div>
 </section>
@@ -649,18 +571,10 @@
       </article>
     {/each}
   </div>
-  <button type="button" class="btn-gold guarantee__cta" onclick={() => (guaranteeAskOpen = true)}>
-    Задать вопрос о гарантии
-    <ChevronRight size={16} strokeWidth={2.3} />
-  </button>
 </section>
-<LeadRequestModal
-  bind:open={guaranteeAskOpen}
-  prefill={guaranteeAskPrefill}
-  source="guarantee-ask"
-/>
 
 <style lang="scss">
+  @use 'sass:color';
   // разделитель между kit-блоками: вместо width 80% — градиент на всю ширину,
   // края растворяются в прозрачность, середина в полный цвет (тон плейсхолдер)
   .kit-divider {
@@ -727,101 +641,104 @@
       display: inline-flex;
     }
   }
-  // тёмные карточки магазина (референс заказчика): шоурум / менеджер / склад
-  .store-cards {
-    display: grid;
-    gap: 12px;
-
-    @media (min-width: 1024px) {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-  .store-card {
+  // карточка визита в салон (ревью 23.11): фото слева, текст и кнопки справа
+  .store-visit {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 14px;
-    border-radius: 14px;
-    background: #3c403c;
-    color: #fff;
-    text-align: center;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 16px;
+    background: #fff;
 
-    &__name {
-      margin: 0;
-      font-size: 1.05rem;
-      font-weight: 500;
-      color: #fff;
+    @media (min-width: 640px) {
+      flex-direction: row;
+      align-items: stretch;
     }
 
-    // фото-слот карточки: заливка с обрезкой, как на референсе
     &__photo {
-      height: 150px;
-      border-radius: 12px;
-      overflow: hidden;
-
+      height: 240px;
+      @media (min-width: 640px) {
+        flex: 0 0 44%;
+        height: auto;
+      }
       img {
         display: block;
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
+    }
 
-      // у портрета менеджера лицо в верхней части кадра
-      &--top img {
-        object-position: top;
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: $sp-2;
+      padding: $sp-4;
+      @media (min-width: 1024px) {
+        justify-content: center;
+        padding: $sp-6;
       }
     }
 
-    // растёт и занимает свободную высоту карточки — кнопки по нижней кромке
-    &__body {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    &__line {
+    &__name {
       margin: 0;
-      font-size: 0.85rem;
-      line-height: 1.35;
-      color: rgba(255, 255, 255, 0.85);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #1c2b22;
     }
 
+    &__meta {
+      margin: 0;
+      font-size: 0.875rem;
+      color: #64748b;
+    }
+
+    &__text {
+      margin: 0;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: #334155;
+    }
+
+    &__actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      // до lg кнопки по центру (карточка в колонку), на десктопе — слева у текста
+      justify-content: center;
+      gap: $sp-4;
+      @media (min-width: 1024px) {
+        justify-content: flex-start;
+      }
+    }
+
+    // зелёная CTA — цвет/форма общие (.btn.primary), здесь только геометрия
     &__btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      width: 100%;
-      height: 38px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.35);
-      color: #fff;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: background 0.15s ease;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.5);
-      }
+      height: 44px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 12px;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    // вторичная ссылка под кнопкой («Склад на карте») — тише кнопки, но кликабельна
-    &__map-link {
+    &__route {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      gap: 4px;
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 0.75rem;
+      gap: $sp-1;
+      color: $green;
+      font-size: 0.9375rem;
+      font-weight: 600;
       text-decoration: underline;
       text-underline-offset: 3px;
       transition: color 0.15s ease;
       &:hover {
-        color: #fff;
+        color: color.scale($green, $lightness: -10%);
       }
     }
   }
@@ -1122,28 +1039,6 @@
       transform: translateY(-3px);
       box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
     }
-    // бейджи поверх карточки: золотая пилюля + белая с количеством
-    .omo-badge {
-      position: absolute;
-      top: 14px;
-      z-index: 2;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.92);
-      color: #1c2b22;
-      font-size: 0.75rem;
-      font-weight: 700;
-      &--gold {
-        left: 14px;
-        border: 1px solid rgba(146, 108, 22, 0.45);
-        background: $gold-gradient;
-        color: #4a3a10;
-      }
-    }
-    .omo-badge + .omo-badge {
-      left: auto;
-      right: 14px;
-    }
     .omo-card__name {
       position: absolute;
       bottom: 18px;
@@ -1170,16 +1065,6 @@
       background: #fff;
       color: #1c2b22;
       box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
-      &--dark {
-        background: #1c2b22;
-        color: #fff;
-        box-shadow: none;
-      }
-      &--gold {
-        background: $gold-gradient;
-        color: #4a3a10;
-        box-shadow: none;
-      }
     }
   }
   .omo-card--photo {
@@ -1220,8 +1105,8 @@
   .omo-card--green {
     // референс: тёмный лес слева → светлый изумруд справа + свечение за диспоузером
     background:
-      radial-gradient(ellipse 45% 75% at 72% 55%, rgba(14, 110, 66, 0.55), transparent 72%),
-      linear-gradient(100deg, #04301b 0%, #034828 100%);
+      radial-gradient(ellipse 45% 75% at 72% 55%, rgba($green-light, 0.45), transparent 72%),
+      linear-gradient(100deg, color.scale($green, $lightness: -12%) 0%, color.scale($green, $lightness: 8%) 100%);
     min-height: 190px;
     .omo-card__side {
       // вырезанный товар (фон удалён, PNG с альфой) прямо на зелёной заливке.
@@ -1272,7 +1157,7 @@
           font-size: 1.1rem;
         }
         .omo-card__sub {
-          color: #b0aa7d;
+          color: rgba($yellow, 0.8);
           font-size: 0.75rem;
           font-weight: 600;
           line-height: 1.35;
@@ -1398,10 +1283,10 @@
       border-radius: 50%;
       border: 1px solid rgba($yellow, 0.6);
       // сочно-зелёный фон, заметно светлее карточки — как на референсе
-      background: radial-gradient(circle at 50% 32%, #43b97e, #17814e);
-      color: #f2f7ef;
+      background: radial-gradient(circle at 50% 32%, color.scale($green-light, $lightness: 15%), $green);
+      color: #fff;
       box-shadow:
-        0 0 18px rgba(67, 185, 126, 0.55),
+        0 0 18px rgba($green-light, 0.55),
         0 0 44px rgba($green-light, 0.4);
     }
 
@@ -1417,15 +1302,6 @@
       font-size: 0.85rem;
       line-height: 1.4;
       color: rgba(255, 255, 255, 0.75);
-    }
-
-    // золотая CTA «Задать вопрос о гарантии» под карточками (ревью)
-    &__cta {
-      height: 44px;
-      padding: 0 22px;
-      font-size: 0.9rem;
-      justify-content: center;
-      gap: $sp-1;
     }
   }
 </style>

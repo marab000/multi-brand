@@ -90,6 +90,7 @@
 </section>
 
 <style lang="scss">
+  @use 'sass:color';
   .reviews {
     padding: $sp-3;
     border-radius: 24px;
@@ -205,7 +206,8 @@
   .platform__btn {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    // ревью 23.11: текст кнопок по центру (стрелка рядом с текстом)
+    justify-content: center;
     gap: $sp-2;
     min-height: 52px;
     margin-top: auto;
@@ -224,14 +226,14 @@
       font-size: 0.8125rem;
     }
     span {
-      text-align: left;
+      text-align: center;
     }
     &--dark {
-      // нейтральный чёрный как в макете (зелёных CTA на странице уже много)
-      background: #171717;
+      // «под цвет сайта» (ревью 23.11): брендовый тёмно-зелёный вместо нейтрального чёрного
+      background: $green;
       color: #fff;
       &:hover {
-        background: #2d2d2d;
+        background: color.scale($green, $lightness: -10%);
       }
     }
   }

@@ -47,14 +47,17 @@
   {/if}
   <div class="kit__grid" class:kit__grid--d3={block.desktopCols === 3}>
     {#each block.cards as card (card.title)}
+      <!-- задача 2-4: заголовок внутри плитки (ревью 23.11); кликабельны и имя, и плитка.
+           Оформление плитки — вариант 2: белая с зелёным бордером (ревью 23.11) -->
       <a class="kit-card" href={card.href}>
-        <span class="kit-card__name">{card.title}</span>
-        <img class="kit-card__img" src={card.img} alt={card.title} loading="lazy" />
-        <span class="kit-card__foot">
+        <span class="kit-card__body">
+          <span class="kit-card__name">{card.title}</span>
+          <img class="kit-card__img" src={card.img} alt={card.title} loading="lazy" />
           {#if card.badge}
             <i class="kit-card__badge">{card.badge}</i>
           {/if}
-          <!-- золотой круг со стрелкой — как у блока OMOIKIRI (ревью: «как у омойкири золотистые») -->
+          <!-- белый круг со стрелкой (ревью 23.11: «стрелка белым», как на плитках OMOIKIRI);
+               absolute в правом нижнем углу, чтобы не оставлять пустую строку в потоке -->
           <span class="kit-card__arrow">
             <ChevronRight size={18} strokeWidth={2.4} />
           </span>
@@ -63,7 +66,7 @@
     {/each}
   </div>
   {#if block.cta}
-    <button type="button" class="btn-gold kit__cta" onclick={oncta}>
+    <button type="button" class="btn secondary kit__cta" onclick={oncta}>
       {block.cta}
       <ChevronRight size={16} strokeWidth={2.3} />
     </button>
@@ -104,7 +107,7 @@
         display: inline-flex;
         vertical-align: middle;
         margin-right: $sp-2;
-        color: #ffcf00;
+        color: $yellow;
       }
       &-divider {
         display: inline-block;
@@ -116,7 +119,7 @@
       }
     }
     &__banner-accent {
-      background: #ffcf00;
+      background: $yellow;
       border-radius: 6px;
       padding: 0 6px;
       color: #{$green};
@@ -141,7 +144,7 @@
         }
       }
     }
-    // CTA ведёт на форму заявки: цвет/капсула — общие (.btn-gold), здесь только геометрия
+    // CTA ведёт на форму заявки: цвет/форма — общие (.btn.secondary), здесь только геометрия
     &__cta {
       height: 42px;
       padding: 0 22px;
@@ -151,59 +154,68 @@
   }
   .kit-card {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 12px;
-    border-radius: 14px;
-    background: #3c403c;
-    color: #fff;
     text-decoration: none;
     text-align: left;
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease;
-    &:hover {
+    &:hover .kit-card__body {
       transform: translateY(-3px);
       box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
     }
 
+    // заголовок внутри плитки (ревью 23.11). Цвет — по варианту плитки ниже
     &__name {
+      margin: 0;
       font-size: 0.9rem;
       font-weight: 600;
       line-height: 1.25;
-      color: #fff;
       text-align: center;
+      color: $green;
+    }
+    // Вариант 2 выбран заказчиком (ревью 23.11): белая плитка + зелёный бордер
+    &__body {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      padding: 12px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid rgba($green, 0.35);
+      color: #fff;
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
     }
     &__img {
       width: 100%;
       height: 96px;
       object-fit: contain;
-      // фото с белым фоном (вытяжки и т.п.): multiply прячет белый на тёмной карточке
+      // фото с белым фоном (вытяжки и т.п.): multiply прячет белый на белой плитке
       mix-blend-mode: multiply;
-      // тёмные силуэты (чёрные шкафы) читаются за счёт светлого ореола
-      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.14));
     }
-    &__foot {
-      display: flex;
-      align-items: flex-end;
-      // стрелка прибита к правому краю карточки (ревью: «прибиты в правой части»)
-      justify-content: flex-end;
-      gap: 8px;
-      min-height: 32px;
-    }
-    // золотой круг со стрелкой по центру карточки — стиль стрелок блока OMOIKIRI
+    // белый круг со стрелкой в правом нижнем углу карточки (ревью 23.11:
+    // «стрелка белым») — как на плитках OMOIKIRI
     &__arrow {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: $gold-gradient;
-      color: #4a3a10;
+      background: #fff;
+      color: $green;
+      // тень — как у стрелок OMOIKIRI: на светлой плитке белый круг без тени теряется
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16);
     }
     &__badge {
-      display: inline-block;
+      position: absolute;
+      left: 12px;
+      // центр по стрелке (та: bottom 12px + 16px = 28px; бейдж ~20px → 18px)
+      bottom: 18px;
+      max-width: calc(100% - 60px);
       padding: 2px 8px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.12);
@@ -212,6 +224,11 @@
       font-style: normal;
       font-weight: 600;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
+    // ── Варианты 1 и 3 отклонены (ревью 23.11: выбран вариант 2 — белый с бордером) —
+    // nth-child-разветвления выпилены.
   }
 </style>

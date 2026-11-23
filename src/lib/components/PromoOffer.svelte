@@ -32,7 +32,7 @@
       {#each offer.titleLines as line, i}{#if i > 0}<br />{/if}{line}{/each}
     </h2>
     <p class="offer__text">{offer.text}</p>
-    <button type="button" class="btn secondary-light offer__btn" onclick={submit}>
+    <button type="button" class="btn light offer__btn" onclick={submit}>
       <span>{offer.buttonLabel}</span>
       <ChevronRight size={18} strokeWidth={2.3} />
     </button>
@@ -99,9 +99,8 @@
     line-height: 1.55;
   }
   .offer__btn {
-    // цвет — от btn.secondary-light (жёлтая с тёмным текстом, как «Подобрать
-    // комплект»); здесь только геометрия под тёмный блок-акцию.
-    // height явно: перебивает height: 44px базового .btn
+    // белая CTA на тёмно-зелёном блоке — цвет/форма общие (.btn.light),
+    // здесь только геометрия. Height явно: перебивает 44px базового .btn
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -114,7 +113,6 @@
     font-size: 0.9375rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.18s ease;
     // на мобилке (стек до 1024px) кнопка по центру, на десктопе — слева колонки
     align-self: center;
     @media (min-width: 1024px) {
