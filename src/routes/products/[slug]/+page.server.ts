@@ -3,6 +3,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { apiFetch } from '$lib/api';
 import { sql } from '$lib/db';
 import { applyMetaTemplate, formatPriceRub, getMetaTemplates } from '$lib/server/metaTemplates';
+import { getRecommendations } from '$lib/server/productRecommendations';
 import { DEFAULT_CART_DISCOUNT_PERCENT, DEFAULT_EXCLUDED_BRANDS } from '$lib/utils/pricing';
 
 // ─── «С этим товаром покупают»: кросс-пары категорий ───
@@ -168,13 +169,22 @@ export const load: PageServerLoad = async ({ params, fetch, locals }) => {
     redirect(301, `/products/${product.slug}`);
   }
 
-  // «С этим товаром покупают»: кросс-пары для салонных брендов (см. pickAlsoBought),
-  // остальное — 4 товара той же категории с ценой и картинкой
+  // «С этим товаром покупают»: сначала ручные рекомендации из админки
+  // (/admin/recommendations), нет связей — кросс-пары для салонных брендов
+  // (см. pickAlsoBought), остальное — 4 товара той же категории с ценой и картинкой.
+  // Фолбэки независимы: поломка ручных связей не глушит автоподбор
   let alsoBought: any[] = [];
   try {
-    alsoBought = await pickAlsoBought(product);
+    alsoBought = await getRecommendations(product.id);
   } catch {
     alsoBought = [];
+  }
+  if (!alsoBought.length) {
+    try {
+      alsoBought = await pickAlsoBought(product);
+    } catch {
+      alsoBought = [];
+    }
   }
 
   // Мета-теги: шаблон из админки (seo → «Шаблоны»), без ручных записей для товаров

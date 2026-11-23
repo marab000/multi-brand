@@ -550,7 +550,7 @@
     <h2 class="also-bought__title">С этим товаром покупают</h2>
     <div class="also-bought__grid">
       {#each data.alsoBought as item (item.id)}
-        <ProductCard product={item} />
+        <ProductCard product={item} note={item.note ?? ''} />
       {/each}
     </div>
   </section>

@@ -28,7 +28,8 @@
   let {
     product,
     bonusPercent = 0,
-    excludedBrands = []
+    excludedBrands = [],
+    note = ''
   } = $props();
   // фото по позиции — для свайп-галереи прямо в карточке каталога
   const cardImages = [...(product.images ?? [])].sort((a: any, b: any) => a.position - b.position);
@@ -235,6 +236,10 @@
       {/if}
     </div>
     {#if product.description}<p class="description mt-auto">{product.description}</p>{/if}
+    {#if note}
+      <!-- пояснение связи из ручных рекомендаций («Парная сушильная машина») -->
+      <p class="card-note">{note}</p>
+    {/if}
     <div class="price-row">
       <div class="price-wrap">
         <p class:discount-price={hasDiscount} class="price">{formatPrice(price)} ₽</p>
@@ -456,6 +461,18 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .card-note {
+      margin: 0;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #f3f4f6;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      line-height: 1.35;
+      align-self: flex-start;
+      max-width: 100%;
     }
     .stock-note {
       margin: 0;
