@@ -34,7 +34,7 @@
   const year = new Date().getFullYear();
 
   // рассрочка: тот же банк-конфиг, что у карточки «Честная рассрочка» на главной
-  const OTP_INSTALLMENT_URL = 'https://ecom.otpbank.ru/smart-form?config=eb7b4194-469a-400f-8cf1-f482869b7e1e';
+  const OTP_INSTALLMENT_URL = 'https://ecom.otpbank.ru/smart-form?config=d5869d11-fe37-421b-8f59-8ead5c3b6b2e';
 
   // «Популярные категории» по референсу футера: частый subset каталога
   const popularCategories: { name: string; href: string }[] = [

@@ -22,7 +22,7 @@
 
   // Рассрочка: форма банка в новой вкладке. Эксперт и хранение — локальные модалки
   // этого компонента (уникальные макеты заказчика), заявки уходят в общий /api/leads.
-  const OTP_INSTALLMENT_URL = 'https://ecom.otpbank.ru/smart-form?config=eb7b4194-469a-400f-8cf1-f482869b7e1e';
+  const OTP_INSTALLMENT_URL = 'https://ecom.otpbank.ru/smart-form?config=d5869d11-fe37-421b-8f59-8ead5c3b6b2e';
 
   // тексты карточек — по ревью 17.11.2026 («Всё для удобной покупки»)
   const privileges = [
@@ -37,8 +37,6 @@
     },
     {
       action: 'expert' as const,
-      badgeValue: '24/7',
-      badgeLabel: 'на связи',
       icon: managerIcon,
       title: 'Ваш личный менеджер',
       text: 'Подберём технику под размеры кухни, ваши задачи и бюджет. Ответим на вопросы в мессенджере.',
@@ -50,7 +48,7 @@
       badgeLabel: 'за хранение',
       icon: storageIcon,
       title: 'Купите сейчас — заберите после ремонта',
-      text: 'Сохраним технику на тёплом охраняемом складе и согласуем доставку, когда кухня будет готова.',
+      text: 'Сохраним технику бесплатно 12 месяцев на тёплом охраняемом складе и согласуем доставку, когда кухня будет готова.',
       cta: 'Уточнить условия хранения'
     }
   ];
@@ -206,10 +204,12 @@
   <div class="privs__grid">
     {#each privileges as p (p.action)}
       <article class="privs__card">
+        {#if p.badgeValue}
         <span class="privs__badge">
           <span class="privs__badge-value">{p.badgeValue}</span>
           <span class="privs__badge-label">{p.badgeLabel}</span>
         </span>
+        {/if}
         <div class="privs__icon">
           <img src={p.icon} alt="" width="640" height="640" loading="lazy" />
         </div>
