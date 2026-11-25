@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-    ArrowUpRight,
+    CheckCircle,
     ChevronDown,
     Wind,
     ChevronRight,
@@ -8,8 +8,12 @@
     ShieldCheck,
     Wrench
   } from 'lucide-svelte';
+  import { toast } from 'svelte-sonner';
   import Slider from '$lib/components/Slider.svelte';
   import { cityForms } from '$lib/cityForms';
+  import { apiFetch } from '$lib/api';
+  import { phoneMask } from '$lib/actions/phoneMask';
+  import { isValidRuPhone, normalizeRuPhone } from '$lib/utils/phone';
   // фото плиток kit-блоков (ревью 23.11: фото из папки qweqwe123, V-ZUG/ASKO/Bosch/Liebherr)
   import kitbOven from '$lib/assets/promo/kitb-oven-vzug.webp';
   import kitbHob from '$lib/assets/promo/kitb-hob-asko.webp';
@@ -41,7 +45,7 @@
   import acMobile from '$lib/assets/promo/ac-mobile.webp';
   import askoQuizPhoto from '$lib/assets/promo/asko-quiz.webp';
   import liebherrQuizPhoto from '$lib/assets/promo/liebherr-quiz.webp';
-  import storeConsult from '$lib/assets/promo/store-consult.webp';
+  import mvVisitBg from '$lib/assets/promo/mv-visit-bg.webp';
 
   let { data } = $props();
   const city = $derived(cityForms(data?.city));
@@ -77,9 +81,58 @@
     '— Выгода при покупке комплектом до 15%'
   ].join('\n');
 
-  // кнопка «Записаться на визит в салон» — простая форма заявки (LeadRequestModal)
-  let storeVisitOpen = $state(false);
-  const storeVisitPrefill = 'Запись на визит в салон (ул. Чистопольская, д. 66)';
+  // Блок «Выезд менеджера на дом» (ревью 25.11, вместо карточки визита в салон):
+  // инлайн-форма уходит в общий лид-конвейер /api/leads (письмо менеджеру).
+  // Согласие одно (две галочки — чужой паттерн, отпугивают), ссылки ведут
+  // на наши /privacy и /offer
+  let mvName = $state('');
+  let mvPhone = $state('');
+  let mvAddress = $state('');
+  let mvAgree = $state(false);
+  let mvLoading = $state(false);
+
+  const mvSubmit = async () => {
+    if (!mvName.trim()) {
+      toast.error('Введите имя');
+      return;
+    }
+    if (!isValidRuPhone(mvPhone)) {
+      toast.error('Введите корректный номер телефона');
+      return;
+    }
+    if (!mvAddress.trim()) {
+      toast.error('Введите адрес');
+      return;
+    }
+    if (!mvAgree) {
+      toast.error('Подтвердите согласие на обработку данных');
+      return;
+    }
+    if (mvLoading) return;
+    mvLoading = true;
+    try {
+      await apiFetch(fetch, '/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: mvName.trim(),
+          phone: normalizeRuPhone(mvPhone),
+          message: `Заявка на выезд менеджера. Адрес: ${mvAddress.trim()}`,
+          source: 'manager-visit'
+        })
+      });
+      if (typeof window !== 'undefined') window.ym?.(108518016, 'reachGoal', 'lead_submit');
+      toast.success('Заявка отправлена — менеджер свяжется с вами');
+      mvName = '';
+      mvPhone = '';
+      mvAddress = '';
+      mvAgree = true;
+    } catch {
+      toast.error('Не удалось отправить заявку');
+    } finally {
+      mvLoading = false;
+    }
+  };
 
   // «Хиты продаж» на мобилке: сначала 4 карточки, «Смотреть ещё» раскрывает список
   let hitsExpanded = $state(false);
@@ -124,7 +177,7 @@
         {
           title: 'Морозильные камеры',
           href: '/catalog/krupnaya-bytovaya-tehnika/holodilniki-i-morozilniki/morozilnye-kamery',
-          img: kitbFridge
+          img: kitbFreezer
         },
         {
           title: 'Винные шкафы',
@@ -363,20 +416,22 @@
   </section>
 {/if}
 
-<section class="hits-section">
-  <h2 class="section-title">Хиты продаж — всегда доступные к заказу</h2>
-  <div class="hits-grid" class:hits-grid--expanded={hitsExpanded}>
-    {#each data.hits as hit (hit.id)}
-      <ProductCard product={hit} />
-    {/each}
-  </div>
-  {#if !hitsExpanded}
-    <button type="button" class="hits-more" onclick={() => (hitsExpanded = true)}>
-      Смотреть ещё
-      <ChevronDown size={16} strokeWidth={2.2} />
-    </button>
-  {/if}
-</section>
+{#if data.hits.length}
+  <section class="hits-section">
+    <h2 class="section-title">Хиты продаж — всегда доступные к заказу</h2>
+    <div class="hits-grid" class:hits-grid--expanded={hitsExpanded}>
+      {#each data.hits as hit (hit.id)}
+        <ProductCard product={hit} />
+      {/each}
+    </div>
+    {#if !hitsExpanded && data.hits.length > 4}
+      <button type="button" class="hits-more" onclick={() => (hitsExpanded = true)}>
+        Смотреть ещё
+        <ChevronDown size={16} strokeWidth={2.2} />
+      </button>
+    {/if}
+  </section>
+{/if}
 
 <section>
   <PrivilegesSection />
@@ -455,7 +510,6 @@
   </div>
 </section>
 <LeadRequestModal bind:open={bundleOpen} prefill={bundlePrefill} />
-<LeadRequestModal bind:open={storeVisitOpen} prefill={storeVisitPrefill} source="store-visit" />
 
 {#if AC_ENABLED}
   <section>
@@ -513,45 +567,81 @@
 </section>
 
 <section>
-  <div class="promo-banner promo-banner--store">
-    <div class="promo-banner__head">
-      <div class="promo-banner__text">
-        <h2>Познакомьтесь с техникой лично</h2>
-        <span>
-          Приезжайте в наш салон: посмотрите представленные модели, сравните варианты и обсудите со
-          специалистом технику для вашей кухни.
+  <div class="mv-visit" style="--mv-bg: url({mvVisitBg})">
+    <!-- ревью 25.11: вместо «Познакомьтесь с техникой лично» — блок «Выезд менеджера
+         на дом» (референс заказчика). Фон-фото — тёмная кухня (актив заказчика),
+         поверх затемняющий градиент для читаемости текста.
+         Заявки уходят в общий лид-конвейер /api/leads. -->
+    <div class="mv-visit__info">
+      <h2 class="mv-visit__title">Выезд менеджера на дом — <span>бесплатно!</span></h2>
+      <p class="mv-visit__lead">Замер, подбор техники, консультация — у вас на кухне</p>
+      <p class="mv-visit__text">
+        Расскажите о вашем проекте — менеджер приедет на объект, снимет размеры ниш, поможет
+        подобрать технику под интерьер и бюджет и сразу посчитает стоимость комплекта.
+      </p>
+      <ul class="mv-visit__points">
+        <li><CheckCircle size={20} strokeWidth={1.8} /> Удобное для вас время</li>
+        <li><CheckCircle size={20} strokeWidth={1.8} /> Замер ниш на объекте</li>
+        <li><CheckCircle size={20} strokeWidth={1.8} /> Подбор комплекта под проект</li>
+        <li><CheckCircle size={20} strokeWidth={1.8} /> Расчёт стоимости на месте</li>
+      </ul>
+      <p class="mv-visit__note">
+        * Бесплатно при заказе комплекта от двух моделей крупной бытовой техники.
+      </p>
+    </div>
+    <form
+      class="mv-visit__form"
+      onsubmit={(e) => {
+        e.preventDefault();
+        void mvSubmit();
+      }}
+    >
+      <h3>Оставить заявку на выезд</h3>
+      <input
+        class="input primary"
+        type="text"
+        placeholder="Ваше имя *"
+        autocomplete="name"
+        bind:value={mvName}
+        disabled={mvLoading}
+      />
+      <div class="with-prefix">
+        <span class="prefix">+7</span>
+        <input
+          class="input primary"
+          type="tel"
+          placeholder="999 123 45 67"
+          autocomplete="tel"
+          inputmode="numeric"
+          value={mvPhone}
+          use:phoneMask={{ value: mvPhone, onAccept: (digits) => (mvPhone = digits) }}
+          disabled={mvLoading}
+        />
+      </div>
+      <input
+        class="input primary"
+        type="text"
+        placeholder="Адрес *"
+        bind:value={mvAddress}
+        disabled={mvLoading}
+      />
+      <label class="checkbox secondary">
+        <input type="checkbox" bind:checked={mvAgree} disabled={mvLoading} />
+        <span class="box"></span>
+        <span class="text">
+          Я соглашаюсь с <a href="/privacy" target="_blank" rel="noopener">политикой
+          конфиденциальности</a> и <a href="/offer" target="_blank" rel="noopener">условиями
+          оферты</a> на обработку персональных данных
         </span>
-      </div>
-    </div>
-    <div class="store-visit">
-      <!-- ревью 23.11: вместо трёх тёмных карточек — одна карточка визита:
-           слева фото салона, справа текст и кнопки записи -->
-      <div class="store-visit__photo">
-        <img src={storeConsult} alt="Консультация в салоне: техника на кухне" loading="lazy" />
-      </div>
-      <div class="store-visit__body">
-        <h3 class="store-visit__name">Персональная консультация в Казани</h3>
-        <p class="store-visit__meta">ул. Чистопольская, 66 • Ежедневно с 9:00 до 18:00</p>
-        <p class="store-visit__text">
-          Обсудим ваш проект, поможем с выбором и ответим на вопросы. При записи расскажите, какую
-          технику хотите посмотреть, и мы подготовимся к вашему визиту.
-        </p>
-        <div class="store-visit__actions">
-          <button type="button" class="btn primary store-visit__btn" onclick={() => (storeVisitOpen = true)}>
-            Записаться в салон
-          </button>
-          <a
-            class="store-visit__route"
-            href="https://yandex.ru/maps/org/192917903315/"
-            target="_blank"
-            rel="noopener"
-          >
-            Построить маршрут
-            <ArrowUpRight size={14} strokeWidth={2.2} />
-          </a>
-        </div>
-      </div>
-    </div>
+      </label>
+      <button
+        class="btn primary mv-visit__submit"
+        type="submit"
+        disabled={!mvAgree || mvLoading}
+      >
+        {mvLoading ? 'Отправляем...' : 'Отправить заявку'}
+      </button>
+    </form>
   </div>
 </section>
 
@@ -641,104 +731,130 @@
       display: inline-flex;
     }
   }
-  // карточка визита в салон (ревью 23.11): фото слева, текст и кнопки справа
-  .store-visit {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 16px;
-    background: #fff;
-
-    @media (min-width: 640px) {
-      flex-direction: row;
-      align-items: stretch;
+  // «Выезд менеджера на дом» (ревью 25.11): тёмный блок, слева текст с чек-пунктами,
+  // справа белая форма заявки. Фон — фото кухни (актив заказчика) + затемняющий
+  // градиент слева (текст) направо; внизу стоп — градиент-заглушка без фото.
+  .mv-visit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: $sp-4;
+    align-items: center;
+    padding: $sp-6;
+    border-radius: 24px;
+    background-image:
+      linear-gradient(
+        95deg,
+        rgba(10, 14, 11, 0.85) 0%,
+        rgba(10, 14, 11, 0.6) 45%,
+        rgba(10, 14, 11, 0.3) 100%
+      ),
+      var(--mv-bg, linear-gradient(105deg, #0c120d 0%, #141d16 55%, #24352a 100%));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    @media (max-width: 1023px) {
+      grid-template-columns: 1fr;
+      padding: $sp-4;
+      border-radius: 16px;
     }
 
-    &__photo {
-      height: 240px;
-      @media (min-width: 640px) {
-        flex: 0 0 44%;
-        height: auto;
-      }
-      img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
-    }
-
-    &__body {
+    &__info {
       display: flex;
       flex-direction: column;
-      gap: $sp-2;
-      padding: $sp-4;
-      @media (min-width: 1024px) {
-        justify-content: center;
-        padding: $sp-6;
+      gap: $sp-3;
+      color: #fff;
+    }
+
+    &__title {
+      margin: 0;
+      max-width: 22ch;
+      color: #fff;
+      text-transform: uppercase;
+      font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: 0.01em;
+      span {
+        color: #3fae5a;
       }
     }
 
-    &__name {
+    &__lead {
       margin: 0;
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: #1c2b22;
-    }
-
-    &__meta {
-      margin: 0;
-      font-size: 0.875rem;
-      color: #64748b;
+      font-size: 1.125rem;
+      font-weight: 600;
     }
 
     &__text {
       margin: 0;
+      max-width: 52ch;
       font-size: 0.9375rem;
-      line-height: 1.5;
-      color: #334155;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.72);
     }
 
-    &__actions {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      // до lg кнопки по центру (карточка в колонку), на десктопе — слева у текста
-      justify-content: center;
-      gap: $sp-4;
-      @media (min-width: 1024px) {
-        justify-content: flex-start;
+    &__points {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: $sp-2 $sp-4;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      li {
+        display: flex;
+        align-items: center;
+        gap: $sp-2;
+        font-size: 0.9375rem;
+        color: rgba(255, 255, 255, 0.92);
+      }
+      li :global(svg) {
+        flex-shrink: 0;
+        color: #3fae5a;
+      }
+      @media (max-width: 560px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    &__note {
+      margin: 0;
+      max-width: 52ch;
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    &__form {
+      display: grid;
+      gap: 10px;
+      padding: $sp-4;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      background: #fff;
+      h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #111827;
+      }
+      :global(.checkbox .text a) {
+        color: $green;
+        text-decoration: underline;
+        text-underline-offset: 2px;
       }
     }
 
     // зелёная CTA — цвет/форма общие (.btn.primary), здесь только геометрия
-    &__btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 44px;
-      padding: 0 22px;
-      border: 0;
-      border-radius: 12px;
+    &__submit {
+      height: 48px;
+      border-radius: 10px;
       font-size: 0.9375rem;
       font-weight: 700;
-      cursor: pointer;
-    }
-
-    &__route {
-      display: inline-flex;
-      align-items: center;
-      gap: $sp-1;
-      color: $green;
-      font-size: 0.9375rem;
-      font-weight: 600;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-      transition: color 0.15s ease;
-      &:hover {
-        color: color.scale($green, $lightness: -10%);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
       }
     }
   }
@@ -909,10 +1025,6 @@
       line-height: 1.4;
       color: #475569;
     }
-  }
-  // только store-баннер: заголовок и подзаголовок по центру (вариант --ac не трогаем)
-  .promo-banner--store .promo-banner__text {
-    text-align: center;
   }
   // ─── Promo cards ───
   .promo-cards {

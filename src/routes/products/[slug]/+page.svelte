@@ -61,10 +61,11 @@
       : price - applyCartDiscount(price, data.bonusPercent)
   );
   // stock из Тетриса — остаток в штуках (склад Доскино, срок 7 дней), не статус.
+  // Пусто/0 — «Доставим за 5-7 дней» (решение заказчика 25.11.2026).
   const stockLabel = $derived(
     p.stock !== null && p.stock > 0
       ? { text: 'В наличии — доставка от 7 дней', tone: 'in' }
-      : { text: 'Доступно к заказу со склада', tone: 'order' }
+      : { text: 'Доставим за 5-7 дней', tone: 'order' }
   );
   const keySpecs = $derived(getKeySpecs(p));
   // подзаголовок под h1: цвет · тип товара (как на референсе)

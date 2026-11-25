@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { sql } from '$lib/db';
 import { getBrandConfig } from '$lib/server/tetrasis';
+import { getHomeHits } from '$lib/server/homeHits';
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 import { replaceCityPlaceholders } from '$lib/server/cityPlaceholders';
 
@@ -19,74 +19,12 @@ export const load: PageServerLoad = async ({ fetch, locals }) => {
 
     // фото промо-блока Omoikiri — статичные ассеты (omoikiri-*.webp)
 
-    // Хиты продаж: состав согласован заказчиком (07.11.2026) — ASKO и SMEG
-    // (стирки/сушки), LIEBHERR (холодильники/морозильники), KORTING, Kuppersberg
-    // и Franke (варочные — только индукция и газ, вытяжки, СВЧ, посудомойки,
-    // холодильники/морозильники). Десять на десктопе (2 ряда по 5), на мобилке
-    // лишние прячет CSS. Бакеты по брендам с чередованием — чтобы все шесть
-    // брендов гарантированно были в секции, внутри бакета случайный выбор.
-    const HIT_COLUMNS = 5; // колонок на десктопе
-    const HITS_TOTAL = HIT_COLUMNS * 2;
-    const pickHits = (
-      brand: string,
-      groups: string[],
-      limit: number,
-      types?: string[]
-    ) => sql`
-      SELECT p.id, p.name, p.product_type, p.price_rrc, p.price_ric, p.specs,
-             p.brand,
-             COALESCE(json_agg(pi ORDER BY pi.position ASC) FILTER (WHERE pi.id IS NOT NULL), '[]') AS images
-      FROM products p
-      LEFT JOIN product_images pi ON pi.product_id = p.id
-      WHERE p.price_rrc IS NOT NULL
-        AND EXISTS (SELECT 1 FROM product_images x WHERE x.product_id = p.id)
-        AND p.product_type NOT ILIKE 'комплект%'
-        AND p.brand->>'name' = ${brand}
-        AND p.catalog_group_slug IN ${sql(groups)}
-        ${types ? sql`AND p.product_type IN ${sql(types)}` : sql``}
-      GROUP BY p.id
-      ORDER BY random()
-      LIMIT ${limit}
-    `;
+    // Хиты продаж: ручной список из админки (/admin/hits) — состав и порядок
+    // задаёт заказчик. Пустой список — секция на главной не показывается
+    // (автоподбора по брендам больше нет).
     let hits: any[] = [];
     try {
-      const hobInductionGas = ['Индукционная поверхность', 'Газовая поверхность'];
-      // стирки и сушки: сушильные ШКАФЫ (другой прибор) в хиты не попадают
-      const laundryTypes = [
-        'Стиральная машина с фронтальной загрузкой',
-        'Стиральная машина с вертикальной загрузкой',
-        'Стиральная машина встраиваемая',
-        'Сушильная машина встраиваемая',
-        'Стирально-сушильная машина отдельностоящая',
-        'Стирально-сушильная машина встраиваемая'
-      ];
-      const kitchenGroups = [
-        'varochnye-poverhnosti',
-        'vytyazhki-vstraivaemye',
-        'vytyazhki-otdelnostoyaschie',
-        'mikrovolnovye-pechi',
-        'posudomoechnye-mashiny',
-        'holodilniki-i-morozilniki'
-      ];
-      const buckets = await Promise.all([
-        pickHits('ASKO', ['stiralnye-i-sushilnye-mashiny'], 6, laundryTypes),
-        pickHits('LIEBHERR', ['holodilniki-i-morozilniki'], 6),
-        pickHits('SMEG', ['stiralnye-i-sushilnye-mashiny'], 6, laundryTypes),
-        pickHits('KORTING', kitchenGroups, 6, hobInductionGas),
-        pickHits('Kuppersberg', kitchenGroups, 6, hobInductionGas),
-        pickHits('Franke', kitchenGroups, 6, hobInductionGas)
-      ]);
-      // чередуем бакеты: Asko, Liebherr, Smeg, Korting, Kuppersberg, Franke, Asko, ...
-      const pools = buckets.map((p) => [...p]);
-      const seen = new Set<string>();
-      for (let round = 0; hits.length < HITS_TOTAL && pools.some((p) => p.length); round++) {
-        const pool = pools[round % pools.length];
-        const item = pool.shift();
-        if (item && !seen.has(item.id)) {
-          seen.add(item.id);
-          hits.push(item);
-        }
-      }
+      hits = await getHomeHits();
     } catch {
       hits = [];
     }

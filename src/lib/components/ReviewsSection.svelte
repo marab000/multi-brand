@@ -1,10 +1,17 @@
 <script lang="ts">
-  import { ArrowUpRight, MapPin } from 'lucide-svelte';
+  import { ArrowUpRight, MapPin, Star } from 'lucide-svelte';
 
   // Карточка организации на Яндекс Картах (та же, что была в старых отзывах)
   const YANDEX_MAPS_URL = 'https://yandex.ru/maps/org/192917903315/';
   // Карточка организации в 2ГИС (в Google Maps организации нет)
   const GIS2_URL = 'https://2gis.ru/kazan/firm/70000001103891779';
+
+  // Рейтинг для витрины (ревью 25.11 «поставить рейтинг возле отзывов»).
+  // Реальные значения на 25.11.2026: обе площадки 5,0 (по 32 оценки) — сверял
+  // по страницам карточек. API площадок не тянем — при смене рейтинга
+  // поправить константы руками.
+  const YANDEX_RATING = '5.0';
+  const GIS2_RATING = '5.0';
 </script>
 
 <section class="reviews mx-auto">
@@ -27,6 +34,14 @@
           <span>Независимая площадка</span>
         </div>
         <ArrowUpRight class="platform__corner" size={20} strokeWidth={2} />
+      </div>
+      <div class="platform__rating" aria-label={`Рейтинг ${YANDEX_RATING} из 5`}>
+        <strong>{YANDEX_RATING}</strong>
+        <span class="stars" aria-hidden="true">
+          {#each Array(5) as _, i (i)}
+            <Star size={22} strokeWidth={1.6} color="#f0b429" fill="#f0b429" />
+          {/each}
+        </span>
       </div>
       <h3>Впечатления клиентов. Без лишних слов.</h3>
       <p class="platform__desc">
@@ -71,6 +86,14 @@
           <span>Независимая площадка</span>
         </div>
         <ArrowUpRight class="platform__corner" size={20} strokeWidth={2} />
+      </div>
+      <div class="platform__rating" aria-label={`Рейтинг ${GIS2_RATING} из 5`}>
+        <strong>{GIS2_RATING}</strong>
+        <span class="stars" aria-hidden="true">
+          {#each Array(5) as _, i (i)}
+            <Star size={22} strokeWidth={1.6} color="#f0b429" fill="#f0b429" />
+          {/each}
+        </span>
       </div>
       <h3>Ваш опыт важен. Поделитесь им.</h3>
       <p class="platform__desc">
@@ -184,6 +207,23 @@
     // в центре карточки стрелка живёт рядом с названием, а не прижата к краю
     color: #94a3b8;
     flex-shrink: 0;
+  }
+  .platform__rating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $sp-2;
+    // число рейтинга крупнее текста — как на референсе
+    strong {
+      color: #171717;
+      font-size: 1.625rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .stars {
+      display: inline-flex;
+      gap: 2px;
+    }
   }
   .platform h3 {
     margin: $sp-2 0 0;

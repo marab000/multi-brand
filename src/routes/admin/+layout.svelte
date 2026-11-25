@@ -148,8 +148,12 @@
     <a href="/admin/tetris" class={$activePath.startsWith('/admin/tetris') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
       <Boxes size={16} strokeWidth={2} /> Тетрис
     </a>
-    <a href="/admin/recommendations" class={$activePath.startsWith('/admin/recommendations') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
-      <Link2 size={16} strokeWidth={2} /> Рекомендации
+    <a
+      href="/admin/recommendations"
+      class={$activePath.startsWith('/admin/recommendations') || $activePath.startsWith('/admin/hits') ? 'active' : ''}
+      onclick={() => (mobileOpen = false)}
+    >
+      <Link2 size={16} strokeWidth={2} /> Рекоменд. / Хиты
     </a>
     <a href="/admin/settings" class={$activePath.startsWith('/admin/settings') ? 'active' : ''} onclick={() => (mobileOpen = false)}>
       <Percent size={16} strokeWidth={2} /> Скидка

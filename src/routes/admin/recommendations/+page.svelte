@@ -2,11 +2,18 @@
   import { toast } from 'svelte-sonner';
   import { onMount, tick } from 'svelte';
   import { Search, ChevronUp, ChevronDown, Trash2, ExternalLink } from 'lucide-svelte';
+  import SegmentedNav from '$lib/components/SegmentedNav.svelte';
   import { imgUrl } from '$lib/s3Public';
   import { slugify } from '$lib/utils/slugify';
   import { formatPrice } from '$lib/utils/formatPrice';
 
   let { data }: { data: any } = $props();
+
+  // переключатель разделов «Рекомендации / Хиты» — как «Чат / Настройки»
+  const recTabs = [
+    { href: '/admin/recommendations', label: 'Рекомендации' },
+    { href: '/admin/hits', label: 'Хиты' }
+  ];
 
   type ProductHit = {
     id: string;
@@ -381,7 +388,10 @@
 {/snippet}
 
 <div class="rec-admin">
-  <h1>Рекомендации товаров</h1>
+  <div class="page-head">
+    <h1>Рекомендации товаров</h1>
+    <SegmentedNav items={recTabs} />
+  </div>
   <p class="page-hint">
     Ручные связки «С этим товаром покупают»: выбери товар слева и добавь к нему рекомендованные.
     Есть связи — блок в карточке показывает только их, нет — работает автоподбор. Оптимально 4
@@ -480,11 +490,19 @@
 
 <style lang="scss">
   .rec-admin {
-    h1 {
-      margin: 0 0 $sp-2;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #111827;
+    .page-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $sp-2;
+      flex-wrap: wrap;
+      margin-bottom: $sp-2;
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+      }
     }
   }
   .page-hint {

@@ -202,7 +202,7 @@
     <div class="footer__meta">
       <div class="footer__copy">
         <p>© {year} {SITE_URL_NAME}</p>
-        <p class="footer__inn">ИНН 1685389560</p>
+        <p class="footer__inn">ИНН 165123360719</p>
       </div>
       <!-- перелинковка региональных поддоменов (до включения DNS ссылки ведут на основной домен) -->
       <div class="footer__cities">
