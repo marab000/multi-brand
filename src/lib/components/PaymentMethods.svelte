@@ -1,13 +1,17 @@
 <script lang="ts">
-  import { QrCode, CreditCard, Banknote, Send, Smartphone, Wallet } from 'lucide-svelte';
+  // брендовые логотипы платёжных систем (ревью 23.11: «generic иконки не подходят,
+  // у СБП определённая иконка — она и должна быть, как и t-pay и прочее»).
+  // Источники: Wikimedia Commons (МИР, СБП, SberPay PNG), logo-teka (T-Pay).
+  import mirLogo from '$lib/assets/payments/mir.svg';
+  import tpayLogo from '$lib/assets/payments/tpay.png';
+  import sbpLogo from '$lib/assets/payments/sbp.svg';
+  import sberpayLogo from '$lib/assets/payments/sberpay.png';
 
   const methods = [
-    { icon: QrCode, label: 'Оплата по QR' },
-    { icon: Smartphone, label: 'Терминал' },
-    { icon: CreditCard, label: 'Кредитная карта' },
-    { icon: Wallet, label: 'Картой' },
-    { icon: Banknote, label: 'Наличные' },
-    { icon: Send, label: 'Перевод на карту' }
+    { src: mirLogo, alt: 'МИР — платёжная система' },
+    { src: tpayLogo, alt: 'T-Pay' },
+    { src: sbpLogo, alt: 'СБП — система быстрых платежей' },
+    { src: sberpayLogo, alt: 'SberPay' }
   ];
 </script>
 
@@ -15,8 +19,8 @@
   <span class="payment-methods__title">Способы оплаты</span>
   <div class="payment-methods__icons">
     {#each methods as m}
-      <div class="payment-method" title={m.label}>
-        <m.icon size={26} strokeWidth={1.8} />
+      <div class="payment-method" title={m.alt}>
+        <img src={m.src} alt={m.alt} />
       </div>
     {/each}
   </div>
@@ -39,18 +43,18 @@
     gap: 10px;
   }
   .payment-method {
+    // белые капсулы: брендовые лого (МИР, T-Pay тёмные) не теряются на тёмном футере
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
-    transition: 0.15s ease;
-    &:hover {
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: #fff;
+    img {
+      display: block;
+      height: 16px;
+      width: auto;
     }
   }
 </style>

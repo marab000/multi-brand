@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ChevronDown, MapPin, ShieldCheck } from 'lucide-svelte';
   import LeadRequestModal from '$lib/components/LeadRequestModal.svelte';
+  import PaymentMethods from '$lib/components/PaymentMethods.svelte';
   import { page } from '$app/stores';
   import { cityForms } from '$lib/cityForms';
   import tgIcon from '$lib/assets/social/tg.svg';
@@ -194,6 +195,9 @@
       <a href="/garantiya">Гарантия и сервис</a>
       <i class="footer__legal-line" aria-hidden="true"></i>
     </div>
+
+    <!-- платёжные системы брендовыми лого (ревью 23.11: МИР / T-Pay / СБП / SberPay) -->
+    <PaymentMethods />
 
     <div class="footer__meta">
       <div class="footer__copy">

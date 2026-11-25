@@ -229,11 +229,12 @@
       text-align: center;
     }
     &--dark {
-      // «под цвет сайта» (ревью 23.11): брендовый тёмно-зелёный вместо нейтрального чёрного
-      background: $green;
+      // «под цвет сайта» (ревью 23.11): кнопочный зелёный $green-cta,
+      // как у всех primary-CTA
+      background: $green-cta;
       color: #fff;
       &:hover {
-        background: color.scale($green, $lightness: -10%);
+        background: color.scale($green-cta, $lightness: -10%);
       }
     }
   }

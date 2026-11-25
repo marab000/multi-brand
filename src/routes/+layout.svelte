@@ -10,7 +10,6 @@
   import ChatWidget from '$lib/components/ChatWidget.svelte';
   import CookieBanner from '$lib/components/CookieBanner.svelte';
   import StoragePopup from '$lib/components/StoragePopup.svelte';
-  import PaymentMethods from '$lib/components/PaymentMethods.svelte';
   import { cart } from '$lib/stores/cart';
   import { favorites } from '$lib/stores/favorites';
   import { SITE_PHONE_HREF, SITE_EMAIL, LINK_TG, LINK_MAX } from '$lib/config/site';
