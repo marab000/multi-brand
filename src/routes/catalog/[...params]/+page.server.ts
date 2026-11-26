@@ -16,6 +16,7 @@ import { buildCategorySeo, buildCategoryDescription } from '$lib/server/seoText'
 import { getSeoOverride, safeCanonical } from '$lib/server/seoOverrides';
 import { looksLikeHtml, sanitizeSectionHtml } from '$lib/server/sanitizeSectionHtml';
 import { applyMetaTemplate, getMetaTemplates } from '$lib/server/metaTemplates';
+import { titleFromH1, descriptionFromH1 } from '$lib/server/metaFromH1';
 
 function buildSpecs(url: URL): Record<string, { min?: number; max?: number }> | undefined {
   const specs: Record<string, { min?: number; max?: number }> = {};
@@ -54,6 +55,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
   // Комплекты убрали с сайта — старые ссылки ведём на раздел встраиваемой техники
   if (segments.includes('komplekty')) {
     redirect(301, '/catalog/vstraivaemaya-tehnika');
+  }
+  // Дубль корня и группы с одним слагом (Смесители, Измельчители): /catalog/{root}/{root}
+  // отдаёт то же, что корень — склеиваем 301 (лист /{root}/{root}/{leaf} не трогаем)
+  if (rootSlug && groupSlug && !leafSlug && groupSlug === rootSlug) {
+    redirect(301, `/catalog/${rootSlug}`);
   }
   const isSearchPage = rootSlug === 'search';
   // граница как у выпадашки подсказок: короче 2 символов — не поиск
@@ -321,12 +327,14 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
   return {
     bonusPercent,
     excludedBrands,
-    // через ||, а не ??: в seo_overrides бывают пустые строки — они не должны глушить шаблон
-    seoTitle: metaO?.title || tplTitle,
+    // через ||, а не ??: в seo_overrides бывают пустые строки — они не должны глушить шаблон.
+    // Правило мета-тегов: title/description, не заданные вручную, собираются из H1
+    seoTitle: metaO?.title || titleFromH1(metaO?.h1) || tplTitle,
     // через ||, а не ??: пустые строки в seo_overrides не должны глушить шаблон
     seoH1: metaO?.h1 || tplH1,
     canonical,
-    metaDescription: metaO?.description || tplDescription || autoDescription,
+    metaDescription:
+      metaO?.description || descriptionFromH1(metaO?.h1) || tplDescription || autoDescription,
     products,
     total,
     perPage,

@@ -24,6 +24,9 @@ export interface CatalogFilters {
   priceMin?: number;
   priceMax?: number;
   specs?: Record<string, { min?: number; max?: number }>;
+  /** Точное совпадение спеки (ключ — из кода, не из пользовательского ввода):
+   *  например { key: 'Тип', value: 'автоматическая' } для кофемашин */
+  specEquals?: { key: string; value: string };
   sort?: 'default' | 'price_asc' | 'price_desc';
 }
 
@@ -252,6 +255,12 @@ export function buildWhere(filters: CatalogFilters, initialValues: any[] = []) {
       parts.push(`LOWER(TRIM(p.specs->>'Цвет')) = $${idx}`);
     }
     if (parts.length) conditions.push(`(${parts.join(' OR ')})`);
+  }
+  if (filters.specEquals?.key && filters.specEquals.value?.trim()) {
+    values.push(filters.specEquals.value.trim().toLowerCase());
+    conditions.push(
+      `LOWER(TRIM(COALESCE(p.specs->>'${filters.specEquals.key}', ''))) = $${values.length}`
+    );
   }
   if (filters.priceMin != null) {
     conditions.push(`p.price_rrc >= $${values.length + 1}`);

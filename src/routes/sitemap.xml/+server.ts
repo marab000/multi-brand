@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import { sql } from '$lib/db';
 import { catalogTree, filterCatalogRootsByAvailability } from '$lib/server/categories';
+import { seoLandings } from '$lib/server/seoLandings';
 import { brandSlug } from '$lib/utils/slugify';
 import { slugify } from '$lib/utils/slugify';
 import { SITE_URL } from '$lib/config/site';
@@ -98,6 +99,16 @@ export const GET: RequestHandler = async ({ url }) => {
         });
       }
     }
+  }
+
+  // 2.5 SEO-лендинги сверх дерева категорий (реестр seoLandings.ts)
+  for (const landing of seoLandings) {
+    entries.push({
+      loc: `${origin}/catalog/${landing.path}`,
+      lastmod: today,
+      changefreq: 'weekly',
+      priority: 0.8
+    });
   }
 
   // 3. Товары: /products/{slug}

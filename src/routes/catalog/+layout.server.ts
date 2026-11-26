@@ -1,6 +1,6 @@
 import type { LayoutServerLoad } from './$types';
 import { sql } from '$lib/db';
-import type { CatalogFilters, CatalogScope } from '$lib/server/catalogApi';
+import type { CatalogFilters } from '$lib/server/catalogApi';
 import { buildWhere } from '$lib/server/catalogApi';
 import {
   findCatalogGroupBySlug,
@@ -10,6 +10,7 @@ import {
   slugifyCatalogValue
 } from '$lib/server/categories';
 import { getLiveCatalog } from '$lib/server/liveCatalog';
+import { findSeoLandingByPath } from '$lib/server/seoLandings';
 import { toDbPrice, toDisplayPrice } from '$lib/utils/formatPrice';
 
 type MinMax = {
@@ -75,17 +76,6 @@ function buildSpecs(url: URL) {
       ...(depthMax ? { max: Math.ceil(Number(depthMax)) } : {})
     };
   return Object.keys(specs).length ? specs : undefined;
-}
-
-function getLandingScopes(rootSlug: string | null): CatalogScope[] | null {
-  if (rootSlug === 'mikrovolnovye-pechi') {
-    return [
-      { rootSlug: 'melkaya-bytovaya-tehnika', groupSlug: 'mikrovolnovye-pechi' },
-      { rootSlug: 'vstraivaemaya-tehnika', groupSlug: 'mikrovolnovye-pechi' }
-    ];
-  }
-  if (rootSlug === 'vytyazhki') return [{ rootSlug: 'kuhonnye-vytyazhki' }];
-  return null;
 }
 
 function buildScopeWhere(
@@ -182,7 +172,10 @@ export const load: LayoutServerLoad = async ({ url }) => {
   const groupSlug = segments[2] ?? null;
   const leafSlug = segments[3] ?? null;
   const isSearchPage = rootSlug === 'search';
-  const landingScopes = getLandingScopes(rootSlug);
+  const landing = findSeoLandingByPath(
+    url.pathname.replace(/^\/catalog\/?/, '').replace(/\/+$/, '')
+  );
+  const landingScopes = landing ? landing.scopes : null;
   const selectedTypes = url.searchParams
     .getAll('type')
     .map((item) => item.trim())
@@ -237,36 +230,7 @@ export const load: LayoutServerLoad = async ({ url }) => {
       `,
       values
     )) as unknown as ProductScopeRow[];
-    categoryNav =
-      rootSlug === 'mikrovolnovye-pechi'
-        ? [
-            {
-              name: 'Отдельностоящие микроволновые печи',
-              slug: 'otdelnostoyaschie-mikrovolnovye-pechi',
-              href: '/catalog/melkaya-bytovaya-tehnika/mikrovolnovye-pechi',
-              level: 'leaf' as const
-            },
-            {
-              name: 'Встраиваемые микроволновые печи',
-              slug: 'vstraivaemye-mikrovolnovye-pechi',
-              href: '/catalog/vstraivaemaya-tehnika/mikrovolnovye-pechi/vstraivaemye-mikrovolnovye-pechi',
-              level: 'leaf' as const
-            }
-          ]
-        : [
-            {
-              name: 'Вытяжки встраиваемые',
-              slug: 'vytyazhki-vstraivaemye',
-              href: '/catalog/kuhonnye-vytyazhki/vytyazhki-vstraivaemye',
-              level: 'leaf' as const
-            },
-            {
-              name: 'Вытяжки отдельностоящие',
-              slug: 'vytyazhki-otdelnostoyaschie',
-              href: '/catalog/kuhonnye-vytyazhki/vytyazhki-otdelnostoyaschie',
-              level: 'leaf' as const
-            }
-          ];
+    categoryNav = (landing?.nav ?? []) as CategoryNavItem[];
   } else if (rootSlug) {
     const { where, values } = buildScopeWhere(
       rootSlug,

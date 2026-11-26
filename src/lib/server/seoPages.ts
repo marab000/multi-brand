@@ -1,5 +1,6 @@
 import { sql } from '$lib/db';
 import { getCatalogRoots } from '$lib/server/categories';
+import { seoLandings } from '$lib/server/seoLandings';
 import { brandSlug } from '$lib/utils/slugify';
 
 // Список страниц, доступных для ручного SEO-редактирования
@@ -48,6 +49,18 @@ export async function buildSeoPageList(): Promise<SeoPageEntry[]> {
 			}
 			for (const group of root.groups) {
 				if (group.slug === root.slug) continue;
+				// группы (средний уровень) тоже редактируются: у них свой page_key
+				const groupHasProducts = group.leaves.some((leaf) =>
+					present.has(`${root.slug}|${group.slug}|${leaf.slug}`)
+				);
+				if (groupHasProducts) {
+					pages.push({
+						key: `category:${root.slug}/${group.slug}`,
+						name: `Раздел: ${group.name}`,
+						path: `/catalog/${root.slug}/${group.slug}`,
+						group: 'Категории'
+					});
+				}
 				for (const leaf of group.leaves) {
 					const key = `${root.slug}|${group.slug}|${leaf.slug}`;
 					if (present.has(key)) {
@@ -63,6 +76,16 @@ export async function buildSeoPageList(): Promise<SeoPageEntry[]> {
 		}
 	} catch {
 		// категории недоступны — пропускаем
+	}
+
+	// SEO-лендинги сверх дерева категорий (реестр seoLandings.ts)
+	for (const landing of seoLandings) {
+		pages.push({
+			key: `landing:${landing.path}`,
+			name: `Лендинг: ${landing.title}`,
+			path: `/catalog/${landing.path}`,
+			group: 'SEO-лендинги'
+		});
 	}
 
 	try {
