@@ -130,7 +130,7 @@
             disabled={loading}
           />
         </div>
-        <button type="submit" class="btn secondary kitoffer__submit" disabled={loading}>
+        <button type="submit" class="btn light kitoffer__submit" disabled={loading}>
           {loading ? 'Отправляем...' : 'Получить расчёт комплекта'}
           <ChevronRight size={18} strokeWidth={2.3} />
         </button>
@@ -469,7 +469,8 @@
       }
     }
     &__submit {
-      // цвет/форма — общие (.btn.secondary); здесь только геометрия:
+      // цвет/форма — общие (.btn.light, белая заливка как у кнопки на зелёном
+      // промо-блоке ниже по странице); здесь только геометрия:
       // ширина по контенту — на мобилке не растягивается на всю строку,
       // кнопка по центру, с 640px (строка «поле + кнопка») — слева
       justify-self: center;
